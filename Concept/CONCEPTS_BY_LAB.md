@@ -38,8 +38,9 @@
 | `out` параметр, TryXxx патерн | 04 | TryFindById(int, out T) |
 | `?.` null-conditional, `??` null-coalescing | 04 | тепер дозволено |
 | Явне приведення `(TypeName)value` | 04 | int → enum у меню |
-| `abstract class`, `abstract` методи | 06 | разом з успадкуванням |
+| `abstract class`, `abstract` методи | 06 | |
 | `virtual` методи | 06 | |
+| `protected` конструктор | 06 | |
 | `List<T>` (базово: Add, Count, [], foreach) | 09 | Generics лаба |
 | Підпростори імен (`ClinicApp.Models` тощо) + `using` директиви | 05 | організація файлів |
 | `private` backing fields `_camelCase` | 05 | |
@@ -188,14 +189,23 @@
 
 ---
 
-### Lab 06 — Inheritance (feature/inheritance → зливається)
+### Lab 06 — Inheritance (feature/inheritance → злито в main)
 
 **Нові конструкції:**
-- Успадкування: `class InsuredPatient : Patient`
-- `base(...)` в конструкторі
-- `override` методу батьківського класу
-- `is` (перевірка типу), `as` (безпечне приведення)
-- `(ChildType)parent` явне приведення
+- `abstract class MedicalRecord` — базовий клас ієрархії медичних записів
+- `abstract string GetSummary()` — підклас зобов'язаний реалізувати
+- `virtual string GetRecordType()`, `virtual bool IsActive()` — підклас може перевизначити
+- `: BaseClass`, `protected` конструктор, `base(...)` виклик
+- `override` в підкласах (`Diagnosis`, `LabResult`, `Prescription`)
+- `is` (перевірка типу), `is T variable` (pattern variable)
+- `as` (безпечне приведення, повертає null)
+- Явне приведення `(T)obj` — і коли воно кидає `InvalidCastException`
+- Поліморфний масив `MedicalRecord[]` — різні підкласи в одному масиві
+
+**Заборонено (ще не введено):**
+- `new` keyword (method hiding) (Lab 07)
+- `sealed` (Lab 07)
+- `interface` (Lab 07/08)
 
 ---
 

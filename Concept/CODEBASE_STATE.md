@@ -200,14 +200,34 @@ src/
 
 ## Lab 06 — Inheritance (feature/inheritance)
 
-**Статус:** 📋 ЗАПЛАНОВАНО
-**Гілка:** `feature/inheritance` — ✅ зливається
-**Що з'явиться:**
-- `InsuredPatient : Patient`, `PrivatePatient : Patient`
-- `GeneralPractitioner : Doctor`, `Specialist : Doctor`
-- В меню: реєстрація пацієнта з типом, реєстрація лікаря зі спеціалізацією
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/inheritance` — ✅ **злито в main**
+**Файли:**
+```
+src/
+├── Models/
+│   ├── MedicalRecord.cs    ← abstract: Id, PatientId, DoctorId, Date, Notes
+│   │                          abstract GetSummary(); virtual GetRecordType(); virtual IsActive()
+│   ├── Diagnosis.cs        ← DiagnosisCode, Description, IsChronic
+│   ├── LabResult.cs        ← TestName, Value, Unit, ReferenceRange, IsNormal
+│   └── Prescription.cs     ← MedicationName, Dosage, DurationDays, ExpiresAt; override IsActive()
+└── Managers/
+    └── MedicalRecordManager.cs  ← MedicalRecord[1000] поліморфний масив
+                                    GetDiagnoses/LabResults/Prescriptions/ChronicDiagnoses/ActivePrescriptions
+                                    DisplayPatientSummary
+```
 
-**Нові файли:** `InsuredPatient.cs`, `PrivatePatient.cs`, `GeneralPractitioner.cs`, `Specialist.cs`
+**Нові концепції в Lab 06:**
+- `abstract class` — не можна інстанціювати напряму
+- `abstract` метод — підклас зобов'язаний реалізувати
+- `virtual` метод — підклас може перевизначити
+- `: BaseClass`, `base(...)` в конструкторі
+- `override` в підкласах
+- `protected` конструктор
+- `is`, `as`, pattern variable `is T var`
+- Поліморфний масив `MedicalRecord[]`
+
+**Нове в меню:** пункт 4 "Медична картка" → зведення / всі записи / додати діагноз/аналіз/рецепт / записи лікаря
 
 ---
 
