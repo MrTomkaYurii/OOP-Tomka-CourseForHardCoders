@@ -156,13 +156,45 @@ src/
 
 ## Lab 05 — Encapsulation (feature/encapsulation)
 
-**Статус:** 📋 ЗАПЛАНОВАНО
-**Гілка:** `feature/encapsulation` — ⏳ чекає Lab06
-**Що зміниться (внутрішнє, меню не змінюється):**
-- Поля Patient: `private string _name`, валідація в сеттері
-- Поля Doctor: `private string _speciality`, валідація
-- Appointment.Status: `private set` + методи переходу стану
-- `throw new ArgumentException(...)` при помилкових даних
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/encapsulation` — ✅ **злито в main**
+**Файли:**
+```
+src/
+├── Clinic.cs                        ← without changes to API
+├── GrowablePatientManager.cs        ← + using ClinicApp.Models
+├── Program.cs                       ← + using ClinicApp.*; try/catch у меню
+├── Enums/
+│   ├── AppointmentStatus.cs         ← namespace ClinicApp.Enums (moved)
+│   ├── BloodType.cs
+│   └── Speciality.cs
+├── Managers/
+│   ├── AppointmentManager.cs        ← namespace ClinicApp.Managers (moved)
+│   ├── DoctorManager.cs
+│   └── PatientManager.cs
+├── Models/
+│   ├── Appointment.cs               ← namespace ClinicApp.Models; _durationMinutes + validate
+│   ├── Doctor.cs                    ← private _firstName, _lastName, _licenseNumber, _phone
+│   ├── Patient.cs                   ← private _firstName, _lastName, _dateOfBirth, _phone
+│   └── WorkSchedule.cs              ← validates start/end in constructor
+└── Utils/
+    ├── ClinicFormatter.cs           ← namespace ClinicApp.Utils (moved)
+    └── ClinicValidator.cs           ← NEW: static ValidateName/Phone/Date/Positive
+```
+
+**Нові концепції в Lab 05:**
+- Sub-namespaces: `ClinicApp.Models`, `ClinicApp.Enums`, `ClinicApp.Managers`, `ClinicApp.Utils`
+- `using` директиви для залежностей між підпросторами
+- `private` backing fields: `_camelCase`
+- Явні сеттери з валідацією
+- `throw new ArgumentException(msg)`
+- `throw new ArgumentOutOfRangeException(paramName, msg)`
+- `string.IsNullOrWhiteSpace()`
+- `nameof(Property)`
+- `try / catch` (порядок: спочатку конкретніший тип)
+- Опційно: `Regex.IsMatch()` для перевірки формату
+
+**Що НЕ змінилось:** меню, API менеджерів, зовнішня поведінка
 
 ---
 

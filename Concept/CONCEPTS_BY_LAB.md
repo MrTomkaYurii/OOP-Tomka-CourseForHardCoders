@@ -41,9 +41,15 @@
 | `abstract class`, `abstract` методи | 06 | разом з успадкуванням |
 | `virtual` методи | 06 | |
 | `List<T>` (базово: Add, Count, [], foreach) | 09 | Generics лаба |
-| `private` поля + валідація в сеттерах | 05 | |
-| `throw new ArgumentException(...)` | 05 | |
-| `try / catch` | 05 | |
+| Підпростори імен (`ClinicApp.Models` тощо) + `using` директиви | 05 | організація файлів |
+| `private` backing fields `_camelCase` | 05 | |
+| Явні сеттери з валідацією | 05 | |
+| `throw new ArgumentException(msg)` | 05 | |
+| `throw new ArgumentOutOfRangeException(paramName, msg)` | 05 | |
+| `string.IsNullOrWhiteSpace(value)` | 05 | |
+| `nameof(Symbol)` | 05 | |
+| `try / catch` (порядок блоків) | 05 | |
+| `Regex.IsMatch()`, `static readonly Regex` | 05 | опційно |
 | `: BaseClass`, `base()` | 06 | успадкування |
 | `override` переваги методів | 06 | |
 | `is`, `as`, явне приведення | 06 | |
@@ -161,14 +167,24 @@
 
 ---
 
-### Lab 05 — Encapsulation (feature/encapsulation → чекає Lab06)
+### Lab 05 — Encapsulation (feature/encapsulation → злито в main)
 
 **Нові конструкції:**
-- `private` backing fields: `private string _name;`
-- Валідація в сеттерах: `set { if (value == "") throw ... }`
-- `throw new ArgumentException(msg)`
-- `throw new ArgumentOutOfRangeException(msg)`
-- `try / catch (Exception e)`
+- Sub-namespaces: `ClinicApp.Models`, `ClinicApp.Enums`, `ClinicApp.Managers`, `ClinicApp.Utils`
+- `using` директиви між підпросторами (залежності між підпапками)
+- `private` backing fields: `private string _firstName = "";`
+- Явні сеттери: `set { /* validate */ _firstName = value; }`
+- `throw new ArgumentException(message)`
+- `throw new ArgumentOutOfRangeException(paramName, message)`
+- `string.IsNullOrWhiteSpace(value)` — перевірка порожнього/whitespace рядка
+- `nameof(Property)` — ім'я символу як рядок (безпечно при рефакторингу)
+- `try / catch` з правильним порядком: конкретніший тип (підклас) — першим
+- `static class ClinicValidator` — правила валідації в одному місці (патерн)
+- Опційно: `System.Text.RegularExpressions.Regex.IsMatch()`, `static readonly Regex`
+
+**Заборонено (ще не введено):**
+- `: BaseClass`, `base()`, `override`, `virtual`, `abstract` (Lab 06)
+- `interface` (Lab 07)
 
 ---
 
