@@ -1,0 +1,14 @@
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\bin\Debug\net8.0\ClinicIntro.exe
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\bin\Debug\net8.0\ClinicIntro.deps.json
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\bin\Debug\net8.0\ClinicIntro.runtimeconfig.json
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\bin\Debug\net8.0\ClinicIntro.dll
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\bin\Debug\net8.0\ClinicIntro.pdb
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.AssemblyInfoInputs.cache
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.AssemblyInfo.cs
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.csproj.CoreCompileInputs.cache
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.dll
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\refint\ClinicIntro.dll
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.pdb
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.genruntimeconfig.cache
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ref\ClinicIntro.dll
