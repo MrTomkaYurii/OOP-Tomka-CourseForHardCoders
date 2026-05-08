@@ -1,35 +1,35 @@
 using ClinicApp;
+using ClinicApp.Enums;
+using ClinicApp.Managers;
+using ClinicApp.Models;
+using ClinicApp.Utils;
 
 // ──────────────────────────────────────────────
 //  Ініціалізація клініки та тестові дані
 // ──────────────────────────────────────────────
 Clinic clinic = new Clinic("Медична Клініка");
 
-// Пацієнти
-clinic.Patients.Add(new Patient("Іван", "Петренко", new DateTime(1985, 3, 15), BloodType.APositive, "0501234567"));
-clinic.Patients.Add(new Patient("Олена", "Коваль", new DateTime(1992, 7, 22), BloodType.BNegative, "0672345678"));
-clinic.Patients.Add(new Patient("Максим", "Бойко", new DateTime(2010, 1, 5), BloodType.OPositive, "0933456789"));
-clinic.Patients.Add(new Patient("Марія", "Ткач"));
+clinic.Patients.Add(new Patient("Іван",   "Петренко", new DateTime(1985, 3, 15), BloodType.APositive,  "0501234567"));
+clinic.Patients.Add(new Patient("Олена",  "Коваль",   new DateTime(1992, 7, 22), BloodType.BNegative,  "0672345678"));
+clinic.Patients.Add(new Patient("Максим", "Бойко",    new DateTime(2010, 1,  5), BloodType.OPositive,  "0933456789"));
+clinic.Patients.Add(new Patient("Марія",  "Ткач"));
 
-// Лікарі
-Doctor d1 = new Doctor("Олег", "Сидоренко", Speciality.Cardiology, "LIC-001", "0441234567");
+Doctor d1 = new Doctor("Олег",    "Сидоренко", Speciality.Cardiology, "LIC-001", "0441234567");
 d1.Schedule = new WorkSchedule(8, 16);
 clinic.Doctors.Add(d1);
 
-Doctor d2 = new Doctor("Наталія", "Мороз", Speciality.Neurology, "LIC-002", "0442345678");
+Doctor d2 = new Doctor("Наталія", "Мороз",     Speciality.Neurology,  "LIC-002", "0442345678");
 d2.Schedule = new WorkSchedule(9, 18);
 clinic.Doctors.Add(d2);
 
-Doctor d3 = new Doctor("Андрій", "Власенко", Speciality.Pediatrics, "LIC-003", "0443456789");
+Doctor d3 = new Doctor("Андрій",  "Власенко",  Speciality.Pediatrics, "LIC-003", "0443456789");
 clinic.Doctors.Add(d3);
 
-// Записи
 DateTime tomorrow = DateTime.Today.AddDays(1);
-DateTime dayAfter = DateTime.Today.AddDays(2);
-
+DateTime dayAfter  = DateTime.Today.AddDays(2);
 clinic.Appointments.Book(1, 1, tomorrow.AddHours(10));
 clinic.Appointments.Book(2, 2, tomorrow.AddHours(11), 45);
-clinic.Appointments.Book(3, 3, dayAfter.AddHours(9), 20);
+clinic.Appointments.Book(3, 3, dayAfter.AddHours(9),  20);
 
 Console.WriteLine();
 
@@ -57,7 +57,7 @@ while (running)
     switch (choice)
     {
         case "1": PatientsMenu(clinic); break;
-        case "2": DoctorsMenu(clinic); break;
+        case "2": DoctorsMenu(clinic);  break;
         case "3": AppointmentsMenu(clinic); break;
         case "4": clinic.GenerateReport(); break;
         case "0":
@@ -115,21 +115,30 @@ static void PatientsMenu(Clinic clinic)
                 int.TryParse(Console.ReadLine(), out int bloodNum);
                 BloodType bloodType = (BloodType)bloodNum;
                 Console.Write("Телефон: ");
-                string phone = Console.ReadLine() ?? "0000000000";
-                clinic.Patients.Add(new Patient(firstName, lastName, dob, bloodType, phone));
+                string phone = Console.ReadLine() ?? "";
+                try
+                {
+                    clinic.Patients.Add(new Patient(firstName, lastName, dob, bloodType, phone));
+                }
+                catch (ArgumentOutOfRangeException e)
+                {
+                    Console.WriteLine("Помилка: " + e.Message);
+                }
+                catch (ArgumentException e)
+                {
+                    Console.WriteLine("Помилка: " + e.Message);
+                }
                 break;
 
             case "3":
                 Console.Write("Пошуковий запит: ");
                 string query = Console.ReadLine() ?? "";
                 Patient[] found = clinic.Patients.FindByName(query);
-                if (found.Length == 0)
-                    Console.WriteLine("Не знайдено.");
+                if (found.Length == 0) Console.WriteLine("Не знайдено.");
                 else
                 {
                     Console.WriteLine("Знайдено: " + found.Length);
-                    for (int i = 0; i < found.Length; i++)
-                        Console.WriteLine(found[i]);
+                    for (int i = 0; i < found.Length; i++) Console.WriteLine(found[i]);
                 }
                 break;
 
@@ -192,29 +201,38 @@ static void DoctorsMenu(Clinic clinic)
                 int.TryParse(Console.ReadLine(), out int specNum);
                 Speciality speciality = (Speciality)specNum;
                 Console.Write("Номер ліцензії: ");
-                string license = Console.ReadLine() ?? "LIC-000";
+                string license = Console.ReadLine() ?? "";
                 Console.Write("Телефон: ");
-                string phone = Console.ReadLine() ?? "0000000000";
+                string phone = Console.ReadLine() ?? "";
                 Console.Write("Початок роботи (година, напр. 8): ");
                 if (!int.TryParse(Console.ReadLine(), out int workStart)) workStart = 8;
                 Console.Write("Кінець роботи (година, напр. 17): ");
                 if (!int.TryParse(Console.ReadLine(), out int workEnd)) workEnd = 17;
-                Doctor newDoctor = new Doctor(firstName, lastName, speciality, license, phone);
-                newDoctor.Schedule = new WorkSchedule(workStart, workEnd);
-                clinic.Doctors.Add(newDoctor);
+                try
+                {
+                    Doctor newDoctor = new Doctor(firstName, lastName, speciality, license, phone);
+                    newDoctor.Schedule = new WorkSchedule(workStart, workEnd);
+                    clinic.Doctors.Add(newDoctor);
+                }
+                catch (ArgumentOutOfRangeException e)
+                {
+                    Console.WriteLine("Помилка: " + e.Message);
+                }
+                catch (ArgumentException e)
+                {
+                    Console.WriteLine("Помилка: " + e.Message);
+                }
                 break;
 
             case "3":
                 Console.Write("Спеціальність: ");
                 string specQuery = Console.ReadLine() ?? "";
                 Doctor[] doctors = clinic.Doctors.FindBySpeciality(specQuery);
-                if (doctors.Length == 0)
-                    Console.WriteLine("Не знайдено.");
+                if (doctors.Length == 0) Console.WriteLine("Не знайдено.");
                 else
                 {
                     Console.WriteLine("Знайдено: " + doctors.Length);
-                    for (int i = 0; i < doctors.Length; i++)
-                        Console.WriteLine(doctors[i]);
+                    for (int i = 0; i < doctors.Length; i++) Console.WriteLine(doctors[i]);
                 }
                 break;
 
@@ -280,9 +298,15 @@ static void AppointmentsMenu(Clinic clinic)
                 Console.Write("Тривалість у хвилинах (Enter = 30): ");
                 string durStr = Console.ReadLine() ?? "";
                 int duration = 30;
-                if (durStr.Length > 0)
-                    int.TryParse(durStr, out duration);
-                clinic.Appointments.Book(patientId, doctorId, scheduledAt, duration);
+                if (durStr.Length > 0) int.TryParse(durStr, out duration);
+                try
+                {
+                    clinic.Appointments.Book(patientId, doctorId, scheduledAt, duration);
+                }
+                catch (ArgumentOutOfRangeException e)
+                {
+                    Console.WriteLine("Помилка: " + e.Message);
+                }
                 break;
 
             case "2":

@@ -1,4 +1,8 @@
-namespace ClinicApp;
+namespace ClinicApp.Managers;
+
+using ClinicApp.Enums;
+using ClinicApp.Models;
+using ClinicApp.Utils;
 
 public class DoctorManager
 {
@@ -33,10 +37,7 @@ public class DoctorManager
     public Doctor FindById(int id)
     {
         for (int i = 0; i < _count; i++)
-        {
-            if (_doctors[i].Id == id)
-                return _doctors[i];
-        }
+            if (_doctors[i].Id == id) return _doctors[i];
         return null!;
     }
 
@@ -46,7 +47,6 @@ public class DoctorManager
         return doctor != null;
     }
 
-    // Перевантаження 1: пошук за рядком (часткове співпадіння у назві)
     public Doctor[] FindBySpeciality(string query)
     {
         string q = query.ToLower();
@@ -63,7 +63,6 @@ public class DoctorManager
         return result;
     }
 
-    // Перевантаження 2: пошук за enum (точне співпадіння)
     public Doctor[] FindBySpeciality(Speciality speciality)
     {
         int matchCount = 0;
@@ -95,32 +94,19 @@ public class DoctorManager
 
     public void DisplayAll()
     {
-        if (_count == 0)
-        {
-            Console.WriteLine("Список лікарів порожній.");
-            return;
-        }
-
+        if (_count == 0) { Console.WriteLine("Список лікарів порожній."); return; }
         Console.WriteLine("\n=== Лікарі (" + _count + " / " + MaxDoctors + ") ===");
-        for (int i = 0; i < _count; i++)
-            Console.WriteLine(_doctors[i]);
+        for (int i = 0; i < _count; i++) Console.WriteLine(_doctors[i]);
         Console.WriteLine(new string('─', 60));
     }
 
     public void DisplayStats()
     {
-        if (_count == 0)
-        {
-            Console.WriteLine("Немає лікарів для статистики.");
-            return;
-        }
+        if (_count == 0) { Console.WriteLine("Немає лікарів для статистики."); return; }
 
         int availableNow = 0;
         for (int i = 0; i < _count; i++)
-        {
-            if (_doctors[i].IsAvailableNow)
-                availableNow++;
-        }
+            if (_doctors[i].IsAvailableNow) availableNow++;
 
         Console.WriteLine("\n=== Статистика лікарів ===");
         Console.WriteLine("Всього:         " + _count);
@@ -132,9 +118,8 @@ public class DoctorManager
             Speciality spec = _doctors[i].Speciality;
             bool alreadyCounted = false;
             for (int j = 0; j < i; j++)
-            {
                 if (_doctors[j].Speciality == spec) { alreadyCounted = true; break; }
-            }
+
             if (!alreadyCounted)
             {
                 int specCount = 0;
@@ -143,16 +128,13 @@ public class DoctorManager
                 Console.WriteLine("  " + ClinicFormatter.FormatSpeciality(spec) + ": " + specCount);
             }
         }
-
         Console.WriteLine("==========================");
     }
 
-    // Повертає всіх лікарів (копія масиву)
     public Doctor[] GetAll()
     {
         Doctor[] result = new Doctor[_count];
-        for (int i = 0; i < _count; i++)
-            result[i] = _doctors[i];
+        for (int i = 0; i < _count; i++) result[i] = _doctors[i];
         return result;
     }
 }

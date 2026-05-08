@@ -1,5 +1,7 @@
 namespace ClinicApp;
 
+using ClinicApp.Models;
+
 public class GrowablePatientManager
 {
     private Patient[] _patients = new Patient[4];

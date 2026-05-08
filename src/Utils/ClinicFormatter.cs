@@ -1,4 +1,6 @@
-namespace ClinicApp;
+namespace ClinicApp.Utils;
+
+using ClinicApp.Enums;
 
 public static class ClinicFormatter
 {
@@ -33,9 +35,9 @@ public static class ClinicFormatter
         if (age % 100 >= 11 && age % 100 <= 19) return age + " років";
         switch (age % 10)
         {
-            case 1: return age + " рік";
+            case 1:            return age + " рік";
             case 2: case 3: case 4: return age + " роки";
-            default: return age + " років";
+            default:           return age + " років";
         }
     }
 

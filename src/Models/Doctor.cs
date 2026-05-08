@@ -1,15 +1,50 @@
-namespace ClinicApp;
+namespace ClinicApp.Models;
+
+using ClinicApp.Enums;
+using ClinicApp.Utils;
 
 public class Doctor
 {
     private static int _nextId = 1;
 
+    private string _firstName = "";
+    private string _lastName = "";
+    private string _licenseNumber = "";
+    private string _phone = "";
+
     public int Id { get; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
+
+    public string FirstName
+    {
+        get => _firstName;
+        set { ClinicValidator.ValidateName(value, "Ім'я"); _firstName = value; }
+    }
+
+    public string LastName
+    {
+        get => _lastName;
+        set { ClinicValidator.ValidateName(value, "Прізвище"); _lastName = value; }
+    }
+
     public Speciality Speciality { get; set; }
-    public string LicenseNumber { get; set; }
-    public string Phone { get; set; }
+
+    public string LicenseNumber
+    {
+        get => _licenseNumber;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Номер ліцензії не може бути порожнім.");
+            _licenseNumber = value;
+        }
+    }
+
+    public string Phone
+    {
+        get => _phone;
+        set { ClinicValidator.ValidatePhone(value); _phone = value; }
+    }
+
     public WorkSchedule Schedule { get; set; }
 
     public string FullName => FirstName + " " + LastName;
