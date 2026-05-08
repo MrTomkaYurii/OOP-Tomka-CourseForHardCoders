@@ -11,6 +11,15 @@ public class AppointmentManager
 
     public int Count => _count;
 
+    public Appointment this[int index]
+    {
+        get
+        {
+            if (index < 0 || index >= _count) return null!;
+            return _appointments[index];
+        }
+    }
+
     public AppointmentManager(PatientManager patients, DoctorManager doctors)
     {
         _patients = patients;
@@ -132,6 +141,12 @@ public class AppointmentManager
         return result;
     }
 
+    // Перевантаження: отримати записи за датою через окремі параметри
+    public Appointment[] GetByDate(int year, int month, int day)
+    {
+        return GetByDate(new DateTime(year, month, day));
+    }
+
     public Appointment[] GetByDate(DateTime date)
     {
         int matchCount = 0;
@@ -175,17 +190,8 @@ public class AppointmentManager
         Patient patient = _patients.FindById(a.PatientId);
         Doctor doctor = _doctors.FindById(a.DoctorId);
 
-        string patientName;
-        if (patient != null)
-            patientName = patient.FullName;
-        else
-            patientName = "Пацієнт #" + a.PatientId;
-
-        string doctorName;
-        if (doctor != null)
-            doctorName = doctor.FullName;
-        else
-            doctorName = "Лікар #" + a.DoctorId;
+        string patientName = patient != null ? patient.FullName : "Пацієнт #" + a.PatientId;
+        string doctorName  = doctor  != null ? doctor.FullName  : "Лікар #"   + a.DoctorId;
 
         string line = "[" + a.Id + "] " + patientName + " → " + doctorName +
                       " | " + a.ScheduledAt.ToString("dd.MM.yyyy HH:mm") +

@@ -6,23 +6,21 @@ using ClinicApp;
 Clinic clinic = new Clinic("Медична Клініка");
 
 // Пацієнти
-clinic.Patients.Add(new Patient("Іван", "Петренко", new DateTime(1985, 3, 15), "A+", "0501234567"));
-clinic.Patients.Add(new Patient("Олена", "Коваль", new DateTime(1992, 7, 22), "B-", "0672345678"));
-clinic.Patients.Add(new Patient("Максим", "Бойко", new DateTime(2010, 1, 5), "O+", "0933456789"));
+clinic.Patients.Add(new Patient("Іван", "Петренко", new DateTime(1985, 3, 15), BloodType.APositive, "0501234567"));
+clinic.Patients.Add(new Patient("Олена", "Коваль", new DateTime(1992, 7, 22), BloodType.BNegative, "0672345678"));
+clinic.Patients.Add(new Patient("Максим", "Бойко", new DateTime(2010, 1, 5), BloodType.OPositive, "0933456789"));
 clinic.Patients.Add(new Patient("Марія", "Ткач"));
 
 // Лікарі
-Doctor d1 = new Doctor("Олег", "Сидоренко", "Кардіологія", "LIC-001", "0441234567");
-d1.WorkStartHour = 8;
-d1.WorkEndHour = 16;
+Doctor d1 = new Doctor("Олег", "Сидоренко", Speciality.Cardiology, "LIC-001", "0441234567");
+d1.Schedule = new WorkSchedule(8, 16);
 clinic.Doctors.Add(d1);
 
-Doctor d2 = new Doctor("Наталія", "Мороз", "Неврологія", "LIC-002", "0442345678");
-d2.WorkStartHour = 9;
-d2.WorkEndHour = 18;
+Doctor d2 = new Doctor("Наталія", "Мороз", Speciality.Neurology, "LIC-002", "0442345678");
+d2.Schedule = new WorkSchedule(9, 18);
 clinic.Doctors.Add(d2);
 
-Doctor d3 = new Doctor("Андрій", "Власенко", "Педіатрія", "LIC-003", "0443456789");
+Doctor d3 = new Doctor("Андрій", "Власенко", Speciality.Pediatrics, "LIC-003", "0443456789");
 clinic.Doctors.Add(d3);
 
 // Записи
@@ -112,8 +110,10 @@ static void PatientsMenu(Clinic clinic)
                     Console.WriteLine("Невірний формат дати.");
                     break;
                 }
-                Console.Write("Група крові (напр. A+): ");
-                string bloodType = Console.ReadLine() ?? "Невідомо";
+                Console.WriteLine("Група крові: 0=Невідомо 1=A+ 2=A- 3=B+ 4=B- 5=AB+ 6=AB- 7=O+ 8=O-");
+                Console.Write("Оберіть: ");
+                int.TryParse(Console.ReadLine(), out int bloodNum);
+                BloodType bloodType = (BloodType)bloodNum;
                 Console.Write("Телефон: ");
                 string phone = Console.ReadLine() ?? "0000000000";
                 clinic.Patients.Add(new Patient(firstName, lastName, dob, bloodType, phone));
@@ -187,23 +187,20 @@ static void DoctorsMenu(Clinic clinic)
                 string firstName = Console.ReadLine() ?? "";
                 Console.Write("Прізвище: ");
                 string lastName = Console.ReadLine() ?? "";
-                Console.Write("Спеціальність: ");
-                string speciality = Console.ReadLine() ?? "Загальна практика";
+                Console.WriteLine("Спеціальність: 0=Загальна 1=Кардіологія 2=Неврологія 3=Педіатрія 4=Хірургія 5=Ортопедія 6=Дерматологія 7=Невідкладна");
+                Console.Write("Оберіть: ");
+                int.TryParse(Console.ReadLine(), out int specNum);
+                Speciality speciality = (Speciality)specNum;
                 Console.Write("Номер ліцензії: ");
                 string license = Console.ReadLine() ?? "LIC-000";
                 Console.Write("Телефон: ");
                 string phone = Console.ReadLine() ?? "0000000000";
                 Console.Write("Початок роботи (година, напр. 8): ");
-                int workStart;
-                if (!int.TryParse(Console.ReadLine(), out workStart))
-                    workStart = 8;
+                if (!int.TryParse(Console.ReadLine(), out int workStart)) workStart = 8;
                 Console.Write("Кінець роботи (година, напр. 17): ");
-                int workEnd;
-                if (!int.TryParse(Console.ReadLine(), out workEnd))
-                    workEnd = 17;
+                if (!int.TryParse(Console.ReadLine(), out int workEnd)) workEnd = 17;
                 Doctor newDoctor = new Doctor(firstName, lastName, speciality, license, phone);
-                newDoctor.WorkStartHour = workStart;
-                newDoctor.WorkEndHour = workEnd;
+                newDoctor.Schedule = new WorkSchedule(workStart, workEnd);
                 clinic.Doctors.Add(newDoctor);
                 break;
 
