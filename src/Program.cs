@@ -31,6 +31,15 @@ clinic.Appointments.Book(1, 1, tomorrow.AddHours(10));
 clinic.Appointments.Book(2, 2, tomorrow.AddHours(11), 45);
 clinic.Appointments.Book(3, 3, dayAfter.AddHours(9),  20);
 
+clinic.MedicalRecords.Add(new Diagnosis(1, 1, DateTime.Today.AddDays(-30),  "I10",  "Гіпертонічна хвороба", isChronic: true));
+clinic.MedicalRecords.Add(new Diagnosis(1, 1, DateTime.Today.AddDays(-5),   "J06.9","Гострий ринофарингіт"));
+clinic.MedicalRecords.Add(new LabResult(1, 1, DateTime.Today.AddDays(-7),   "Гемоглобін",    145, "г/л",  "120–160", true));
+clinic.MedicalRecords.Add(new LabResult(1, 1, DateTime.Today.AddDays(-7),   "Холестерин",    6.2, "ммоль/л", "< 5.2",  false));
+clinic.MedicalRecords.Add(new Prescription(1, 1, DateTime.Today.AddDays(-5), "Лізиноприл",   "10 мг", 30, "1 раз на добу вранці"));
+clinic.MedicalRecords.Add(new Diagnosis(2, 2, DateTime.Today.AddDays(-60),  "G43",  "Мігрень без аури",  isChronic: true));
+clinic.MedicalRecords.Add(new Prescription(2, 2, DateTime.Today.AddDays(-3), "Суматриптан",  "50 мг", 5,  "при нападі"));
+clinic.MedicalRecords.Add(new LabResult(3, 3, DateTime.Today.AddDays(-14),   "Загальний аналіз крові", 4.8, "×10⁹/л", "4.0–9.0", true));
+
 Console.WriteLine();
 
 // ──────────────────────────────────────────────
@@ -46,7 +55,8 @@ while (running)
     Console.WriteLine("║  1. Пацієнти                 ║");
     Console.WriteLine("║  2. Лікарі                   ║");
     Console.WriteLine("║  3. Записи на прийом         ║");
-    Console.WriteLine("║  4. Звіт                     ║");
+    Console.WriteLine("║  4. Медична картка           ║");
+    Console.WriteLine("║  5. Звіт                     ║");
     Console.WriteLine("║  0. Вийти                    ║");
     Console.WriteLine("╚══════════════════════════════╝");
     Console.Write("Оберіть розділ: ");
@@ -59,7 +69,8 @@ while (running)
         case "1": PatientsMenu(clinic); break;
         case "2": DoctorsMenu(clinic);  break;
         case "3": AppointmentsMenu(clinic); break;
-        case "4": clinic.GenerateReport(); break;
+        case "4": MedicalRecordsMenu(clinic); break;
+        case "5": clinic.GenerateReport(); break;
         case "0":
             running = false;
             Console.WriteLine("До побачення!");
@@ -357,6 +368,114 @@ static void AppointmentsMenu(Clinic clinic)
             case "7":
                 Console.WriteLine("Майбутні записи:");
                 clinic.Appointments.DisplayList(clinic.Appointments.GetUpcoming());
+                break;
+
+            case "0":
+                inMenu = false;
+                break;
+
+            default:
+                Console.WriteLine("Невідома команда.");
+                break;
+        }
+        Console.WriteLine();
+    }
+}
+
+// ──────────────────────────────────────────────
+//  Меню медичної картки
+// ──────────────────────────────────────────────
+static void MedicalRecordsMenu(Clinic clinic)
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        Console.WriteLine("── Медична картка ────────────");
+        Console.WriteLine("  1. Картка пацієнта (зведення)");
+        Console.WriteLine("  2. Всі записи пацієнта");
+        Console.WriteLine("  3. Додати діагноз");
+        Console.WriteLine("  4. Додати аналіз");
+        Console.WriteLine("  5. Додати рецепт");
+        Console.WriteLine("  6. Записи лікаря");
+        Console.WriteLine("  0. Назад");
+        Console.Write("Оберіть: ");
+
+        string cmd = Console.ReadLine() ?? "";
+
+        switch (cmd)
+        {
+            case "1":
+                Console.Write("ID пацієнта: ");
+                if (!int.TryParse(Console.ReadLine(), out int summaryId)) break;
+                clinic.MedicalRecords.DisplayPatientSummary(summaryId);
+                break;
+
+            case "2":
+                Console.Write("ID пацієнта: ");
+                if (!int.TryParse(Console.ReadLine(), out int pId)) break;
+                Console.WriteLine("Всі записи пацієнта #" + pId + ":");
+                clinic.MedicalRecords.DisplayList(clinic.MedicalRecords.GetByPatient(pId));
+                break;
+
+            case "3":
+                clinic.Patients.DisplayAll();
+                Console.Write("ID пацієнта: ");
+                if (!int.TryParse(Console.ReadLine(), out int dpId)) break;
+                clinic.Doctors.DisplayAll();
+                Console.Write("ID лікаря: ");
+                if (!int.TryParse(Console.ReadLine(), out int ddId)) break;
+                Console.Write("Код діагнозу (напр. J06.9): ");
+                string code = Console.ReadLine() ?? "";
+                Console.Write("Опис: ");
+                string desc = Console.ReadLine() ?? "";
+                Console.Write("Хронічне? (1=так, 0=ні): ");
+                bool isChronic = Console.ReadLine() == "1";
+                clinic.MedicalRecords.Add(new Diagnosis(dpId, ddId, DateTime.Today, code, desc, isChronic));
+                break;
+
+            case "4":
+                clinic.Patients.DisplayAll();
+                Console.Write("ID пацієнта: ");
+                if (!int.TryParse(Console.ReadLine(), out int lpId)) break;
+                clinic.Doctors.DisplayAll();
+                Console.Write("ID лікаря: ");
+                if (!int.TryParse(Console.ReadLine(), out int ldId)) break;
+                Console.Write("Назва аналізу: ");
+                string testName = Console.ReadLine() ?? "";
+                Console.Write("Значення (число): ");
+                double.TryParse(Console.ReadLine(), out double val);
+                Console.Write("Одиниці виміру: ");
+                string unit = Console.ReadLine() ?? "";
+                Console.Write("Норма (напр. 4.0–9.0): ");
+                string range = Console.ReadLine() ?? "";
+                Console.Write("В нормі? (1=так, 0=ні): ");
+                bool isNormal = Console.ReadLine() == "1";
+                clinic.MedicalRecords.Add(new LabResult(lpId, ldId, DateTime.Today, testName, val, unit, range, isNormal));
+                break;
+
+            case "5":
+                clinic.Patients.DisplayAll();
+                Console.Write("ID пацієнта: ");
+                if (!int.TryParse(Console.ReadLine(), out int ppId)) break;
+                clinic.Doctors.DisplayAll();
+                Console.Write("ID лікаря: ");
+                if (!int.TryParse(Console.ReadLine(), out int pdId)) break;
+                Console.Write("Препарат: ");
+                string med = Console.ReadLine() ?? "";
+                Console.Write("Дозування (напр. 10 мг): ");
+                string dosage = Console.ReadLine() ?? "";
+                Console.Write("Кількість днів: ");
+                int.TryParse(Console.ReadLine(), out int days);
+                Console.Write("Інструкція (Enter = пропустити): ");
+                string instr = Console.ReadLine() ?? "";
+                clinic.MedicalRecords.Add(new Prescription(ppId, pdId, DateTime.Today, med, dosage, days, instr));
+                break;
+
+            case "6":
+                Console.Write("ID лікаря: ");
+                if (!int.TryParse(Console.ReadLine(), out int dId)) break;
+                Console.WriteLine("Записи лікаря #" + dId + ":");
+                clinic.MedicalRecords.DisplayList(clinic.MedicalRecords.GetByDoctor(dId));
                 break;
 
             case "0":
