@@ -12,3 +12,4 @@ C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debu
 C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.pdb
 C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.genruntimeconfig.cache
 C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ref\ClinicIntro.dll
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\sandbox\intro\obj\Debug\net8.0\ClinicIntro.sourcelink.json
