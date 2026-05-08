@@ -1,5 +1,7 @@
 namespace ClinicApp.Models;
 
+using ClinicApp.Utils;
+
 public abstract class MedicalRecord
 {
     private static int _nextId = 1;
@@ -12,6 +14,8 @@ public abstract class MedicalRecord
 
     protected MedicalRecord(int patientId, int doctorId, DateTime date)
     {
+        ClinicValidator.ValidatePositive(patientId, "PatientId");
+        ClinicValidator.ValidatePositive(doctorId, "DoctorId");
         Id = _nextId++;
         PatientId = patientId;
         DoctorId = doctorId;

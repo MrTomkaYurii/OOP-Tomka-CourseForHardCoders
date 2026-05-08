@@ -1,11 +1,33 @@
 namespace ClinicApp.Models;
 
+using ClinicApp.Utils;
+
 public class LabResult : MedicalRecord
 {
-    public string TestName { get; set; }
+    private string _testName = "";
+    private string _unit = "";
+    private string _referenceRange = "";
+
+    public string TestName
+    {
+        get => _testName;
+        set { ClinicValidator.ValidateName(value, "Назва аналізу"); _testName = value; }
+    }
+
     public double Value { get; set; }
-    public string Unit { get; set; }
-    public string ReferenceRange { get; set; }
+
+    public string Unit
+    {
+        get => _unit;
+        set { ClinicValidator.ValidateName(value, "Одиниці виміру"); _unit = value; }
+    }
+
+    public string ReferenceRange
+    {
+        get => _referenceRange;
+        set { ClinicValidator.ValidateName(value, "Норма"); _referenceRange = value; }
+    }
+
     public bool IsNormal { get; set; }
 
     public LabResult(int patientId, int doctorId, DateTime date,

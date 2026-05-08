@@ -36,15 +36,16 @@ git checkout -b feature/inheritance
 1. `abstract class MedicalRecord` у `src/Models/`:
    - `Id` (статичний лічильник, як у `Patient`)
    - `PatientId`, `DoctorId`, `Date`, `Notes`
-   - `protected` конструктор — ініціалізує спільні поля
+   - `protected` конструктор — ініціалізує спільні поля і перевіряє `PatientId > 0`, `DoctorId > 0` через `ClinicValidator.ValidatePositive`
    - `abstract string GetSummary()` — зміст запису, кожен підклас реалізує по-своєму
    - `virtual string GetRecordType()` — базова реалізація: `"Медичний запис"`
    - `virtual bool IsActive()` — базова реалізація: запис активний якщо давніший не більше 6 місяців
    - `override ToString()` — використовує `GetRecordType()` і `GetSummary()`
 
 2. Перший конкретний підклас `Diagnosis : MedicalRecord`:
-   - Поля: `DiagnosisCode` (рядок, напр. `"I10"`), `Description`, `IsChronic`
-   - Конструктор що викликає `base(...)`
+   - Приватні поля `_diagnosisCode`, `_description` з явними сеттерами — валідація через `ClinicValidator.ValidateName`
+   - Публічні властивості: `DiagnosisCode`, `Description`, `IsChronic`
+   - Конструктор що викликає `base(...)` і присвоює через властивості
    - `override GetSummary()` — `"I10: Гіпертонічна хвороба [хронічне]"`
    - `override GetRecordType()` — `"Діагноз"`
 
@@ -137,12 +138,15 @@ git commit -m "Lab06 Task1: add abstract MedicalRecord base class and Diagnosis 
 **Що реалізувати:**
 
 1. `LabResult : MedicalRecord`:
-   - Поля: `TestName`, `Value` (double), `Unit`, `ReferenceRange`, `IsNormal`
+   - Приватні поля `_testName`, `_unit`, `_referenceRange` — валідація через `ClinicValidator.ValidateName`
+   - `Value` (double) і `IsNormal` (bool) — auto-property без валідації
    - `override GetSummary()` → `"Гемоглобін: 145 г/л (норма: 120–160)"`; якщо поза нормою — додати `" ⚠ поза нормою"`
    - `override GetRecordType()` → `"Аналіз"`
 
 2. `Prescription : MedicalRecord`:
-   - Поля: `MedicationName`, `Dosage`, `DurationDays`, `Instructions`
+   - Приватні поля `_medicationName`, `_dosage` — валідація через `ClinicValidator.ValidateName`
+   - Приватне поле `_durationDays` — валідація через `ClinicValidator.ValidatePositive`
+   - `Instructions` — auto-property (необов'язкове поле, не валідується)
    - Обчислювана властивість `ExpiresAt` → `Date.AddDays(DurationDays)`
    - `override GetSummary()` → `"Лізиноприл 10 мг × 30 днів (1 раз на добу вранці)"`
    - `override GetRecordType()` → `"Рецепт"`
@@ -191,6 +195,7 @@ for (int i = 0; i < records.Length; i++)
        Console.WriteLine(_records[i]);  // викликається override ToString() підкласу
    ```
 4. Це і є поліморфізм: один код `Console.WriteLine(_records[i])` поводиться по-різному залежно від реального типу об'єкта.
+5. Валідація в підкласах будується за тим самим патерном що і в `Patient`/`Doctor` з Lab 05: приватне поле + явний сеттер + `ClinicValidator`. Новий клас — нові правила, але **один і той самий** `ClinicValidator`.
 
 📖 [Polymorphism (C# Programming Guide)](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/polymorphism)
 📖 [override (C# Reference)](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/override)
@@ -370,7 +375,16 @@ for (int i = 0; i < records.Length; i++)
 
 1. `MedicalRecord` у `Clinic.cs` вимагає `using ClinicApp.Managers;` — переконайтесь, що using є.
 2. Меню "Медична картка" — окрема `static void MedicalRecordsMenu(Clinic clinic)` за зразком існуючих меню.
-3. Для "завершеного рецепту" в тестових даних: `DateTime.Today.AddDays(-40)` з `DurationDays = 10` — курс закінчився 30 днів тому, `IsActive()` поверне `false`.
+3. У пунктах "Додати діагноз/аналіз/рецепт" огорніть конструктор у `try/catch` — підкласи кидають `ArgumentException` при некоректних даних:
+   ```csharp
+   try
+   {
+       clinic.MedicalRecords.Add(new Diagnosis(patientId, doctorId, DateTime.Today, code, desc, isChronic));
+   }
+   catch (ArgumentOutOfRangeException e) { Console.WriteLine("Помилка: " + e.Message); }
+   catch (ArgumentException e) { Console.WriteLine("Помилка: " + e.Message); }
+   ```
+4. Для "завершеного рецепту" в тестових даних: `DateTime.Today.AddDays(-40)` з `DurationDays = 10` — курс закінчився 30 днів тому, `IsActive()` поверне `false`.
 4. Перевірте: `DisplayPatientSummary` для пацієнта без жодного хронічного діагнозу — не виводить порожній розділ.
 5. Ключовий момент для самоперевірки: у методі `DisplayList(MedicalRecord[] records)` немає жодного `if`, жодного `is`. Це і є поліморфізм — код не знає типів, але поводиться правильно:
    ```csharp
