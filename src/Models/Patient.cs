@@ -1,15 +1,45 @@
-namespace ClinicApp;
+namespace ClinicApp.Models;
+
+using ClinicApp.Enums;
+using ClinicApp.Utils;
 
 public class Patient
 {
     private static int _nextId = 1;
 
+    private string _firstName = "";
+    private string _lastName = "";
+    private DateTime _dateOfBirth;
+    private string _phone = "";
+
     public int Id { get; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public DateTime DateOfBirth { get; set; }
+
+    public string FirstName
+    {
+        get => _firstName;
+        set { ClinicValidator.ValidateName(value, "Ім'я"); _firstName = value; }
+    }
+
+    public string LastName
+    {
+        get => _lastName;
+        set { ClinicValidator.ValidateName(value, "Прізвище"); _lastName = value; }
+    }
+
+    public DateTime DateOfBirth
+    {
+        get => _dateOfBirth;
+        set { ClinicValidator.ValidateDate(value, "Дата народження"); _dateOfBirth = value; }
+    }
+
     public BloodType BloodType { get; set; }
-    public string Phone { get; set; }
+
+    public string Phone
+    {
+        get => _phone;
+        set { ClinicValidator.ValidatePhone(value); _phone = value; }
+    }
+
     public string? Email { get; set; }
 
     public string FullName => FirstName + " " + LastName;
@@ -20,27 +50,23 @@ public class Patient
         {
             var today = DateTime.Today;
             int age = today.Year - DateOfBirth.Year;
-            if (DateOfBirth.Date > today.AddYears(-age))
-                age--;
+            if (DateOfBirth.Date > today.AddYears(-age)) age--;
             return age;
         }
     }
 
     public bool IsAdult => Age >= 18;
 
-    // Constructor 1: default values
     public Patient()
         : this("Невідомий", "Пацієнт", new DateTime(2000, 1, 1), BloodType.Unknown, "0000000000")
     {
     }
 
-    // Constructor 2: first and last name only
     public Patient(string firstName, string lastName)
         : this(firstName, lastName, new DateTime(2000, 1, 1), BloodType.Unknown, "0000000000")
     {
     }
 
-    // Constructor 3: full — assigns Id
     public Patient(string firstName, string lastName, DateTime dateOfBirth, BloodType bloodType, string phone)
     {
         Id = _nextId++;

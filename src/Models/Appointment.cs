@@ -1,19 +1,29 @@
-namespace ClinicApp;
+namespace ClinicApp.Models;
+
+using ClinicApp.Enums;
+using ClinicApp.Utils;
 
 public class Appointment
 {
     private static int _nextId = 1;
 
+    private int _durationMinutes;
+
     public int Id { get; }
     public int PatientId { get; }
     public int DoctorId { get; }
     public DateTime ScheduledAt { get; set; }
-    public int DurationMinutes { get; set; }
+
+    public int DurationMinutes
+    {
+        get => _durationMinutes;
+        set { ClinicValidator.ValidatePositive(value, "Тривалість"); _durationMinutes = value; }
+    }
+
     public AppointmentStatus Status { get; private set; }
     public string Notes { get; private set; }
 
     public DateTime EndsAt => ScheduledAt.AddMinutes(DurationMinutes);
-
     public bool IsUpcoming => ScheduledAt > DateTime.Now && Status == AppointmentStatus.Scheduled;
 
     public Appointment(int patientId, int doctorId, DateTime scheduledAt, int durationMinutes = 30)
