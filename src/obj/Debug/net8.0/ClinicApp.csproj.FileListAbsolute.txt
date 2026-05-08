@@ -1,0 +1,15 @@
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\bin\Debug\net8.0\ClinicApp.exe
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\bin\Debug\net8.0\ClinicApp.deps.json
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\bin\Debug\net8.0\ClinicApp.runtimeconfig.json
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\bin\Debug\net8.0\ClinicApp.dll
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\bin\Debug\net8.0\ClinicApp.pdb
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ClinicApp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ClinicApp.AssemblyInfoInputs.cache
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ClinicApp.AssemblyInfo.cs
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ClinicApp.csproj.CoreCompileInputs.cache
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ClinicApp.sourcelink.json
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ClinicApp.dll
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\refint\ClinicApp.dll
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ClinicApp.pdb
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ClinicApp.genruntimeconfig.cache
+C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\src\obj\Debug\net8.0\ref\ClinicApp.dll
