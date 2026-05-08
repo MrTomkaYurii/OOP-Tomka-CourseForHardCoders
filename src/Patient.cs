@@ -8,7 +8,7 @@ public class Patient
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public DateTime DateOfBirth { get; set; }
-    public string BloodType { get; set; }
+    public BloodType BloodType { get; set; }
     public string Phone { get; set; }
     public string? Email { get; set; }
 
@@ -30,18 +30,18 @@ public class Patient
 
     // Constructor 1: default values
     public Patient()
-        : this("Невідомий", "Пацієнт", new DateTime(2000, 1, 1), "Невідомо", "0000000000")
+        : this("Невідомий", "Пацієнт", new DateTime(2000, 1, 1), BloodType.Unknown, "0000000000")
     {
     }
 
     // Constructor 2: first and last name only
     public Patient(string firstName, string lastName)
-        : this(firstName, lastName, new DateTime(2000, 1, 1), "Невідомо", "0000000000")
+        : this(firstName, lastName, new DateTime(2000, 1, 1), BloodType.Unknown, "0000000000")
     {
     }
 
     // Constructor 3: full — assigns Id
-    public Patient(string firstName, string lastName, DateTime dateOfBirth, string bloodType, string phone)
+    public Patient(string firstName, string lastName, DateTime dateOfBirth, BloodType bloodType, string phone)
     {
         Id = _nextId++;
         FirstName = firstName;
@@ -60,9 +60,12 @@ public class Patient
 
     public override string ToString()
     {
-        string result = $"[{Id}] {FullName} | Вік: {Age} ({GetAgeCategory()}) | Кров: {BloodType} | Тел: {Phone}";
-        if (Email is not null)
-            result += $" | Email: {Email}";
+        string result = "[" + Id + "] " + FullName +
+                        " | Вік: " + ClinicFormatter.FormatAge(Age) + " (" + GetAgeCategory() + ")" +
+                        " | Кров: " + ClinicFormatter.FormatBloodType(BloodType) +
+                        " | Тел: " + ClinicFormatter.FormatPhone(Phone);
+        if (Email != null && Email.Length > 0)
+            result += " | Email: " + Email;
         return result;
     }
 }
