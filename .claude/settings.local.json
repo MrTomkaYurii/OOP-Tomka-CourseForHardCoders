@@ -4,7 +4,8 @@
       "PowerShell(New-Item *)",
       "Bash(dotnet run *)",
       "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\Yurii\\\\source\\\\repos\\\\OOP-Tomka-CourseForHardCoders\" -Filter \"*.txt\")",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(dotnet build *)"
     ]
   }
 }
