@@ -385,8 +385,8 @@ for (int i = 0; i < records.Length; i++)
    catch (ArgumentException e) { Console.WriteLine("Помилка: " + e.Message); }
    ```
 4. Для "завершеного рецепту" в тестових даних: `DateTime.Today.AddDays(-40)` з `DurationDays = 10` — курс закінчився 30 днів тому, `IsActive()` поверне `false`.
-4. Перевірте: `DisplayPatientSummary` для пацієнта без жодного хронічного діагнозу — не виводить порожній розділ.
-5. Ключовий момент для самоперевірки: у методі `DisplayList(MedicalRecord[] records)` немає жодного `if`, жодного `is`. Це і є поліморфізм — код не знає типів, але поводиться правильно:
+5. Перевірте: `DisplayPatientSummary` для пацієнта без жодного хронічного діагнозу — не виводить порожній розділ.
+6. Ключовий момент для самоперевірки: у методі `DisplayList(MedicalRecord[] records)` немає жодного `if`, жодного `is`. Це і є поліморфізм — код не знає типів, але поводиться правильно:
    ```csharp
    public void DisplayList(MedicalRecord[] records)
    {
@@ -433,6 +433,9 @@ dotnet run
 - [ ] `GetChronicDiagnoses` повертає тільки хронічні
 - [ ] `DisplayPatientSummary` правильно рахує типи і показує зведення
 - [ ] Меню "Медична картка" (пункт 4) доступне і всі підпункти працюють
+- [ ] `new Diagnosis(1, 1, DateTime.Today, "", "Ринофарингіт")` кидає `ArgumentException`
+- [ ] `new Prescription(1, 1, DateTime.Today, "Аспірин", "500 мг", 0)` кидає `ArgumentOutOfRangeException`
+- [ ] При введенні порожнього коду діагнозу в меню — програма показує повідомлення про помилку, а не падає
 
 ---
 
@@ -445,6 +448,7 @@ dotnet run
 5. Яка різниця між `is`, `as` і явним приведенням `(Diagnosis)record`? Коли кожен із них кидає виняток?
 6. Чому `Prescription.IsActive()` перевизначає логіку, а `LabResult.IsActive()` ні? Як базовий клас "знає" яку реалізацію викликати?
 7. Метод `DisplayList(MedicalRecord[])` не містить жодного `if (r is ...)`, але виводить різні рядки для різних типів. Чому це можливо?
+8. Чому `ClinicValidator` викликається і в базовому конструкторі (`ValidatePositive` для `patientId`, `doctorId`), і у сеттерах підкласів (`ValidateName` для назв)? Де саме "живе" відповідальність за кожну перевірку?
 
 ---
 
