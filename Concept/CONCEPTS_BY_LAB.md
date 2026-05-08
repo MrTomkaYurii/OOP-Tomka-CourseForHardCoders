@@ -30,10 +30,17 @@
 | `null`, `if (x == null)` | 03 | |
 | Масив об'єктів `Patient[]` + ручний лічильник | 03 | замість List<T> |
 | `const` поле | 03 | для MaxCapacity |
-| `enum` | 04 | BloodType, Speciality |
-| `abstract class`, `abstract` методи | 04 | |
-| `virtual` методи | 04 | |
-| `List<T>` (базово: Add, Count, [], foreach) | 04 | замінює масиви зі Task8 Lab03 |
+| `enum` | 04 | BloodType, Speciality, AppointmentStatus |
+| `struct` | 04 | WorkSchedule (value type) |
+| `static class` | 04 | ClinicFormatter — тільки static методи |
+| Індексатор `this[int index]` | 04 | PatientManager, DoctorManager, AppointmentManager |
+| Перевантаження методів (overloading) | 04 | FindBySpeciality(string) / (Speciality) |
+| `out` параметр, TryXxx патерн | 04 | TryFindById(int, out T) |
+| `?.` null-conditional, `??` null-coalescing | 04 | тепер дозволено |
+| Явне приведення `(TypeName)value` | 04 | int → enum у меню |
+| `abstract class`, `abstract` методи | 06 | разом з успадкуванням |
+| `virtual` методи | 06 | |
+| `List<T>` (базово: Add, Count, [], foreach) | 09 | Generics лаба |
 | `private` поля + валідація в сеттерах | 05 | |
 | `throw new ArgumentException(...)` | 05 | |
 | `try / catch` | 05 | |
@@ -130,21 +137,27 @@
 - Nullable оператори `?.` та `??`
 - `IEnumerable<T>` як тип параметра
 - `is not null` pattern matching (використовувати `!= null`)
-- `abstract`, `interface`, `enum`
+- `abstract`, `interface`, `enum`, `struct`, `static class`
 
 ---
 
-### Lab 04 — Abstraction (feature/abstraction → зливається)
+### Lab 04 — Члени класу (feature/class-members → злито в main)
 
 **Нові конструкції:**
-- `enum` (BloodType, Speciality, VisitType)
-- `abstract class` + `abstract` методи
-- `virtual` методи (override в нащадку)
-- `List<T>` — замінює масиви з Lab 03 (Add, Count, [], foreach, Remove)
-- `?.` null-conditional оператор (тепер можна)
-- `??` null-coalescing оператор
+- `enum` — BloodType, Speciality, AppointmentStatus; заміняє рядки-константи
+- `struct` — WorkSchedule: value type, поля тільки `{ get; }`, конструктор
+- `static class` — ClinicFormatter: клас без інстанцій, тільки `public static` методи
+- Індексатор `this[int index]` — Manager-класи поводяться як масиви
+- Перевантаження методів — одне ім'я, різні сигнатури (`FindBySpeciality(string)` / `(Speciality)`)
+- `out` параметр — `bool TryFindById(int id, out Patient patient)` (TryXxx патерн)
+- `?.` null-conditional та `??` null-coalescing — тепер дозволено
+- Явне приведення `(TypeName)value` — int → enum для вводу з консолі
 
-**Перехід:** PatientManager, DoctorManager, AppointmentManager переходять з `T[]` на `List<T>`
+**Заборонено (ще не введено):**
+- `List<T>`, `Dictionary<K,V>` (Lab 09 — Generics)
+- `abstract class`, `virtual`, `override` (Lab 06 — Inheritance)
+- `interface` (Lab 07)
+- `try / catch`, `throw` (Lab 05)
 
 ---
 

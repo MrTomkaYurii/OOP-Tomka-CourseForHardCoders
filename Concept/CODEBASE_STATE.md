@@ -68,8 +68,8 @@ sandbox/arrays/
 
 ## Lab 03 — Defining Classes (feature/catalog)
 
-**Статус:** 🔄 В РОБОТІ
-**Гілка:** `feature/catalog` — ✅ **зливається в main**
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/catalog` — ✅ **злито в main**
 **Файли:**
 ```
 src/
@@ -103,11 +103,10 @@ src/
 ```
 
 **Навмисні обмеження (мотивують наступні лаби):**
-- Фіксований розмір масивів → `List<T>` в Lab04
-- Лінійний пошук O(n) → Task8 дослідження → `List<T>` в Lab04, `Dictionary` в Lab09
+- Фіксований розмір масивів → `List<T>` в Lab09 (Generics)
+- Лінійний пошук O(n) → `Dictionary` в Lab09
 - Немає валідації полів → Lab05 Encapsulation
 - Немає типів пацієнтів (застрахований/приватний) → Lab06 Inheritance
-- Рядок `Status` замість типізованого enum → Lab04 Abstraction
 
 **Концепції введені в Lab03:**
 - `class`, `static int _nextId`, `const int MaxCapacity`
@@ -122,19 +121,36 @@ src/
 
 ---
 
-## Lab 04 — Abstraction (feature/abstraction)
+## Lab 04 — Члени класу (feature/class-members)
 
-**Статус:** 📋 ЗАПЛАНОВАНО
-**Гілка:** `feature/abstraction` — ✅ зливається
-**Що зміниться:**
-- Додається `BloodType` enum (замість `string`)
-- Додається `Speciality` enum
-- `abstract class MedicalEntity` — базовий клас для Patient і Doctor
-- `abstract CalculateCost()` в Appointment
-- `PatientManager`, `DoctorManager` переходять з `T[]` на `List<T>`
-- В меню: фільтр лікарів за спеціальністю (enum)
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/class-members` — ✅ **злито в main**
+**Файли:**
+```
+src/
+├── BloodType.cs            ← enum BloodType (9 значень)
+├── Speciality.cs           ← enum Speciality (8 значень)
+├── AppointmentStatus.cs    ← enum AppointmentStatus (3 значення)
+├── WorkSchedule.cs         ← struct WorkSchedule { Start, End, IsNow, Contains() }
+├── ClinicFormatter.cs      ← static class — FormatBloodType, FormatSpeciality, FormatAge, FormatPhone
+├── Patient.cs              ← використовує BloodType enum та ClinicFormatter
+├── Doctor.cs               ← використовує Speciality + WorkSchedule, IsAvailableNow
+├── Appointment.cs          ← використовує AppointmentStatus enum
+├── PatientManager.cs       ← + indexer this[int], + TryFindById(out), + FindByBloodType
+├── DoctorManager.cs        ← + indexer, + FindBySpeciality(Speciality) overload, + TryFindById(out)
+├── AppointmentManager.cs   ← + indexer, + GetByDate(int,int,int) overload
+└── Program.cs              ← cast (BloodType)num, (Speciality)num у меню
+```
 
-**Нові файли:** `MedicalEntity.cs`, `Enums.cs`
+**Нові концепції в Lab 04:**
+- `enum` — BloodType, Speciality, AppointmentStatus
+- `struct` — WorkSchedule (value type, immutable fields)
+- `static class` — ClinicFormatter (утиліти без інстанцій)
+- Індексатор `this[int index]` в Manager-класах
+- Перевантаження методів (`FindBySpeciality(string)` / `FindBySpeciality(Speciality)`)
+- `out` параметр і TryXxx патерн (`TryFindById`)
+- `?.` null-conditional та `??` null-coalescing (тепер дозволено)
+- `(TypeName)value` — явне приведення int → enum
 
 ---
 
