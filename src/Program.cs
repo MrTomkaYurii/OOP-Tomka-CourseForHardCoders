@@ -430,7 +430,12 @@ static void MedicalRecordsMenu(Clinic clinic)
                 string desc = Console.ReadLine() ?? "";
                 Console.Write("Хронічне? (1=так, 0=ні): ");
                 bool isChronic = Console.ReadLine() == "1";
-                clinic.MedicalRecords.Add(new Diagnosis(dpId, ddId, DateTime.Today, code, desc, isChronic));
+                try
+                {
+                    clinic.MedicalRecords.Add(new Diagnosis(dpId, ddId, DateTime.Today, code, desc, isChronic));
+                }
+                catch (ArgumentOutOfRangeException e) { Console.WriteLine("Помилка: " + e.Message); }
+                catch (ArgumentException e) { Console.WriteLine("Помилка: " + e.Message); }
                 break;
 
             case "4":
@@ -450,7 +455,12 @@ static void MedicalRecordsMenu(Clinic clinic)
                 string range = Console.ReadLine() ?? "";
                 Console.Write("В нормі? (1=так, 0=ні): ");
                 bool isNormal = Console.ReadLine() == "1";
-                clinic.MedicalRecords.Add(new LabResult(lpId, ldId, DateTime.Today, testName, val, unit, range, isNormal));
+                try
+                {
+                    clinic.MedicalRecords.Add(new LabResult(lpId, ldId, DateTime.Today, testName, val, unit, range, isNormal));
+                }
+                catch (ArgumentOutOfRangeException e) { Console.WriteLine("Помилка: " + e.Message); }
+                catch (ArgumentException e) { Console.WriteLine("Помилка: " + e.Message); }
                 break;
 
             case "5":
@@ -468,7 +478,12 @@ static void MedicalRecordsMenu(Clinic clinic)
                 int.TryParse(Console.ReadLine(), out int days);
                 Console.Write("Інструкція (Enter = пропустити): ");
                 string instr = Console.ReadLine() ?? "";
-                clinic.MedicalRecords.Add(new Prescription(ppId, pdId, DateTime.Today, med, dosage, days, instr));
+                try
+                {
+                    clinic.MedicalRecords.Add(new Prescription(ppId, pdId, DateTime.Today, med, dosage, days, instr));
+                }
+                catch (ArgumentOutOfRangeException e) { Console.WriteLine("Помилка: " + e.Message); }
+                catch (ArgumentException e) { Console.WriteLine("Помилка: " + e.Message); }
                 break;
 
             case "6":

@@ -1,10 +1,31 @@
 namespace ClinicApp.Models;
 
+using ClinicApp.Utils;
+
 public class Prescription : MedicalRecord
 {
-    public string MedicationName { get; set; }
-    public string Dosage { get; set; }
-    public int DurationDays { get; set; }
+    private string _medicationName = "";
+    private string _dosage = "";
+    private int _durationDays;
+
+    public string MedicationName
+    {
+        get => _medicationName;
+        set { ClinicValidator.ValidateName(value, "Назва препарату"); _medicationName = value; }
+    }
+
+    public string Dosage
+    {
+        get => _dosage;
+        set { ClinicValidator.ValidateName(value, "Дозування"); _dosage = value; }
+    }
+
+    public int DurationDays
+    {
+        get => _durationDays;
+        set { ClinicValidator.ValidatePositive(value, "Тривалість курсу"); _durationDays = value; }
+    }
+
     public string Instructions { get; set; }
 
     public DateTime ExpiresAt => Date.AddDays(DurationDays);

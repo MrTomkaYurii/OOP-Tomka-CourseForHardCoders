@@ -1,9 +1,24 @@
 namespace ClinicApp.Models;
 
+using ClinicApp.Utils;
+
 public class Diagnosis : MedicalRecord
 {
-    public string DiagnosisCode { get; set; }
-    public string Description { get; set; }
+    private string _diagnosisCode = "";
+    private string _description = "";
+
+    public string DiagnosisCode
+    {
+        get => _diagnosisCode;
+        set { ClinicValidator.ValidateName(value, "Код діагнозу"); _diagnosisCode = value; }
+    }
+
+    public string Description
+    {
+        get => _description;
+        set { ClinicValidator.ValidateName(value, "Опис діагнозу"); _description = value; }
+    }
+
     public bool IsChronic { get; set; }
 
     public Diagnosis(int patientId, int doctorId, DateTime date,
