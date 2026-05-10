@@ -1,5 +1,6 @@
 using ClinicApp;
 using ClinicApp.Enums;
+using ClinicApp.Interfaces;
 using ClinicApp.Managers;
 using ClinicApp.Models;
 using ClinicApp.Utils;
@@ -49,16 +50,17 @@ bool running = true;
 while (running)
 {
     Console.WriteLine();
-    Console.WriteLine("╔══════════════════════════════╗");
-    Console.WriteLine("║     МЕДИЧНА КЛІНІКА          ║");
-    Console.WriteLine("╠══════════════════════════════╣");
-    Console.WriteLine("║  1. Пацієнти                 ║");
-    Console.WriteLine("║  2. Лікарі                   ║");
-    Console.WriteLine("║  3. Записи на прийом         ║");
-    Console.WriteLine("║  4. Медична картка           ║");
-    Console.WriteLine("║  5. Звіт                     ║");
-    Console.WriteLine("║  0. Вийти                    ║");
-    Console.WriteLine("╚══════════════════════════════╝");
+    Console.WriteLine("╔══════════════════════════════════════════════╗");
+    Console.WriteLine("║           МЕДИЧНА КЛІНІКА                    ║");
+    Console.WriteLine("╠══════════════════════════════════════════════╣");
+    Console.WriteLine("║  1. Пацієнти       — реєстрація, пошук      ║");
+    Console.WriteLine("║  2. Лікарі         — персонал, розклад      ║");
+    Console.WriteLine("║  3. Записи         — прийоми, скасування    ║");
+    Console.WriteLine("║  4. Медична картка — діагнози, рецепти      ║");
+    Console.WriteLine("║  5. Рахунки        — оплата, борги          ║");
+    Console.WriteLine("║  6. Звіт           — загальна статистика    ║");
+    Console.WriteLine("║  0. Вийти                                    ║");
+    Console.WriteLine("╚══════════════════════════════════════════════╝");
     Console.Write("Оберіть розділ: ");
 
     string choice = Console.ReadLine() ?? "";
@@ -70,7 +72,8 @@ while (running)
         case "2": DoctorsMenu(clinic);  break;
         case "3": AppointmentsMenu(clinic); break;
         case "4": MedicalRecordsMenu(clinic); break;
-        case "5": clinic.GenerateReport(); break;
+        case "5": BillingMenu(clinic); break;
+        case "6": clinic.GenerateReport(); break;
         case "0":
             running = false;
             Console.WriteLine("До побачення!");
@@ -491,6 +494,65 @@ static void MedicalRecordsMenu(Clinic clinic)
                 if (!int.TryParse(Console.ReadLine(), out int dId)) break;
                 Console.WriteLine("Записи лікаря #" + dId + ":");
                 clinic.MedicalRecords.DisplayList(clinic.MedicalRecords.GetByDoctor(dId));
+                break;
+
+            case "0":
+                inMenu = false;
+                break;
+
+            default:
+                Console.WriteLine("Невідома команда.");
+                break;
+        }
+        Console.WriteLine();
+    }
+}
+
+// ──────────────────────────────────────────────
+//  Меню рахунків
+// ──────────────────────────────────────────────
+static void BillingMenu(Clinic clinic)
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        Console.WriteLine("── Рахунки ───────────────────");
+        Console.WriteLine("  1. Борги пацієнта");
+        Console.WriteLine("  2. Всі неоплачені записи");
+        Console.WriteLine("  3. Оплатити запис");
+        Console.WriteLine("  4. Загальний борг клініки");
+        Console.WriteLine("  0. Назад");
+        Console.Write("Оберіть: ");
+
+        string cmd = Console.ReadLine() ?? "";
+
+        switch (cmd)
+        {
+            case "1":
+                Console.Write("ID пацієнта: ");
+                if (!int.TryParse(Console.ReadLine(), out int pId)) break;
+                IPayable[] patientUnpaid = clinic.Billing.GetUnpaidByPatient(pId);
+                Console.WriteLine("Неоплачені записи пацієнта #" + pId + ":");
+                clinic.Billing.DisplayUnpaid(patientUnpaid);
+                Console.WriteLine("Борг: " + clinic.Billing.GetPatientDebt(pId).ToString("F2") + " грн");
+                break;
+
+            case "2":
+                Console.WriteLine("Всі неоплачені записи:");
+                clinic.Billing.DisplayUnpaid(clinic.Billing.GetAllUnpaid());
+                break;
+
+            case "3":
+                Console.Write("ID запису для оплати: ");
+                if (!int.TryParse(Console.ReadLine(), out int aId)) break;
+                if (clinic.Billing.PayAppointment(aId))
+                    Console.WriteLine("Запис [" + aId + "] оплачено.");
+                else
+                    Console.WriteLine("Не вдалося оплатити: запис не знайдено, вже оплачено або скасовано.");
+                break;
+
+            case "4":
+                Console.WriteLine("Загальний борг по клініці: " + clinic.Billing.GetTotalDebt().ToString("F2") + " грн");
                 break;
 
             case "0":
