@@ -7,19 +7,21 @@
 
 ## Головне меню — еволюція
 
-| Пункт меню                    | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 | Lab 09 |
-|-------------------------------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
-| 1. Пацієнти                   | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 2. Лікарі                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 3. Записи                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 4. Медична картка             | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     |
-| 5. Рахунки                    | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     |
-| 6. Черга — очікування, прийом | —      | —      | —      | —      | —      | —      | ✅ NEW |
-| 7. Звіт                       | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (7) |
+| Пункт меню                    | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 | Lab 09 | Lab 10 |
+|-------------------------------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
+| 1. Пацієнти                   | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 2. Лікарі                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 3. Записи                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 4. Медична картка             | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     |
+| 5. Рахунки                    | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     |
+| 6. Черга — очікування, прийом | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     |
+| 7. Звіт                       | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (7) | ✅ (7) |
+| 8. Аналітика                  | —      | —      | —      | —      | —      | —      | —      | ✅ NEW |
 
 > Lab 07: головне меню отримало **описи через дефіс** (напр. "1. Пацієнти — реєстрація, пошук").  
 > Lab 08: меню **не змінюється** — внутрішні зміни (підкласи Appointment).  
-> Lab 09: доданий пункт **6. Черга**; колишній "6. Звіт" переміщено на **7. Звіт**.
+> Lab 09: доданий пункт **6. Черга**; колишній "6. Звіт" переміщено на **7. Звіт**.  
+> Lab 10: доданий пункт **8. Аналітика** — новий модуль статистики.
 
 ---
 
@@ -193,6 +195,36 @@
 
 ---
 
+## 8. Аналітика *(додано в Lab 10)*
+
+| Підпункт                          | Що робить                                                                                  |
+|-----------------------------------|--------------------------------------------------------------------------------------------|
+| 1. Лікарі — за навантаженням      | `ComputeDoctorStats()` → зібрати в List → `.Sort()` (IComparable) → вивести               |
+| 2. Лікарі — за виручкою           | `.Sort(new DoctorStatsByRevenue())`                                                        |
+| 3. Лікарі — за іменем             | `.Sort(new DoctorStatsByName())`                                                           |
+| 4. Пацієнти — за кількістю візитів| `ComputePatientStats()` → зібрати в List → `.Sort()` (IComparable) → вивести              |
+| 5. Пацієнти — за витратами        | `.Sort(new PatientStatsBySpent())`                                                         |
+
+**Нові класи в Lab 10:**
+
+| Клас | Інтерфейс | Поля |
+|------|-----------|------|
+| `DoctorStats` | `IComparable<DoctorStats>` | DoctorId, FullName, AppointmentCount, TotalRevenue, LastAppointmentDate |
+| `PatientStats` | `IComparable<PatientStats>` | PatientId, FullName, VisitCount, TotalSpent, LastVisitDate |
+| `DoctorStatsByRevenue` | `IComparer<DoctorStats>` | сортує за TotalRevenue (desc) |
+| `DoctorStatsByName` | `IComparer<DoctorStats>` | сортує за FullName (asc) |
+| `PatientStatsBySpent` | `IComparer<PatientStats>` | сортує за TotalSpent (desc) |
+| `PatientStatsByLastVisit` | `IComparer<PatientStats>` | сортує за LastVisitDate (desc) |
+
+**`AnalyticsManager`** — ключовий клас Lab 10:
+
+| Метод | Повертає | Як реалізовано |
+|-------|----------|----------------|
+| `ComputeDoctorStats()` | `IEnumerable<DoctorStats>` | `yield return` по кожному лікарю |
+| `ComputePatientStats()` | `IEnumerable<PatientStats>` | `yield return` по кожному пацієнту |
+
+---
+
 ## Тестові дані (seeded при старті)
 
 | Що               | Кількість | Додано  | Примітка                                                  |
@@ -208,8 +240,8 @@
 
 ```
 src/
-├── Clinic.cs                    — оркестратор (Patients, Doctors, Appointments, MedicalRecords, Billing, WaitingRoom)
-├── Program.cs                   — меню (PatientsMenu / DoctorsMenu / AppointmentsMenu / MedicalRecordsMenu / BillingMenu / WaitingRoomMenu)
+├── Clinic.cs                    — оркестратор (Patients, Doctors, Appointments, MedicalRecords, Billing, WaitingRoom, Analytics)
+├── Program.cs                   — меню (PatientsMenu / DoctorsMenu / AppointmentsMenu / MedicalRecordsMenu / BillingMenu / WaitingRoomMenu / AnalyticsMenu)
 │
 ├── Enums/
 │   ├── BloodType.cs             — Lab 04
@@ -230,16 +262,25 @@ src/
 │   ├── UrgentAppointment.cs     — Lab 08 (override GetCost *1.5, sealed GetDescription, new GetPriority)
 │   ├── SpecialistAppointment.cs — Lab 08 (sealed class, override GetCost *1.3)
 │   ├── WaitingQueue.cs          — Lab 09 (generic WaitingQueue<T> над Queue<T>)
+│   ├── DoctorStats.cs           — Lab 10 (IComparable<DoctorStats>)
+│   ├── PatientStats.cs          — Lab 10 (IComparable<PatientStats>)
 │   ├── WorkSchedule.cs          — Lab 04 (struct)
 │   ├── MedicalRecord.cs         — Lab 06 (abstract)
 │   ├── Diagnosis.cs             — Lab 06
 │   ├── LabResult.cs             — Lab 06
 │   └── Prescription.cs          — Lab 06
 │
+├── Comparators/                 — Lab 10
+│   ├── DoctorStatsByRevenue.cs  — Lab 10 (IComparer<DoctorStats>)
+│   ├── DoctorStatsByName.cs     — Lab 10 (IComparer<DoctorStats>)
+│   ├── PatientStatsBySpent.cs   — Lab 10 (IComparer<PatientStats>)
+│   └── PatientStatsByLastVisit.cs— Lab 10 (IComparer<PatientStats>)
+│
 ├── Managers/
 │   ├── PatientManager.cs        — Lab 03 → Lab 04 (indexer, out, overloads) → Lab 09 (List<Patient>)
 │   ├── DoctorManager.cs         — Lab 03 → Lab 04
 │   ├── AppointmentManager.cs    — Lab 03 → Lab 04 → Lab 07 (GetAll) → Lab 08 (BookUrgent, BookSpecialist)
+│   ├── AnalyticsManager.cs      — Lab 10 (IEnumerable<DoctorStats/PatientStats> з yield return)
 │   ├── Repository.cs            — Lab 09 (generic Repository<T> where T : IIdentifiable)
 │   ├── GrowablePatientManager.cs— Lab 05 (зростаючий масив — концептуальний)
 │   ├── MedicalRecordManager.cs  — Lab 06

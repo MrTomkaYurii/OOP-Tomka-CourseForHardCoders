@@ -63,9 +63,9 @@
 | `Queue<T>`, `Stack<T>` | 09 | |
 | `InvalidOperationException` | 09 | порожня черга |
 | `default!` keyword | 09 | generic методи |
-| `IEnumerable<T>`, `yield return` | 10 | |
-| `IComparable<T>`, `IComparer<T>` | 10 | |
-| `SortedSet<T>`, `SortedList<K,V>` | 10 | |
+| `IComparable<T>`, `int CompareTo(T? other)` | 10 | |
+| `IComparer<T>`, `int Compare(T? x, T? y)` | 10 | |
+| `IEnumerable<T>` як тип повернення, `yield return` | 10 | ліниве обчислення |
 | `Attribute` (кастомний), `Reflection` | 11 | |
 | `delegate`, `event`, `EventArgs`, `+=` | 12 | |
 | LINQ (`.Where`, `.Select`, `.OrderBy`, `.GroupBy`, `.Join`, | 13 | |
@@ -257,14 +257,18 @@
 
 ---
 
-### Lab 10 — Iterators & Comparators (feature/iterators → зливається)
+### Lab 10 — Iterators & Comparators (feature/iterators → злито в main)
 
 **Нові конструкції:**
-- `IEnumerable<T>`: реалізація `GetEnumerator()`, `yield return`
-- `IComparable<T>`: `CompareTo()` для сортування
-- `IComparer<T>`: окремий клас-компаратор
-- `SortedSet<T>`, `SortedList<K,V>`
-- Власний `foreach` через `IEnumerable`
+- `IComparable<T>` — `int CompareTo(T? other)`; реалізується в самому класі; `Array.Sort()` / `List.Sort()` без аргументу
+- `IComparer<T>` — `int Compare(T? x, T? y)`; окремий клас-компаратор; `List.Sort(new MyComparer())`
+- `IEnumerable<T>` як тип повернення методу
+- `yield return` — ліниве обчислення (state machine), відновлення стану між ітераціями
+- `foreach` по `IEnumerable<T>` для споживання ітератора
+
+**Що дозволяється вперше:**
+- `IEnumerable<T>` як тип повернення (раніше заборонено до Lab 10)
+- `string.Compare(x, y, StringComparison.CurrentCulture)` — культурно-залежне порівняння рядків
 
 ---
 
