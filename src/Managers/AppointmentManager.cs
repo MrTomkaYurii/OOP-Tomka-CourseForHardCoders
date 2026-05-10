@@ -181,6 +181,42 @@ public class AppointmentManager
         return result;
     }
 
+    public Appointment[] GetUrgent()
+    {
+        int matchCount = 0;
+        for (int i = 0; i < _count; i++)
+            if (_appointments[i] is UrgentAppointment) matchCount++;
+        Appointment[] result = new Appointment[matchCount];
+        int idx = 0;
+        for (int i = 0; i < _count; i++)
+            if (_appointments[i] is UrgentAppointment) result[idx++] = _appointments[i];
+        return result;
+    }
+
+    public Appointment[] GetSpecialist()
+    {
+        int matchCount = 0;
+        for (int i = 0; i < _count; i++)
+            if (_appointments[i] is SpecialistAppointment) matchCount++;
+        Appointment[] result = new Appointment[matchCount];
+        int idx = 0;
+        for (int i = 0; i < _count; i++)
+            if (_appointments[i] is SpecialistAppointment) result[idx++] = _appointments[i];
+        return result;
+    }
+
+    public Appointment[] GetRegular()
+    {
+        int matchCount = 0;
+        for (int i = 0; i < _count; i++)
+            if (_appointments[i] is RegularAppointment) matchCount++;
+        Appointment[] result = new Appointment[matchCount];
+        int idx = 0;
+        for (int i = 0; i < _count; i++)
+            if (_appointments[i] is RegularAppointment) result[idx++] = _appointments[i];
+        return result;
+    }
+
     public Appointment[] GetUpcoming()
     {
         int matchCount = 0;
@@ -202,10 +238,12 @@ public class AppointmentManager
         string patientName = patient != null ? patient.FullName : "Пацієнт #" + a.PatientId;
         string doctorName  = doctor  != null ? doctor.FullName  : "Лікар #"   + a.DoctorId;
 
-        string line = "[" + a.Id + "] " + patientName + " → " + doctorName +
+        string line = "[" + a.Id + "] " + a.GetDescription() +
+                      " | " + patientName + " → " + doctorName +
                       " | " + a.ScheduledAt.ToString("dd.MM.yyyy HH:mm") +
                       "–" + a.EndsAt.ToString("HH:mm") +
-                      " | " + a.Status;
+                      " | " + a.Status +
+                      " | " + a.GetCost().ToString("F2") + " грн";
         if (a.Notes != null && a.Notes.Length > 0) line += " | " + a.Notes;
         Console.WriteLine(line);
     }
