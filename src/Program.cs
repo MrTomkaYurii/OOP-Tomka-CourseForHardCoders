@@ -1,4 +1,5 @@
 using ClinicApp;
+using ClinicApp.Comparators;
 using ClinicApp.Enums;
 using ClinicApp.Interfaces;
 using ClinicApp.Managers;
@@ -66,6 +67,7 @@ while (running)
     Console.WriteLine("║  5. Рахунки        — оплата, борги          ║");
     Console.WriteLine("║  6. Черга          — очікування, прийом     ║");
     Console.WriteLine("║  7. Звіт           — загальна статистика    ║");
+    Console.WriteLine("║  8. Аналітика      — статистика, рейтинги   ║");
     Console.WriteLine("║  0. Вийти                                    ║");
     Console.WriteLine("╚══════════════════════════════════════════════╝");
     Console.Write("Оберіть розділ: ");
@@ -82,6 +84,7 @@ while (running)
         case "5": BillingMenu(clinic); break;
         case "6": WaitingRoomMenu(clinic); break;
         case "7": clinic.GenerateReport(); break;
+        case "8": AnalyticsMenu(clinic); break;
         case "0":
             running = false;
             Console.WriteLine("До побачення!");
@@ -673,4 +676,101 @@ static void WaitingRoomMenu(Clinic clinic)
         }
         Console.WriteLine();
     }
+}
+
+// ──────────────────────────────────────────────
+//  Меню аналітики
+// ──────────────────────────────────────────────
+static void AnalyticsMenu(Clinic clinic)
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        Console.WriteLine("── Аналітика ─────────────────");
+        Console.WriteLine("  1. Лікарі — за навантаженням");
+        Console.WriteLine("  2. Лікарі — за виручкою");
+        Console.WriteLine("  3. Лікарі — за іменем");
+        Console.WriteLine("  4. Пацієнти — за кількістю візитів");
+        Console.WriteLine("  5. Пацієнти — за витратами");
+        Console.WriteLine("  0. Назад");
+        Console.Write("Оберіть: ");
+
+        string cmd = Console.ReadLine() ?? "";
+        Console.WriteLine();
+
+        switch (cmd)
+        {
+            case "1":
+                List<DoctorStats> byLoad = CollectDoctorStats(clinic);
+                byLoad.Sort();
+                Console.WriteLine("=== Лікарі за навантаженням ===");
+                PrintDoctorStats(byLoad);
+                break;
+
+            case "2":
+                List<DoctorStats> byRevenue = CollectDoctorStats(clinic);
+                byRevenue.Sort(new DoctorStatsByRevenue());
+                Console.WriteLine("=== Лікарі за виручкою ===");
+                PrintDoctorStats(byRevenue);
+                break;
+
+            case "3":
+                List<DoctorStats> byName = CollectDoctorStats(clinic);
+                byName.Sort(new DoctorStatsByName());
+                Console.WriteLine("=== Лікарі за іменем ===");
+                PrintDoctorStats(byName);
+                break;
+
+            case "4":
+                List<PatientStats> byVisits = CollectPatientStats(clinic);
+                byVisits.Sort();
+                Console.WriteLine("=== Пацієнти за кількістю візитів ===");
+                PrintPatientStats(byVisits);
+                break;
+
+            case "5":
+                List<PatientStats> bySpent = CollectPatientStats(clinic);
+                bySpent.Sort(new PatientStatsBySpent());
+                Console.WriteLine("=== Пацієнти за витратами ===");
+                PrintPatientStats(bySpent);
+                break;
+
+            case "0":
+                inMenu = false;
+                break;
+
+            default:
+                Console.WriteLine("Невідома команда.");
+                break;
+        }
+        Console.WriteLine();
+    }
+}
+
+static List<DoctorStats> CollectDoctorStats(Clinic clinic)
+{
+    List<DoctorStats> list = new List<DoctorStats>();
+    foreach (DoctorStats s in clinic.Analytics.ComputeDoctorStats())
+        list.Add(s);
+    return list;
+}
+
+static List<PatientStats> CollectPatientStats(Clinic clinic)
+{
+    List<PatientStats> list = new List<PatientStats>();
+    foreach (PatientStats s in clinic.Analytics.ComputePatientStats())
+        list.Add(s);
+    return list;
+}
+
+static void PrintDoctorStats(List<DoctorStats> stats)
+{
+    for (int i = 0; i < stats.Count; i++)
+        Console.WriteLine("  " + (i + 1) + ". " + stats[i]);
+}
+
+static void PrintPatientStats(List<PatientStats> stats)
+{
+    for (int i = 0; i < stats.Count; i++)
+        Console.WriteLine("  " + (i + 1) + ". " + stats[i]);
 }
