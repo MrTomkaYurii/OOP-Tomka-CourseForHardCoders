@@ -266,8 +266,8 @@ src/
 
 ## Lab 08 — Polymorphism (feature/polymorphism)
 
-**Статус:** ✅ ЗАВЕРШЕНО (⏳ зливається разом з Lab 09)
-**Гілка:** `feature/polymorphism` — чекає Lab09
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/polymorphism` — ✅ злито в main
 
 **Нові файли:**
 ```

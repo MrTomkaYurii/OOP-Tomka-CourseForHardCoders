@@ -99,7 +99,7 @@ Lab03 Task2: Add Patient class with constructor and properties
 | 05 | `feature/encapsulation` | ✅ | ✅ | Patients+ | Внутрішня валідація + try/catch у меню |
 | 06 | `feature/inheritance` | ✅ | ✅ | MedicalRecords | **Нове меню:** 4.Медична картка (діагнози, аналізи, рецепти) |
 | 07 | `feature/interfaces` | ✅ | ✅ | Billing | **Нове меню:** 5.Рахунки (IPayable → вартість, борг, оплата) |
-| 08 | `feature/polymorphism` | ⏳ | 📋 | Appointments+ | Внутрішнє покращення (типи прийомів) |
+| 08 | `feature/polymorphism` | ✅ | ✅ | Appointments+ | Внутрішнє покращення (типи прийомів) |
 | 09 | `feature/generics` | ✅ | 📋 | Waiting | **Нове меню:** 6.Черга очікування |
 | 10 | `feature/iterators` | ✅ | 📋 | всі | Меню: сортування списків (foreach, comparators) |
 | 11 | `feature/reflection` | ⏳ | 📋 | Validation | Внутрішнє: авто-валідатор через рефлексію |
@@ -387,8 +387,8 @@ git checkout main && git merge feature/[назва] && git push
 
 ## Поточний стан
 
-**Завершено:** Lab 00–07 ✅
-**В розробці:** Lab 08 — `feature/polymorphism` — Polymorphism (⏳ чекає Lab 09)
+**Завершено:** Lab 00–08 ✅
+**Наступний крок:** Lab 09 — `feature/generics` — Generics
 
 **Порядок роботи:**
 1. Реалізувати еталонний код на C# (домен: Клініка) на новій гілці
