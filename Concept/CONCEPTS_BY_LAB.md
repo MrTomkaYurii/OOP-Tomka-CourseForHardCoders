@@ -38,10 +38,6 @@
 | `out` параметр, TryXxx патерн | 04 | TryFindById(int, out T) |
 | `?.` null-conditional, `??` null-coalescing | 04 | тепер дозволено |
 | Явне приведення `(TypeName)value` | 04 | int → enum у меню |
-| `abstract class`, `abstract` методи | 06 | |
-| `virtual` методи | 06 | |
-| `protected` конструктор | 06 | |
-| `List<T>` (базово: Add, Count, [], foreach) | 09 | Generics лаба |
 | Підпростори імен (`ClinicApp.Models` тощо) + `using` директиви | 05 | організація файлів |
 | `private` backing fields `_camelCase` | 05 | |
 | Явні сеттери з валідацією | 05 | |
@@ -51,13 +47,18 @@
 | `nameof(Symbol)` | 05 | |
 | `try / catch` (порядок блоків) | 05 | |
 | `Regex.IsMatch()`, `static readonly Regex` | 05 | опційно |
+| `abstract class`, `abstract` методи | 06 | |
+| `virtual` методи | 06 | |
+| `protected` конструктор | 06 | |
 | `: BaseClass`, `base()` | 06 | успадкування |
 | `override` переваги методів | 06 | |
 | `is`, `as`, явне приведення | 06 | |
-| `interface` | 07 | |
+| `interface` | 07 | IPayable, ICancellable, ISchedulable |
 | Кілька інтерфейсів на одному класі | 07 | |
 | Поліморфізм (base ref → child type) | 08 | |
 | `new` (приховування методу) | 08 | |
+| `sealed` | 08 | |
+| `List<T>` (базово: Add, Count, [], foreach) | 09 | Generics лаба |
 | Генерики `<T>`, `where T :` | 09 | |
 | `Queue<T>`, `Stack<T>` | 09 | |
 | `IEnumerable<T>`, `yield return` | 10 | |
@@ -203,28 +204,37 @@
 - Поліморфний масив `MedicalRecord[]` — різні підкласи в одному масиві
 
 **Заборонено (ще не введено):**
-- `new` keyword (method hiding) (Lab 07)
-- `sealed` (Lab 07)
-- `interface` (Lab 07/08)
+- `interface` (Lab 07)
+- `new` keyword (method hiding) (Lab 08)
+- `sealed` (Lab 08)
 
 ---
 
 ### Lab 07 — Interfaces (feature/interfaces → зливається)
 
 **Нові конструкції:**
-- `interface ISchedulable { ... }`
-- Реалізація кількох інтерфейсів: `class X : Base, IFoo, IBar`
-- Явна реалізація: `void IFoo.Method() { ... }`
-- Generic interface: перший погляд на `IRepository<T>`
+- `interface IPayable { decimal GetCost(); bool IsPaid; void MarkPaid(); }`
+- `interface ICancellable { void Cancel(string reason); bool IsCancelled; }`
+- `interface ISchedulable { bool CanSchedule(DateTime); }`
+- Реалізація кількох інтерфейсів: `class Appointment : IPayable, ICancellable`
+- Метод що приймає інтерфейс як параметр: `void Process(IPayable[] items)`
+- `is IPayable p` — перевірка реалізації інтерфейсу
+
+**Що з'явиться в меню:** 5. Рахунки — борги пацієнта, оплата запису, загальна сума
+
+**Заборонено (ще не введено):**
+- `new` keyword (method hiding) (Lab 08)
+- `sealed` (Lab 08)
 
 ---
 
 ### Lab 08 — Polymorphism (feature/polymorphism → чекає Lab09)
 
 **Нові конструкції:**
-- Поліморфний список: `Patient[] patients` зберігає `InsuredPatient`, `PrivatePatient`
-- `new` (метод-приховування, відмінне від `override`)
-- Виклик через базовий тип
+- Підкласи `Appointment`: `RegularAppointment`, `UrgentAppointment`, `SpecialistAppointment`
+- `new` keyword — метод-приховування (відмінне від `override`)
+- `sealed class` і `sealed override`
+- Різна логіка `GetCost()` в кожному підкласі через `override`
 
 ---
 
@@ -311,7 +321,7 @@
 | Практика | Чому заборонена |
 |----------|----------------|
 | LINQ в Labs 01–12 | Не введений до Lab 13 |
-| `List<T>` в Labs 01–03 основному коді | Не введений до Lab 04 |
+| `List<T>` в Labs 01–08 основному коді | Не введений до Lab 09 (Generics) |
 | `TimeOnly`, `DateOnly` в Labs 01–05 | Надто специфічні типи, вводяться при потребі |
 | `?.` і `??` в Labs 01–03 | Не введені до Lab 04 |
 | `Dictionary<K,V>` в Labs 01–08 | Офіційно в Lab 09+ |

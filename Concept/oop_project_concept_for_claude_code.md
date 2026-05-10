@@ -6,7 +6,7 @@
 ## Контекст
 
 Викладач розробляє **еталонний навчальний проєкт** на C# для курсу OOP.
-Еталон пишеться на домені **Бібліотека** — потім транспонується в загальні інструкції для студентів.
+Еталон пишеться на домені **Медична Клініка** — потім транспонується в загальні інструкції для студентів.
 
 Студент працює **автономно**:
 - має свій GitHub репозиторій
@@ -19,34 +19,36 @@
 ## Структура репозиторію
 
 ```
-oop-course/
- ├── sandbox/                    ← теми 1-2, окрема папка не модуль
- │    ├── topic-01-intro/
- │    │    ├── Task1.cs
- │    │    ├── Task2.cs
- │    │    ├── Task3.cs
- │    │    └── Task4.cs
- │    └── topic-02-arrays/
- │         ├── Task1.cs
- │         ├── Task2.cs
- │         ├── Task3.cs
- │         └── Task4.cs
- └── src/
-      ├── Core/                  ← з'являється на лабі 04
-      │    ├── Entities/         ← BaseEntity та спільні класи
-      │    ├── Interfaces/       ← IRepository, IBorrowable...
-      │    └── Events/           ← EventBus (лаба 12)
-      ├── Modules/
-      │    ├── Catalog/          ← лаба 03
-      │    ├── Membership/       ← лаба 06
-      │    ├── Lending/          ← лаба 07-09
-      │    ├── Validation/       ← лаба 11
-      │    ├── Notifications/    ← лаба 12
-      │    ├── Reports/          ← лаба 13-14
-      │    ├── Storage/          ← лаба 15-16
-      │    └── Database/         ← лаба 17-20
-      └── ConsoleApp/            ← точка входу, живе весь курс
-           └── Program.cs
+OOP-Tomka-CourseForHardCoders/
+ ├── sandbox/
+ │    ├── intro/          ← Lab 01: базовий C#, Task1.cs … Task8.cs
+ │    └── arrays/         ← Lab 02: масиви, Task1.cs … Task8.cs
+ ├── src/                 ← головний проект, росте весь курс
+ │    ├── ClinicApp.csproj
+ │    ├── Clinic.cs       ← оркестратор (Lab 03+)
+ │    ├── Program.cs      ← єдина точка входу, росте весь курс
+ │    ├── Enums/          ← Lab 04: BloodType, Speciality, AppointmentStatus
+ │    ├── Models/         ← Lab 03+: Patient, Doctor, Appointment, WorkSchedule
+ │    │                      Lab 06+: MedicalRecord, Diagnosis, LabResult, Prescription
+ │    ├── Managers/       ← Lab 03+: PatientManager, DoctorManager, AppointmentManager
+ │    │                      Lab 05: GrowablePatientManager
+ │    │                      Lab 06+: MedicalRecordManager
+ │    │                      Lab 07+: BillingManager
+ │    ├── Interfaces/     ← Lab 07+: IPayable, ICancellable, ISchedulable
+ │    ├── Utils/          ← Lab 04: ClinicFormatter; Lab 05: ClinicValidator
+ │    └── (майбутнє)
+ │         ├── Events/    ← Lab 12: EventBus
+ │         ├── Reports/   ← Lab 13–14: LINQ + Functional
+ │         └── Storage/   ← Lab 15–16: Files + JSON
+ ├── labs/
+ │    ├── lab-00-choose-domain/
+ │    ├── lab-01-intro/
+ │    └── ... (кожна лаба = папка з instructions.md)
+ └── Concept/
+      ├── COURSE_DESIGN.md        ← таблиця всіх лаб, деталі по кожній
+      ├── CODEBASE_STATE.md       ← стан src/ після кожної лаби
+      ├── CONCEPTS_BY_LAB.md      ← які C# конструкції вводяться коли
+      └── MENU_BY_LAB.md          ← що є в меню після кожної лаби
 ```
 
 ---
@@ -151,34 +153,30 @@ while (true)
 
 ## Таблиця всіх гілок
 
-| # | Гілка | Merge в main | Модуль | Нова функціональність в консолі |
+| # | Гілка | Merge | Статус | Нова функціональність в консолі |
 |---|---|---|---|---|
-| 01 | `sandbox/intro` | ❌ | — | Синтаксис, цикли, умови. Завдання процедурні — стануть методами на лабі 03 |
-| 02 | `sandbox/arrays` | ❌ | — | Масиви рядків домену. `FindByTitle()`, `SortByYear()`, `PrintAll()`, `CountOverdue()` — функції що стануть методами класів |
-| 03 | `feature/catalog` | ✅ | Catalog | Меню: показати всі, додати, знайти за назвою. Перші класи домену |
-| 04 | `feature/abstraction` | ✅ | Core | BaseEntity, абстрактні класи. Зовні — нові типи документів в меню |
-| 05 | `feature/encapsulation` | ⏳ | Catalog+ | Внутрішнє — валідація. Зливається з лабою 06 |
-| 06 | `feature/inheritance` | ✅ | Membership | Меню: реєстрація читача з типом (стандартний/преміум). Різна поведінка |
-| 07 | `feature/polymorphism` | ⏳ | Membership+ | Внутрішнє покращення. Зливається з лабою 08 |
-| 08 | `feature/interfaces` | ✅ | Lending | Меню: позичити книгу, повернути, переглянути активні позики |
-| 09 | `feature/datetime` | ✅ | Lending+ | Меню: прострочені позики, розрахунок штрафу, дедлайни |
-| 10 | `feature/generics` | ⏳ | Lending+ | Внутрішнє — Repository\<T\>. Зливається з лабою 11 |
-| 11 | `feature/iterators` | ✅ | Catalog+ | Меню: сортування каталогу за різними критеріями, foreach по колекції |
-| 12 | `feature/reflection` | ⏳ | Validation | Внутрішнє — автовалідатор. Зливається з лабою 13 |
-| 13 | `feature/events` | ✅ | Notifications | Меню: налаштування сповіщень. Автоматичні повідомлення при подіях |
-| 14 | `feature/linq` | ✅ | Reports | Меню: звіти — топ книги, активні читачі, статистика за період |
-| 15 | `feature/functional` | ⏳ | Reports+ | Внутрішнє — чисті функції. Зливається з лабою 16 |
-| 16 | `feature/console-ui` | ✅ | ConsoleApp | Меню стає структурованим: розділи, навігація, форматований вивід |
-| 17 | `feature/storage` | ✅ | Storage | Меню: зберегти стан, завантажити при старті. JSON серіалізація |
-| 18a | `feature/storage-adv-1` | ✅ | Storage+ | Рівень 1 розширеної роботи з файлами |
-| 18b | `feature/storage-adv-2` | ✅ | Storage+ | Рівень 2 |
-| 18c | `feature/storage-adv-3` | ✅ | Storage+ | Рівень 3 |
-| 18d | `feature/storage-adv-4` | ✅ | Storage+ | Рівень 4 |
-| 19 | `refactor/solid` | ✅ | всі модулі | Зовні нічого не змінилось. Внутрішньо — аудит і рефакторинг усього |
-| 20 | `feature/ef-codefirst` | ✅ | Database | БД замінила JSON. Поведінка консолі та сама — реалізація інша |
-| 21 | `feature/ef-relations` | ✅ | Database+ | Меню: зв'язані запити — книги автора, читачі з активними позиками |
-| 22 | `feature/ef-advanced` | ✅ | Database+ | Меню: складні зв'язки many-to-many в запитах |
-| 23 | `feature/ef-querying` | ✅ | Database+ | Меню: фільтрація, сортування, пагінація через IQueryable |
+| 00 | — | — | ✅ | Вибір домену, setup |
+| 01 | `sandbox/intro` | ❌ | ✅ | Синтаксис C#, sandbox (8 завдань), не входить у src/ |
+| 02 | `sandbox/arrays` | ❌ | ✅ | Масиви доменних даних, sandbox (8 завдань) |
+| 03 | `feature/catalog` | ✅ | ✅ | Меню: 1.Пацієнти 2.Лікарі 3.Записи 4.Звіт |
+| 04 | `feature/class-members` | ✅ | ✅ | Enum BloodType/Speciality у меню, статистика, розклад лікаря |
+| 05 | `feature/encapsulation` | ✅ | ✅ | Внутрішня валідація + try/catch у меню (зовні не змінилось) |
+| 06 | `feature/inheritance` | ✅ | ✅ | **Нове меню:** 4.Медична картка (діагнози, аналізи, рецепти) |
+| 07 | `feature/interfaces` | ✅ | 📋 | **Нове меню:** 5.Рахунки (IPayable → борг, оплата) |
+| 08 | `feature/polymorphism` | ⏳ | 📋 | Внутрішнє: типи прийомів (RegularAppointment, UrgentAppointment) |
+| 09 | `feature/generics` | ✅ | 📋 | **Нове меню:** 6.Черга очікування |
+| 10 | `feature/iterators` | ✅ | 📋 | Меню: сортування списків за різними критеріями |
+| 11 | `feature/reflection` | ⏳ | 📋 | Внутрішнє: авто-валідатор через рефлексію |
+| 12 | `feature/events` | ✅ | 📋 | **Нове меню:** сповіщення при записі/скасуванні |
+| 13 | `feature/linq` | ✅ | 📋 | **Нове меню:** Звіти (топ лікарі, активні пацієнти) |
+| 14 | `feature/functional` | ⏳ | 📋 | Внутрішнє: чисті функції, делегати |
+| 15 | `feature/storage` | ✅ | 📋 | **Нове меню:** зберегти/завантажити стан |
+| 16 | `feature/console-ui` | ✅ | 📋 | Структуроване меню, кольори, пагінація |
+| 17 | `feature/ef-basic` | ✅ | 📋 | БД замінила in-memory дані (поведінка та сама) |
+| 18 | `feature/ef-relations` | ✅ | 📋 | Меню: зв'язані запити |
+| 19 | `feature/ef-advanced` | ✅ | 📋 | Меню: many-to-many зв'язки |
+| 20 | `feature/ef-querying` | ✅ | 📋 | Меню: фільтрація, пагінація через IQueryable |
+| 21 | `refactor/solid` | ✅ | 📋 | Зовні нічого, внутрішньо — SOLID рефакторинг |
 
 ---
 
@@ -215,9 +213,11 @@ while (true)
 
 ### Для кожної лаби Claude Code створює
 
-**Еталонний код** — повна реалізація на домені Бібліотека:
+**Еталонний код** — повна реалізація на домені Клініка:
 ```
-src/Modules/[ModuleName]/    ← якщо новий модуль
+src/Models/       ← нові моделі
+src/Managers/     ← нові менеджери
+src/Interfaces/   ← нові інтерфейси (Lab 07+)
 або точкові зміни в існуючих файлах
 ```
 
@@ -275,42 +275,52 @@ git push
 
 ### Важлива деталь інструкцій
 
-Інструкції пишуться в **загальному вигляді** — без конкретних назв домену Бібліотека. Використовуються абстрактні назви:
+Інструкції пишуться в **загальному вигляді** — без конкретних назв домену Клініка. Використовуються абстрактні назви:
 
 ```
-Сутність A    замість    Book
-Сутність B    замість    Author  
-Користувач    замість    Member
-Операція      замість    Loan
-Каталог       замість    BookCatalog
+Сутність A    замість    Patient
+Сутність B    замість    Doctor
+Користувач    замість    Receptionist
+Операція      замість    Appointment
+Документ      замість    MedicalRecord
 ```
 
-Студент підставляє свій домен. Еталонний код на Бібліотеці є як приклад — але в інструкції його немає.
+Студент підставляє свій домен. Еталонний код на Клініці є як приклад — але в інструкції його немає.
 
 ---
 
 ## Домени для студентів
 
+> **Еталонний домен курсу: Клініка (варіант А)**. Інструкції пишуться в абстрактному вигляді — студент підставляє свій домен.
+
 | Варіант | Домен | A | B | Користувач | Операція |
 |---|---|---|---|---|---|
-| А | Бібліотека | Book | Author | Member | Loan |
+| **А** | **Клініка** ⭐ | Patient | Doctor | Receptionist | Appointment |
 | Б | Готель | Room | Service | Guest | Booking |
-| В | Клініка | Patient | Doctor | Receptionist | Appointment |
-| Г | Університет | Course | Subject | Student | Enrollment |
-| Д | Прокат авто | Car | Brand | Client | Rental |
-| Е | Ресторан | Dish | Ingredient | Waiter | Order |
-| Є | Аптека | Medicine | Supplier | Customer | Sale |
-| Ж | Кінотеатр | Movie | Director | Viewer | Ticket |
+| В | Університет | Course | Subject | Student | Enrollment |
+| Г | Прокат авто | Car | Brand | Client | Rental |
+| Д | Ресторан | Dish | Ingredient | Waiter | Order |
+| Е | Аптека | Medicine | Supplier | Customer | Sale |
+| Є | Кінотеатр | Movie | Director | Viewer | Ticket |
+| Ж | Бібліотека | Book | Author | Member | Loan |
 
 ---
 
 ## Поточний стан проєкту
 
-**Що вже написано:** нічого — починаємо з нуля.
+**Завершено:** Lab 00–06 ✅
+**Наступний крок:** Lab 07 — `feature/interfaces` — Billing / Рахунки
 
-**Наступний крок:** Лаба 01 — sandbox/intro.
+**Домен еталону:** Клініка (варіант А).
 
-**Домен еталону:** Бібліотека (варіант А).
+**Головне меню зараз:**
+```
+1. Пацієнти       — список, додати, знайти, видалити, статистика
+2. Лікарі         — список, додати, знайти за спеціальністю, статистика
+3. Записи         — записати, скасувати, виконати, фільтри, розклад
+4. Медична картка — зведення, всі записи, додати діагноз/аналіз/рецепт
+5. Звіт           — загальна статистика
+```
 
 ---
 

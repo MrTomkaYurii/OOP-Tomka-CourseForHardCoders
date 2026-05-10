@@ -106,7 +106,7 @@ src/
 - Фіксований розмір масивів → `List<T>` в Lab09 (Generics)
 - Лінійний пошук O(n) → `Dictionary` в Lab09
 - Немає валідації полів → Lab05 Encapsulation
-- Немає типів пацієнтів (застрахований/приватний) → Lab06 Inheritance
+- Медичні записи (MedicalRecord) відсутні → Lab06 Inheritance
 
 **Концепції введені в Lab03:**
 - `class`, `static int _nextId`, `const int MaxCapacity`
@@ -236,11 +236,13 @@ src/
 **Статус:** 📋 ЗАПЛАНОВАНО
 **Гілка:** `feature/interfaces` — ✅ зливається
 **Що з'явиться:**
-- `ISchedulable`, `IPayable`, `ICancellable`, `INotifiable`
-- В меню: записатись / скасувати / переглянути записи
-- Перший погляд на `IRepository<T>`
+- `IPayable`, `ICancellable`, `ISchedulable`
+- `Appointment` реалізує `IPayable` і `ICancellable`
+- `Doctor` реалізує `ISchedulable`
+- `BillingManager` — рахує борги через `IPayable[]`
+- **Нове меню:** 5. Рахунки (борги пацієнта, оплата, загальна сума)
 
-**Нові файли:** `Interfaces/ISchedulable.cs`, `Interfaces/IPayable.cs` тощо
+**Нові файли:** `Interfaces/IPayable.cs`, `Interfaces/ICancellable.cs`, `Interfaces/ISchedulable.cs`, `Managers/BillingManager.cs`
 
 ---
 
@@ -249,8 +251,9 @@ src/
 **Статус:** 📋 ЗАПЛАНОВАНО
 **Гілка:** `feature/polymorphism` — ⏳ чекає Lab09
 **Що зміниться:**
-- `RegularAppointment`, `UrgentAppointment`, `SpecialistAppointment`
-- Поліморфний список `Appointment[]` або `List<Appointment>`
+- `RegularAppointment`, `UrgentAppointment`, `SpecialistAppointment` — підкласи `Appointment`
+- Різна логіка `GetCost()` через `override`
+- Поліморфний масив `Appointment[]` — вже зберігає підкласи
 - Внутрішнє покращення, меню не змінюється
 
 ---
