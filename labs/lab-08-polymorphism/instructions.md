@@ -8,7 +8,7 @@
 
 Після Lab 07 `Appointment` реалізує `IPayable` — але всі записи однакові і коштують однаково. Насправді клініка має три типи прийомів: звичайний, терміновий (+50% вартість) і консультація спеціаліста (+30% вартість). Ця лаба вводить підкласи. Меню **не змінюється** — зміни внутрішні.
 
-> ⏳ Ця лаба зливається в `main` разом з Lab 09.
+> Ця лаба зливається в `main` після Task 4. Task 5 — бонус.
 
 ## Гілка
 
@@ -254,7 +254,87 @@ git commit -m "Lab08 Task3: BookUrgent/BookSpecialist, update seed data, demonst
 
 ---
 
-## Завдання 4 — відкрита проблема: комбінації типів ⭐⭐⭐⭐
+## Завдання 4 — фільтр за типом у меню ⭐⭐⭐
+
+### Умова
+
+Поліморфізм поки "невидимий" — програма працює правильно, але користувач не бачить різниці. Додай у підменю "Записи" новий пункт **"8. За типом прийому"** — щоб можна було окремо переглянути термінові, консультації спеціаліста і звичайні.
+
+### Що реалізувати
+
+**`Managers/AppointmentManager.cs`** — три нових методи (паттерн аналогічний `GetByPatient`):
+
+```csharp
+public Appointment[] GetUrgent()
+{
+    int matchCount = 0;
+    for (int i = 0; i < _count; i++)
+        if (_appointments[i] is UrgentAppointment) matchCount++;
+    Appointment[] result = new Appointment[matchCount];
+    int idx = 0;
+    for (int i = 0; i < _count; i++)
+        if (_appointments[i] is UrgentAppointment) result[idx++] = _appointments[i];
+    return result;
+}
+// Аналогічно: GetSpecialist() і GetRegular()
+```
+
+Також оновити `DisplayAppointment` — додати тип і вартість у рядок виводу:
+
+```csharp
+string line = "[" + a.Id + "] " + a.GetDescription() +   // ← поліморфний виклик
+              " | " + patientName + " → " + doctorName +
+              " | " + a.ScheduledAt.ToString("dd.MM.yyyy HH:mm") + "–" + a.EndsAt.ToString("HH:mm") +
+              " | " + a.Status +
+              " | " + a.GetCost().ToString("F2") + " грн"; // ← різна ціна для кожного типу
+```
+
+**`Program.cs`** — додати у меню "Записи":
+
+```csharp
+Console.WriteLine("  8. За типом прийому");
+// ...
+case "8": AppointmentsByTypeMenu(clinic); break;
+```
+
+```csharp
+static void AppointmentsByTypeMenu(Clinic clinic)
+{
+    Console.WriteLine("── За типом прийому ──────────");
+    Console.WriteLine("  1. Термінові");
+    Console.WriteLine("  2. Консультації спеціаліста");
+    Console.WriteLine("  3. Звичайні");
+    Console.Write("Оберіть: ");
+    string choice = Console.ReadLine() ?? "";
+    switch (choice)
+    {
+        case "1": clinic.Appointments.DisplayList(clinic.Appointments.GetUrgent()); break;
+        case "2": clinic.Appointments.DisplayList(clinic.Appointments.GetSpecialist()); break;
+        case "3": clinic.Appointments.DisplayList(clinic.Appointments.GetRegular()); break;
+    }
+}
+```
+
+### Що перевірити
+
+Запусти і відкрий `3. Записи → 8. За типом → 1. Термінові`. Якщо seed data завантажено правильно — побачиш тільки `UrgentAppointment` з написом "Терміновий (гострий головний біль)" і ціною × 1.5.
+
+### Ключові спостереження
+
+- `a.GetDescription()` в `DisplayAppointment` — це поліморфний виклик. Без `virtual`/`override` всі рядки виглядали б однаково.
+- `a.GetCost()` — аналогічно, кожен тип повертає іншу суму без жодного `if`.
+- `is UrgentAppointment` у циклі — це runtime-перевірка фактичного типу об'єкта, не типу посилання.
+
+### Коміт
+
+```bash
+git add src/Managers/AppointmentManager.cs src/Program.cs
+git commit -m "Lab08 Task4: GetUrgent/GetSpecialist/GetRegular, AppointmentsByTypeMenu, show type in list"
+```
+
+---
+
+## Завдання 5 — відкрита проблема: комбінації типів ⭐⭐⭐⭐
 
 ### Умова
 
@@ -327,6 +407,10 @@ dotnet run
 - [ ] `Appointment ref = new UrgentAppointment(...)` → `ref.GetPriority()` повертає `3`, не `1`
 - [ ] `UrgentAppointment ref = new UrgentAppointment(...)` → `ref.GetPriority()` повертає `1`
 - [ ] `BookUrgent()` і `BookSpecialist()` додають записи в `AppointmentManager`
+- [ ] Список записів тепер показує тип і вартість кожного прийому
+- [ ] `3. Записи → 8. За типом → 1. Термінові` — виводить тільки `UrgentAppointment`
+- [ ] `3. Записи → 8. За типом → 2. Консультації` — виводить тільки `SpecialistAppointment`
+- [ ] `3. Записи → 8. За типом → 3. Звичайні` — виводить тільки `RegularAppointment`
 
 ---
 
@@ -344,13 +428,9 @@ dotnet run
 
 ## Злиття
 
-> ⏳ Ця лаба зливається **разом з Lab 09** (Generics), не окремо.
-
 ```bash
-# Після завершення Lab 09:
 git checkout main
 git merge --no-ff feature/polymorphism -m "Merge feature/polymorphism: Lab08 Polymorphism"
-git merge --no-ff feature/generics -m "Merge feature/generics: Lab09 Generics"
 git push
 ```
 
