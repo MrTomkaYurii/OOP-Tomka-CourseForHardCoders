@@ -296,12 +296,36 @@ src/Models/
 
 ## Lab 09 — Generics (feature/generics)
 
-**Статус:** 📋 ЗАПЛАНОВАНО
-**Гілка:** `feature/generics` — ✅ зливається
-**Що з'явиться:**
-- `Repository<T>` замінює PatientManager, DoctorManager
-- `WaitingQueue<T>` (черга очікування)
-- В меню: черга очікування
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/generics` — ✅ злито в main
+**Файли:**
+```
+src/
+├── Models/
+│   └── WaitingQueue.cs          ← NEW: generic WaitingQueue<T> над Queue<T>
+├── Interfaces/
+│   └── IIdentifiable.cs         ← NEW: interface IIdentifiable { int Id { get; } }
+└── Managers/
+    ├── PatientManager.cs        ← List<Patient> замість Patient[] + _count
+    └── Repository.cs            ← NEW: Repository<T> where T : IIdentifiable
+```
+
+**Зміни в існуючих файлах:**
+- `Models/Patient.cs` — `class Patient : IIdentifiable`
+- `Models/Doctor.cs` — `class Doctor : ISchedulable, IIdentifiable`
+- `Models/Appointment.cs` — `class Appointment : IPayable, ICancellable, IIdentifiable`
+- `Clinic.cs` — `public WaitingQueue<Patient> WaitingRoom { get; }` + ініціалізація
+- `Program.cs` — пункт "6. Черга — очікування, прийом" (Звіт переміщено з 6 на 7), `WaitingRoomMenu()`
+
+**Нові концепції в Lab 09:**
+- `List<T>` — динамічний список замість `T[]` + ручний лічильник
+- Generic клас `class WaitingQueue<T>` — параметр типу без constraint
+- `Queue<T>` — FIFO колекція зі стандартної бібліотеки
+- Generic constraint `where T : IIdentifiable` — обмеження типу через інтерфейс
+- `default!` — повернення default значення типу в generic методі
+- `InvalidOperationException` — кидається при `Dequeue`/`Peek` на порожній черзі
+
+**Нове в меню:** пункт 6 "Черга — очікування, прийом" → додати до черги, прийняти першого, хто перший, переглянути чергу
 
 ---
 

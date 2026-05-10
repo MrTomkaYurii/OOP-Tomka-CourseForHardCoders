@@ -100,7 +100,7 @@ Lab03 Task2: Add Patient class with constructor and properties
 | 06 | `feature/inheritance` | ✅ | ✅ | MedicalRecords | **Нове меню:** 4.Медична картка (діагнози, аналізи, рецепти) |
 | 07 | `feature/interfaces` | ✅ | ✅ | Billing | **Нове меню:** 5.Рахунки (IPayable → вартість, борг, оплата) |
 | 08 | `feature/polymorphism` | ✅ | ✅ | Appointments+ | Внутрішнє покращення (типи прийомів) |
-| 09 | `feature/generics` | ✅ | 📋 | Waiting | **Нове меню:** 6.Черга очікування |
+| 09 | `feature/generics` | ✅ | ✅ | Waiting | **Нове меню:** 6.Черга очікування |
 | 10 | `feature/iterators` | ✅ | 📋 | всі | Меню: сортування списків (foreach, comparators) |
 | 11 | `feature/reflection` | ⏳ | 📋 | Validation | Внутрішнє: авто-валідатор через рефлексію |
 | 12 | `feature/events` | ✅ | 📋 | Notifications | **Нове меню:** сповіщення при записі/скасуванні |
@@ -197,15 +197,15 @@ Lab03 Task2: Add Patient class with constructor and properties
 - Task3 (проблема): "VIP клієнти мають різні правила для кожного типу прийому. Тобто VIPPatient + UrgentAppointment = 50% знижка. Як передати «правило» у розрахунок без if?" → Студент відкриває Strategy pattern.
 - Task4: "Що станеться якщо додати новий тип прийому? Скільки місць треба змінити?" → Студент аналізує і знаходить Open/Closed проблему.
 
-### Lab 09 — feature/generics (Generics)
-**Джерело:** Old Lab 09 (Generics)
-**Гілка:** `feature/generics` → ✅ зливається
-**Що з'являється:** Меню: черга очікування в клініці
+### Lab 09 — feature/generics (Generics) ✅
+**Гілка:** `feature/generics` → ✅ злито
+**Що з'явилось:** Нове меню 6. Черга — очікування, прийом
+**Нові файли:** `Models/WaitingQueue.cs`, `Interfaces/IIdentifiable.cs`, `Managers/Repository.cs`
 **Завдання клініки:**
-- Task1: Generic клас Repository<T> where T : MedicalEntity. Методи Add, GetById, GetAll, Remove.
-- Task2: Generic клас WaitingQueue<T> (обгортка над Queue<T>). Enqueue, Dequeue, Peek, Count.
-- Task3 (проблема): "Потрібна черга, де пріоритет залежить від терміновості. Urgent пацієнти мають йти першими. Як зробити без дублювання WaitingQueue?" → Generic з IComparer або Constraint: where T : IComparable<T>.
-- Task4: "Repository<T> не може фільтрувати. GetAll() повертає все. Як додати Find(Predicate<T>)?" → Студент відкриває делегати/функції.
+- Task1: Замінити `Patient[]` + `_count` у `PatientManager` на `List<Patient>`. Зовнішній API не змінюється.
+- Task2: Generic клас `WaitingQueue<T>` — обгортка над `Queue<T>`. `Enqueue`, `Dequeue`, `Peek`, `Count`, `IsEmpty`, `ToArray`.
+- Task3: Підключити `WaitingQueue<Patient>` до `Clinic`. Нове меню "6. Черга" — додати до черги, прийняти першого, хто перший, переглянути чергу.
+- Task4 (бонус): `IIdentifiable` + `Repository<T> where T : IIdentifiable`. Методи `Add`, `GetById`, `GetAll`, `Remove`. Демонструє constraint.
 
 ### Lab 10 — feature/iterators (Iterators & Comparators)
 **Джерело:** Old Lab 10 (Iterators & Comparators)
@@ -387,8 +387,8 @@ git checkout main && git merge feature/[назва] && git push
 
 ## Поточний стан
 
-**Завершено:** Lab 00–08 ✅
-**Наступний крок:** Lab 09 — `feature/generics` — Generics
+**Завершено:** Lab 00–09 ✅
+**Наступний крок:** Lab 10 — `feature/iterators` — Iterators & Comparators
 
 **Порядок роботи:**
 1. Реалізувати еталонний код на C# (домен: Клініка) на новій гілці
@@ -396,13 +396,15 @@ git checkout main && git merge feature/[назва] && git push
 3. Оновити `Concept/CODEBASE_STATE.md`, `Concept/CONCEPTS_BY_LAB.md`, `Concept/MENU_BY_LAB.md`
 4. Злити в `main`, запушити
 
-**Головне меню після Lab 07:**
+**Головне меню після Lab 09:**
 ```
 1. Пацієнти       — реєстрація, пошук
 2. Лікарі         — персонал, розклад
 3. Записи         — прийоми, скасування
 4. Медична картка — діагнози, рецепти
 5. Рахунки        — оплата, борги
-6. Звіт           — загальна статистика
+6. Черга          — очікування, прийом
+7. Звіт           — загальна статистика
 ```
 > Lab 08 меню не змінює (внутрішні зміни: підкласи Appointment).
+> Lab 09: доданий пункт 6. Черга; старий пункт 6. Звіт переміщено на 7.
