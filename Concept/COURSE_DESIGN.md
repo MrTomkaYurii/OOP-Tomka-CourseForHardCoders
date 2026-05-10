@@ -30,39 +30,34 @@
 project-root/
 ├── sandbox/
 │   ├── intro/              ← Lab 01: базовий C#, без домену
-│   │   ├── Task1.cs        (консоль, змінні, типи)
-│   │   ├── Task2.cs        (умови, switch)
-│   │   ├── Task3.cs        (цикли, математика)
-│   │   └── Task4.cs        (методи, рефакторинг)
 │   └── arrays/             ← Lab 02: масиви
-│       ├── Task1.cs        (базові операції)
-│       ├── Task2.cs        (пошук, сортування)
-│       ├── Task3.cs        (складні алгоритми)
-│       └── Task4.cs        (2D масиви або матриці)
-├── src/
-│   ├── Core/               ← з'являється на Lab 04
-│   │   ├── Entities/       (BaseEntity, BaseAudit)
-│   │   ├── Interfaces/     (IRepository, ISchedulable, IPayable)
-│   │   └── Events/         (EventBus — Lab 12)
-│   ├── Modules/
-│   │   ├── Patients/       ← Lab 03
-│   │   ├── Doctors/        ← Lab 06
-│   │   ├── Appointments/   ← Lab 07-08
-│   │   ├── Waiting/        ← Lab 09 (Generic queue)
-│   │   ├── Validation/     ← Lab 11 (Reflection)
-│   │   ├── Notifications/  ← Lab 12 (Events)
-│   │   ├── Reports/        ← Lab 13-14 (LINQ + Functional)
-│   │   ├── Storage/        ← Lab 15-16 (Files + JSON)
-│   │   └── Database/       ← Lab 17-20 (EF Core)
-│   └── ConsoleApp/
-│       └── Program.cs      ← єдина точка входу, росте весь курс
+├── src/                    ← головний проект, росте весь курс
+│   ├── ClinicApp.csproj
+│   ├── Clinic.cs           ← оркестратор (з'явився Lab 03)
+│   ├── Program.cs          ← єдина точка входу, росте весь курс
+│   ├── Enums/              ← Lab 04: BloodType, Speciality, AppointmentStatus
+│   ├── Models/             ← Lab 03+: Patient, Doctor, Appointment, WorkSchedule
+│   │                          Lab 06+: MedicalRecord, Diagnosis, LabResult, Prescription
+│   ├── Managers/           ← Lab 03+: PatientManager, DoctorManager, AppointmentManager
+│   │                          Lab 05: GrowablePatientManager
+│   │                          Lab 06+: MedicalRecordManager
+│   │                          Lab 07+: BillingManager (IPayable)
+│   ├── Interfaces/         ← Lab 07+: IPayable, ISchedulable, ICancellable
+│   ├── Utils/              ← Lab 04: ClinicFormatter; Lab 05: ClinicValidator
+│   └── (майбутнє)
+│       ├── Events/         ← Lab 12: EventBus
+│       ├── Reports/        ← Lab 13–14: LINQ + Functional
+│       └── Storage/        ← Lab 15–16: Files + JSON
 ├── labs/
 │   ├── lab-00-choose-domain/
 │   ├── lab-01-intro/
 │   ├── lab-02-arrays/
 │   └── ... (кожна лаба = папка з instructions.md)
-└── docs/
-    └── COURSE_DESIGN.md    ← цей файл
+└── Concept/
+    ├── COURSE_DESIGN.md    ← цей файл
+    ├── CODEBASE_STATE.md   ← стан src/ після кожної лаби
+    ├── CONCEPTS_BY_LAB.md  ← які C# конструкції вводяться коли
+    └── MENU_BY_LAB.md      ← що є в меню після кожної лаби
 ```
 
 ---
@@ -94,30 +89,30 @@ Lab03 Task2: Add Patient class with constructor and properties
 
 ## Таблиця лаб
 
-| # | Гілка | Merge | Модуль | Що з'являється в консолі |
-|---|-------|-------|--------|--------------------------|
-| 00 | — | — | — | Вибір домену, setup |
-| 01 | `sandbox/intro` | ❌ | — | Синтаксис C#, без проекту |
-| 02 | `sandbox/arrays` | ❌ | — | Масиви доменних даних |
-| 03 | `feature/catalog` | ✅ | Patients | Menu: список, додати, знайти |
-| 04 | `feature/abstraction` | ✅ | Core | Нові типи в меню (лікарі за спеціальністю) |
-| 05 | `feature/encapsulation` | ⏳ | Patients+ | Внутрішня валідація |
-| 06 | `feature/inheritance` | ✅ | Doctors | Меню: реєстрація з типом (загальний/спеціаліст) |
-| 07 | `feature/interfaces` | ✅ | Appointments | Меню: записатись, скасувати, переглянути |
-| 08 | `feature/polymorphism` | ⏳ | Appointments+ | Внутрішнє покращення |
-| 09 | `feature/generics` | ✅ | Waiting | Меню: черга очікування |
-| 10 | `feature/iterators` | ✅ | всі | Меню: сортування списків (foreach, comparators) |
-| 11 | `feature/reflection` | ⏳ | Validation | Авто-валідатор через рефлексію |
-| 12 | `feature/events` | ✅ | Notifications | Меню: сповіщення про прийом |
-| 13 | `feature/linq` | ✅ | Reports | Меню: звіти (топ лікарі, активні пацієнти) |
-| 14 | `feature/functional` | ⏳ | Reports+ | Внутрішнє покращення (чисті функції) |
-| 15 | `feature/storage` | ✅ | Storage | Меню: зберегти/завантажити стан |
-| 16 | `feature/console-ui` | ✅ | ConsoleApp | Структуроване меню, розділи, навігація |
-| 17 | `feature/ef-basic` | ✅ | Database | БД замінила in-memory дані |
-| 18 | `feature/ef-relations` | ✅ | Database+ | Зв'язані запити в меню |
-| 19 | `feature/ef-advanced` | ✅ | Database+ | Складні зв'язки many-to-many |
-| 20 | `feature/ef-querying` | ✅ | Database+ | Фільтрація, пагінація через IQueryable |
-| 21 | `refactor/solid` | ✅ | всі | Зовні нічого, внутрішньо — SOLID рефакторинг |
+| # | Гілка | Merge | Статус | Модуль | Що з'являється в консолі |
+|---|-------|-------|--------|--------|--------------------------|
+| 00 | — | — | ✅ | — | Вибір домену, setup |
+| 01 | `sandbox/intro` | ❌ | ✅ | — | Синтаксис C#, sandbox (8 завдань) |
+| 02 | `sandbox/arrays` | ❌ | ✅ | — | Масиви доменних даних, sandbox (8 завдань) |
+| 03 | `feature/catalog` | ✅ | ✅ | Patients + Doctors + Appointments | Меню: 1.Пацієнти 2.Лікарі 3.Записи 4.Звіт |
+| 04 | `feature/class-members` | ✅ | ✅ | Core types | Enum BloodType/Speciality у меню, статистика, розклад |
+| 05 | `feature/encapsulation` | ✅ | ✅ | Patients+ | Внутрішня валідація + try/catch у меню |
+| 06 | `feature/inheritance` | ✅ | ✅ | MedicalRecords | **Нове меню:** 4.Медична картка (діагнози, аналізи, рецепти) |
+| 07 | `feature/interfaces` | ✅ | 📋 | Billing | **Нове меню:** 5.Рахунки (IPayable → вартість, борг, оплата) |
+| 08 | `feature/polymorphism` | ⏳ | 📋 | Appointments+ | Внутрішнє покращення (типи прийомів) |
+| 09 | `feature/generics` | ✅ | 📋 | Waiting | **Нове меню:** 6.Черга очікування |
+| 10 | `feature/iterators` | ✅ | 📋 | всі | Меню: сортування списків (foreach, comparators) |
+| 11 | `feature/reflection` | ⏳ | 📋 | Validation | Внутрішнє: авто-валідатор через рефлексію |
+| 12 | `feature/events` | ✅ | 📋 | Notifications | **Нове меню:** сповіщення при записі/скасуванні |
+| 13 | `feature/linq` | ✅ | 📋 | Reports | **Нове меню:** Звіти (топ лікарі, активні пацієнти) |
+| 14 | `feature/functional` | ⏳ | 📋 | Reports+ | Внутрішнє покращення (чисті функції, делегати) |
+| 15 | `feature/storage` | ✅ | 📋 | Storage | **Нове меню:** зберегти/завантажити стан |
+| 16 | `feature/console-ui` | ✅ | 📋 | ConsoleApp | Структуроване меню, кольори, пагінація |
+| 17 | `feature/ef-basic` | ✅ | 📋 | Database | БД замінила in-memory дані |
+| 18 | `feature/ef-relations` | ✅ | 📋 | Database+ | Зв'язані запити в меню |
+| 19 | `feature/ef-advanced` | ✅ | 📋 | Database+ | Складні зв'язки many-to-many |
+| 20 | `feature/ef-querying` | ✅ | 📋 | Database+ | Фільтрація, пагінація через IQueryable |
+| 21 | `refactor/solid` | ✅ | 📋 | всі | Зовні нічого, внутрішньо — SOLID рефакторинг |
 
 ---
 
@@ -143,54 +138,55 @@ Lab03 Task2: Add Patient class with constructor and properties
 - Task3: Решето Ератосфена → аналог: знайти лікарів без записів (алгоритм маркування).
 - Task4: 2D масив розкладу. Рядки = лікарі, стовпці = часові слоти. Знайти вільний слот.
 
-### Lab 03 — feature/catalog (Defining Classes)
-**Джерело:** Old Lab 03 (Defining Classes)
-**Гілка:** `feature/catalog` → ✅ зливається
-**Що з'являється:** Меню з 4 пунктами: показати всіх пацієнтів, додати, знайти за ім'ям, вийти
+### Lab 03 — feature/catalog (Defining Classes) ✅
+**Гілка:** `feature/catalog` → ✅ злито
+**Що з'явилось:** Головне меню: 1.Пацієнти 2.Лікарі 3.Записи на прийом 4.Звіт
+**Нові файли:** `Patient.cs`, `Doctor.cs`, `Appointment.cs`, `PatientManager.cs`, `DoctorManager.cs`, `AppointmentManager.cs`, `Clinic.cs`, `Program.cs`
 **Завдання клініки:**
-- Task1: Клас Patient (Id, Name, Age, BloodType string, Phone). Конструктори. ToString(). Список пацієнтів в пам'яті.
-- Task2: Клас Doctor (Id, Name, Speciality, Phone, WorkingHours). Список лікарів. Знайти лікаря за спеціальністю.
-- Task3 (проблема): "Клініка хоче зберігати не тільки пацієнтів, але і записи на прийом. Як зв'язати пацієнта з лікарем і датою так, щоб можна було переглянути всі записи лікаря або всі записи пацієнта?" → Клас Appointment (PatientId, DoctorId, DateTime, Status).
-- Task4 (відкрите): "Список пацієнтів росте. Як знайти пацієнта швидко? Що якщо є 1000 пацієнтів?" → Студент досліджує Dictionary vs List.
+- Task1: Клас `Patient` (Id, FirstName, LastName, DateOfBirth, BloodType string, Phone). Конструктори. ToString(). Масив `Patient[100]` з лічильником.
+- Task2: Клас `Doctor` (Id, Name, Speciality string, LicenseNumber, Phone). `DoctorManager` з пошуком за спеціальністю.
+- Task3: Клас `Appointment` (PatientId, DoctorId, ScheduledAt, Status string, Notes). `AppointmentManager`: Book, Cancel, Complete, GetByPatient, GetByDoctor.
+- Task4: `Clinic` як оркестратор. `GenerateReport()`. Консольне меню з підменю для кожного розділу.
 
-### Lab 04 — feature/abstraction (Abstraction)
-**Джерело:** Old Lab 04 (Abstraction)
-**Гілка:** `feature/abstraction` → ✅ зливається
-**Що з'являється:** В меню нові типи лікарів, можна фільтрувати за спеціальністю
+### Lab 04 — feature/class-members (Class Members) ✅
+**Гілка:** `feature/class-members` → ✅ злито
+**Що з'явилось:** BloodType у меню додавання пацієнта; фільтр за Speciality; статистика; розклад лікаря
+**Нові файли:** `Enums/BloodType.cs`, `Enums/Speciality.cs`, `Enums/AppointmentStatus.cs`, `Models/WorkSchedule.cs`, `Utils/ClinicFormatter.cs`
 **Завдання клініки:**
-- Task1: Enum Speciality (General, Cardiology, Neurology, Pediatrics). Enum BloodType (A, B, AB, O). Клас PriceCalculator з enum VisitType (Regular, Urgent, Specialist) та DiscountType.
-- Task2: Abstract клас MedicalEntity (Id, Name, CreatedAt). Patient і Doctor успадковують від нього.
-- Task3 (проблема): "Клініка хоче приймати різні типи пацієнтів: застраховані і незастраховані. Розрахунок вартості відрізняється. Як зробити так, щоб система рахувала вартість автоматично без if?" → Abstract метод CalculateCost().
-- Task4: "Що якщо в клініці є не тільки прийоми, але і процедури, операції? Як структурувати це без дублювання?" → Студент відкриває ієрархію класів.
+- Task1: `enum BloodType` (9 значень), `enum Speciality` (8 значень), `enum AppointmentStatus`. Замінити рядки в `Patient`, `Doctor`, `Appointment`.
+- Task2: `struct WorkSchedule` (Start, End, IsNow, Contains()). Додати до `Doctor`. `static class ClinicFormatter` — FormatBloodType, FormatSpeciality, FormatAge.
+- Task3: Індексатор `this[int]` в Manager-класах. Перевантаження методів: `FindBySpeciality(string)` і `FindBySpeciality(Speciality)`.
+- Task4: `out` параметр і `TryFindById(int, out T)` патерн у PatientManager і DoctorManager.
 
-### Lab 05 — feature/encapsulation (Encapsulation)
-**Джерело:** Old Lab 05 (Encapsulation)
-**Гілка:** `feature/encapsulation` → ⏳ зливається з Lab 06
+### Lab 05 — feature/encapsulation (Encapsulation) ✅
+**Гілка:** `feature/encapsulation` → ✅ злито
+**Що з'явилось:** Зовні нічого — внутрішньо валідація; меню показує повідомлення про помилку замість краша
+**Нові файли:** `Utils/ClinicValidator.cs`, `GrowablePatientManager.cs`; реорганізація в sub-namespaces
 **Завдання клініки:**
-- Task1: Зробити всі поля Patient приватними. Додати валідацію в сеттери: Name не пустий, Age в [0..150], Phone формат. Exceptions з повідомленнями.
-- Task2: Валідація Doctor. Speciality тільки з enum. WorkingHours в [6..12].
-- Task3 (проблема): "Призначення (Appointment) має статус. Хтось може змінити статус на будь-який. Як захистити так, щоб переходи були лише дозволені: Scheduled→Completed або Scheduled→Cancelled?" → State machine через приватний сеттер + метод.
-- Task4: "Як гарантувати що у кожного Patient є унікальний Id, і ніхто не може його змінити зовні?" → readonly, фабричний метод.
+- Task1: `private` backing fields в `Patient` (`_firstName`, `_lastName`, `_dateOfBirth`, `_phone`). Явні сеттери з `ClinicValidator.ValidateName/Phone/Date`. `throw new ArgumentException`.
+- Task2: Аналогічно для `Doctor` і `WorkSchedule`. `throw new ArgumentOutOfRangeException` для числових меж.
+- Task3: `Appointment.DurationMinutes` — приватне поле + `ValidatePositive`. State machine для `Status`: `Cancel()` і `Complete()` методи замість прямого присвоєння.
+- Task4: `try/catch` у меню (порядок: спочатку `ArgumentOutOfRangeException`, потім `ArgumentException`). `GrowablePatientManager` — зростаючий масив через `Array.Resize`.
 
-### Lab 06 — feature/inheritance (Inheritance)
-**Джерело:** Old Lab 06 (Inheritance)
-**Гілка:** `feature/inheritance` → ✅ зливається
-**Що з'являється:** Меню: реєстрація пацієнта з типом (загальний/VIP), реєстрація лікаря з спеціальністю
+### Lab 06 — feature/inheritance (Inheritance) ✅
+**Гілка:** `feature/inheritance` → ✅ злито
+**Що з'явилось:** **Нове меню:** 4.Медична картка (зведення пацієнта, всі записи, додати діагноз/аналіз/рецепт, записи лікаря)
+**Нові файли:** `Models/MedicalRecord.cs` (abstract), `Models/Diagnosis.cs`, `Models/LabResult.cs`, `Models/Prescription.cs`, `Managers/MedicalRecordManager.cs`
 **Завдання клініки:**
-- Task1: InsuredPatient : Patient, PrivatePatient : Patient. Різна логіка CalculateCost(). Override ToString().
-- Task2: GeneralPractitioner : Doctor, Specialist : Doctor (з полем Speciality). Specialist може бути тільки Cardiology/Neurology/etc.
-- Task3 (проблема): "Клініка додала VIP-відділення. VIP пацієнт має всі права звичайного + пріоритетну чергу + знижку. Як зробити без копіювання коду InsuredPatient?" → Ланцюжок успадкування або композиція.
-- Task4: "Студент бачить дублювання ToString() у всіх підкласах. Як уникнути?" → Студент відкриває шаблонний метод (Template Method pattern).
+- Task1: `abstract class MedicalRecord` (Id, PatientId, DoctorId, Date, Notes). `abstract GetSummary()`, `virtual GetRecordType()`, `virtual IsActive()`. Перший підклас `Diagnosis` (DiagnosisCode, Description, IsChronic). Валідація через `ClinicValidator`.
+- Task2: `LabResult` (TestName, Value, Unit, ReferenceRange, IsNormal) і `Prescription` (MedicationName, Dosage, DurationDays, ExpiresAt). `Prescription` перевизначає `IsActive()`. `MedicalRecordManager` з `MedicalRecord[1000]`.
+- Task3: Фільтрація через `is`/`as`/pattern variable: `GetDiagnoses()`, `GetLabResults()`, `GetPrescriptions()`, `GetChronicDiagnoses()`, `GetActivePrescriptions()`.
+- Task4: Інтеграція в `Clinic.cs`. `MedicalRecordsMenu` в `Program.cs` з `try/catch`. `DisplayPatientSummary` — зведення по типах.
 
-### Lab 07 — feature/interfaces (Interfaces & Abstraction)
-**Джерело:** Old Lab 07 (Interfaces)
+### Lab 07 — feature/interfaces (Interfaces) 📋
 **Гілка:** `feature/interfaces` → ✅ зливається
-**Що з'являється:** Меню: записатись на прийом, скасувати, переглянути мої записи
+**Що з'явиться:** **Нове меню:** 5.Рахунки — перегляд боргів, оплата прийому, підсумок по пацієнту
+**Нові файли:** `Interfaces/IPayable.cs`, `Interfaces/ICancellable.cs`, `Interfaces/ISchedulable.cs`, `Managers/BillingManager.cs`
 **Завдання клініки:**
-- Task1: ISchedulable (CanSchedule(), GetAvailableSlots()). IPayable (CalculateCost(), Pay()). Реалізувати в Appointment.
-- Task2: ICancellable (Cancel(), CancellationReason). INotifiable (Notify(string message)). Реалізувати.
-- Task3 (проблема): "Деякі операції потрібні скрізь: і для пацієнтів, і для лікарів, і для прийомів. Як уникнути дублювання коду для загальних операцій (наприклад, пошук за Id)?" → Студент відкриває generic interface IRepository<T>.
-- Task4: "Що якщо завтра додається нова сутність — медична карта? Чи треба змінювати IRepository?" → Студент перевіряє open/closed principle.
+- Task1: `interface IPayable` (decimal GetCost(), bool IsPaid, void MarkPaid()). Реалізувати в `Appointment`. `BillingManager` — збирає всі `IPayable`, рахує борг пацієнта.
+- Task2: `interface ICancellable` (void Cancel(string reason), bool IsCancelled, string CancellationReason). Реалізувати в `Appointment`. Метод що приймає `ICancellable[]` — скасувати всі прострочені.
+- Task3: `interface ISchedulable` (bool CanSchedule(DateTime), DateTime[] GetAvailableSlots()). Реалізувати в `Doctor`. `BillingManager.GetUnpaidByPatient(int)` — повертає `IPayable[]`.
+- Task4: Меню "Рахунки": показати борги пацієнта, оплатити запис (за Id), загальна сума боргів по клініці. `try/catch`.
 
 ### Lab 08 — feature/polymorphism (Polymorphism)
 **Джерело:** Old Lab 08 (Polymorphism)
@@ -391,10 +387,20 @@ git checkout main && git merge feature/[назва] && git push
 
 ## Поточний стан
 
-**Написано:** тільки цей файл дизайну.
-**Наступний крок:** Lab 00 (вибір домену) → Lab 01 (sandbox/intro).
-**Порядок роботи Claude Code:**
-1. Написати еталонний код на C# (домен: Клініка)
-2. Написати instructions.md в абстрактному вигляді
-3. Перевірити Task 3-4 на складність
-4. Зберегти файли в `labs/lab-NN-назва/`
+**Завершено:** Lab 00–06 ✅
+**Наступний крок:** Lab 07 — `feature/interfaces` — Billing / Рахунки
+
+**Порядок роботи:**
+1. Реалізувати еталонний код на C# (домен: Клініка) на новій гілці
+2. Написати `labs/lab-NN-назва/instructions.md` в абстрактному вигляді
+3. Оновити `Concept/CODEBASE_STATE.md`, `Concept/CONCEPTS_BY_LAB.md`, `Concept/MENU_BY_LAB.md`
+4. Злити в `main`, запушити
+
+**Головне меню після Lab 06:**
+```
+1. Пацієнти       — список, додати, знайти, видалити, статистика
+2. Лікарі         — список, додати, знайти за спеціальністю, статистика
+3. Записи         — записати, скасувати, виконати, записи пацієнта/лікаря, розклад, майбутні
+4. Медична картка — зведення, всі записи, додати діагноз/аналіз/рецепт, записи лікаря
+5. Звіт           — загальна статистика
+```
