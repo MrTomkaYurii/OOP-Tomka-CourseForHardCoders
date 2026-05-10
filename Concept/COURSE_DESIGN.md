@@ -101,7 +101,7 @@ Lab03 Task2: Add Patient class with constructor and properties
 | 07 | `feature/interfaces` | ✅ | ✅ | Billing | **Нове меню:** 5.Рахунки (IPayable → вартість, борг, оплата) |
 | 08 | `feature/polymorphism` | ✅ | ✅ | Appointments+ | Внутрішнє покращення (типи прийомів) |
 | 09 | `feature/generics` | ✅ | ✅ | Waiting | **Нове меню:** 6.Черга очікування |
-| 10 | `feature/iterators` | ✅ | 📋 | всі | Меню: сортування списків (foreach, comparators) |
+| 10 | `feature/iterators` | ✅ | ✅ | Analytics | **Нове меню:** 8.Аналітика (рейтинги лікарів і пацієнтів) |
 | 11 | `feature/reflection` | ⏳ | 📋 | Validation | Внутрішнє: авто-валідатор через рефлексію |
 | 12 | `feature/events` | ✅ | 📋 | Notifications | **Нове меню:** сповіщення при записі/скасуванні |
 | 13 | `feature/linq` | ✅ | 📋 | Reports | **Нове меню:** Звіти (топ лікарі, активні пацієнти) |
@@ -207,15 +207,16 @@ Lab03 Task2: Add Patient class with constructor and properties
 - Task3: Підключити `WaitingQueue<Patient>` до `Clinic`. Нове меню "6. Черга" — додати до черги, прийняти першого, хто перший, переглянути чергу.
 - Task4 (бонус): `IIdentifiable` + `Repository<T> where T : IIdentifiable`. Методи `Add`, `GetById`, `GetAll`, `Remove`. Демонструє constraint.
 
-### Lab 10 — feature/iterators (Iterators & Comparators)
-**Джерело:** Old Lab 10 (Iterators & Comparators)
-**Гілка:** `feature/iterators` → ✅ зливається
-**Що з'являється:** Меню: сортування списку пацієнтів, лікарів, прийомів за різними критеріями
+### Lab 10 — feature/iterators (Iterators & Comparators) ✅
+**Гілка:** `feature/iterators` → ✅ злито
+**Що з'явилось:** Нове меню 8. Аналітика — рейтинги лікарів і пацієнтів за різними критеріями
+**Нові файли:** `Models/DoctorStats.cs`, `Models/PatientStats.cs`, `Comparators/` (4 класи), `Managers/AnalyticsManager.cs`
 **Завдання клініки:**
-- Task1: IEnumerable<T> на PatientCollection. Реалізувати GetEnumerator() з yield return. Foreach по колекції.
-- Task2: IComparable<Patient> (за ім'ям). IComparable<Appointment> (за датою).
-- Task3: IComparer — PatientByAgeComparer, DoctorByRatingComparer. SortedSet<Doctor>.
-- Task4 (проблема): "Список прийомів повинен автоматично залишатися відсортованим при додаванні нового. Але SortedSet не дозволяє дублікати. Як вирішити?" → Студент досліджує і знаходить SortedList або власну структуру.
+- Task1: Клас `DoctorStats` з `IComparable<DoctorStats>` — природній порядок за кількістю прийомів (спадний).
+- Task2: Клас `PatientStats` з `IComparable<PatientStats>` — природній порядок за кількістю візитів.
+- Task3: Компаратори `IComparer<T>` — `DoctorStatsByRevenue`, `DoctorStatsByName`, `PatientStatsBySpent`, `PatientStatsByLastVisit`.
+- Task4: `AnalyticsManager` з `yield return` — `IEnumerable<DoctorStats>` і `IEnumerable<PatientStats>`, ліниве обчислення по одному об'єкту.
+- Task5: Меню "8. Аналітика" — 5 варіантів рейтингів, `foreach` по IEnumerable для збору в List, `.Sort()` / `.Sort(comparer)`.
 
 ### Lab 11 — feature/reflection (Reflection & Attributes)
 **Джерело:** Old Lab 11 (Reflection & Attributes)
@@ -387,8 +388,8 @@ git checkout main && git merge feature/[назва] && git push
 
 ## Поточний стан
 
-**Завершено:** Lab 00–09 ✅
-**Наступний крок:** Lab 10 — `feature/iterators` — Iterators & Comparators
+**Завершено:** Lab 00–10 ✅
+**Наступний крок:** Lab 11 — `feature/reflection` — Reflection & Attributes
 
 **Порядок роботи:**
 1. Реалізувати еталонний код на C# (домен: Клініка) на новій гілці
@@ -396,7 +397,7 @@ git checkout main && git merge feature/[назва] && git push
 3. Оновити `Concept/CODEBASE_STATE.md`, `Concept/CONCEPTS_BY_LAB.md`, `Concept/MENU_BY_LAB.md`
 4. Злити в `main`, запушити
 
-**Головне меню після Lab 09:**
+**Головне меню після Lab 10:**
 ```
 1. Пацієнти       — реєстрація, пошук
 2. Лікарі         — персонал, розклад
@@ -405,6 +406,8 @@ git checkout main && git merge feature/[назва] && git push
 5. Рахунки        — оплата, борги
 6. Черга          — очікування, прийом
 7. Звіт           — загальна статистика
+8. Аналітика      — статистика, рейтинги
 ```
 > Lab 08 меню не змінює (внутрішні зміни: підкласи Appointment).
 > Lab 09: доданий пункт 6. Черга; старий пункт 6. Звіт переміщено на 7.
+> Lab 10: доданий пункт 8. Аналітика.

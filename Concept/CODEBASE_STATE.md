@@ -331,12 +331,35 @@ src/
 
 ## Lab 10 — Iterators & Comparators (feature/iterators)
 
-**Статус:** 📋 ЗАПЛАНОВАНО
+**Статус:** ✅ ЗАВЕРШЕНО
 **Гілка:** `feature/iterators` — ✅ зливається
-**Що з'явиться:**
-- `IEnumerable<T>` на колекціях
-- Сортування пацієнтів, лікарів, записів за різними критеріями
-- В меню: вибір критерію сортування
+**Файли:**
+```
+src/
+├── Models/
+│   ├── DoctorStats.cs           ← NEW: IComparable<DoctorStats> (за AppointmentCount desc)
+│   └── PatientStats.cs          ← NEW: IComparable<PatientStats> (за VisitCount desc)
+├── Comparators/
+│   ├── DoctorStatsByRevenue.cs  ← NEW: IComparer<DoctorStats> (за TotalRevenue desc)
+│   ├── DoctorStatsByName.cs     ← NEW: IComparer<DoctorStats> (за FullName asc)
+│   ├── PatientStatsBySpent.cs   ← NEW: IComparer<PatientStats> (за TotalSpent desc)
+│   └── PatientStatsByLastVisit.cs← NEW: IComparer<PatientStats> (за LastVisitDate desc)
+└── Managers/
+    └── AnalyticsManager.cs      ← NEW: IEnumerable<DoctorStats/PatientStats> з yield return
+```
+
+**Зміни в існуючих файлах:**
+- `Clinic.cs` — `public AnalyticsManager Analytics { get; }` + ініціалізація
+- `Program.cs` — "8. Аналітика", `AnalyticsMenu()`, `CollectDoctorStats()`, `CollectPatientStats()`
+
+**Нові концепції в Lab 10:**
+- `IComparable<T>` — природній порядок, реалізується в самому класі; `Array.Sort()` / `List.Sort()`
+- `IComparer<T>` — зовнішній компаратор, окремий клас для одного критерію; `List.Sort(comparer)`
+- `IEnumerable<T>` як тип повернення методу
+- `yield return` — ліниве обчислення: state machine, обчислення по запиту
+- `foreach` по `IEnumerable<T>` для споживання ітератора
+
+**Нове в меню:** пункт 8 "Аналітика" → 5 варіантів рейтингів (лікарі та пацієнти за різними критеріями)
 
 ---
 
