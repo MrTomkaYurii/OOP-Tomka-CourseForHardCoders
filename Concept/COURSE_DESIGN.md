@@ -98,7 +98,7 @@ Lab03 Task2: Add Patient class with constructor and properties
 | 04 | `feature/class-members` | ✅ | ✅ | Core types | Enum BloodType/Speciality у меню, статистика, розклад |
 | 05 | `feature/encapsulation` | ✅ | ✅ | Patients+ | Внутрішня валідація + try/catch у меню |
 | 06 | `feature/inheritance` | ✅ | ✅ | MedicalRecords | **Нове меню:** 4.Медична картка (діагнози, аналізи, рецепти) |
-| 07 | `feature/interfaces` | ✅ | 📋 | Billing | **Нове меню:** 5.Рахунки (IPayable → вартість, борг, оплата) |
+| 07 | `feature/interfaces` | ✅ | ✅ | Billing | **Нове меню:** 5.Рахунки (IPayable → вартість, борг, оплата) |
 | 08 | `feature/polymorphism` | ⏳ | 📋 | Appointments+ | Внутрішнє покращення (типи прийомів) |
 | 09 | `feature/generics` | ✅ | 📋 | Waiting | **Нове меню:** 6.Черга очікування |
 | 10 | `feature/iterators` | ✅ | 📋 | всі | Меню: сортування списків (foreach, comparators) |
@@ -178,7 +178,7 @@ Lab03 Task2: Add Patient class with constructor and properties
 - Task3: Фільтрація через `is`/`as`/pattern variable: `GetDiagnoses()`, `GetLabResults()`, `GetPrescriptions()`, `GetChronicDiagnoses()`, `GetActivePrescriptions()`.
 - Task4: Інтеграція в `Clinic.cs`. `MedicalRecordsMenu` в `Program.cs` з `try/catch`. `DisplayPatientSummary` — зведення по типах.
 
-### Lab 07 — feature/interfaces (Interfaces) 📋
+### Lab 07 — feature/interfaces (Interfaces) ✅
 **Гілка:** `feature/interfaces` → ✅ зливається
 **Що з'явиться:** **Нове меню:** 5.Рахунки — перегляд боргів, оплата прийому, підсумок по пацієнту
 **Нові файли:** `Interfaces/IPayable.cs`, `Interfaces/ICancellable.cs`, `Interfaces/ISchedulable.cs`, `Managers/BillingManager.cs`
@@ -387,8 +387,8 @@ git checkout main && git merge feature/[назва] && git push
 
 ## Поточний стан
 
-**Завершено:** Lab 00–06 ✅
-**Наступний крок:** Lab 07 — `feature/interfaces` — Billing / Рахунки
+**Завершено:** Lab 00–07 ✅
+**В розробці:** Lab 08 — `feature/polymorphism` — Polymorphism (⏳ чекає Lab 09)
 
 **Порядок роботи:**
 1. Реалізувати еталонний код на C# (домен: Клініка) на новій гілці
@@ -396,11 +396,13 @@ git checkout main && git merge feature/[назва] && git push
 3. Оновити `Concept/CODEBASE_STATE.md`, `Concept/CONCEPTS_BY_LAB.md`, `Concept/MENU_BY_LAB.md`
 4. Злити в `main`, запушити
 
-**Головне меню після Lab 06:**
+**Головне меню після Lab 07:**
 ```
-1. Пацієнти       — список, додати, знайти, видалити, статистика
-2. Лікарі         — список, додати, знайти за спеціальністю, статистика
-3. Записи         — записати, скасувати, виконати, записи пацієнта/лікаря, розклад, майбутні
-4. Медична картка — зведення, всі записи, додати діагноз/аналіз/рецепт, записи лікаря
-5. Звіт           — загальна статистика
+1. Пацієнти       — реєстрація, пошук
+2. Лікарі         — персонал, розклад
+3. Записи         — прийоми, скасування
+4. Медична картка — діагнози, рецепти
+5. Рахунки        — оплата, борги
+6. Звіт           — загальна статистика
 ```
+> Lab 08 меню не змінює (внутрішні зміни: підкласи Appointment).
