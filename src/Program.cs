@@ -288,6 +288,7 @@ static void AppointmentsMenu(Clinic clinic)
         Console.WriteLine("  5. Записи лікаря");
         Console.WriteLine("  6. Розклад на дату");
         Console.WriteLine("  7. Майбутні записи");
+        Console.WriteLine("  8. За типом прийому");
         Console.WriteLine("  0. Назад");
         Console.Write("Оберіть: ");
 
@@ -379,6 +380,10 @@ static void AppointmentsMenu(Clinic clinic)
                 clinic.Appointments.DisplayList(clinic.Appointments.GetUpcoming());
                 break;
 
+            case "8":
+                AppointmentsByTypeMenu(clinic);
+                break;
+
             case "0":
                 inMenu = false;
                 break;
@@ -388,6 +393,34 @@ static void AppointmentsMenu(Clinic clinic)
                 break;
         }
         Console.WriteLine();
+    }
+}
+
+static void AppointmentsByTypeMenu(Clinic clinic)
+{
+    Console.WriteLine("── За типом прийому ──────────");
+    Console.WriteLine("  1. Термінові");
+    Console.WriteLine("  2. Консультації спеціаліста");
+    Console.WriteLine("  3. Звичайні");
+    Console.Write("Оберіть: ");
+    string choice = Console.ReadLine() ?? "";
+    switch (choice)
+    {
+        case "1":
+            Console.WriteLine("Термінові записи:");
+            clinic.Appointments.DisplayList(clinic.Appointments.GetUrgent());
+            break;
+        case "2":
+            Console.WriteLine("Консультації спеціаліста:");
+            clinic.Appointments.DisplayList(clinic.Appointments.GetSpecialist());
+            break;
+        case "3":
+            Console.WriteLine("Звичайні записи:");
+            clinic.Appointments.DisplayList(clinic.Appointments.GetRegular());
+            break;
+        default:
+            Console.WriteLine("Невідома команда.");
+            break;
     }
 }
 
