@@ -64,7 +64,8 @@ while (running)
     Console.WriteLine("║  3. Записи         — прийоми, скасування    ║");
     Console.WriteLine("║  4. Медична картка — діагнози, рецепти      ║");
     Console.WriteLine("║  5. Рахунки        — оплата, борги          ║");
-    Console.WriteLine("║  6. Звіт           — загальна статистика    ║");
+    Console.WriteLine("║  6. Черга          — очікування, прийом     ║");
+    Console.WriteLine("║  7. Звіт           — загальна статистика    ║");
     Console.WriteLine("║  0. Вийти                                    ║");
     Console.WriteLine("╚══════════════════════════════════════════════╝");
     Console.Write("Оберіть розділ: ");
@@ -79,7 +80,8 @@ while (running)
         case "3": AppointmentsMenu(clinic); break;
         case "4": MedicalRecordsMenu(clinic); break;
         case "5": BillingMenu(clinic); break;
-        case "6": clinic.GenerateReport(); break;
+        case "6": WaitingRoomMenu(clinic); break;
+        case "7": clinic.GenerateReport(); break;
         case "0":
             running = false;
             Console.WriteLine("До побачення!");
@@ -592,6 +594,73 @@ static void BillingMenu(Clinic clinic)
 
             case "4":
                 Console.WriteLine("Загальний борг по клініці: " + clinic.Billing.GetTotalDebt().ToString("F2") + " грн");
+                break;
+
+            case "0":
+                inMenu = false;
+                break;
+
+            default:
+                Console.WriteLine("Невідома команда.");
+                break;
+        }
+        Console.WriteLine();
+    }
+}
+
+static void WaitingRoomMenu(Clinic clinic)
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        Console.WriteLine("── Черга очікування ──────────");
+        Console.WriteLine("  Зараз у черзі: " + clinic.WaitingRoom.Count);
+        Console.WriteLine("  1. Додати пацієнта до черги");
+        Console.WriteLine("  2. Прийняти першого (Dequeue)");
+        Console.WriteLine("  3. Хто перший? (Peek)");
+        Console.WriteLine("  4. Переглянути всю чергу");
+        Console.WriteLine("  0. Назад");
+        Console.Write("Оберіть: ");
+
+        string cmd = Console.ReadLine() ?? "";
+
+        switch (cmd)
+        {
+            case "1":
+                clinic.Patients.DisplayAll();
+                Console.Write("ID пацієнта: ");
+                int pid;
+                if (!int.TryParse(Console.ReadLine(), out pid)) break;
+                Patient p = clinic.Patients.FindById(pid);
+                if (p == null) { Console.WriteLine("Пацієнта не знайдено."); break; }
+                clinic.WaitingRoom.Enqueue(p);
+                Console.WriteLine(p.FullName + " додано до черги. У черзі: " + clinic.WaitingRoom.Count);
+                break;
+
+            case "2":
+                try
+                {
+                    Patient next = clinic.WaitingRoom.Dequeue();
+                    Console.WriteLine("Прийнято: " + next.FullName + ". Залишилось у черзі: " + clinic.WaitingRoom.Count);
+                }
+                catch (InvalidOperationException e) { Console.WriteLine("Помилка: " + e.Message); }
+                break;
+
+            case "3":
+                try
+                {
+                    Patient first = clinic.WaitingRoom.Peek();
+                    Console.WriteLine("Наступний: " + first.FullName);
+                }
+                catch (InvalidOperationException e) { Console.WriteLine("Помилка: " + e.Message); }
+                break;
+
+            case "4":
+                Patient[] queue = clinic.WaitingRoom.ToArray();
+                if (queue.Length == 0) { Console.WriteLine("Черга порожня."); break; }
+                Console.WriteLine("Черга очікування (" + queue.Length + "):");
+                for (int i = 0; i < queue.Length; i++)
+                    Console.WriteLine("  " + (i + 1) + ". " + queue[i].FullName);
                 break;
 
             case "0":
