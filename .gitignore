@@ -1,0 +1,29 @@
+# Build output
+bin/
+obj/
+
+# User-specific VS files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docview
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
