@@ -7,17 +7,19 @@
 
 ## Головне меню — еволюція
 
-| Пункт меню          | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 |
-|---------------------|:------:|:------:|:------:|:------:|:------:|:------:|
-| 1. Пацієнти         | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 2. Лікарі           | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 3. Записи           | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 4. Медична картка   | —      | —      | —      | ✅ NEW | ✅     | ✅     |
-| 5. Рахунки          | —      | —      | —      | —      | ✅ NEW | ✅     |
-| 6. Звіт             | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| Пункт меню                    | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 | Lab 09 |
+|-------------------------------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
+| 1. Пацієнти                   | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 2. Лікарі                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 3. Записи                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 4. Медична картка             | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     |
+| 5. Рахунки                    | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     |
+| 6. Черга — очікування, прийом | —      | —      | —      | —      | —      | —      | ✅ NEW |
+| 7. Звіт                       | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (7) |
 
 > Lab 07: головне меню отримало **описи через дефіс** (напр. "1. Пацієнти — реєстрація, пошук").  
-> Lab 08: меню **не змінюється** — внутрішні зміни (підкласи Appointment).
+> Lab 08: меню **не змінюється** — внутрішні зміни (підкласи Appointment).  
+> Lab 09: доданий пункт **6. Черга**; колишній "6. Звіт" переміщено на **7. Звіт**.
 
 ---
 
@@ -161,7 +163,29 @@
 
 ---
 
-## 6. Звіт
+## 6. Черга — очікування, прийом *(додано в Lab 09)*
+
+| Підпункт                  | Що робить                                                                    |
+|---------------------------|------------------------------------------------------------------------------|
+| 1. Додати пацієнта до черги | вибрати пацієнта за ID → `clinic.WaitingRoom.Enqueue(patient)`             |
+| 2. Прийняти першого        | `WaitingRoom.Dequeue()` — виводить ім'я та скільки залишилось; `try/catch`  |
+| 3. Хто перший?             | `WaitingRoom.Peek()` — показати без видалення; `try/catch`                  |
+| 4. Переглянути всю чергу   | `WaitingRoom.ToArray()` — нумерований список черги                          |
+
+**`WaitingQueue<T>`** — новий generic клас в Lab 09:
+
+| Член                  | Опис                                                                |
+|-----------------------|---------------------------------------------------------------------|
+| `int Count`           | кількість у черзі (тільки читання)                                  |
+| `bool IsEmpty`        | чи порожня черга                                                    |
+| `void Enqueue(T item)`| додати в кінець                                                     |
+| `T Dequeue()`         | взяти першого (видаляє); кидає `InvalidOperationException` якщо порожня |
+| `T Peek()`            | подивитись на першого (не видаляє); кидає `InvalidOperationException` якщо порожня |
+| `T[] ToArray()`       | поточний стан черги у масиві (FIFO порядок)                         |
+
+---
+
+## 7. Звіт
 
 | Підпункт   | Додано  | Що робить                                                             |
 |------------|---------|------------------------------------------------------------------------|
@@ -184,26 +208,28 @@
 
 ```
 src/
-├── Clinic.cs                    — оркестратор (Patients, Doctors, Appointments, MedicalRecords, Billing)
-├── Program.cs                   — меню (PatientsMenu / DoctorsMenu / AppointmentsMenu / MedicalRecordsMenu / BillingMenu)
+├── Clinic.cs                    — оркестратор (Patients, Doctors, Appointments, MedicalRecords, Billing, WaitingRoom)
+├── Program.cs                   — меню (PatientsMenu / DoctorsMenu / AppointmentsMenu / MedicalRecordsMenu / BillingMenu / WaitingRoomMenu)
 │
 ├── Enums/
 │   ├── BloodType.cs             — Lab 04
 │   ├── Speciality.cs            — Lab 04
 │   └── AppointmentStatus.cs     — Lab 04
 │
-├── Interfaces/                  — Lab 07
+├── Interfaces/
 │   ├── IPayable.cs              — Lab 07
 │   ├── ICancellable.cs          — Lab 07
-│   └── ISchedulable.cs          — Lab 07
+│   ├── ISchedulable.cs          — Lab 07
+│   └── IIdentifiable.cs         — Lab 09 (int Id { get; })
 │
 ├── Models/
-│   ├── Patient.cs               — Lab 03 → Lab 05 (валідація)
-│   ├── Doctor.cs                — Lab 03 → Lab 05 → Lab 07 (ISchedulable)
-│   ├── Appointment.cs           — Lab 03 → Lab 05 → Lab 07 (IPayable, ICancellable) → Lab 08 (virtual)
+│   ├── Patient.cs               — Lab 03 → Lab 05 (валідація) → Lab 09 (IIdentifiable)
+│   ├── Doctor.cs                — Lab 03 → Lab 05 → Lab 07 (ISchedulable) → Lab 09 (IIdentifiable)
+│   ├── Appointment.cs           — Lab 03 → Lab 05 → Lab 07 (IPayable, ICancellable) → Lab 08 (virtual) → Lab 09 (IIdentifiable)
 │   ├── RegularAppointment.cs    — Lab 08 (override GetDescription)
 │   ├── UrgentAppointment.cs     — Lab 08 (override GetCost *1.5, sealed GetDescription, new GetPriority)
 │   ├── SpecialistAppointment.cs — Lab 08 (sealed class, override GetCost *1.3)
+│   ├── WaitingQueue.cs          — Lab 09 (generic WaitingQueue<T> над Queue<T>)
 │   ├── WorkSchedule.cs          — Lab 04 (struct)
 │   ├── MedicalRecord.cs         — Lab 06 (abstract)
 │   ├── Diagnosis.cs             — Lab 06
@@ -211,9 +237,10 @@ src/
 │   └── Prescription.cs          — Lab 06
 │
 ├── Managers/
-│   ├── PatientManager.cs        — Lab 03 → Lab 04 (indexer, out, overloads)
+│   ├── PatientManager.cs        — Lab 03 → Lab 04 (indexer, out, overloads) → Lab 09 (List<Patient>)
 │   ├── DoctorManager.cs         — Lab 03 → Lab 04
 │   ├── AppointmentManager.cs    — Lab 03 → Lab 04 → Lab 07 (GetAll) → Lab 08 (BookUrgent, BookSpecialist)
+│   ├── Repository.cs            — Lab 09 (generic Repository<T> where T : IIdentifiable)
 │   ├── GrowablePatientManager.cs— Lab 05 (зростаючий масив — концептуальний)
 │   ├── MedicalRecordManager.cs  — Lab 06
 │   └── BillingManager.cs        — Lab 07

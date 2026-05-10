@@ -58,9 +58,11 @@
 | Поліморфізм (base ref → child type) | 08 | |
 | `new` (приховування методу) | 08 | |
 | `sealed` | 08 | |
-| `List<T>` (базово: Add, Count, [], foreach) | 09 | Generics лаба |
-| Генерики `<T>`, `where T :` | 09 | |
+| `List<T>` (Add, RemoveAt, Count, [], ToArray) | 09 | Generics лаба |
+| Generic клас `class Foo<T>`, `where T : Interface` | 09 | |
 | `Queue<T>`, `Stack<T>` | 09 | |
+| `InvalidOperationException` | 09 | порожня черга |
+| `default!` keyword | 09 | generic методи |
 | `IEnumerable<T>`, `yield return` | 10 | |
 | `IComparable<T>`, `IComparer<T>` | 10 | |
 | `SortedSet<T>`, `SortedList<K,V>` | 10 | |
@@ -228,7 +230,7 @@
 
 ---
 
-### Lab 08 — Polymorphism (feature/polymorphism → чекає Lab09)
+### Lab 08 — Polymorphism (feature/polymorphism → злито в main)
 
 **Нові конструкції:**
 - Підкласи `Appointment`: `RegularAppointment`, `UrgentAppointment`, `SpecialistAppointment`
@@ -238,14 +240,20 @@
 
 ---
 
-### Lab 09 — Generics (feature/generics → зливається)
+### Lab 09 — Generics (feature/generics → злито в main)
 
 **Нові конструкції:**
-- `class Repository<T> where T : ...`
-- `class WaitingQueue<T>`
-- `Queue<T>`, `Stack<T>` зі стандартної бібліотеки
-- Типові параметри: `where T : class`, `where T : new()`, `where T : IInterface`
-- Пояснення: чому `List<T>` — це generics (retroactively)
+- `List<T>` — динамічний масив: `.Add()`, `.RemoveAt()`, `.Count`, `.ToArray()`, `[i]`
+- Generic клас `public class WaitingQueue<T>` — параметр `T` без обмеження
+- `Queue<T>` зі стандартної бібліотеки — `Enqueue`, `Dequeue`, `Peek`, `Count`
+- Generic constraint `where T : IIdentifiable` — доступ до `item.Id` всередині generic класу
+- `default!` — значення за замовчуванням для `T` (null для reference types)
+- `InvalidOperationException` — кидається при операції на порожній черзі
+
+**Що дозволяється вперше:**
+- `List<T>` в основному коді (раніше — тільки Task 8 дослідження Lab 03)
+- `Queue<T>` і `Stack<T>` (раніше заборонені)
+- `Dictionary<K,V>` (офіційно дозволяється з Lab 09)
 
 ---
 
