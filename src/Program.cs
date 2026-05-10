@@ -29,8 +29,14 @@ clinic.Doctors.Add(d3);
 DateTime tomorrow = DateTime.Today.AddDays(1);
 DateTime dayAfter  = DateTime.Today.AddDays(2);
 clinic.Appointments.Book(1, 1, tomorrow.AddHours(10));
-clinic.Appointments.Book(2, 2, tomorrow.AddHours(11), 45);
-clinic.Appointments.Book(3, 3, dayAfter.AddHours(9),  20);
+clinic.Appointments.BookUrgent(2, 2, tomorrow.AddHours(11), "гострий головний біль", 45);
+clinic.Appointments.BookSpecialist(3, 3, dayAfter.AddHours(9), "педіатрія", 20);
+
+// Демонстрація: new (приховування) vs override (поліморфізм)
+// Доступ через базовий тип Appointment:
+Appointment urgentRef = clinic.Appointments[1]; // реальний тип — UrgentAppointment
+Console.WriteLine("GetDescription (override): " + urgentRef.GetDescription()); // "Терміновий (...)" — поліморфізм ✓
+Console.WriteLine("GetPriority   (new):       " + urgentRef.GetPriority());    // 3, а не 1 — new не дає поліморфізму!
 
 clinic.MedicalRecords.Add(new Diagnosis(1, 1, DateTime.Today.AddDays(-30),  "I10",  "Гіпертонічна хвороба", isChronic: true));
 clinic.MedicalRecords.Add(new Diagnosis(1, 1, DateTime.Today.AddDays(-5),   "J06.9","Гострий ринофарингіт"));

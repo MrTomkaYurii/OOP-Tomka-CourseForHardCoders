@@ -388,7 +388,7 @@ git checkout main && git merge feature/[назва] && git push
 ## Поточний стан
 
 **Завершено:** Lab 00–07 ✅
-**Наступний крок:** Lab 08 — `feature/polymorphism` — Polymorphism (⏳ чекає Lab 09)
+**В розробці:** Lab 08 — `feature/polymorphism` — Polymorphism (⏳ чекає Lab 09)
 
 **Порядок роботи:**
 1. Реалізувати еталонний код на C# (домен: Клініка) на новій гілці
@@ -405,3 +405,4 @@ git checkout main && git merge feature/[назва] && git push
 5. Рахунки        — оплата, борги
 6. Звіт           — загальна статистика
 ```
+> Lab 08 меню не змінює (внутрішні зміни: підкласи Appointment).

@@ -266,14 +266,31 @@ src/
 
 ## Lab 08 — Polymorphism (feature/polymorphism)
 
-**Статус:** 📋 ЗАПЛАНОВАНО (⏳ чекає Lab09)
-**Гілка:** `feature/polymorphism` — зливається разом з Lab09
-**Що зміниться:**
-- `RegularAppointment`, `UrgentAppointment`, `SpecialistAppointment` — підкласи `Appointment`
-- `GetCost()` і `GetDescription()` стають `virtual` у базовому класі
-- Різна логіка `GetCost()` через `override` у кожному підкласі
-- Поліморфний масив `Appointment[]` вже зберігає підкласи
-- Внутрішнє покращення, меню не змінюється
+**Статус:** ✅ ЗАВЕРШЕНО (⏳ зливається разом з Lab 09)
+**Гілка:** `feature/polymorphism` — чекає Lab09
+
+**Нові файли:**
+```
+src/Models/
+├── RegularAppointment.cs   ← override GetDescription() → "Звичайний прийом"
+├── UrgentAppointment.cs    ← UrgencyNote; override GetCost() * 1.5m; sealed override GetDescription(); new GetPriority() => 1
+└── SpecialistAppointment.cs← sealed class; ConsultationTopic; override GetCost() * 1.3m; override GetDescription()
+```
+
+**Зміни в існуючих файлах:**
+- `Models/Appointment.cs` — `GetCost()` та `GetDescription()` стали `virtual`; додано `GetPriority() => 3` (не virtual — для демо `new`); оновлено `ToString()` через `GetDescription()` і `GetCost()`
+- `Managers/AppointmentManager.cs` — `Book()` тепер створює `RegularAppointment`; додано `BookUrgent()` і `BookSpecialist()`
+- `Program.cs` — seed data оновлено: `BookUrgent(2, 2, ...)`, `BookSpecialist(3, 3, ...)`; демо `new` vs `override` при старті
+
+**Нові концепції:**
+- `virtual` метод у базовому класі
+- `override` у підкласах — справжній поліморфізм
+- `new` — приховування методу (НЕ поліморфізм)
+- `sealed class` — `SpecialistAppointment` не можна успадкувати
+- `sealed override` — `UrgentAppointment.GetDescription()` не можна перевизначити далі
+- `base.GetCost()` — виклик реалізації батька в override
+
+**Меню не змінюється** — всі зміни внутрішні
 
 ---
 

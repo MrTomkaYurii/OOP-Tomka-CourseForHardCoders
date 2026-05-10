@@ -7,16 +7,17 @@
 
 ## Головне меню — еволюція
 
-| Пункт меню          | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 |
-|---------------------|:------:|:------:|:------:|:------:|:------:|
-| 1. Пацієнти         | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 2. Лікарі           | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 3. Записи           | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 4. Медична картка   | —      | —      | —      | ✅ NEW | ✅     |
-| 5. Рахунки          | —      | —      | —      | —      | ✅ NEW |
-| 6. Звіт             | ✅     | ✅     | ✅     | ✅     | ✅     |
+| Пункт меню          | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 |
+|---------------------|:------:|:------:|:------:|:------:|:------:|:------:|
+| 1. Пацієнти         | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 2. Лікарі           | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 3. Записи           | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 4. Медична картка   | —      | —      | —      | ✅ NEW | ✅     | ✅     |
+| 5. Рахунки          | —      | —      | —      | —      | ✅ NEW | ✅     |
+| 6. Звіт             | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
 
-> Lab 07: головне меню також отримало **описи через дефіс** для кожного пункту (напр. "1. Пацієнти — реєстрація, пошук").
+> Lab 07: головне меню отримало **описи через дефіс** (напр. "1. Пацієнти — реєстрація, пошук").  
+> Lab 08: меню **не змінюється** — внутрішні зміни (підкласи Appointment).
 
 ---
 
@@ -100,7 +101,20 @@
 | `Notes`                 | Lab 03  | рядок, необов'язковий                              |
 | `DurationMinutes`       | Lab 04  | `int`, за замовчуванням 30                         |
 | `DurationMinutes`       | Lab 05 ↑| private backing field + `ValidatePositive`         |
-| `GetCost()`             | Lab 03  | обчислювана (перенесено з Task2/Task8 sandbox)     |
+| `GetCost()`             | Lab 03  | обчислювана; Lab 07: реалізує `IPayable`; Lab 08: стає `virtual` |
+| `IsPaid`, `MarkPaid()`  | Lab 07  | реалізує `IPayable`                                |
+| `IsCancelled`, `CancellationReason` | Lab 07 | реалізує `ICancellable`               |
+| `GetDescription()`      | Lab 08  | `virtual` → повертає рядок типу прийому            |
+| `GetPriority()`         | Lab 08  | НЕ virtual — для демонстрації `new` vs `override`  |
+
+**Ієрархія підкласів `Appointment`** — введена в Lab 08:
+
+| Клас                      | Унікальні поля    | override / new / sealed                                    |
+|---------------------------|-------------------|------------------------------------------------------------|
+| `Appointment` (base)      | —                 | `virtual GetCost()`, `virtual GetDescription()`, `GetPriority()` |
+| `RegularAppointment`      | —                 | `override GetDescription()` → "Звичайний прийом"          |
+| `UrgentAppointment`       | `UrgencyNote`     | `override GetCost() * 1.5m`, `sealed override GetDescription()`, `new GetPriority() => 1` |
+| `SpecialistAppointment` *(sealed)* | `ConsultationTopic` | `override GetCost() * 1.3m`, `override GetDescription()` |
 
 ---
 
@@ -133,7 +147,7 @@
 | 1. Борги пацієнта               | `Billing.GetUnpaidByPatient(id)` → `DisplayUnpaid()` — список неоплачених записів |
 | 2. Оплатити запис               | `Billing.PayAppointment(id)` — позначає запис як оплачений                        |
 | 3. Загальна сума боргів         | `Billing.GetTotalDebt()` — сума всіх неоплачених записів по клініці               |
-| 4. Борги пацієнта (з підсумком) | Підсумок `GetPatientDebt(id)` — скільки конкретний пацієнт заборгував             |
+| 4. Борги пацієнта (з підсумком) | `GetPatientDebt(id)` — скільки конкретний пацієнт заборгував                      |
 
 **Модель `Appointment` — зміни в Lab 07:**
 
@@ -157,12 +171,12 @@
 
 ## Тестові дані (seeded при старті)
 
-| Що               | Кількість | Додано  |
-|------------------|-----------|---------|
-| Пацієнти         | 4         | Lab 03  |
-| Лікарі           | 3         | Lab 03  |
-| Записи на прийом | 3         | Lab 03  |
-| Медичні записи   | 8         | Lab 06  |
+| Що               | Кількість | Додано  | Примітка                                                  |
+|------------------|-----------|---------|-----------------------------------------------------------|
+| Пацієнти         | 4         | Lab 03  |                                                           |
+| Лікарі           | 3         | Lab 03  |                                                           |
+| Записи на прийом | 3         | Lab 03  | Lab 08: 1×RegularAppointment, 1×UrgentAppointment, 1×SpecialistAppointment |
+| Медичні записи   | 8         | Lab 06  |                                                           |
 
 ---
 
@@ -185,8 +199,11 @@ src/
 │
 ├── Models/
 │   ├── Patient.cs               — Lab 03 → Lab 05 (валідація)
-│   ├── Doctor.cs                — Lab 03 → Lab 05 (валідація) → Lab 07 (ISchedulable)
-│   ├── Appointment.cs           — Lab 03 → Lab 05 (валідація) → Lab 07 (IPayable, ICancellable)
+│   ├── Doctor.cs                — Lab 03 → Lab 05 → Lab 07 (ISchedulable)
+│   ├── Appointment.cs           — Lab 03 → Lab 05 → Lab 07 (IPayable, ICancellable) → Lab 08 (virtual)
+│   ├── RegularAppointment.cs    — Lab 08 (override GetDescription)
+│   ├── UrgentAppointment.cs     — Lab 08 (override GetCost *1.5, sealed GetDescription, new GetPriority)
+│   ├── SpecialistAppointment.cs — Lab 08 (sealed class, override GetCost *1.3)
 │   ├── WorkSchedule.cs          — Lab 04 (struct)
 │   ├── MedicalRecord.cs         — Lab 06 (abstract)
 │   ├── Diagnosis.cs             — Lab 06
@@ -196,7 +213,7 @@ src/
 ├── Managers/
 │   ├── PatientManager.cs        — Lab 03 → Lab 04 (indexer, out, overloads)
 │   ├── DoctorManager.cs         — Lab 03 → Lab 04
-│   ├── AppointmentManager.cs    — Lab 03 → Lab 04 → Lab 07 (GetAll)
+│   ├── AppointmentManager.cs    — Lab 03 → Lab 04 → Lab 07 (GetAll) → Lab 08 (BookUrgent, BookSpecialist)
 │   ├── GrowablePatientManager.cs— Lab 05 (зростаючий масив — концептуальний)
 │   ├── MedicalRecordManager.cs  — Lab 06
 │   └── BillingManager.cs        — Lab 07
