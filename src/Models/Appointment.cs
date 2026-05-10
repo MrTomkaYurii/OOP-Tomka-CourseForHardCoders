@@ -28,7 +28,10 @@ public class Appointment : IPayable, ICancellable
     public DateTime EndsAt => ScheduledAt.AddMinutes(DurationMinutes);
     public bool IsUpcoming => ScheduledAt > DateTime.Now && Status == AppointmentStatus.Scheduled;
 
-    public decimal GetCost() => (decimal)DurationMinutes * 10m;
+    public virtual decimal GetCost() => (decimal)DurationMinutes * 10m;
+    public virtual string GetDescription() => "Звичайний прийом";
+    public int GetPriority() => 3;
+
     public bool IsPaid => _isPaid;
     public void MarkPaid() { if (!IsCancelled) _isPaid = true; }
 
@@ -63,9 +66,11 @@ public class Appointment : IPayable, ICancellable
 
     public override string ToString()
     {
-        string result = "[" + Id + "] Пацієнт #" + PatientId + " → Лікар #" + DoctorId +
+        string result = "[" + Id + "] " + GetDescription() +
+                        " | Пацієнт #" + PatientId + " → Лікар #" + DoctorId +
                         " | " + ScheduledAt.ToString("dd.MM.yyyy HH:mm") + "–" + EndsAt.ToString("HH:mm") +
-                        " | " + Status;
+                        " | " + Status +
+                        " | " + GetCost().ToString("F2") + " грн";
         if (Notes.Length > 0) result += " | " + Notes;
         return result;
     }
