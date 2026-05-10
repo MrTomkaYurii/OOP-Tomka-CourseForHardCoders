@@ -7,13 +7,16 @@
 
 ## Головне меню — еволюція
 
-| Пункт меню          | Lab 03 | Lab 04 | Lab 05 | Lab 06 |
-|---------------------|:------:|:------:|:------:|:------:|
-| 1. Пацієнти         | ✅     | ✅     | ✅     | ✅     |
-| 2. Лікарі           | ✅     | ✅     | ✅     | ✅     |
-| 3. Записи на прийом | ✅     | ✅     | ✅     | ✅     |
-| 4. Медична картка   | —      | —      | —      | ✅ NEW |
-| 5. Звіт             | ✅     | ✅     | ✅     | ✅     |
+| Пункт меню          | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 |
+|---------------------|:------:|:------:|:------:|:------:|:------:|
+| 1. Пацієнти         | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 2. Лікарі           | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 3. Записи           | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 4. Медична картка   | —      | —      | —      | ✅ NEW | ✅     |
+| 5. Рахунки          | —      | —      | —      | —      | ✅ NEW |
+| 6. Звіт             | ✅     | ✅     | ✅     | ✅     | ✅     |
+
+> Lab 07: головне меню також отримало **описи через дефіс** для кожного пункту (напр. "1. Пацієнти — реєстрація, пошук").
 
 ---
 
@@ -123,7 +126,28 @@
 
 ---
 
-## 5. Звіт
+## 5. Рахунки *(додано в Lab 07)*
+
+| Підпункт                        | Що робить                                                                         |
+|---------------------------------|-----------------------------------------------------------------------------------|
+| 1. Борги пацієнта               | `Billing.GetUnpaidByPatient(id)` → `DisplayUnpaid()` — список неоплачених записів |
+| 2. Оплатити запис               | `Billing.PayAppointment(id)` — позначає запис як оплачений                        |
+| 3. Загальна сума боргів         | `Billing.GetTotalDebt()` — сума всіх неоплачених записів по клініці               |
+| 4. Борги пацієнта (з підсумком) | Підсумок `GetPatientDebt(id)` — скільки конкретний пацієнт заборгував             |
+
+**Модель `Appointment` — зміни в Lab 07:**
+
+| Нова властивість / метод | Інтерфейс        | Примітка                               |
+|--------------------------|------------------|----------------------------------------|
+| `bool IsPaid`            | `IPayable`       | `true` після `MarkPaid()`              |
+| `decimal GetCost()`      | `IPayable`       | `DurationMinutes * 10m`                |
+| `void MarkPaid()`        | `IPayable`       | не спрацьовує якщо запис скасовано     |
+| `bool IsCancelled`       | `ICancellable`   | `Status == Cancelled`                  |
+| `string CancellationReason` | `ICancellable` | Notes якщо скасовано, інакше ""       |
+
+---
+
+## 6. Звіт
 
 | Підпункт   | Додано  | Що робить                                                             |
 |------------|---------|------------------------------------------------------------------------|
@@ -146,18 +170,23 @@
 
 ```
 src/
-├── Clinic.cs                    — оркестратор (Patients, Doctors, Appointments, MedicalRecords)
-├── Program.cs                   — меню (PatientsMenu / DoctorsMenu / AppointmentsMenu / MedicalRecordsMenu)
+├── Clinic.cs                    — оркестратор (Patients, Doctors, Appointments, MedicalRecords, Billing)
+├── Program.cs                   — меню (PatientsMenu / DoctorsMenu / AppointmentsMenu / MedicalRecordsMenu / BillingMenu)
 │
 ├── Enums/
 │   ├── BloodType.cs             — Lab 04
 │   ├── Speciality.cs            — Lab 04
 │   └── AppointmentStatus.cs     — Lab 04
 │
+├── Interfaces/                  — Lab 07
+│   ├── IPayable.cs              — Lab 07
+│   ├── ICancellable.cs          — Lab 07
+│   └── ISchedulable.cs          — Lab 07
+│
 ├── Models/
 │   ├── Patient.cs               — Lab 03 → Lab 05 (валідація)
-│   ├── Doctor.cs                — Lab 03 → Lab 05 (валідація)
-│   ├── Appointment.cs           — Lab 03 → Lab 05 (валідація)
+│   ├── Doctor.cs                — Lab 03 → Lab 05 (валідація) → Lab 07 (ISchedulable)
+│   ├── Appointment.cs           — Lab 03 → Lab 05 (валідація) → Lab 07 (IPayable, ICancellable)
 │   ├── WorkSchedule.cs          — Lab 04 (struct)
 │   ├── MedicalRecord.cs         — Lab 06 (abstract)
 │   ├── Diagnosis.cs             — Lab 06
@@ -167,9 +196,10 @@ src/
 ├── Managers/
 │   ├── PatientManager.cs        — Lab 03 → Lab 04 (indexer, out, overloads)
 │   ├── DoctorManager.cs         — Lab 03 → Lab 04
-│   ├── AppointmentManager.cs    — Lab 03 → Lab 04
+│   ├── AppointmentManager.cs    — Lab 03 → Lab 04 → Lab 07 (GetAll)
 │   ├── GrowablePatientManager.cs— Lab 05 (зростаючий масив — концептуальний)
-│   └── MedicalRecordManager.cs  — Lab 06
+│   ├── MedicalRecordManager.cs  — Lab 06
+│   └── BillingManager.cs        — Lab 07
 │
 └── Utils/
     ├── ClinicFormatter.cs       — Lab 04 (static: форматування)

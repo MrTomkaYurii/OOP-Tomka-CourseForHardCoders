@@ -233,27 +233,46 @@ src/
 
 ## Lab 07 — Interfaces (feature/interfaces)
 
-**Статус:** 📋 ЗАПЛАНОВАНО
-**Гілка:** `feature/interfaces` — ✅ зливається
-**Що з'явиться:**
-- `IPayable`, `ICancellable`, `ISchedulable`
-- `Appointment` реалізує `IPayable` і `ICancellable`
-- `Doctor` реалізує `ISchedulable`
-- `BillingManager` — рахує борги через `IPayable[]`
-- **Нове меню:** 5. Рахунки (борги пацієнта, оплата, загальна сума)
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/interfaces` — ✅ злито в main
 
-**Нові файли:** `Interfaces/IPayable.cs`, `Interfaces/ICancellable.cs`, `Interfaces/ISchedulable.cs`, `Managers/BillingManager.cs`
+**Нові файли:**
+```
+src/
+├── Interfaces/
+│   ├── IPayable.cs         ← decimal GetCost(); bool IsPaid; void MarkPaid()
+│   ├── ICancellable.cs     ← bool IsCancelled; string CancellationReason; bool Cancel(string)
+│   └── ISchedulable.cs     ← bool CanSchedule(DateTime); DateTime[] GetAvailableSlots(DateTime, int)
+└── Managers/
+    └── BillingManager.cs   ← GetAllUnpaid, GetUnpaidByPatient, GetTotalDebt, GetPatientDebt, PayAppointment, DisplayUnpaid
+```
+
+**Зміни в існуючих файлах:**
+- `Models/Appointment.cs` — `class Appointment : IPayable, ICancellable`; додано `_isPaid`, `GetCost()`, `IsPaid`, `MarkPaid()`, `IsCancelled`, `CancellationReason`
+- `Models/Doctor.cs` — `class Doctor : ISchedulable`; додано `CanSchedule(DateTime)`, `GetAvailableSlots(DateTime, int)`
+- `Managers/AppointmentManager.cs` — додано `GetAll()`
+- `Clinic.cs` — додано `public BillingManager Billing { get; }`
+- `Program.cs` — головне меню з описами через дефіс; додано `BillingMenu` (пункт 5)
+
+**Нові концепції:**
+- `interface` із методами та властивостями
+- Клас реалізує кілька інтерфейсів: `class Appointment : IPayable, ICancellable`
+- Інтерфейс як тип параметра: `void DisplayUnpaid(IPayable[] items)`
+- `is Appointment a` — перевірка на тип через базове посилання
+
+**Нове в меню:** пункт 5 "Рахунки" → борги пацієнта, оплата запису, загальна сума боргів
 
 ---
 
 ## Lab 08 — Polymorphism (feature/polymorphism)
 
-**Статус:** 📋 ЗАПЛАНОВАНО
-**Гілка:** `feature/polymorphism` — ⏳ чекає Lab09
+**Статус:** 📋 ЗАПЛАНОВАНО (⏳ чекає Lab09)
+**Гілка:** `feature/polymorphism` — зливається разом з Lab09
 **Що зміниться:**
 - `RegularAppointment`, `UrgentAppointment`, `SpecialistAppointment` — підкласи `Appointment`
-- Різна логіка `GetCost()` через `override`
-- Поліморфний масив `Appointment[]` — вже зберігає підкласи
+- `GetCost()` і `GetDescription()` стають `virtual` у базовому класі
+- Різна логіка `GetCost()` через `override` у кожному підкласі
+- Поліморфний масив `Appointment[]` вже зберігає підкласи
 - Внутрішнє покращення, меню не змінюється
 
 ---
