@@ -4,7 +4,7 @@ using ClinicApp.Enums;
 using ClinicApp.Interfaces;
 using ClinicApp.Utils;
 
-public class Appointment : IPayable
+public class Appointment : IPayable, ICancellable
 {
     private static int _nextId = 1;
 
