@@ -2,6 +2,7 @@
 import AppShell from "@/components/AppShell.astro";
 import SiteLayout from "@/layouts/SiteLayout.astro";
 import { getLabs } from "@/data/course";
+import { sitePath } from "@/utils/paths";
 
 const labs = getLabs();
 ---
@@ -16,7 +17,7 @@ const labs = getLabs();
 
     <section class="timeline">
       {labs.map((lab) => (
-        <a class="timeline-row" href={`/labs/${lab.slug}/`}>
+        <a class="timeline-row" href={sitePath(`/labs/${lab.slug}/`)}>
           <span class="timeline-number">{String(lab.number).padStart(2, "0")}</span>
           <div>
             <h2>{lab.title}</h2>

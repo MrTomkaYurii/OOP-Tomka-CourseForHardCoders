@@ -1,0 +1,45 @@
+---
+import AppShell from "@/components/AppShell.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { evolutionSteps } from "@/data/evolution";
+---
+
+<SiteLayout title="Еволюція проєкту | OOP C# Course">
+  <AppShell>
+    <section class="page-title">
+      <p class="eyebrow">Clinic App</p>
+      <h1>Еволюція проєкту</h1>
+      <p>Ця карта показує, як навчальна система росте від sandbox-задач до модулів клініки. Дані узгоджені з `COURSE_DESIGN.md`, `MENU_BY_LAB.md` і `CONCEPTS_BY_LAB.md`.</p>
+    </section>
+
+    <section class="evolution-list">
+      {evolutionSteps.map((step) => (
+        <article class="evolution-card">
+          <div class="evolution-index">
+            <span>Lab</span>
+            <strong>{String(step.lab).padStart(2, "0")}</strong>
+          </div>
+          <div class="evolution-main">
+            <p class="eyebrow">{step.module}</p>
+            <h2>{step.title}</h2>
+            <p>{step.menu}</p>
+            <div class="evolution-columns">
+              <div>
+                <h3>Файли та модулі</h3>
+                <ul>
+                  {step.files.map((file) => <li><code>{file}</code></li>)}
+                </ul>
+              </div>
+              <div>
+                <h3>Поняття</h3>
+                <ul class="tag-list">
+                  {step.concepts.map((concept) => <li>{concept}</li>)}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </section>
+  </AppShell>
+</SiteLayout>

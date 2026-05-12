@@ -2,6 +2,7 @@
 import AppShell from "@/components/AppShell.astro";
 import SiteLayout from "@/layouts/SiteLayout.astro";
 import { getLab, getLabs } from "@/data/course";
+import { sitePath } from "@/utils/paths";
 
 export function getStaticPaths() {
   return getLabs().map((lab) => ({ params: { slug: lab.slug } }));
@@ -10,8 +11,13 @@ export function getStaticPaths() {
 const lab = getLab(Astro.params.slug!);
 
 if (!lab) {
-  return Astro.redirect("/labs/");
+  return Astro.redirect(sitePath("/labs/"));
 }
+
+const labs = getLabs();
+const currentIndex = labs.findIndex((item) => item.slug === lab.slug);
+const previousLab = currentIndex > 0 ? labs[currentIndex - 1] : undefined;
+const nextLab = currentIndex >= 0 && currentIndex < labs.length - 1 ? labs[currentIndex + 1] : undefined;
 
 const tocGroups = lab.headings.reduce<Array<{ parent: (typeof lab.headings)[number]; children: typeof lab.headings }>>(
   (groups, heading) => {
@@ -79,20 +85,66 @@ const tocGroups = lab.headings.reduce<Array<{ parent: (typeof lab.headings)[numb
             group.children.length > 0 ? (
               <details class="toc-group" open={index < 2 || group.parent.text.startsWith("Задача 1")}>
                 <summary>
-                  <a href={`#${group.parent.slug}`}>{group.parent.text}</a>
+                  <a data-toc-link href={`#${group.parent.slug}`}>{group.parent.text}</a>
                 </summary>
                 <div>
                   {group.children.map((heading) => (
-                    <a href={`#${heading.slug}`}>{heading.text}</a>
+                    <a data-toc-link href={`#${heading.slug}`}>{heading.text}</a>
                   ))}
                 </div>
               </details>
             ) : (
-              <a class="toc-link" href={`#${group.parent.slug}`}>{group.parent.text}</a>
+              <a data-toc-link class="toc-link" href={`#${group.parent.slug}`}>{group.parent.text}</a>
             )
           ))}
         </aside>
       </div>
+
+      <nav class="lab-pager" aria-label="Навігація між лабораторними">
+        {previousLab ? (
+          <a class="pager-card previous" href={sitePath(`/labs/${previousLab.slug}/`)}>
+            <span>Попередня</span>
+            <strong>Lab {String(previousLab.number).padStart(2, "0")}: {previousLab.title}</strong>
+          </a>
+        ) : <span></span>}
+
+        {nextLab ? (
+          <a class="pager-card next" href={sitePath(`/labs/${nextLab.slug}/`)}>
+            <span>Наступна</span>
+            <strong>Lab {String(nextLab.number).padStart(2, "0")}: {nextLab.title}</strong>
+          </a>
+        ) : <span></span>}
+      </nav>
     </article>
+
+    <script>
+      const headingNodes = [...document.querySelectorAll<HTMLElement>(".markdown-body h2[id], .markdown-body h3[id]")];
+      const tocLinks = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")];
+      const linkById = new Map(tocLinks.map((link) => [decodeURIComponent(link.hash.slice(1)), link]));
+
+      function activateTocLink(id: string) {
+        tocLinks.forEach((link) => link.classList.toggle("active", decodeURIComponent(link.hash.slice(1)) === id));
+        const activeLink = linkById.get(id);
+        activeLink?.closest("details")?.setAttribute("open", "");
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+
+          if (visible?.target.id) {
+            activateTocLink(visible.target.id);
+          }
+        },
+        { rootMargin: "-18% 0px -70% 0px", threshold: 0.01 },
+      );
+
+      headingNodes.forEach((heading) => observer.observe(heading));
+      if (headingNodes[0]?.id) {
+        activateTocLink(headingNodes[0].id);
+      }
+    </script>
   </AppShell>
 </SiteLayout>

@@ -10,6 +10,11 @@ const { title = "OOP C# Course", description = "Лабораторний кур�
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script is:inline>
+      const savedTheme = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = savedTheme ?? (prefersDark ? "dark" : "light");
+    </script>
     <title>{title}</title>
   </head>
   <body>

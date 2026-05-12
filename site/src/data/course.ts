@@ -155,6 +155,12 @@ function slugify(value: string) {
     .replace(/\s+/g, "-");
 }
 
+function uniqueSlug(baseSlug: string, counts: Map<string, number>) {
+  const nextCount = (counts.get(baseSlug) ?? 0) + 1;
+  counts.set(baseSlug, nextCount);
+  return nextCount === 1 ? baseSlug : `${baseSlug}-${nextCount}`;
+}
+
 function stripMarkdown(value: string) {
   return value
     .replace(/```[\s\S]*?```/g, " ")
@@ -164,10 +170,12 @@ function stripMarkdown(value: string) {
 }
 
 function collectHeadings(markdown: string) {
+  const counts = new Map<string, number>();
+
   return [...markdown.matchAll(/^(#{2,3})\s+(.+)$/gm)].map((match) => ({
     depth: match[1].length,
     text: match[2].trim(),
-    slug: slugify(match[2]),
+    slug: uniqueSlug(slugify(match[2]), counts),
   }));
 }
 
@@ -185,10 +193,12 @@ export function getLabs(): Lab[] {
       const markdown = readFileSync(sourcePath, "utf-8");
       const headings = collectHeadings(markdown);
       const renderer = new marked.Renderer();
+      let headingIndex = 0;
 
       renderer.heading = ({ tokens, depth }) => {
         const text = tokens.map((token) => token.raw).join("");
-        const id = slugify(text);
+        const id = headings[headingIndex]?.slug ?? slugify(text);
+        headingIndex += 1;
         return `<h${depth} id="${id}">${text}</h${depth}>`;
       };
 

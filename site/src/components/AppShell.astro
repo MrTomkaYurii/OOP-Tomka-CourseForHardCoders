@@ -1,8 +1,12 @@
 ---
 import { getLabs } from "@/data/course";
+import { pathWithoutBase, sitePath } from "@/utils/paths";
+import ThemeToggle from "@/components/ThemeToggle.astro";
+import TopBar from "@/components/TopBar.astro";
+import BackToTop from "@/components/BackToTop.astro";
 
 const labs = getLabs();
-const currentPath = Astro.url.pathname;
+const currentPath = pathWithoutBase(Astro.url.pathname);
 ---
 
 <input class="drawer-toggle left-toggle" type="checkbox" id="course-menu-toggle" aria-hidden="true" />
@@ -13,7 +17,8 @@ const currentPath = Astro.url.pathname;
       <span></span>
       <span></span>
     </label>
-    <a class="mobile-brand" href="/">OOP Course</a>
+    <a class="mobile-brand" href={sitePath("/")}>OOP Course</a>
+    <ThemeToggle />
   </div>
 
   <label class="drawer-backdrop" for="course-menu-toggle" aria-label="Закрити меню"></label>
@@ -24,7 +29,7 @@ const currentPath = Astro.url.pathname;
       <label class="close-button" for="course-menu-toggle" aria-label="Закрити меню">×</label>
     </div>
 
-    <a class="brand" href="/">
+    <a class="brand" href={sitePath("/")}>
       <span class="brand-mark">C#</span>
       <span>
         <strong>OOP Course</strong>
@@ -33,16 +38,17 @@ const currentPath = Astro.url.pathname;
     </a>
 
     <nav class="nav-block" aria-label="Основна навігація">
-      <a class:list={["nav-link", currentPath === "/" && "active"]} href="/">Огляд курсу</a>
-      <a class:list={["nav-link", currentPath === "/labs/" && "active"]} href="/labs/">Лабораторні</a>
-      <a class:list={["nav-link", currentPath === "/roadmap/" && "active"]} href="/roadmap/">Карта розвитку</a>
+      <a class:list={["nav-link", currentPath === "/" && "active"]} href={sitePath("/")}>Огляд курсу</a>
+      <a class:list={["nav-link", currentPath === "/labs/" && "active"]} href={sitePath("/labs/")}>Лабораторні</a>
+      <a class:list={["nav-link", currentPath === "/roadmap/" && "active"]} href={sitePath("/roadmap/")}>Карта розвитку</a>
+      <a class:list={["nav-link", currentPath === "/evolution/" && "active"]} href={sitePath("/evolution/")}>Еволюція проєкту</a>
     </nav>
 
     <div class="nav-section">
       <p>Лаби</p>
       <div class="lab-nav">
         {labs.map((lab) => (
-          <a class:list={["lab-nav-link", currentPath === `/labs/${lab.slug}/` && "active"]} href={`/labs/${lab.slug}/`}>
+          <a class:list={["lab-nav-link", currentPath === `/labs/${lab.slug}/` && "active"]} href={sitePath(`/labs/${lab.slug}/`)}>
             <span>{String(lab.number).padStart(2, "0")}</span>
             <strong>{lab.title}</strong>
           </a>
@@ -52,6 +58,12 @@ const currentPath = Astro.url.pathname;
   </aside>
 
   <main class="content-frame">
+    <TopBar />
     <slot />
+    <footer class="site-footer">
+      <span>Розроблено</span>
+      <strong>Tomka Yurii</strong>
+    </footer>
   </main>
+  <BackToTop />
 </div>

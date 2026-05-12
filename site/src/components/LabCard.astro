@@ -1,4 +1,6 @@
 ---
+import { sitePath } from "@/utils/paths";
+
 const { lab } = Astro.props;
 
 const statusLabel = {
@@ -8,7 +10,7 @@ const statusLabel = {
 }[lab.status];
 ---
 
-<a class="lab-card" href={`/labs/${lab.slug}/`}>
+<a class="lab-card" href={sitePath(`/labs/${lab.slug}/`)}>
   <div class="lab-card-top">
     <span class="lab-number">Lab {String(lab.number).padStart(2, "0")}</span>
     <span class:list={["status", lab.status]}>{statusLabel}</span>

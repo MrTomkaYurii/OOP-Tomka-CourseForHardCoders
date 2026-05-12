@@ -1,0 +1,56 @@
+---
+import ThemeToggle from "@/components/ThemeToggle.astro";
+---
+
+<div class="content-toolbar">
+  <div class="datetime-line" aria-live="polite">
+    <span data-date-weekday>Сьогодні</span>
+    <span data-date-full></span>
+    <time data-date-time></time>
+  </div>
+  <ThemeToggle />
+</div>
+
+<script>
+  const weekdays = ["Неділя", "Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота"];
+  const months = [
+    "січня",
+    "лютого",
+    "березня",
+    "квітня",
+    "травня",
+    "червня",
+    "липня",
+    "серпня",
+    "вересня",
+    "жовтня",
+    "листопада",
+    "грудня",
+  ];
+
+  const weekdayNode = document.querySelector<HTMLElement>("[data-date-weekday]");
+  const fullDateNode = document.querySelector<HTMLElement>("[data-date-full]");
+  const timeNode = document.querySelector<HTMLTimeElement>("[data-date-time]");
+
+  function updateDateTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    if (weekdayNode) {
+      weekdayNode.textContent = weekdays[now.getDay()];
+    }
+
+    if (fullDateNode) {
+      fullDateNode.textContent = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    }
+
+    if (timeNode) {
+      timeNode.textContent = `${hours}:${minutes}`;
+      timeNode.dateTime = now.toISOString();
+    }
+  }
+
+  updateDateTime();
+  window.setInterval(updateDateTime, 30_000);
+</script>

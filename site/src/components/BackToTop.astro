@@ -1,0 +1,16 @@
+<button class="back-to-top" type="button" aria-label="Повернутися вгору">↑</button>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>(".back-to-top");
+
+  function syncBackToTop() {
+    button?.classList.toggle("visible", window.scrollY > 520);
+  }
+
+  button?.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  syncBackToTop();
+  window.addEventListener("scroll", syncBackToTop, { passive: true });
+</script>

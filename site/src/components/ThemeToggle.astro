@@ -1,0 +1,30 @@
+<button class="theme-toggle" type="button" aria-label="Перемкнути тему">
+  <span class="theme-toggle-track">
+    <span class="theme-toggle-thumb"></span>
+  </span>
+  <span class="theme-toggle-text" data-light="Світла" data-dark="Темна">Світла</span>
+</button>
+
+<script>
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>(".theme-toggle")];
+
+  function syncThemeButton() {
+    const theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+    buttons.forEach((button) => {
+      const text = button.querySelector<HTMLElement>(".theme-toggle-text");
+      button.setAttribute("aria-pressed", String(theme === "dark"));
+      if (text) {
+        text.textContent = theme === "dark" ? text.dataset.dark ?? "Темна" : text.dataset.light ?? "Світла";
+      }
+    });
+  }
+
+  buttons.forEach((button) => button.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = nextTheme;
+    localStorage.setItem("theme", nextTheme);
+    syncThemeButton();
+  }));
+
+  syncThemeButton();
+</script>
