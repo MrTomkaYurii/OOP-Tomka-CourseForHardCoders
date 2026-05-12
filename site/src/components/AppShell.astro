@@ -1,0 +1,57 @@
+---
+import { getLabs } from "@/data/course";
+
+const labs = getLabs();
+const currentPath = Astro.url.pathname;
+---
+
+<input class="drawer-toggle left-toggle" type="checkbox" id="course-menu-toggle" aria-hidden="true" />
+<div class="app-shell">
+  <div class="mobile-bar">
+    <label class="icon-button" for="course-menu-toggle" aria-label="Відкрити меню курсу">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <a class="mobile-brand" href="/">OOP Course</a>
+  </div>
+
+  <label class="drawer-backdrop" for="course-menu-toggle" aria-label="Закрити меню"></label>
+
+  <aside class="sidebar">
+    <div class="drawer-head">
+      <span>Меню курсу</span>
+      <label class="close-button" for="course-menu-toggle" aria-label="Закрити меню">×</label>
+    </div>
+
+    <a class="brand" href="/">
+      <span class="brand-mark">C#</span>
+      <span>
+        <strong>OOP Course</strong>
+        <small>Clinic system labs</small>
+      </span>
+    </a>
+
+    <nav class="nav-block" aria-label="Основна навігація">
+      <a class:list={["nav-link", currentPath === "/" && "active"]} href="/">Огляд курсу</a>
+      <a class:list={["nav-link", currentPath === "/labs/" && "active"]} href="/labs/">Лабораторні</a>
+      <a class:list={["nav-link", currentPath === "/roadmap/" && "active"]} href="/roadmap/">Карта розвитку</a>
+    </nav>
+
+    <div class="nav-section">
+      <p>Лаби</p>
+      <div class="lab-nav">
+        {labs.map((lab) => (
+          <a class:list={["lab-nav-link", currentPath === `/labs/${lab.slug}/` && "active"]} href={`/labs/${lab.slug}/`}>
+            <span>{String(lab.number).padStart(2, "0")}</span>
+            <strong>{lab.title}</strong>
+          </a>
+        ))}
+      </div>
+    </div>
+  </aside>
+
+  <main class="content-frame">
+    <slot />
+  </main>
+</div>

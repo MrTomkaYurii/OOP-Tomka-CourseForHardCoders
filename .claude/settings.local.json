@@ -5,7 +5,16 @@
       "Bash(dotnet run *)",
       "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\Yurii\\\\source\\\\repos\\\\OOP-Tomka-CourseForHardCoders\" -Filter \"*.txt\")",
       "Bash(Select-Object FullName)",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git push *)",
+      "Bash(python -c ' *)",
+      "Bash(git commit *)",
+      "Bash(python3 *)",
+      "Bash(git rm *)"
     ]
   }
 }

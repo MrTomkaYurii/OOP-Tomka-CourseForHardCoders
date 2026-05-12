@@ -27,3 +27,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Course site
+site/node_modules/
+site/dist/
+site/.astro/
+site/.env
+site/.env.*
+site/dev-server*.log

@@ -1,0 +1,29 @@
+---
+const { lab } = Astro.props;
+
+const statusLabel = {
+  ready: "Готова",
+  draft: "Чернетка",
+  planned: "Запланована",
+}[lab.status];
+---
+
+<a class="lab-card" href={`/labs/${lab.slug}/`}>
+  <div class="lab-card-top">
+    <span class="lab-number">Lab {String(lab.number).padStart(2, "0")}</span>
+    <span class:list={["status", lab.status]}>{statusLabel}</span>
+  </div>
+  <h3>{lab.title}</h3>
+  <p>{lab.topic}</p>
+  <div class="lab-meta-grid">
+    <span>Модуль</span>
+    <strong>{lab.module}</strong>
+    <span>Гілка</span>
+    <strong>{lab.branch}</strong>
+    <span>Меню</span>
+    <strong>{lab.menu}</strong>
+  </div>
+  <div class="difficulty" aria-label={`Складність ${lab.difficulty} з 3`}>
+    {Array.from({ length: 3 }).map((_, index) => <i class:list={[index < lab.difficulty && "on"]}></i>)}
+  </div>
+</a>

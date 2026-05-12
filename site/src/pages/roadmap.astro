@@ -1,0 +1,31 @@
+---
+import AppShell from "@/components/AppShell.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { getLabs } from "@/data/course";
+
+const labs = getLabs();
+---
+
+<SiteLayout title="Карта розвитку | OOP C# Course">
+  <AppShell>
+    <section class="page-title">
+      <p class="eyebrow">Еволюція системи</p>
+      <h1>Карта розвитку Clinic App</h1>
+      <p>Видно, коли курс переходить від ізольованих задач до модулів реальної консольної системи.</p>
+    </section>
+
+    <section class="timeline">
+      {labs.map((lab) => (
+        <a class="timeline-row" href={`/labs/${lab.slug}/`}>
+          <span class="timeline-number">{String(lab.number).padStart(2, "0")}</span>
+          <div>
+            <h2>{lab.title}</h2>
+            <p>{lab.topic}</p>
+          </div>
+          <strong>{lab.module}</strong>
+          <em>{lab.menu}</em>
+        </a>
+      ))}
+    </section>
+  </AppShell>
+</SiteLayout>

@@ -1,0 +1,98 @@
+---
+import AppShell from "@/components/AppShell.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { getLab, getLabs } from "@/data/course";
+
+export function getStaticPaths() {
+  return getLabs().map((lab) => ({ params: { slug: lab.slug } }));
+}
+
+const lab = getLab(Astro.params.slug!);
+
+if (!lab) {
+  return Astro.redirect("/labs/");
+}
+
+const tocGroups = lab.headings.reduce<Array<{ parent: (typeof lab.headings)[number]; children: typeof lab.headings }>>(
+  (groups, heading) => {
+    if (heading.depth === 2) {
+      groups.push({ parent: heading, children: [] });
+      return groups;
+    }
+
+    if (heading.depth === 3 && groups.length > 0) {
+      groups[groups.length - 1].children.push(heading);
+    }
+
+    return groups;
+  },
+  [],
+);
+---
+
+<SiteLayout title={`${lab.title} | OOP C# Course`}>
+  <AppShell>
+    <article class="lab-layout">
+      <header class="lab-hero">
+        <div>
+          <p class="eyebrow">Lab {String(lab.number).padStart(2, "0")}</p>
+          <h1>{lab.title}</h1>
+          <p>{lab.topic}</p>
+        </div>
+        <aside class="lab-facts">
+          <div>
+            <span>Модуль</span>
+            <strong>{lab.module}</strong>
+          </div>
+          <div>
+            <span>Гілка</span>
+            <strong>{lab.branch}</strong>
+          </div>
+          <div>
+            <span>Merge</span>
+            <strong>{lab.merge}</strong>
+          </div>
+          <div>
+            <span>Меню</span>
+            <strong>{lab.menu}</strong>
+          </div>
+        </aside>
+      </header>
+
+      <input class="drawer-toggle right-toggle" type="checkbox" id="lab-toc-toggle" aria-hidden="true" />
+      <label class="toc-fab" for="lab-toc-toggle" aria-label="Відкрити зміст лабораторної">
+        <span></span>
+        <span></span>
+        <span></span>
+      </label>
+      <label class="toc-backdrop" for="lab-toc-toggle" aria-label="Закрити зміст"></label>
+
+      <div class="reader-grid">
+        <div class="markdown-body" set:html={lab.html} />
+        <aside class="toc">
+          <div class="drawer-head toc-drawer-head">
+            <span>Зміст лабораторної</span>
+            <label class="close-button" for="lab-toc-toggle" aria-label="Закрити зміст">×</label>
+          </div>
+          <p>На сторінці</p>
+          {tocGroups.map((group, index) => (
+            group.children.length > 0 ? (
+              <details class="toc-group" open={index < 2 || group.parent.text.startsWith("Задача 1")}>
+                <summary>
+                  <a href={`#${group.parent.slug}`}>{group.parent.text}</a>
+                </summary>
+                <div>
+                  {group.children.map((heading) => (
+                    <a href={`#${heading.slug}`}>{heading.text}</a>
+                  ))}
+                </div>
+              </details>
+            ) : (
+              <a class="toc-link" href={`#${group.parent.slug}`}>{group.parent.text}</a>
+            )
+          ))}
+        </aside>
+      </div>
+    </article>
+  </AppShell>
+</SiteLayout>

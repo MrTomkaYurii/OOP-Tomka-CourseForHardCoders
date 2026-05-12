@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Yurii\\\\source\\\\repos\\\\OOP-Tomka-CourseForHardCoders\\\\src\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Yurii\\\\source\\\\repos\\\\OOP-Tomka-CourseForHardCoders\\\\src\" -Recurse -File | Select-Object @{N='Path';E={$_.FullName.Replace\\('C:\\\\Users\\\\Yurii\\\\source\\\\repos\\\\OOP-Tomka-CourseForHardCoders\\\\src\\\\',''\\)}} | Sort-Object Path)",
+      "Bash(dotnet build *)"
+    ]
+  }
+}

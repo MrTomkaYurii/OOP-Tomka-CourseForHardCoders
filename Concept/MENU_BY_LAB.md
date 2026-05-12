@@ -276,15 +276,16 @@ src/
 │   ├── PatientStatsBySpent.cs   — Lab 10 (IComparer<PatientStats>)
 │   └── PatientStatsByLastVisit.cs— Lab 10 (IComparer<PatientStats>)
 │
+├── GrowablePatientManager.cs    — Lab 05 (зростаючий масив — концептуальний)
+│
 ├── Managers/
 │   ├── PatientManager.cs        — Lab 03 → Lab 04 (indexer, out, overloads) → Lab 09 (List<Patient>)
 │   ├── DoctorManager.cs         — Lab 03 → Lab 04
 │   ├── AppointmentManager.cs    — Lab 03 → Lab 04 → Lab 07 (GetAll) → Lab 08 (BookUrgent, BookSpecialist)
-│   ├── AnalyticsManager.cs      — Lab 10 (IEnumerable<DoctorStats/PatientStats> з yield return)
-│   ├── Repository.cs            — Lab 09 (generic Repository<T> where T : IIdentifiable)
-│   ├── GrowablePatientManager.cs— Lab 05 (зростаючий масив — концептуальний)
 │   ├── MedicalRecordManager.cs  — Lab 06
-│   └── BillingManager.cs        — Lab 07
+│   ├── BillingManager.cs        — Lab 07
+│   ├── Repository.cs            — Lab 09 (generic Repository<T> where T : IIdentifiable)
+│   └── AnalyticsManager.cs      — Lab 10 (IEnumerable<DoctorStats/PatientStats> з yield return)
 │
 └── Utils/
     ├── ClinicFormatter.cs       — Lab 04 (static: форматування)

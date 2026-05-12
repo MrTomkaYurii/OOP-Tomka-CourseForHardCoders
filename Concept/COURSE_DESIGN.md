@@ -38,11 +38,16 @@ project-root/
 │   ├── Enums/              ← Lab 04: BloodType, Speciality, AppointmentStatus
 │   ├── Models/             ← Lab 03+: Patient, Doctor, Appointment, WorkSchedule
 │   │                          Lab 06+: MedicalRecord, Diagnosis, LabResult, Prescription
+│   ├── GrowablePatientManager.cs  ← Lab 05 (зростаючий масив — концептуальний)
 │   ├── Managers/           ← Lab 03+: PatientManager, DoctorManager, AppointmentManager
-│   │                          Lab 05: GrowablePatientManager
 │   │                          Lab 06+: MedicalRecordManager
 │   │                          Lab 07+: BillingManager (IPayable)
+│   │                          Lab 09+: Repository<T>
+│   │                          Lab 10+: AnalyticsManager
 │   ├── Interfaces/         ← Lab 07+: IPayable, ISchedulable, ICancellable
+│   │                          Lab 09+: IIdentifiable
+│   ├── Comparators/        ← Lab 10+: DoctorStatsByRevenue, DoctorStatsByName,
+│   │                                   PatientStatsBySpent, PatientStatsByLastVisit
 │   ├── Utils/              ← Lab 04: ClinicFormatter; Lab 05: ClinicValidator
 │   └── (майбутнє)
 │       ├── Events/         ← Lab 12: EventBus

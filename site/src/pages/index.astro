@@ -1,0 +1,76 @@
+---
+import AppShell from "@/components/AppShell.astro";
+import LabCard from "@/components/LabCard.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { courseStats, getLabs } from "@/data/course";
+
+const labs = getLabs();
+const visibleLabs = labs.slice(0, 6);
+---
+
+<SiteLayout title="OOP C# Course">
+  <AppShell>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">{courseStats.language}</p>
+        <h1>{courseStats.title}</h1>
+        <p>{courseStats.subtitle}</p>
+        <div class="hero-actions">
+          <a class="button primary" href="/labs/">Відкрити лабораторні</a>
+          <a class="button" href="/roadmap/">Карта розвитку</a>
+        </div>
+      </div>
+
+      <div class="course-panel">
+        <div>
+          <span>Домен</span>
+          <strong>{courseStats.domain}</strong>
+        </div>
+        <div>
+          <span>Матеріали</span>
+          <strong>{labs.length} готових лаб</strong>
+        </div>
+        <div>
+          <span>Повний план</span>
+          <strong>{courseStats.totalLabs} лабораторна</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-head">
+      <div>
+        <p class="eyebrow">Навчальна траєкторія</p>
+        <h2>Від синтаксису до архітектури</h2>
+      </div>
+      <a class="text-link" href="/labs/">Усі лабораторні</a>
+    </section>
+
+    <section class="lab-grid">
+      {visibleLabs.map((lab) => <LabCard lab={lab} />)}
+    </section>
+
+    <section class="split-section">
+      <div>
+        <p class="eyebrow">Формат курсу</p>
+        <h2>Одна система росте протягом семестру</h2>
+      </div>
+      <div class="feature-list">
+        <article>
+          <span>01</span>
+          <h3>Sandbox</h3>
+          <p>Перші лабораторні ізольовані: базовий C#, масиви, прості задачі та коміти після кожного кроку.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Clinic App</h3>
+          <p>Після класів студенти працюють із єдиною доменною системою: пацієнти, лікарі, записи, рахунки.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Architecture</h3>
+          <p>Курс поступово вводить інкапсуляцію, наслідування, інтерфейси, generics, аналітику й подальші модулі.</p>
+        </article>
+      </div>
+    </section>
+  </AppShell>
+</SiteLayout>

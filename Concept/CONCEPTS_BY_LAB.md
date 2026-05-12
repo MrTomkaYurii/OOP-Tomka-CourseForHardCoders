@@ -216,7 +216,7 @@
 
 **Нові конструкції:**
 - `interface IPayable { decimal GetCost(); bool IsPaid; void MarkPaid(); }`
-- `interface ICancellable { void Cancel(string reason); bool IsCancelled; }`
+- `interface ICancellable { bool Cancel(string reason = ""); bool IsCancelled; string CancellationReason; }`
 - `interface ISchedulable { bool CanSchedule(DateTime); }`
 - Реалізація кількох інтерфейсів: `class Appointment : IPayable, ICancellable`
 - Метод що приймає інтерфейс як параметр: `void Process(IPayable[] items)`
