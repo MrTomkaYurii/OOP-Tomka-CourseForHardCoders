@@ -1,11 +1,14 @@
 namespace ClinicApp.Managers;
 
+using ClinicApp.Events;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
 
 public class BillingManager
 {
     private readonly AppointmentManager _appointments;
+
+    public event EventHandler<PaymentEventArgs>? PaymentReceived;
 
     public BillingManager(AppointmentManager appointments)
     {
@@ -62,7 +65,9 @@ public class BillingManager
             if (all[i].Id == appointmentId)
             {
                 if (all[i].IsPaid || all[i].IsCancelled) return false;
+                decimal amount = all[i].GetCost();
                 all[i].MarkPaid();
+                PaymentReceived?.Invoke(this, new PaymentEventArgs(appointmentId, amount));
                 return true;
             }
         }

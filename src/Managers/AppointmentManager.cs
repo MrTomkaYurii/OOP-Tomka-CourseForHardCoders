@@ -1,6 +1,7 @@
 namespace ClinicApp.Managers;
 
 using ClinicApp.Enums;
+using ClinicApp.Events;
 using ClinicApp.Models;
 
 public class AppointmentManager
@@ -11,6 +12,11 @@ public class AppointmentManager
 
     private PatientManager _patients;
     private DoctorManager _doctors;
+
+    public event EventHandler<AppointmentEventArgs>? AppointmentBooked;
+    public event EventHandler<AppointmentEventArgs>? AppointmentCancelled;
+    public event EventHandler<AppointmentEventArgs>? AppointmentCompleted;
+    public event EventHandler<AppointmentEventArgs>? UrgentAppointmentBooked;
 
     public int Count => _count;
 
@@ -65,6 +71,9 @@ public class AppointmentManager
         Console.WriteLine("Запис [" + appointment.Id + "] створено: " +
                           patient.FullName + " → " + doctor.FullName +
                           " о " + scheduledAt.ToString("dd.MM.yyyy HH:mm"));
+
+        AppointmentBooked?.Invoke(this, new AppointmentEventArgs(
+            appointment.Id, patientId, doctorId, scheduledAt));
         return true;
     }
 
@@ -79,7 +88,13 @@ public class AppointmentManager
 
         string reasonArg = reason.Length > 0 ? reason : null!;
         bool result = appointment.Cancel(reasonArg);
-        if (result) Console.WriteLine("Запис [" + id + "] скасовано.");
+        if (result)
+        {
+            Console.WriteLine("Запис [" + id + "] скасовано.");
+            AppointmentCancelled?.Invoke(this, new AppointmentEventArgs(
+                appointment.Id, appointment.PatientId, appointment.DoctorId,
+                appointment.ScheduledAt, reason));
+        }
         else Console.WriteLine("Запис [" + id + "] неможливо скасувати (статус: " + appointment.Status + ").");
         return result;
     }
@@ -94,7 +109,13 @@ public class AppointmentManager
         }
 
         bool result = appointment.Complete();
-        if (result) Console.WriteLine("Запис [" + id + "] позначено як виконаний.");
+        if (result)
+        {
+            Console.WriteLine("Запис [" + id + "] позначено як виконаний.");
+            AppointmentCompleted?.Invoke(this, new AppointmentEventArgs(
+                appointment.Id, appointment.PatientId, appointment.DoctorId,
+                appointment.ScheduledAt));
+        }
         else Console.WriteLine("Запис [" + id + "] неможливо завершити (статус: " + appointment.Status + ").");
         return result;
     }
@@ -154,6 +175,10 @@ public class AppointmentManager
         Console.WriteLine("Терміновий запис [" + appointment.Id + "] створено: " +
                           patient.FullName + " → " + doctor.FullName +
                           " о " + scheduledAt.ToString("dd.MM.yyyy HH:mm"));
+
+        var args = new AppointmentEventArgs(appointment.Id, patientId, doctorId, scheduledAt, urgencyNote);
+        AppointmentBooked?.Invoke(this, args);
+        UrgentAppointmentBooked?.Invoke(this, args);
         return true;
     }
 

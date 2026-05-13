@@ -19,6 +19,8 @@ public class Clinic
     public ClinicExporter Exporter { get; }
     public CsvImporter Importer { get; }
     public SessionManager Session { get; }
+    public PatientPassportWriter Passport { get; }
+    public SessionEventTracker Tracker { get; }
 
     public Clinic(string name)
     {
@@ -35,6 +37,36 @@ public class Clinic
         Exporter = new ClinicExporter(this);
         Importer = new CsvImporter(this);
         Session = new SessionManager();
+        Passport = new PatientPassportWriter(this);
+        Tracker  = new SessionEventTracker(this);
+
+        SubscribeEvents();
+    }
+
+    private void SubscribeEvents()
+    {
+        // Logger слухає всі події
+        Patients.PatientAdded                  += Logger.OnPatientAdded;
+        Appointments.AppointmentBooked         += Logger.OnAppointmentBooked;
+        Appointments.AppointmentCancelled      += Logger.OnAppointmentCancelled;
+        Appointments.AppointmentCompleted      += Logger.OnAppointmentCompleted;
+        Appointments.UrgentAppointmentBooked   += Logger.OnUrgentBooked;
+        Billing.PaymentReceived                += Logger.OnPaymentReceived;
+        TreatmentPlans.PlanCompleted           += Logger.OnPlanCompleted;
+
+        // PassportWriter оновлює файл паспорту
+        Patients.PatientAdded                  += Passport.OnPatientAdded;
+        Appointments.AppointmentCompleted      += Passport.OnAppointmentCompleted;
+        TreatmentPlans.PlanCompleted           += Passport.OnPlanCompleted;
+
+        // Tracker рахує статистику сесії + реагує на чергу
+        Patients.PatientAdded                  += Tracker.OnPatientAdded;
+        Appointments.AppointmentBooked         += Tracker.OnAppointmentBooked;
+        Appointments.UrgentAppointmentBooked   += Tracker.OnUrgentBooked;
+        Appointments.AppointmentCancelled      += Tracker.OnAppointmentCancelled;
+        Appointments.AppointmentCompleted      += Tracker.OnAppointmentCompleted;
+        Billing.PaymentReceived                += Tracker.OnPaymentReceived;
+        TreatmentPlans.PlanCompleted           += Tracker.OnPlanCompleted;
     }
 
     public void DisplaySchedule(DateTime date)

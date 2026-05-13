@@ -324,13 +324,26 @@
 
 ---
 
-### Lab 13 — Events (feature/events → зливається)
+### Lab 13 — Events & Delegates (feature/events → злито в main)
 
 **Нові конструкції:**
-- `delegate void Handler(object? sender, EventArgs e)`
-- `event EventHandler<T> OnSomething`
-- `+=`, `-=` підписка/відписка
-- Власний `EventArgs`: `class AppointmentEventArgs : EventArgs`
+- `class XxxEventArgs : EventArgs` — власні аргументи події з readonly властивостями
+- `event EventHandler<T>?` — поле-подія в класі (заборонено `=` ззовні, тільки `+=`/`-=`)
+- `?.Invoke(this, args)` — безпечне підняття: не падає якщо підписників нема
+- `+=` / `-=` — підписка і відписка
+- Обробник: `void Handler(object? sender, TEventArgs e)` — обов'язкова сигнатура
+- Множинні підписники — всі спрацьовують при одному `Invoke`
+- `event` vs поле `EventHandler<T>?` — різниця в доступі ззовні
+
+**Нові файли:**
+- `src/Events/AppointmentEventArgs.cs`, `PatientEventArgs.cs`, `PaymentEventArgs.cs`, `TreatmentPlanEventArgs.cs`
+- `src/Utils/PatientPassportWriter.cs` — генерує `patients/passport_{id}.txt`
+- `src/Utils/SessionEventTracker.cs` — лічильники + WaitingRoom реакція + `session_summary.txt`
+
+**Що з'являється:** автоматичне логування, паспорти пацієнтів, алерти `alerts/`, підсумок сесії
+
+**Заборонено (ще не введено):**
+- LINQ (Lab 14)
 
 ---
 

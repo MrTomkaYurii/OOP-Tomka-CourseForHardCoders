@@ -3,6 +3,7 @@ using ClinicApp;
 using ClinicApp.Attributes;
 using ClinicApp.Comparators;
 using ClinicApp.Enums;
+using ClinicApp.Events;
 using ClinicApp.Interfaces;
 using ClinicApp.Managers;
 using ClinicApp.Models;
@@ -62,6 +63,11 @@ clinic.MedicalRecords.Add(new Diagnosis(2, 2, DateTime.Today.AddDays(-60),  "G43
 clinic.MedicalRecords.Add(new Prescription(2, 2, DateTime.Today.AddDays(-3), "Суматриптан",  "50 мг", 5,  "при нападі"));
 clinic.MedicalRecords.Add(new LabResult(3, 3, DateTime.Today.AddDays(-14),   "Загальний аналіз крові", 4.8, "×10⁹/л", "4.0–9.0", true));
 
+// ── Lab13 Task1: простий консольний обробник однієї події ─────
+// Демонстрація механіки: метод з правильною сигнатурою як обробник.
+// У Task2 цей рядок прибирається — Logger підписується замість нього.
+clinic.Appointments.AppointmentBooked += OnAppointmentBookedConsole;
+
 Console.WriteLine();
 
 // ──────────────────────────────────────────────
@@ -104,6 +110,8 @@ while (running)
         case "9":  TreatmentPlansMenu(clinic); break;
         case "10": FilesMenu(clinic); break;
         case "0":
+            clinic.Tracker.PrintSummary();
+            clinic.Tracker.SaveSummary();
             Console.Write("Зберегти сесію перед виходом? (y/n): ");
             if ((Console.ReadLine() ?? "").Trim().ToLower() == "y")
             {
@@ -800,6 +808,12 @@ static void PrintPatientStats(List<PatientStats> stats)
         Console.WriteLine("  " + (i + 1) + ". " + stats[i]);
 }
 
+// Lab13 Task1: простий обробник для демонстрації механіки події
+static void OnAppointmentBookedConsole(object? sender, AppointmentEventArgs e)
+{
+    Console.WriteLine($"  [EVENT] Запис #{e.AppointmentId} створено — пацієнт {e.PatientId}, лікар {e.DoctorId}");
+}
+
 // ──────────────────────────────────────────────
 //  Меню файлів (Lab 12)
 // ──────────────────────────────────────────────
@@ -931,38 +945,20 @@ static void TreatmentPlansMenu(Clinic clinic)
 
             case "4":
                 Console.Write("ID плану для активації: ");
-                if (!int.TryParse(Console.ReadLine(), out int actId))
-                {
-                    Console.WriteLine("Невірний ID.");
-                    break;
-                }
-                TreatmentPlan? toActivate = clinic.TreatmentPlans.GetById(actId);
-                if (toActivate == null) { Console.WriteLine("План не знайдено."); break; }
-                Console.WriteLine(toActivate.Activate() ? "Активовано." : "Не можна активувати (статус: " + toActivate.Status + ").");
+                if (!int.TryParse(Console.ReadLine(), out int actId)) { Console.WriteLine("Невірний ID."); break; }
+                Console.WriteLine(clinic.TreatmentPlans.Activate(actId) ? "Активовано." : "Не знайдено або неможливо активувати.");
                 break;
 
             case "5":
                 Console.Write("ID плану для завершення: ");
-                if (!int.TryParse(Console.ReadLine(), out int compId))
-                {
-                    Console.WriteLine("Невірний ID.");
-                    break;
-                }
-                TreatmentPlan? toComplete = clinic.TreatmentPlans.GetById(compId);
-                if (toComplete == null) { Console.WriteLine("План не знайдено."); break; }
-                Console.WriteLine(toComplete.Complete() ? "Завершено." : "Не можна завершити (статус: " + toComplete.Status + ").");
+                if (!int.TryParse(Console.ReadLine(), out int compId)) { Console.WriteLine("Невірний ID."); break; }
+                Console.WriteLine(clinic.TreatmentPlans.Complete(compId) ? "Завершено." : "Не знайдено або неможливо завершити.");
                 break;
 
             case "6":
                 Console.Write("ID плану для скасування: ");
-                if (!int.TryParse(Console.ReadLine(), out int canId))
-                {
-                    Console.WriteLine("Невірний ID.");
-                    break;
-                }
-                TreatmentPlan? toCancel = clinic.TreatmentPlans.GetById(canId);
-                if (toCancel == null) { Console.WriteLine("План не знайдено."); break; }
-                Console.WriteLine(toCancel.Cancel() ? "Скасовано." : "Не можна скасувати (статус: " + toCancel.Status + ").");
+                if (!int.TryParse(Console.ReadLine(), out int canId)) { Console.WriteLine("Невірний ID."); break; }
+                Console.WriteLine(clinic.TreatmentPlans.Cancel(canId) ? "Скасовано." : "Не знайдено або неможливо скасувати.");
                 break;
 
             case "7":
