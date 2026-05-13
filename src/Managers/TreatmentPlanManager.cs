@@ -1,4 +1,5 @@
 using ClinicApp.Enums;
+using ClinicApp.Events;
 using ClinicApp.Models;
 using ClinicApp.Utils;
 
@@ -7,6 +8,8 @@ namespace ClinicApp.Managers;
 public class TreatmentPlanManager
 {
     private readonly List<TreatmentPlan> _plans = new();
+
+    public event EventHandler<TreatmentPlanEventArgs>? PlanCompleted;
 
     public bool Add(TreatmentPlan plan)
     {
@@ -33,4 +36,26 @@ public class TreatmentPlanManager
         _plans.Where(p => p.Status == status).ToArray();
 
     public TreatmentPlan[] GetAll() => _plans.ToArray();
+
+    public bool Complete(int id)
+    {
+        TreatmentPlan? plan = GetById(id);
+        if (plan == null) return false;
+        bool ok = plan.Complete();
+        if (ok)
+            PlanCompleted?.Invoke(this, new TreatmentPlanEventArgs(plan.Id, plan.PatientId, plan.Diagnosis));
+        return ok;
+    }
+
+    public bool Activate(int id)
+    {
+        TreatmentPlan? plan = GetById(id);
+        return plan?.Activate() ?? false;
+    }
+
+    public bool Cancel(int id)
+    {
+        TreatmentPlan? plan = GetById(id);
+        return plan?.Cancel() ?? false;
+    }
 }
