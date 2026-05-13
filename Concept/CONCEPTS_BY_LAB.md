@@ -272,13 +272,38 @@
 
 ---
 
-### Lab 11 — Reflection & Attributes (feature/reflection → чекає Lab12)
+### Lab 11 — Reflection & Attributes (feature/reflection → злито в main)
 
 **Нові конструкції:**
-- `[AttributeUsage(...)] class RequiredAttribute : Attribute`
-- `typeof(T)`, `obj.GetType()`
-- `PropertyInfo[]` через `Type.GetProperties()`
-- `GetCustomAttribute<T>()`
+- `[AttributeUsage(AttributeTargets.Property)] sealed class XxxAttribute : Attribute` — власний атрибут з нуля
+- `typeof(T)` — статичний тип, відомий на час компіляції
+- `obj.GetType()` — динамічний тип під час виконання
+- `Type.GetProperties()` → `PropertyInfo[]`
+- `prop.GetValue(obj)` — зчитати значення властивості через рефлексію
+- `prop.SetValue(obj, value)` — записати значення через рефлексію
+- `prop.GetCustomAttribute<T>()` — зчитати атрибут конкретного типу
+- `prop.GetCustomAttributes()` — усі атрибути на властивості
+- `where T : new()` — constraint: тип T повинен мати публічний конструктор без параметрів
+- `Convert.ChangeType(value, targetType)` — конверсія значення до типу відомого тільки в рантаймі
+
+**Нові файли:**
+- `src/Attributes/RequiredAttribute.cs` — `[Required]`
+- `src/Attributes/MaxLengthAttribute.cs` — `[MaxLength(n)]`
+- `src/Attributes/MinValueAttribute.cs` — `[MinValue(n)]`
+- `src/Enums/TreatmentStatus.cs` — `Planned / Active / Completed / Cancelled`
+- `src/Models/TreatmentPlan.cs` — нова сутність з атрибутами
+- `src/Utils/ValidationResult.cs` — контейнер помилок
+- `src/Utils/ModelValidator.cs` — `static Validate(object)`, `PrintInfo(Type)`
+- `src/Utils/FormBuilder.cs` — `static Build<T>() where T : new()`
+- `src/Managers/TreatmentPlanManager.cs` — CRUD + валідація
+- `src/Clinic.cs` оновлено — `public TreatmentPlanManager TreatmentPlans { get; }`
+- `src/Program.cs` оновлено — пункт меню **9. Плани лікування**
+
+**Що з'явиться в меню:** 9. Плани лікування — додавання через FormBuilder, зміна статусу, PrintInfo
+
+**Заборонено (ще не введено):**
+- `delegate`, `event` (Lab 12)
+- LINQ (Lab 13)
 
 ---
 

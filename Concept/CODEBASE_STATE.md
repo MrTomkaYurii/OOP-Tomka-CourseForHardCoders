@@ -363,7 +363,48 @@ src/
 
 ---
 
-## Lab 11–21 — (детальніше після реалізації попередніх)
+## Lab 11 — Reflection & Attributes (feature/reflection)
+
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/reflection` — ✅ зливається
+**Файли:**
+```
+src/
+├── Attributes/
+│   ├── RequiredAttribute.cs     ← NEW: власний атрибут [Required]
+│   ├── MaxLengthAttribute.cs    ← NEW: власний атрибут [MaxLength(n)]
+│   └── MinValueAttribute.cs     ← NEW: власний атрибут [MinValue(n)]
+├── Enums/
+│   └── TreatmentStatus.cs       ← NEW: Planned/Active/Completed/Cancelled
+├── Models/
+│   └── TreatmentPlan.cs         ← NEW: модель із атрибутами на властивостях
+├── Utils/
+│   ├── ValidationResult.cs      ← NEW: контейнер помилок валідації
+│   ├── ModelValidator.cs        ← NEW: static Validate(object), PrintInfo(Type)
+│   └── FormBuilder.cs           ← NEW: static Build<T>() where T : new()
+└── Managers/
+    └── TreatmentPlanManager.cs  ← NEW: CRUD + валідація через ModelValidator
+```
+
+**Зміни в існуючих файлах:**
+- `Clinic.cs` — `public TreatmentPlanManager TreatmentPlans { get; }` + ініціалізація
+- `Program.cs` — "9. Плани лікування", `TreatmentPlansMenu()`
+
+**Нові концепції в Lab 11:**
+- `sealed class XxxAttribute : Attribute` — власний атрибут з нуля
+- `[AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]`
+- `typeof(T)` vs `obj.GetType()` — статичний vs динамічний тип
+- `Type.GetProperties()` → `PropertyInfo[]`
+- `prop.GetValue(obj)` / `prop.SetValue(obj, value)` — читання/запис через рефлексію
+- `prop.GetCustomAttribute<T>()` — атрибути конкретного типу
+- `where T : new()` — constraint на наявність публічного конструктора без параметрів
+- `Convert.ChangeType(value, targetType)` — конверсія без знання типу на час компіляції
+
+**Нове в меню:** пункт 9 "Плани лікування" → 7 підпунктів (включно з PrintInfo через рефлексію)
+
+---
+
+## Lab 12–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 
