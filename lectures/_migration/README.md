@@ -11,31 +11,17 @@
 - код оформлювати Markdown-блоками;
 - усі редакторські втручання фіксувати в журналі переносу.
 
-## Перенесені файли
+## Проміжні перенесені файли
 
-- `01-vstup.md`
-- `02-struktura-programy-zminni-ta-konstanty.md`
-- `03-literaly-ta-typy-danykh.md`
-- `04-konsolne-vvedennia-vyvedennia.md`
-- `05-operatsii-ta-prysvoiennia.md`
-- `06-peretvorennia-typiv.md`
-- `07-umovni-vyrazy-ta-cykly.md`
-- `08-masyvy.md`
-- `09-metody-parametry-return.md`
-- `10-parametry-ref-out-in-params.md`
-- `11-rekursiia-ta-lokalni-funktsii.md`
-- `12-switch-ta-enum.md`
-- `13-klasy-ta-obiekty.md`
-- `14-konstruktory-ta-this.md`
-- `15-program-main-ta-top-level-statements.md`
-- `16-struktury.md`
-- `17-typy-znachen-ta-posylan.md`
+Перший перенос із DOCX збережено в `lectures/_combined/`. Це проміжні великі Markdown-блоки для звірки, не активне джерело сторінок сайту.
 
 ## Структура для сайту
 
-Для відображення на сайті лекції додатково розрізані на окремі підрозділи в `lectures/sections/`.
+Для відображення на сайті лекції розрізані на окремі підрозділи в `lectures/sections/`.
 
 Формат: `RR-PP-slug.md`, де `RR` - номер розділу, `PP` - номер підрозділу.
+
+Короткі описи для карток сторінки `Лекційні матеріали` зберігаються в `lectures/sections/summaries.json`.
 
 Наприклад:
 

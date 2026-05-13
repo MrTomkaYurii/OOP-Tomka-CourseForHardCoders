@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 22
@@ -20,17 +20,17 @@ void Compare(int[] numbers1, int[] numbers2)
     int numbers2Sum = 0;
 
     foreach (int number in numbers1)
-        numbers1Sum += number;
+    numbers1Sum += number;
 
     foreach (int number in numbers2)
-        numbers2Sum += number;
+    numbers2Sum += number;
 
     if (numbers1Sum > numbers2Sum)
-        Console.WriteLine("сума чисел з масиву numbers1 більше");
+    Console.WriteLine("сума чисел з масиву numbers1 більше");
     else if (numbers1Sum < numbers2Sum)
-        Console.WriteLine("сума чисел з масиву numbers2 більше");
+    Console.WriteLine("сума чисел з масиву numbers2 більше");
     else
-        Console.WriteLine("суми чисел обох масивів рівні");
+    Console.WriteLine("суми чисел обох масивів рівні");
 }
 
 int[] numbers1 = { 1, 2, 3 };
@@ -45,7 +45,7 @@ Compare(numbers1, numbers2);
 int numbers1Sum = 0;
 
 foreach (int number in numbers1)
-    numbers1Sum += number;
+numbers1Sum += number;
 ```
 
 До того ж що, якщо ми захочемо порівнювати суму лише позитивних чи парних чисел чи інакше змінити логіку порівняння? У цьому краще винести дії, що повторюються, в окремий метод. Однак, якщо ці дії ніде більше в програмі не будуть викликатися і будуть використовуватися тільки в одному методі, то доцільно визначити ці дії у вигляді локальної функції. Для цього змінимо метод `Compare` таким чином:
@@ -57,17 +57,17 @@ void Compare(int[] numbers1, int[] numbers2)
     int numbers2Sum = Sum(numbers2);
 
     if (numbers1Sum > numbers2Sum)
-        Console.WriteLine("сума чисел з масиву numbers1 більше");
+    Console.WriteLine("сума чисел з масиву numbers1 більше");
     else if (numbers1Sum < numbers2Sum)
-        Console.WriteLine("сума чисел з масиву numbers2 більше");
+    Console.WriteLine("сума чисел з масиву numbers2 більше");
     else
-        Console.WriteLine("суми чисел обох масивів рівні");
+    Console.WriteLine("суми чисел обох масивів рівні");
 
     int Sum(int[] numbers)
     {
         int result = 0;
         foreach (int number in numbers)
-            result += number;
+        result += number;
         return result;
     }
 }

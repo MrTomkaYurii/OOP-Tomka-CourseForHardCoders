@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 16
@@ -120,14 +120,14 @@ string language = "en";
 switch (language)
 {
     case "en":
-        SayHelloEn();
-        break;
+    SayHelloEn();
+    break;
     case "ua":
-        SayHelloUa();
-        break;
+    SayHelloUa();
+    break;
     case "fr":
-        SayHelloFr();
-        break;
+    SayHelloFr();
+    break;
 }
 ```
 

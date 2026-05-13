@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 23
@@ -17,18 +17,18 @@ source: "../12-switch-ta-enum.md"
 switch (вираз)
 {
     case значення1:
-        код, виконуваний якщо вираз має значення1
-        break;
+    код, виконуваний якщо вираз має значення1
+    break;
     case значення2:
-        код, виконуваний якщо вираз має значення2
-        break;
+    код, виконуваний якщо вираз має значення2
+    break;
     //.............
     case значенняN:
-        код, виконуваний якщо вираз має значення N
-        break;
+    код, виконуваний якщо вираз має значення N
+    break;
     default:
-        код, який виконується, якщо вираз не має жодного з вищевказаних значень
-        break;
+    код, який виконується, якщо вираз не має жодного з вищевказаних значень
+    break;
 }
 ```
 
@@ -44,14 +44,14 @@ string name = "Tom";
 switch (name)
 {
     case "Bob":
-        Console.WriteLine("Ваше ім'я - Bob");
-        break;
+    Console.WriteLine("Ваше ім'я - Bob");
+    break;
     case "Tom":
-        Console.WriteLine("Ваше ім'я - Tom");
-        break;
+    Console.WriteLine("Ваше ім'я - Tom");
+    break;
     case "Sam":
-        Console.WriteLine("Ваше ім'я - Sam");
-        break;
+    Console.WriteLine("Ваше ім'я - Sam");
+    break;
 }
 ```
 
@@ -59,8 +59,8 @@ switch (name)
 
 ```csharp
 case "Tom":
-    Console.WriteLine("Ваше ім'я - Tom");
-    break;
+Console.WriteLine("Ваше ім'я - Tom");
+break;
 ```
 
 Відповідно ми побачимо на консолі
@@ -75,17 +75,17 @@ string name = "Alex";
 switch (name)
 {
     case "Bob":
-        Console.WriteLine("Ваше ім'я - Bob");
-        break;
+    Console.WriteLine("Ваше ім'я - Bob");
+    break;
     case "Tom":
-        Console.WriteLine("Ваше ім'я - Tom");
-        break;
+    Console.WriteLine("Ваше ім'я - Tom");
+    break;
     case "Sam":
-        Console.WriteLine("Ваше ім'я - Sam");
-        break;
+    Console.WriteLine("Ваше ім'я - Sam");
+    break;
     default:
-        Console.WriteLine("Невідоме ім'я");
-        break;
+    Console.WriteLine("Невідоме ім'я");
+    break;
 }
 ```
 
@@ -93,8 +93,8 @@ switch (name)
 
 ```csharp
 default:
-    Console.WriteLine("Невідоме ім'я");
-    break;
+Console.WriteLine("Невідоме ім'я");
+break;
 ```
 
 Однак якщо ми хочемо, щоб, навпаки, після виконання поточного блоку `case` виконувався інший блок `case`, то ми можемо використовувати замість `break` оператор `goto case`:
@@ -104,17 +104,17 @@ int number = 1;
 switch (number)
 {
     case 1:
-        Console.WriteLine("case 1");
-        goto case 5; // Перехід до case 5
+    Console.WriteLine("case 1");
+    goto case 5; // Перехід до case 5
     case 3:
-        Console.WriteLine("case 3");
-        break;
+    Console.WriteLine("case 3");
+    break;
     case 5:
-        Console.WriteLine("case 5");
-        break;
+    Console.WriteLine("case 5");
+    break;
     default:
-        Console.WriteLine("default");
-        break;
+    Console.WriteLine("default");
+    break;
 }
 ```
 

@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 14
@@ -220,7 +220,7 @@ int[,,] nums3 = new int[2, 3, 4];
 ```csharp
 int[,] numbers = { { 1, 2, 3 }, { 4, 5, 6 } };
 foreach (int i in numbers)
-    Console.Write($"{i} ");
+Console.Write($"{i} ");
 ```
 
 У даному випадку довжина масиву `numbers` дорівнює 6. І цикл `foreach` виводить всі елементи масиву в рядок:

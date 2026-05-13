@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 13
@@ -76,7 +76,7 @@ for (int i = 1; i < 4; i++)
 
 ```csharp
 for (int i = 1; i < 4; i++)
-    Console.WriteLine(i);
+Console.WriteLine(i);
 
 // або так
 for (int i = 1; i < 4; i++) Console.WriteLine(i);
@@ -127,7 +127,7 @@ for (; i < 4;)
 
 ```csharp
 for (int i = 1, j = 1; i < 10; i++, j++)
-    Console.WriteLine($"{i * j}");
+Console.WriteLine($"{i * j}");
 ```
 
 Тут у першій частині оголошення циклу визначаються дві змінні: `i` та `j`. Цикл виконується, поки `i` не дорівнюватиме 10. Після кожної ітерації змінні `i` і `j` збільшуються на одиницю. Консольний висновок програми:
@@ -243,7 +243,7 @@ foreach (var c in "Tom")
 for (int i = 0; i < 9; i++)
 {
     if (i == 5)
-        break;
+    break;
     Console.WriteLine(i);
 }
 ```
@@ -258,7 +258,7 @@ for (int i = 0; i < 9; i++)
 for (int i = 0; i < 9; i++)
 {
     if (i == 5)
-        continue;
+    continue;
     Console.WriteLine(i);
 }
 ```

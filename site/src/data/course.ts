@@ -42,6 +42,7 @@ const root = path.resolve(process.cwd(), "..");
 const labsDir = path.join(root, "labs");
 const lecturesDir = path.join(root, "lectures");
 const lectureSectionsDir = path.join(lecturesDir, "sections");
+const lectureSummariesPath = path.join(lectureSectionsDir, "summaries.json");
 const base = import.meta.env.BASE_URL;
 
 function siteAssetPath(assetPath: string) {
@@ -213,17 +214,14 @@ function stripMarkdown(value: string) {
 }
 
 function parseFrontmatter(markdown: string) {
-  if (!markdown.startsWith("---\n")) {
+  const match = markdown.match(/^\uFEFF?---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+
+  if (!match) {
     return { data: {} as Record<string, string>, body: markdown };
   }
 
-  const end = markdown.indexOf("\n---", 4);
-  if (end === -1) {
-    return { data: {} as Record<string, string>, body: markdown };
-  }
-
-  const raw = markdown.slice(4, end).trim();
-  const body = markdown.slice(end + 4).replace(/^\s+/, "");
+  const raw = match[1].trim();
+  const body = markdown.slice(match[0].length).replace(/^\s+/, "");
   const data: Record<string, string> = {};
 
   for (const line of raw.split("\n")) {
@@ -238,6 +236,14 @@ function parseFrontmatter(markdown: string) {
   }
 
   return { data, body };
+}
+
+function getLectureSummaries() {
+  if (!existsSync(lectureSummariesPath)) {
+    return {} as Record<string, string>;
+  }
+
+  return JSON.parse(readFileSync(lectureSummariesPath, "utf-8")) as Record<string, string>;
 }
 
 function collectHeadings(markdown: string, minDepth = 2) {
@@ -314,6 +320,8 @@ export function getLectures(): Lecture[] {
     return [];
   }
 
+  const summaries = getLectureSummaries();
+
   return readdirSync(lectureSectionsDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && /^\d{2}-.+\.md$/.test(entry.name))
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -328,6 +336,7 @@ export function getLectures(): Lecture[] {
       const title = data.title ?? markdown.match(/^##\s+(.+)$/m)?.[1]?.trim() ?? `Лекція ${numberLabel}`;
       const chapterTitle = data.chapterTitle ?? lectureChapterTitle(chapter);
       const rendered = renderMarkdown(markdown, { assetPrefix: siteAssetPath("/lecture-assets/docx") });
+      const summary = summaries[slug];
 
       return {
         slug,
@@ -339,7 +348,7 @@ export function getLectures(): Lecture[] {
         section,
         numberLabel,
         sourcePath,
-        excerpt: stripMarkdown(markdown).slice(0, 210),
+        excerpt: summary ?? stripMarkdown(markdown).slice(0, 210),
         headings: rendered.headings,
         html: rendered.html,
       };

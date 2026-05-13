@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 12
@@ -43,7 +43,7 @@ if (num1 > num2)
 int num1 = 8;
 int num2 = 6;
 if (num1 > num2)
-    Console.WriteLine($"Число {num1} більше числа {num2}");
+Console.WriteLine($"Число {num1} більше числа {num2}");
 
 // або так
 if (num1 > num2) Console.WriteLine($"Число {num1} більше числа {num2}");
@@ -85,9 +85,9 @@ else
 int num1 = 8;
 int num2 = 6;
 if (num1 > num2)
-    Console.WriteLine($"Число {num1} більше числа {num2}");
+Console.WriteLine($"Число {num1} більше числа {num2}");
 else
-    Console.WriteLine($"Число {num1} менше числа {num2}");
+Console.WriteLine($"Число {num1} менше числа {num2}");
 ```
 
 ## else if
@@ -117,13 +117,13 @@ else
 string name = "Alex";
 
 if (name == "Tom")
-    Console.WriteLine("Вас звуть Tomas");
+Console.WriteLine("Вас звуть Tomas");
 else if (name == "Bob")
-    Console.WriteLine("Вас звуть Robert");
+Console.WriteLine("Вас звуть Robert");
 else if (name == "Mike")
-    Console.WriteLine("Вас звуть Michael");
+Console.WriteLine("Вас звуть Michael");
 else
-    Console.WriteLine("Невідоме ім'я");
+Console.WriteLine("Невідоме ім'я");
 ```
 
 ## Тернарна операція

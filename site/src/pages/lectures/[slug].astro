@@ -18,6 +18,13 @@ const lectures = getLectures();
 const currentIndex = lectures.findIndex((item) => item.slug === lecture.slug);
 const previousLecture = currentIndex > 0 ? lectures[currentIndex - 1] : undefined;
 const nextLecture = currentIndex >= 0 && currentIndex < lectures.length - 1 ? lectures[currentIndex + 1] : undefined;
+const chapterLabel = lecture.chapterTitle.replace(/^Розділ\s+\d+\.\s*/, "");
+const formatPagerTitle = (item: typeof lecture) => {
+  const escapedNumber = item.numberLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const startsWithNumber = new RegExp(`^${escapedNumber}[.:\\s]`).test(item.title);
+
+  return startsWithNumber ? item.title : `${item.numberLabel}. ${item.title}`;
+};
 
 const tocGroups = lecture.headings.reduce<Array<{ parent: (typeof lecture.headings)[number]; children: typeof lecture.headings }>>(
   (groups, heading) => {
@@ -43,19 +50,15 @@ const tocGroups = lecture.headings.reduce<Array<{ parent: (typeof lecture.headin
         <div>
           <p class="eyebrow">Підрозділ {lecture.numberLabel}</p>
           <h1>{lecture.title}</h1>
-          <p>Матеріал перенесено з DOCX-конспекту у Markdown без скорочення пояснень, із кодовими прикладами та рисунками.</p>
+          <p>{lecture.excerpt}</p>
         </div>
         <aside class="lab-facts">
           <div>
-            <span>Джерело</span>
-            <strong>DOCX конспект</strong>
+            <span>Розділ</span>
+            <strong>{chapterLabel}</strong>
           </div>
           <div>
-            <span>Формат</span>
-            <strong>Markdown + assets</strong>
-          </div>
-          <div>
-            <span>Номер</span>
+            <span>Підрозділ</span>
             <strong>{lecture.numberLabel}</strong>
           </div>
         </aside>
@@ -100,14 +103,14 @@ const tocGroups = lecture.headings.reduce<Array<{ parent: (typeof lecture.headin
         {previousLecture ? (
           <a class="pager-card previous" href={sitePath(`/lectures/${previousLecture.slug}/`)}>
             <span>Попередня</span>
-            <strong>{previousLecture.numberLabel}: {previousLecture.title}</strong>
+            <strong>{formatPagerTitle(previousLecture)}</strong>
           </a>
         ) : <span></span>}
 
         {nextLecture ? (
           <a class="pager-card next" href={sitePath(`/lectures/${nextLecture.slug}/`)}>
             <span>Наступна</span>
-            <strong>{nextLecture.numberLabel}: {nextLecture.title}</strong>
+            <strong>{formatPagerTitle(nextLecture)}</strong>
           </a>
         ) : <span></span>}
       </nav>
