@@ -439,7 +439,46 @@ src/
 
 ---
 
-## Lab 13–21 — (детальніше після реалізації попередніх)
+## Lab 13 — Events & Delegates (feature/events)
+
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/events` — ✅ зливається
+**Файли:**
+```
+src/
+├── Events/
+│   ├── AppointmentEventArgs.cs  ← NEW: Id, PatientId, DoctorId, ScheduledAt, Notes
+│   ├── PatientEventArgs.cs      ← NEW: PatientId, FullName
+│   ├── PaymentEventArgs.cs      ← NEW: AppointmentId, Amount
+│   └── TreatmentPlanEventArgs.cs← NEW: PlanId, PatientId, Diagnosis
+└── Utils/
+    ├── PatientPassportWriter.cs ← NEW: генерує patients/passport_{id}.txt за подіями
+    └── SessionEventTracker.cs   ← NEW: рахує події, реагує на чергу, session_summary.txt
+```
+
+**Зміни в існуючих файлах:**
+- `AppointmentManager` — `AppointmentBooked`, `AppointmentCancelled`, `AppointmentCompleted`, `UrgentAppointmentBooked`
+- `PatientManager` — `PatientAdded`
+- `BillingManager` — `PaymentReceived`
+- `TreatmentPlanManager` — `PlanCompleted` + методи `Activate(id)`, `Complete(id)`, `Cancel(id)`
+- `ClinicLogger` — обробники `OnPatientAdded`, `OnAppointmentBooked/Cancelled/Completed`, `OnUrgentBooked` (+ alerts/), `OnPaymentReceived`, `OnPlanCompleted`
+- `Clinic.cs` — `Passport`, `Tracker` властивості + `SubscribeEvents()`
+- `Program.cs` — Task1 handler, `Tracker.PrintSummary/SaveSummary` при виході
+
+**Нові концепції в Lab 13:**
+- `class XxxEventArgs : EventArgs` — власні аргументи події
+- `event EventHandler<T>?` — оголошення події в класі
+- `?.Invoke(sender, args)` — безпечне підняття події
+- `+=` / `-=` — підписка / відписка
+- Множинні підписники на одну подію — спрацьовують всі незалежно
+- `event` vs `delegate` поле — заборона `=` ззовні
+- Cross-domain реакція через обробник (WaitingRoom в SessionEventTracker)
+
+**Що з'являється:** Logger тепер пише автоматично; паспорти в `patients/`; алерти в `alerts/`; підсумок `session_summary.txt` при виході
+
+---
+
+## Lab 14–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 
