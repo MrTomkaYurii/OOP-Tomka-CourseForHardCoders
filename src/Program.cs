@@ -1,3 +1,4 @@
+using System.Text;
 using ClinicApp;
 using ClinicApp.Attributes;
 using ClinicApp.Comparators;
@@ -11,6 +12,18 @@ using ClinicApp.Utils;
 //  Ініціалізація клініки та тестові дані
 // ──────────────────────────────────────────────
 Clinic clinic = new Clinic("Медична Клініка");
+
+if (clinic.Session.Exists())
+{
+    Console.Write("Знайдено збережену сесію. Завантажити? (y/n): ");
+    if ((Console.ReadLine() ?? "").Trim().ToLower() == "y")
+    {
+        int loaded = clinic.Session.Load(clinic);
+        Console.WriteLine($"Завантажено {loaded} пацієнтів із сесії.");
+        clinic.Logger.LogInfo($"Сесію завантажено: {loaded} пацієнтів.");
+    }
+}
+
 
 clinic.Patients.Add(new Patient("Іван",   "Петренко", new DateTime(1985, 3, 15), BloodType.APositive,  "0501234567"));
 clinic.Patients.Add(new Patient("Олена",  "Коваль",   new DateTime(1992, 7, 22), BloodType.BNegative,  "0672345678"));
@@ -70,7 +83,8 @@ while (running)
     Console.WriteLine("║  7. Звіт           — загальна статистика    ║");
     Console.WriteLine("║  8. Аналітика      — статистика, рейтинги   ║");
     Console.WriteLine("║  9. Плани лікування — рефлексія, атрибути   ║");
-    Console.WriteLine("║  0. Вийти                                    ║");
+    Console.WriteLine("║ 10. Файли           — експорт, імпорт, лог  ║");
+    Console.WriteLine("║  0. Вийти (зберегти сесію)                  ║");
     Console.WriteLine("╚══════════════════════════════════════════════╝");
     Console.Write("Оберіть розділ: ");
 
@@ -87,8 +101,16 @@ while (running)
         case "6": WaitingRoomMenu(clinic); break;
         case "7": clinic.GenerateReport(); break;
         case "8": AnalyticsMenu(clinic); break;
-        case "9": TreatmentPlansMenu(clinic); break;
+        case "9":  TreatmentPlansMenu(clinic); break;
+        case "10": FilesMenu(clinic); break;
         case "0":
+            Console.Write("Зберегти сесію перед виходом? (y/n): ");
+            if ((Console.ReadLine() ?? "").Trim().ToLower() == "y")
+            {
+                clinic.Session.Save(clinic);
+                clinic.Logger.LogInfo("Сесію збережено при виході.");
+                Console.WriteLine("Сесію збережено.");
+            }
             running = false;
             Console.WriteLine("До побачення!");
             break;
@@ -776,6 +798,84 @@ static void PrintPatientStats(List<PatientStats> stats)
 {
     for (int i = 0; i < stats.Count; i++)
         Console.WriteLine("  " + (i + 1) + ". " + stats[i]);
+}
+
+// ──────────────────────────────────────────────
+//  Меню файлів (Lab 12)
+// ──────────────────────────────────────────────
+static void FilesMenu(Clinic clinic)
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        Console.WriteLine("── Файли ─────────────────────────────");
+        Console.WriteLine("  1. Експортувати всі звіти");
+        Console.WriteLine("  2. Експортувати пацієнтів");
+        Console.WriteLine("  3. Експортувати записи на прийом");
+        Console.WriteLine("  4. Імпортувати пацієнтів з CSV");
+        Console.WriteLine("  5. Переглянути останні записи логу");
+        Console.WriteLine("  6. Очистити лог");
+        Console.WriteLine("  0. Назад");
+        Console.Write("Оберіть: ");
+
+        string cmd = Console.ReadLine() ?? "";
+
+        switch (cmd)
+        {
+            case "1":
+                Console.WriteLine("Експорт...");
+                clinic.Exporter.ExportAll();
+                clinic.Logger.LogInfo("Виконано повний експорт звітів.");
+                break;
+
+            case "2":
+                string p2 = clinic.Exporter.ExportPatients();
+                Console.WriteLine("Збережено: " + p2);
+                clinic.Logger.LogInfo($"Експортовано пацієнтів: {p2}");
+                break;
+
+            case "3":
+                string p3 = clinic.Exporter.ExportAppointments();
+                Console.WriteLine("Збережено: " + p3);
+                clinic.Logger.LogInfo($"Експортовано записи: {p3}");
+                break;
+
+            case "4":
+                Console.Write("Шлях до CSV файлу (наприклад import/patients.csv): ");
+                string csvPath = Console.ReadLine() ?? "";
+                ImportResult result = clinic.Importer.ImportPatients(csvPath);
+                result.Print();
+                clinic.Logger.LogInfo($"Імпорт CSV '{csvPath}': {result.Imported} успішно, {result.Skipped} пропущено.");
+                break;
+
+            case "5":
+                Console.Write("Скільки останніх рядків показати? ");
+                if (!int.TryParse(Console.ReadLine(), out int n)) n = 10;
+                string[] lines = clinic.Logger.GetLastLines(n);
+                if (lines.Length == 0) { Console.WriteLine("Лог порожній."); break; }
+                foreach (string line in lines)
+                    Console.WriteLine("  " + line);
+                break;
+
+            case "6":
+                Console.Write("Очистити лог? (y/n): ");
+                if ((Console.ReadLine() ?? "").Trim().ToLower() == "y")
+                {
+                    clinic.Logger.Clear();
+                    Console.WriteLine("Лог очищено.");
+                }
+                break;
+
+            case "0":
+                inMenu = false;
+                break;
+
+            default:
+                Console.WriteLine("Невідома команда.");
+                break;
+        }
+        Console.WriteLine();
+    }
 }
 
 // ──────────────────────────────────────────────
