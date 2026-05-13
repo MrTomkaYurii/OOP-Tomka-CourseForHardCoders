@@ -15,6 +15,9 @@ obj/
 # VS Code
 .vscode/
 
+# Local agent worktrees
+.claude/worktrees/
+
 # NuGet
 *.nupkg
 *.snupkg
