@@ -2,11 +2,13 @@
 import AppShell from "@/components/AppShell.astro";
 import LabCard from "@/components/LabCard.astro";
 import SiteLayout from "@/layouts/SiteLayout.astro";
-import { courseStats, getLabs } from "@/data/course";
+import { courseStats, getLabs, getLectures } from "@/data/course";
 import { sitePath } from "@/utils/paths";
 
 const labs = getLabs();
+const lectures = getLectures();
 const visibleLabs = labs.slice(0, 6);
+const visibleLectures = lectures.slice(0, 4);
 ---
 
 <SiteLayout title="OOP C# Course">
@@ -18,6 +20,7 @@ const visibleLabs = labs.slice(0, 6);
         <p>{courseStats.subtitle}</p>
         <div class="hero-actions">
           <a class="button primary" href={sitePath("/labs/")}>Відкрити лабораторні</a>
+          <a class="button" href={sitePath("/lectures/")}>Лекції</a>
           <a class="button" href={sitePath("/roadmap/")}>Карта розвитку</a>
         </div>
       </div>
@@ -29,7 +32,7 @@ const visibleLabs = labs.slice(0, 6);
         </div>
         <div>
           <span>Матеріали</span>
-          <strong>{labs.length} готових лаб</strong>
+          <strong>{labs.length} лаб / {lectures.length} лекцій</strong>
         </div>
         <div>
           <span>Повний план</span>
@@ -48,6 +51,24 @@ const visibleLabs = labs.slice(0, 6);
 
     <section class="lab-grid">
       {visibleLabs.map((lab) => <LabCard lab={lab} />)}
+    </section>
+
+    <section class="section-head">
+      <div>
+        <p class="eyebrow">Теорія</p>
+        <h2>Конспект лекцій поруч із практикою</h2>
+      </div>
+      <a class="text-link" href={sitePath("/lectures/")}>Усі лекції</a>
+    </section>
+
+    <section class="lecture-strip">
+      {visibleLectures.map((lecture) => (
+        <a class="lecture-mini" href={sitePath(`/lectures/${lecture.slug}/`)}>
+          <span>{lecture.numberLabel}</span>
+          <strong>{lecture.title}</strong>
+          <p>{lecture.excerpt}</p>
+        </a>
+      ))}
     </section>
 
     <section class="split-section">

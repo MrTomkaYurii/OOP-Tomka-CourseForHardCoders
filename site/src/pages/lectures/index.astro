@@ -1,0 +1,31 @@
+---
+import AppShell from "@/components/AppShell.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { getLectures } from "@/data/course";
+import { sitePath } from "@/utils/paths";
+
+const lectures = getLectures();
+---
+
+<SiteLayout title="Лекції | OOP C# Course">
+  <AppShell>
+    <section class="page-title">
+      <p class="eyebrow">Конспект</p>
+      <h1>Лекційні матеріали</h1>
+      <p>Сторінки зібрані з Markdown-файлів `lectures/*.md`, перенесених із DOCX-конспекту. Рисунки та приклади коду збережені поруч із текстом лекції.</p>
+    </section>
+
+    <section class="lecture-grid">
+      {lectures.map((lecture) => (
+        <a class="lecture-card" href={sitePath(`/lectures/${lecture.slug}/`)}>
+          <div class="lab-card-top">
+            <span class="lab-number">{lecture.numberLabel}</span>
+            <span class="status">Markdown</span>
+          </div>
+          <h2>{lecture.title}</h2>
+          <p>{lecture.excerpt}</p>
+        </a>
+      ))}
+    </section>
+  </AppShell>
+</SiteLayout>

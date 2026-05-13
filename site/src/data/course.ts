@@ -18,11 +18,54 @@ export type Lab = {
   sourcePath: string;
   excerpt: string;
   html: string;
-  headings: Array<{ depth: number; text: string; slug: string }>;
+  headings: Array<Heading>;
+};
+
+export type Heading = { depth: number; text: string; slug: string };
+
+export type Lecture = {
+  slug: string;
+  number: number;
+  numberLabel: string;
+  title: string;
+  chapter: number;
+  chapterTitle: string;
+  section: number;
+  sections: Array<{ text: string; slug: string }>;
+  sourcePath: string;
+  excerpt: string;
+  html: string;
+  headings: Array<Heading>;
 };
 
 const root = path.resolve(process.cwd(), "..");
 const labsDir = path.join(root, "labs");
+const lecturesDir = path.join(root, "lectures");
+const lectureSectionsDir = path.join(lecturesDir, "sections");
+const base = import.meta.env.BASE_URL;
+
+function siteAssetPath(assetPath: string) {
+  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+  const normalizedPath = assetPath.startsWith("/") ? assetPath : `/${assetPath}`;
+
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+function lectureChapterTitle(chapter: number, fallback = `Розділ ${chapter}`) {
+  if (chapter === 1) {
+    return "Розділ 1. Вступ";
+  }
+
+  if (chapter === 2) {
+    return "Розділ 2. Основи програмування на C#";
+  }
+
+  if (chapter === 3) {
+    return "Розділ 3. Класи, структури та простір імен";
+  }
+
+  return fallback;
+}
 
 const meta: Record<string, Omit<Lab, "sourcePath" | "excerpt" | "html" | "headings">> = {
   "lab-01-intro": {
@@ -169,14 +212,72 @@ function stripMarkdown(value: string) {
     .trim();
 }
 
-function collectHeadings(markdown: string) {
+function parseFrontmatter(markdown: string) {
+  if (!markdown.startsWith("---\n")) {
+    return { data: {} as Record<string, string>, body: markdown };
+  }
+
+  const end = markdown.indexOf("\n---", 4);
+  if (end === -1) {
+    return { data: {} as Record<string, string>, body: markdown };
+  }
+
+  const raw = markdown.slice(4, end).trim();
+  const body = markdown.slice(end + 4).replace(/^\s+/, "");
+  const data: Record<string, string> = {};
+
+  for (const line of raw.split("\n")) {
+    const separator = line.indexOf(":");
+    if (separator === -1) {
+      continue;
+    }
+
+    const key = line.slice(0, separator).trim();
+    const value = line.slice(separator + 1).trim().replace(/^"|"$/g, "");
+    data[key] = value;
+  }
+
+  return { data, body };
+}
+
+function collectHeadings(markdown: string, minDepth = 2) {
   const counts = new Map<string, number>();
 
-  return [...markdown.matchAll(/^(#{2,3})\s+(.+)$/gm)].map((match) => ({
+  return [...markdown.matchAll(/^(#{1,3})\s+(.+)$/gm)]
+    .filter((match) => match[1].length >= minDepth)
+    .map((match) => ({
     depth: match[1].length,
     text: match[2].trim(),
     slug: uniqueSlug(slugify(match[2]), counts),
   }));
+}
+
+function renderMarkdown(markdown: string, options: { assetPrefix?: string } = {}) {
+  const renderHeadings = collectHeadings(markdown, 1);
+  const headings = renderHeadings.filter((heading) => heading.depth >= 2);
+  const renderer = new marked.Renderer();
+  let headingIndex = 0;
+
+  renderer.heading = ({ tokens, depth }) => {
+    const text = tokens.map((token) => token.raw).join("");
+    const id = depth <= 3 ? renderHeadings[headingIndex]?.slug ?? slugify(text) : slugify(text);
+
+    if (depth <= 3) {
+      headingIndex += 1;
+    }
+
+    return `<h${depth} id="${id}">${text}</h${depth}>`;
+  };
+
+  const preparedMarkdown = options.assetPrefix
+    ? markdown.replace(/\]\(assets\/docx\/([^)]+)\)/g, `](${options.assetPrefix}/$1)`)
+    : markdown;
+
+  return {
+    headings,
+    allHeadings: renderHeadings,
+    html: marked(preparedMarkdown, { renderer, gfm: true }) as string,
+  };
 }
 
 export function getLabs(): Lab[] {
@@ -191,23 +292,14 @@ export function getLabs(): Lab[] {
     .map((slug) => {
       const sourcePath = path.join(labsDir, slug, "instructions.md");
       const markdown = readFileSync(sourcePath, "utf-8");
-      const headings = collectHeadings(markdown);
-      const renderer = new marked.Renderer();
-      let headingIndex = 0;
-
-      renderer.heading = ({ tokens, depth }) => {
-        const text = tokens.map((token) => token.raw).join("");
-        const id = headings[headingIndex]?.slug ?? slugify(text);
-        headingIndex += 1;
-        return `<h${depth} id="${id}">${text}</h${depth}>`;
-      };
+      const rendered = renderMarkdown(markdown);
 
       return {
         ...meta[slug],
         sourcePath,
         excerpt: stripMarkdown(markdown).slice(0, 180),
-        headings,
-        html: marked(markdown, { renderer, gfm: true }) as string,
+        headings: rendered.headings,
+        html: rendered.html,
       };
     })
     .sort((a, b) => a.number - b.number);
@@ -215,6 +307,48 @@ export function getLabs(): Lab[] {
 
 export function getLab(slug: string) {
   return getLabs().find((lab) => lab.slug === slug);
+}
+
+export function getLectures(): Lecture[] {
+  if (!existsSync(lectureSectionsDir)) {
+    return [];
+  }
+
+  return readdirSync(lectureSectionsDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /^\d{2}-.+\.md$/.test(entry.name))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((entry) => {
+      const sourcePath = path.join(lectureSectionsDir, entry.name);
+      const rawMarkdown = readFileSync(sourcePath, "utf-8");
+      const { data, body: markdown } = parseFrontmatter(rawMarkdown);
+      const chapter = Number(data.chapter ?? entry.name.slice(0, 2));
+      const section = Number(data.section ?? entry.name.slice(3, 5));
+      const numberLabel = data.number ?? `${chapter}.${section}`;
+      const slug = entry.name.replace(/\.md$/, "");
+      const title = data.title ?? markdown.match(/^##\s+(.+)$/m)?.[1]?.trim() ?? `Лекція ${numberLabel}`;
+      const chapterTitle = data.chapterTitle ?? lectureChapterTitle(chapter);
+      const rendered = renderMarkdown(markdown, { assetPrefix: siteAssetPath("/lecture-assets/docx") });
+
+      return {
+        slug,
+        number: chapter * 100 + section,
+        title,
+        chapter,
+        chapterTitle,
+        sections: [],
+        section,
+        numberLabel,
+        sourcePath,
+        excerpt: stripMarkdown(markdown).slice(0, 210),
+        headings: rendered.headings,
+        html: rendered.html,
+      };
+    })
+    .sort((a, b) => a.chapter - b.chapter || Number(a.numberLabel.split(".")[1]) - Number(b.numberLabel.split(".")[1]));
+}
+
+export function getLecture(slug: string) {
+  return getLectures().find((lecture) => lecture.slug === slug);
 }
 
 export const courseStats = {

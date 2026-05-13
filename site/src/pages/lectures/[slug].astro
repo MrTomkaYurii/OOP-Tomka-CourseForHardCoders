@@ -1,0 +1,147 @@
+---
+import AppShell from "@/components/AppShell.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { getLecture, getLectures } from "@/data/course";
+import { sitePath } from "@/utils/paths";
+
+export function getStaticPaths() {
+  return getLectures().map((lecture) => ({ params: { slug: lecture.slug } }));
+}
+
+const lecture = getLecture(Astro.params.slug!);
+
+if (!lecture) {
+  return Astro.redirect(sitePath("/lectures/"));
+}
+
+const lectures = getLectures();
+const currentIndex = lectures.findIndex((item) => item.slug === lecture.slug);
+const previousLecture = currentIndex > 0 ? lectures[currentIndex - 1] : undefined;
+const nextLecture = currentIndex >= 0 && currentIndex < lectures.length - 1 ? lectures[currentIndex + 1] : undefined;
+
+const tocGroups = lecture.headings.reduce<Array<{ parent: (typeof lecture.headings)[number]; children: typeof lecture.headings }>>(
+  (groups, heading) => {
+    if (heading.depth === 2) {
+      groups.push({ parent: heading, children: [] });
+      return groups;
+    }
+
+    if (heading.depth === 3 && groups.length > 0) {
+      groups[groups.length - 1].children.push(heading);
+    }
+
+    return groups;
+  },
+  [],
+);
+---
+
+<SiteLayout title={`${lecture.title} | OOP C# Course`}>
+  <AppShell>
+    <article class="lab-layout">
+      <header class="lab-hero lecture-hero">
+        <div>
+          <p class="eyebrow">Підрозділ {lecture.numberLabel}</p>
+          <h1>{lecture.title}</h1>
+          <p>Матеріал перенесено з DOCX-конспекту у Markdown без скорочення пояснень, із кодовими прикладами та рисунками.</p>
+        </div>
+        <aside class="lab-facts">
+          <div>
+            <span>Джерело</span>
+            <strong>DOCX конспект</strong>
+          </div>
+          <div>
+            <span>Формат</span>
+            <strong>Markdown + assets</strong>
+          </div>
+          <div>
+            <span>Номер</span>
+            <strong>{lecture.numberLabel}</strong>
+          </div>
+        </aside>
+      </header>
+
+      <input class="drawer-toggle right-toggle" type="checkbox" id="lecture-toc-toggle" aria-hidden="true" />
+      <label class="toc-fab" for="lecture-toc-toggle" aria-label="Відкрити зміст лекції">
+        <span></span>
+        <span></span>
+        <span></span>
+      </label>
+      <label class="toc-backdrop" for="lecture-toc-toggle" aria-label="Закрити зміст"></label>
+
+      <div class="reader-grid">
+        <div class="markdown-body" set:html={lecture.html} />
+        <aside class="toc">
+          <div class="drawer-head toc-drawer-head">
+            <span>Зміст лекції</span>
+            <label class="close-button" for="lecture-toc-toggle" aria-label="Закрити зміст">×</label>
+          </div>
+          <p>На сторінці</p>
+          {tocGroups.map((group, index) => (
+            group.children.length > 0 ? (
+              <details class="toc-group" open={index < 3}>
+                <summary>
+                  <a data-toc-link href={`#${group.parent.slug}`}>{group.parent.text}</a>
+                </summary>
+                <div>
+                  {group.children.map((heading) => (
+                    <a data-toc-link href={`#${heading.slug}`}>{heading.text}</a>
+                  ))}
+                </div>
+              </details>
+            ) : (
+              <a data-toc-link class="toc-link" href={`#${group.parent.slug}`}>{group.parent.text}</a>
+            )
+          ))}
+        </aside>
+      </div>
+
+      <nav class="lab-pager" aria-label="Навігація між лекціями">
+        {previousLecture ? (
+          <a class="pager-card previous" href={sitePath(`/lectures/${previousLecture.slug}/`)}>
+            <span>Попередня</span>
+            <strong>{previousLecture.numberLabel}: {previousLecture.title}</strong>
+          </a>
+        ) : <span></span>}
+
+        {nextLecture ? (
+          <a class="pager-card next" href={sitePath(`/lectures/${nextLecture.slug}/`)}>
+            <span>Наступна</span>
+            <strong>{nextLecture.numberLabel}: {nextLecture.title}</strong>
+          </a>
+        ) : <span></span>}
+      </nav>
+    </article>
+
+    <script>
+      const headingNodes = [...document.querySelectorAll<HTMLElement>(".markdown-body h2[id], .markdown-body h3[id]")];
+      const tocLinks = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")];
+
+      function activateTocLink(id: string) {
+        tocLinks.forEach((link) => link.classList.toggle("active", decodeURIComponent(link.hash.slice(1)) === id));
+        tocLinks
+          .find((link) => decodeURIComponent(link.hash.slice(1)) === id)
+          ?.closest("details")
+          ?.setAttribute("open", "");
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+
+          if (visible?.target.id) {
+            activateTocLink(visible.target.id);
+          }
+        },
+        { rootMargin: "-18% 0px -70% 0px", threshold: 0.01 },
+      );
+
+      headingNodes.forEach((heading) => observer.observe(heading));
+      if (headingNodes[0]?.id) {
+        activateTocLink(headingNodes[0].id);
+      }
+    </script>
+  </AppShell>
+</SiteLayout>

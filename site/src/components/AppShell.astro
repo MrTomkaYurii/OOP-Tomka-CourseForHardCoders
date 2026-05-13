@@ -1,12 +1,33 @@
 ---
-import { getLabs } from "@/data/course";
+import { getLabs, getLectures } from "@/data/course";
 import { pathWithoutBase, sitePath } from "@/utils/paths";
 import ThemeToggle from "@/components/ThemeToggle.astro";
 import TopBar from "@/components/TopBar.astro";
 import BackToTop from "@/components/BackToTop.astro";
 
 const labs = getLabs();
+const lectures = getLectures();
 const currentPath = pathWithoutBase(Astro.url.pathname);
+const lectureGroups = lectures.reduce<Array<{ title: string; items: Array<{ href: string; number: string; title: string; active: boolean }> }>>((groups, lecture) => {
+  const lastGroup = groups[groups.length - 1];
+  const lecturePath = `/lectures/${lecture.slug}/`;
+  const sourceItems = [
+    {
+      href: lecturePath,
+      number: lecture.numberLabel,
+      title: lecture.title.replace(/^\d+\.\d+\.\s*/, "").replace(/^Розділ\s+\d+\.\s*/, ""),
+      active: currentPath === lecturePath,
+    },
+  ];
+
+  if (lastGroup?.title === lecture.chapterTitle) {
+    lastGroup.items.push(...sourceItems);
+    return groups;
+  }
+
+  groups.push({ title: lecture.chapterTitle, items: sourceItems });
+  return groups;
+}, []);
 ---
 
 <input class="drawer-toggle left-toggle" type="checkbox" id="course-menu-toggle" aria-hidden="true" />
@@ -40,9 +61,32 @@ const currentPath = pathWithoutBase(Astro.url.pathname);
     <nav class="nav-block" aria-label="Основна навігація">
       <a class:list={["nav-link", currentPath === "/" && "active"]} href={sitePath("/")}>Огляд курсу</a>
       <a class:list={["nav-link", currentPath === "/labs/" && "active"]} href={sitePath("/labs/")}>Лабораторні</a>
+      <a class:list={["nav-link", currentPath.startsWith("/lectures/") && "active"]} href={sitePath("/lectures/")}>Лекції</a>
       <a class:list={["nav-link", currentPath === "/roadmap/" && "active"]} href={sitePath("/roadmap/")}>Карта розвитку</a>
       <a class:list={["nav-link", currentPath === "/evolution/" && "active"]} href={sitePath("/evolution/")}>Еволюція проєкту</a>
     </nav>
+
+    <div class="nav-section">
+      <p>Лекції</p>
+      <div class="lecture-nav">
+        {lectureGroups.map((group) => (
+          <details class="lecture-nav-group" open={group.items.some((item) => item.active)}>
+            <summary>
+              <span>{group.title.match(/^Розділ\s+(\d+)/)?.[1]?.padStart(2, "0") ?? "00"}</span>
+              <strong>{group.title.replace(/^Розділ\s+\d+\.\s*/, "")}</strong>
+            </summary>
+            <div class="lecture-nav-list">
+              {group.items.map((item) => (
+                <a class:list={["lecture-nav-link", item.active && "active"]} href={sitePath(item.href)}>
+                  <span>{item.number}</span>
+                  <strong>{item.title}</strong>
+                </a>
+              ))}
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
 
     <div class="nav-section">
       <p>Лаби</p>
