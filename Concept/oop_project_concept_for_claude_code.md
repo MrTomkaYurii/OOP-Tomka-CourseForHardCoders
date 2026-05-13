@@ -35,11 +35,11 @@ OOP-Tomka-CourseForHardCoders/
  │    │                      Lab 06+: MedicalRecordManager
  │    │                      Lab 07+: BillingManager
  │    ├── Interfaces/     ← Lab 07+: IPayable, ICancellable, ISchedulable
- │    ├── Utils/          ← Lab 04: ClinicFormatter; Lab 05: ClinicValidator
+ │    ├── Attributes/     ← Lab 11: RequiredAttribute, MaxLengthAttribute, MinValueAttribute
+ │    ├── Events/         ← Lab 13: XxxEventArgs (існує)
+ │    ├── Utils/          ← Lab 04: ClinicFormatter; Lab 05: ClinicValidator; Lab 11: ModelValidator, FormBuilder; Lab 12: ClinicLogger, ClinicExporter, CsvImporter, SessionManager; Lab 13: PatientPassportWriter, SessionEventTracker
  │    └── (майбутнє)
- │         ├── Events/    ← Lab 12: EventBus
- │         ├── Reports/   ← Lab 13–14: LINQ + Functional
- │         └── Storage/   ← Lab 15–16: Files + JSON
+ │         └── Reports/   ← Lab 14–15: LINQ + Functional
  ├── labs/
  │    ├── lab-00-choose-domain/
  │    ├── lab-01-intro/
@@ -162,15 +162,15 @@ while (true)
 | 04 | `feature/class-members` | ✅ | ✅ | Enum BloodType/Speciality у меню, статистика, розклад лікаря |
 | 05 | `feature/encapsulation` | ✅ | ✅ | Внутрішня валідація + try/catch у меню (зовні не змінилось) |
 | 06 | `feature/inheritance` | ✅ | ✅ | **Нове меню:** 4.Медична картка (діагнози, аналізи, рецепти) |
-| 07 | `feature/interfaces` | ✅ | 📋 | **Нове меню:** 5.Рахунки (IPayable → борг, оплата) |
-| 08 | `feature/polymorphism` | ⏳ | 📋 | Внутрішнє: типи прийомів (RegularAppointment, UrgentAppointment) |
-| 09 | `feature/generics` | ✅ | 📋 | **Нове меню:** 6.Черга очікування |
-| 10 | `feature/iterators` | ✅ | 📋 | Меню: сортування списків за різними критеріями |
-| 11 | `feature/reflection` | ⏳ | 📋 | Внутрішнє: авто-валідатор через рефлексію |
-| 12 | `feature/events` | ✅ | 📋 | **Нове меню:** сповіщення при записі/скасуванні |
-| 13 | `feature/linq` | ✅ | 📋 | **Нове меню:** Звіти (топ лікарі, активні пацієнти) |
-| 14 | `feature/functional` | ⏳ | 📋 | Внутрішнє: чисті функції, делегати |
-| 15 | `feature/storage` | ✅ | 📋 | **Нове меню:** зберегти/завантажити стан |
+| 07 | `feature/interfaces` | ✅ | ✅ | **Нове меню:** 5.Рахунки (IPayable → борг, оплата) |
+| 08 | `feature/polymorphism` | ✅ | ✅ | Внутрішнє: типи прийомів (RegularAppointment, UrgentAppointment) |
+| 09 | `feature/generics` | ✅ | ✅ | **Нове меню:** 6.Черга очікування |
+| 10 | `feature/iterators` | ✅ | ✅ | **Нове меню:** 8.Аналітика — рейтинги лікарів і пацієнтів |
+| 11 | `feature/reflection` | ✅ | ✅ | Внутрішнє: авто-валідатор; **Нове меню:** 9.Плани лікування |
+| 12 | `feature/files` | ✅ | ✅ | **Нове меню:** 10.Файли; авто-лог; збереження сесії |
+| 13 | `feature/events` | ✅ | ✅ | Авто: лог у файл, паспорт пацієнта, алерти, трекер |
+| 14 | `feature/linq` | ✅ | 📋 | **Нове меню:** Звіти (топ лікарі, активні пацієнти) |
+| 15 | `feature/functional` | ⏳ | 📋 | Внутрішнє: чисті функції, делегати |
 | 16 | `feature/console-ui` | ✅ | 📋 | Структуроване меню, кольори, пагінація |
 | 17 | `feature/ef-basic` | ✅ | 📋 | БД замінила in-memory дані (поведінка та сама) |
 | 18 | `feature/ef-relations` | ✅ | 📋 | Меню: зв'язані запити |
@@ -308,19 +308,26 @@ git push
 
 ## Поточний стан проєкту
 
-**Завершено:** Lab 00–06 ✅
-**Наступний крок:** Lab 07 — `feature/interfaces` — Billing / Рахунки
+**Завершено:** Lab 00–13 ✅
+**Наступний крок:** Lab 14 — `feature/linq` — LINQ & Reports
 
 **Домен еталону:** Клініка (варіант А).
 
 **Головне меню зараз:**
 ```
-1. Пацієнти       — список, додати, знайти, видалити, статистика
-2. Лікарі         — список, додати, знайти за спеціальністю, статистика
-3. Записи         — записати, скасувати, виконати, фільтри, розклад
-4. Медична картка — зведення, всі записи, додати діагноз/аналіз/рецепт
-5. Звіт           — загальна статистика
+1. Пацієнти        — список, додати, знайти, видалити, статистика
+2. Лікарі          — список, додати, знайти за спеціальністю, статистика
+3. Записи          — записати, скасувати, виконати, фільтри, розклад
+4. Медична картка  — зведення, всі записи, додати діагноз/аналіз/рецепт
+5. Рахунки         — борги пацієнта, оплата, загальна сума боргів
+6. Черга           — додати, прийняти першого, переглянути
+7. Звіт            — загальна статистика
+8. Аналітика       — рейтинги лікарів і пацієнтів за різними критеріями
+9. Плани лікування — додати, активувати, завершити, скасувати
+10. Файли          — експорт звітів, імпорт CSV, лог, сесія
+0. Вийти           — зберегти сесію + підсумок подій
 ```
+> Авто (Lab 13): при кожній дії — лог у `clinic.log`, паспорти у `patients/`, алерти у `alerts/`, трекер сесії.
 
 ---
 

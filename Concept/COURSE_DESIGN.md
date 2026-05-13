@@ -50,9 +50,8 @@ project-root/
 │   │                                   PatientStatsBySpent, PatientStatsByLastVisit
 │   ├── Utils/              ← Lab 04: ClinicFormatter; Lab 05: ClinicValidator
 │   └── (майбутнє)
-│       ├── Events/         ← Lab 12: EventBus
-│       ├── Reports/        ← Lab 13–14: LINQ + Functional
-│       └── Storage/        ← Lab 15–16: Files + JSON
+│       ├── Events/         ← Lab 13: підписники подій (існує)
+│       └── Reports/        ← Lab 14–15: LINQ + Functional
 ├── labs/
 │   ├── lab-00-choose-domain/
 │   ├── lab-01-intro/
@@ -107,11 +106,11 @@ Lab03 Task2: Add Patient class with constructor and properties
 | 08 | `feature/polymorphism` | ✅ | ✅ | Appointments+ | Внутрішнє покращення (типи прийомів) |
 | 09 | `feature/generics` | ✅ | ✅ | Waiting | **Нове меню:** 6.Черга очікування |
 | 10 | `feature/iterators` | ✅ | ✅ | Analytics | **Нове меню:** 8.Аналітика (рейтинги лікарів і пацієнтів) |
-| 11 | `feature/reflection` | ⏳ | 📋 | Validation | Внутрішнє: авто-валідатор через рефлексію |
-| 12 | `feature/events` | ✅ | 📋 | Notifications | **Нове меню:** сповіщення при записі/скасуванні |
-| 13 | `feature/linq` | ✅ | 📋 | Reports | **Нове меню:** Звіти (топ лікарі, активні пацієнти) |
-| 14 | `feature/functional` | ⏳ | 📋 | Reports+ | Внутрішнє покращення (чисті функції, делегати) |
-| 15 | `feature/storage` | ✅ | 📋 | Storage | **Нове меню:** зберегти/завантажити стан |
+| 11 | `feature/reflection` | ✅ | ✅ | Validation | Внутрішнє: авто-валідатор; **Нове меню:** 9. Плани лікування |
+| 12 | `feature/files` | ✅ | ✅ | Files | **Нове меню:** 10. Файли; авто-лог; збереження сесії |
+| 13 | `feature/events` | ✅ | ✅ | Events | Авто: лог у файл, паспорт пацієнта, алерти, трекер сесії |
+| 14 | `feature/linq` | ✅ | 📋 | Reports | **Нове меню:** Звіти (топ лікарі, активні пацієнти) |
+| 15 | `feature/functional` | ⏳ | 📋 | Reports+ | Внутрішнє покращення (чисті функції, делегати) |
 | 16 | `feature/console-ui` | ✅ | 📋 | ConsoleApp | Структуроване меню, кольори, пагінація |
 | 17 | `feature/ef-basic` | ✅ | 📋 | Database | БД замінила in-memory дані |
 | 18 | `feature/ef-relations` | ✅ | 📋 | Database+ | Зв'язані запити в меню |
@@ -223,53 +222,53 @@ Lab03 Task2: Add Patient class with constructor and properties
 - Task4: `AnalyticsManager` з `yield return` — `IEnumerable<DoctorStats>` і `IEnumerable<PatientStats>`, ліниве обчислення по одному об'єкту.
 - Task5: Меню "8. Аналітика" — 5 варіантів рейтингів, `foreach` по IEnumerable для збору в List, `.Sort()` / `.Sort(comparer)`.
 
-### Lab 11 — feature/reflection (Reflection & Attributes)
-**Джерело:** Old Lab 11 (Reflection & Attributes)
-**Гілка:** `feature/reflection` → ⏳ зливається з Lab 12
+### Lab 11 — feature/reflection (Reflection & Attributes) ✅
+**Гілка:** `feature/reflection` → ✅ злито
+**Що з'явилось:** **Нове меню:** 9. Плани лікування; авто-валідація при Add через атрибути
+**Нові файли:** `Attributes/RequiredAttribute.cs`, `Attributes/MaxLengthAttribute.cs`, `Attributes/MinValueAttribute.cs`, `Enums/TreatmentStatus.cs`, `Models/TreatmentPlan.cs`, `Utils/ValidationResult.cs`, `Utils/ModelValidator.cs`, `Utils/FormBuilder.cs`, `Managers/TreatmentPlanManager.cs`
 **Завдання клініки:**
-- Task1: Кастомний атрибут [Required], [MaxLength(n)], [Range(min, max)]. Застосувати до властивостей Patient і Doctor.
-- Task2: Клас MedicalValidator. Метод Validate<T>(T entity) — через рефлексію знаходить всі властивості з атрибутами і перевіряє. Повертає список помилок.
-- Task3 (проблема): "Валідатор треба підключити до Repository<T> щоб перевіряти перед Add(). Але Repository не знає про конкретні типи атрибутів. Як підключити?" → Validator через інтерфейс або делегат.
-- Task4: "Вивести поля класу Patient через рефлексію у вигляді таблиці (назва — значення). Як зробити це для будь-якого об'єкта?" → Generic Display<T> метод.
+- Task1: Кастомні атрибути `[Required]`, `[MaxLength(n)]`, `[MinValue(n)]` — успадковують `System.Attribute`. Модель `TreatmentPlan` з атрибутами на властивостях. `enum TreatmentStatus`.
+- Task2: `ModelValidator.Validate(object)` — `GetType().GetProperties()`, `GetCustomAttribute<T>()`, `prop.GetValue()`. Повертає `ValidationResult`. Підключено в `TreatmentPlanManager.Add()`.
+- Task3: `FormBuilder.Build<T>() where T : new()` — через рефлексію читає властивості та атрибути, будує інтерактивну форму введення в консолі.
+- Task4: `ModelValidator.PrintInfo(Type)` — виводить таблицю властивостей та прив'язаних атрибутів для будь-якого типу. Нове меню **9. Плани лікування** з Activate/Complete/Cancel.
 
-### Lab 12 — feature/events (Events & Communication)
-**Джерело:** Old Lab 12 (Communication & Events)
-**Гілка:** `feature/events` → ✅ зливається
-**Що з'являється:** Меню: налаштувати сповіщення. Автоматичні сповіщення при подіях (запис/скасування).
+### Lab 12 — feature/files (Files & Streams) ✅
+**Гілка:** `feature/files` → ✅ злито
+**Що з'явилось:** **Нове меню:** 10. Файли (експорт, імпорт CSV, перегляд логу, очищення); автозбереження сесії при виході
+**Нові файли:** `Utils/ClinicLogger.cs`, `Utils/ClinicExporter.cs`, `Utils/CsvImporter.cs`, `Utils/ImportResult.cs`, `Utils/SessionManager.cs`
 **Завдання клініки:**
-- Task1: Event OnAppointmentScheduled в Appointment. EventArgs з інформацією. Підписатись (ConsoleNotifier) і вивести повідомлення.
-- Task2: Event OnAppointmentCancelled. Multiple subscribers (ConsoleNotifier + Logger).
-- Task3 (проблема): "Різні модулі хочуть знати про різні події. NotificationModule хоче знати про нові записи, ReportModule — про всі завершені. Як підключити без прямих залежностей між модулями?" → Студент відкриває EventBus/Mediator.
-- Task4: "Що якщо сповіщень стає багато і консоль переповнена? Як зробити фільтрацію: кожен підписник отримує тільки ті події що йому потрібні?" → Предикати на підписку.
+- Task1: `ClinicLogger` — `File.AppendAllText` для append-логу `clinic.log`, `File.ReadAllLines` для `GetLastLines(n)`, `Encoding.UTF8`, методи `LogInfo/LogWarning/LogError`.
+- Task2: `ClinicExporter` — `StreamWriter` + `using` → звіти у `reports/yyyy-MM-dd/` (patients.txt, doctors.txt, appointments.txt, summary.txt). `Directory.CreateDirectory`, `Path.Combine`.
+- Task3: `CsvImporter.ImportPatients(path)` — `File.ReadAllLines`, CSV-парсинг рядок за рядком із `try/catch` у циклі, повертає `ImportResult` з лічильниками Imported/Skipped/Errors.
+- Task4: `SessionManager.Save/Load` — формат із секціями `[PATIENTS]` / `[DOCTORS]` у `session.dat`. Сесія завантажується при старті, пропонується зберегти при виході.
 
-### Lab 13 — feature/linq (LINQ)
-**Джерело:** Old Lab 13 (LINQ)
+### Lab 13 — feature/events (Events & Communication) ✅
+**Гілка:** `feature/events` → ✅ злито
+**Що з'явилось:** Автоматичні побічні ефекти при діях: лог у файл, генерація паспорту пацієнта, алерти для термінових записів, трекер сесії з підсумком
+**Нові файли:** `Events/AppointmentEventArgs.cs`, `Events/PatientEventArgs.cs`, `Events/PaymentEventArgs.cs`, `Events/TreatmentPlanEventArgs.cs`, `Utils/PatientPassportWriter.cs`, `Utils/SessionEventTracker.cs`
+**Змінені файли:** `Managers/AppointmentManager.cs` (+4 події), `Managers/PatientManager.cs` (+1), `Managers/BillingManager.cs` (+1), `Managers/TreatmentPlanManager.cs` (+1 + Activate/Complete/Cancel), `Utils/ClinicLogger.cs` (+7 обробників), `Clinic.cs` (+Passport, +Tracker, +SubscribeEvents()), `Program.cs` (+Task1 обробник, +підсумок при виході)
+**Завдання клініки:**
+- Task1: `class XxxEventArgs : EventArgs`. Одна подія `AppointmentBooked` в `AppointmentManager`. Підписатись у `Program.cs` через `+=`, вивести `[EVENT]` у консоль — студент одразу бачить результат.
+- Task2: Додати події до `PatientManager`, `BillingManager`, `TreatmentPlanManager`. `ClinicLogger` підписується на всі — пише у `clinic.log`. Кілька підписників на одну подію.
+- Task3: `PatientPassportWriter` — підписується на 3 події, при кожній генерує `patients/passport_{id}.txt` з 6 розділами (особисті дані, діагнози, аналізи, рецепти, записи, фінанси).
+- Task4: `SessionEventTracker` — рахує всі події. `OnAppointmentCancelled` реагує на `WaitingRoom` (cross-domain). При виході: `PrintSummary()` + `SaveSummary("session_summary.txt")`.
+
+### Lab 14 — feature/linq (LINQ)
 **Гілка:** `feature/linq` → ✅ зливається
-**Що з'являється:** Меню: звіти — топ лікарі, завантаженість, статистика
+**Що з'являється:** **Нове меню:** Звіти — топ лікарі, завантаженість, статистика
 **Завдання клініки:**
-- Task1: LINQ запити на List<Patient>: фільтр за BloodType, вік від-до, є/немає запису.
-- Task2: LINQ на Appointments: group by Doctor, OrderBy Date, Join Patient+Doctor.
-- Task3: Агрегати: середній час очікування, найпопулярніша спеціальність, лікарі без пацієнтів цього місяця.
-- Task4 (проблема): "Звіт займає довго бо перебирає всі записи. Як зробити щоб не завантажувати в пам'ять зайве?" → Студент відкриває IQueryable vs IEnumerable, lazy evaluation.
+- Task1: LINQ запити на `List<Patient>`: фільтр за BloodType, вік від-до, є/немає запису. `.Where()`, `.OrderBy()`, `.Select()`.
+- Task2: LINQ на Appointments: `group by` Doctor, `OrderBy` Date, `Join` Patient+Doctor. Метод синтаксис vs лямбда.
+- Task3: Агрегати: середній час очікування, найпопулярніша спеціальність, лікарі без пацієнтів цього місяця. `.Average()`, `.GroupBy().OrderByDescending()`, `.Except()`.
+- Task4 (проблема): "Звіт займає довго бо перебирає всі записи. Як зробити щоб не завантажувати в пам'ять зайве?" → Студент відкриває `IQueryable` vs `IEnumerable`, lazy evaluation.
 
-### Lab 14 — feature/functional (Functional Programming)
-**Джерело:** Old Lab 14 (Functional Programming)
-**Гілка:** `feature/functional` → ⏳ зливається з Lab 15
+### Lab 15 — feature/functional (Functional Programming)
+**Гілка:** `feature/functional` → ⏳ зливається з Lab 16
 **Завдання клініки:**
-- Task1: Action<Patient> для виводу інформації. Func<Appointment, decimal> для розрахунку вартості.
-- Task2: Predicate<Patient> для фільтрів в Repository.Find(). Higher-order функція ApplyDiscount(Func<decimal, decimal> discountFn).
-- Task3: Метод розширення ToClinicReport(this IEnumerable<Appointment>). Ланцюжок .Where().GroupBy().Select().
+- Task1: `Action<Patient>` для виводу інформації. `Func<Appointment, decimal>` для розрахунку вартості. Передати як параметр методу.
+- Task2: `Predicate<Patient>` для фільтрів в `Repository.Find()`. Higher-order функція `ApplyDiscount(Func<decimal, decimal> discountFn)`.
+- Task3: Метод розширення `ToClinicReport(this IEnumerable<Appointment>)`. Ланцюжок `.Where().GroupBy().Select()`.
 - Task4 (проблема): "Функції фільтрації часто комбінуються: пацієнти старше 60 І з серцевими хворобами І без страховки. Як скласти складний фільтр з простих без довгих if?" → Студент відкриває Predicate composition (AND, OR, NOT).
-
-### Lab 15 — feature/storage (Streams & Files)
-**Джерело:** Old Lab 15 (Streams, Files, Directories)
-**Гілка:** `feature/storage` → ✅ зливається
-**Що з'являється:** Меню: зберегти стан, завантажити при старті
-**Завдання клініки:**
-- Task1: Зберегти список пацієнтів у текстовий файл (StreamWriter). Завантажити (StreamReader). Формат CSV.
-- Task2: Серіалізація/десеріалізація через System.Text.Json. Зберігати і завантажувати всі дані (пацієнти, лікарі, прийоми).
-- Task3 (проблема): "При збереженні великих даних файл може бути пошкоджений якщо програма впаде. Як зробити безпечне збереження?" → Atomic write (спочатку в temp файл, потім переіменувати).
-- Task4: "Треба зберігати логи дій (хто що зробив і коли). Лог не повинен видалятися при перезапуску." → Append mode, RotatingLog.
 
 ### Lab 16 — feature/console-ui (Advanced Console UI)
 **Джерело:** Old Lab 16 PDFs (не зчитались — тема: розширений консольний інтерфейс)
@@ -393,26 +392,31 @@ git checkout main && git merge feature/[назва] && git push
 
 ## Поточний стан
 
-**Завершено:** Lab 00–10 ✅
-**Наступний крок:** Lab 11 — `feature/reflection` — Reflection & Attributes
+**Завершено:** Lab 00–13 ✅
+**Наступний крок:** Lab 14 — `feature/linq` — LINQ & Reports
 
 **Порядок роботи:**
 1. Реалізувати еталонний код на C# (домен: Клініка) на новій гілці
 2. Написати `labs/lab-NN-назва/instructions.md` в абстрактному вигляді
-3. Оновити `Concept/CODEBASE_STATE.md`, `Concept/CONCEPTS_BY_LAB.md`, `Concept/MENU_BY_LAB.md`
+3. Оновити `Concept/CODEBASE_STATE.md`, `Concept/CONCEPTS_BY_LAB.md`, `Concept/MENU_BY_LAB.md`, `Concept/COURSE_DESIGN.md`, `Concept/oop_project_concept_for_claude_code.md`
 4. Злити в `main`, запушити
 
-**Головне меню після Lab 10:**
+**Головне меню після Lab 13:**
 ```
-1. Пацієнти       — реєстрація, пошук
-2. Лікарі         — персонал, розклад
-3. Записи         — прийоми, скасування
-4. Медична картка — діагнози, рецепти
-5. Рахунки        — оплата, борги
-6. Черга          — очікування, прийом
-7. Звіт           — загальна статистика
-8. Аналітика      — статистика, рейтинги
+1. Пацієнти        — реєстрація, пошук
+2. Лікарі          — персонал, розклад
+3. Записи          — прийоми, скасування
+4. Медична картка  — діагнози, рецепти
+5. Рахунки         — оплата, борги
+6. Черга           — очікування, прийом
+7. Звіт            — загальна статистика
+8. Аналітика       — статистика, рейтинги
+9. Плани лікування — додати, активувати, завершити
+10. Файли          — звіти, лог, імпорт CSV
+0. Вийти           — зберегти сесію, підсумок сесії
 ```
-> Lab 08 меню не змінює (внутрішні зміни: підкласи Appointment).
 > Lab 09: доданий пункт 6. Черга; старий пункт 6. Звіт переміщено на 7.
 > Lab 10: доданий пункт 8. Аналітика.
+> Lab 11: доданий пункт 9. Плани лікування (рефлексія + атрибути).
+> Lab 12: доданий пункт 10. Файли; вихід тепер зберігає сесію.
+> Lab 13: меню не змінюється — автоматичні побічні ефекти (лог, паспорт, трекер).

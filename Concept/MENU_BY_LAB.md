@@ -7,26 +7,27 @@
 
 ## Головне меню — еволюція
 
-| Пункт меню                    | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 | Lab 09 | Lab 10 | Lab 11 | Lab 12 |
-|-------------------------------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
-| 1. Пацієнти                   | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 2. Лікарі                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 3. Записи                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 4. Медична картка             | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 5. Рахунки                    | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 6. Черга — очікування, прийом | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     |
-| 7. Звіт                       | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (7) | ✅ (7) | ✅ (7) | ✅ (7) |
-| 8. Аналітика                  | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     |
-| 9. Плани лікування            | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     |
-| 10. Файли                     | —      | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW |
-| 0. Вийти (зберегти сесію)     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅ UPD |
+| Пункт меню                    | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 | Lab 09 | Lab 10 | Lab 11 | Lab 12 | Lab 13 |
+|-------------------------------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
+| 1. Пацієнти                   | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 2. Лікарі                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 3. Записи                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 4. Медична картка             | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 5. Рахунки                    | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 6. Черга — очікування, прийом | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     |
+| 7. Звіт                       | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (7) | ✅ (7) | ✅ (7) | ✅ (7) | ✅ (7) |
+| 8. Аналітика                  | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     |
+| 9. Плани лікування            | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     |
+| 10. Файли                     | —      | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     |
+| 0. Вийти (зберегти сесію)     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅ UPD | ✅ UPD |
 
 > Lab 07: головне меню отримало **описи через дефіс** (напр. "1. Пацієнти — реєстрація, пошук").  
 > Lab 08: меню **не змінюється** — внутрішні зміни (підкласи Appointment).  
 > Lab 09: доданий пункт **6. Черга**; колишній "6. Звіт" переміщено на **7. Звіт**.  
 > Lab 10: доданий пункт **8. Аналітика** — новий модуль статистики.  
 > Lab 11: доданий пункт **9. Плани лікування** — рефлексія та атрибути.  
-> Lab 12: доданий пункт **10. Файли**; вихід тепер пропонує зберегти сесію.
+> Lab 12: доданий пункт **10. Файли**; вихід тепер пропонує зберегти сесію.  
+> Lab 13: меню **не змінюється** — авто-поведінка: лог у файл, паспорт пацієнта, алерти, трекер сесії.
 
 ---
 
@@ -214,6 +215,56 @@
 
 ---
 
+## Авто-поведінка *(додано в Lab 13 — Events)*
+
+> Lab 13 **не додає нових пунктів меню** — тільки авто-реакції на вже існуючі дії.
+
+### Що відбувається автоматично після Lab 13
+
+| Дія користувача               | Хто підписаний          | Що відбувається                                                           |
+|-------------------------------|-------------------------|---------------------------------------------------------------------------|
+| Додати пацієнта               | Logger, Passport        | Рядок у `clinic.log`; генерується `patients/passport_{id}.txt`           |
+| Записати на прийом            | Logger, Tracker         | Рядок у `clinic.log`; `AppointmentsBooked++`                              |
+| Терміновий запис              | Logger, Tracker         | WARN у `clinic.log`; дозапис у `alerts/urgent_{date}.txt`                |
+| Скасувати запис               | Logger, Tracker         | WARN у `clinic.log`; виводить наступного в черзі (якщо є)                |
+| Завершити прийом              | Logger, Tracker, Passport | Рядок у `clinic.log`; оновлює `passport_{id}.txt`; `AppointmentsCompleted++` |
+| Прийняти оплату               | Logger, Tracker         | Рядок у `clinic.log`; `PaymentsReceived++`                                |
+| Завершити план лікування      | Logger, Tracker, Passport | Рядок у `clinic.log`; оновлює `passport_{id}.txt`; `PlansCompleted++`   |
+
+### Файли, що генеруються авто
+
+| Файл                            | Генерується коли                   | Вміст                                                      |
+|---------------------------------|------------------------------------|------------------------------------------------------------|
+| `clinic.log`                    | будь-яка подія                     | `[рівень]` + час + опис події                              |
+| `patients/passport_{id}.txt`    | додавання пацієнта / завершення прийому або плану | 6 розділів: дані, діагнози, аналізи, рецепти, записи, фінанси |
+| `alerts/urgent_{date}.txt`      | терміновий запис                   | час + номер запису + нотатка                               |
+| `session_summary.txt`           | при виході з програми              | лічильники всіх подій за сесію                             |
+
+### Нові класи в Lab 13
+
+| Клас / файл                       | Простір імен           | Призначення                                                              |
+|-----------------------------------|------------------------|--------------------------------------------------------------------------|
+| `AppointmentEventArgs`            | `ClinicApp.Events`     | `AppointmentId, PatientId, DoctorId, ScheduledAt, Notes`                 |
+| `PatientEventArgs`                | `ClinicApp.Events`     | `PatientId, FullName`                                                    |
+| `PaymentEventArgs`                | `ClinicApp.Events`     | `AppointmentId, Amount`                                                  |
+| `TreatmentPlanEventArgs`          | `ClinicApp.Events`     | `PlanId, PatientId, Diagnosis`                                           |
+| `PatientPassportWriter`           | `ClinicApp.Utils`      | підписується на 3 події → генерує `patients/passport_{id}.txt`           |
+| `SessionEventTracker`             | `ClinicApp.Utils`      | рахує всі події; реагує на скасування → черга; `PrintSummary/SaveSummary` |
+
+### Події в менеджерах (Lab 13)
+
+| Менеджер               | Подія                       | Піднімається коли                  |
+|------------------------|-----------------------------|------------------------------------|
+| `PatientManager`       | `PatientAdded`              | `Add()` успішний                   |
+| `AppointmentManager`   | `AppointmentBooked`         | `Book()` успішний                  |
+| `AppointmentManager`   | `UrgentAppointmentBooked`   | `BookUrgent()` успішний            |
+| `AppointmentManager`   | `AppointmentCancelled`      | `Cancel()` успішний                |
+| `AppointmentManager`   | `AppointmentCompleted`      | `Complete()` успішний              |
+| `BillingManager`       | `PaymentReceived`           | `PayAppointment()` успішний        |
+| `TreatmentPlanManager` | `PlanCompleted`             | `Complete(id)` успішний            |
+
+---
+
 ## 9. Плани лікування *(додано в Lab 11)*
 
 | Підпункт                        | Що робить                                                                                     |
@@ -287,13 +338,25 @@
 
 ```
 src/
-├── Clinic.cs                    — оркестратор (Patients, Doctors, Appointments, MedicalRecords, Billing, WaitingRoom, Analytics)
-├── Program.cs                   — меню (PatientsMenu / DoctorsMenu / AppointmentsMenu / MedicalRecordsMenu / BillingMenu / WaitingRoomMenu / AnalyticsMenu)
+├── Clinic.cs                    — Lab 03+ оркестратор; Lab 12: Logger/Exporter/Importer/Session; Lab 13: Passport/Tracker + SubscribeEvents()
+├── Program.cs                   — Lab 03+ меню; Lab 12: FilesMenu, session load/save; Lab 13: Tracker.PrintSummary/SaveSummary при виході
+│
+├── Attributes/                  — Lab 11
+│   ├── RequiredAttribute.cs     — Lab 11 ([Required])
+│   ├── MaxLengthAttribute.cs    — Lab 11 ([MaxLength(n)])
+│   └── MinValueAttribute.cs     — Lab 11 ([MinValue(n)])
+│
+├── Events/                      — Lab 13
+│   ├── AppointmentEventArgs.cs  — Lab 13
+│   ├── PatientEventArgs.cs      — Lab 13
+│   ├── PaymentEventArgs.cs      — Lab 13
+│   └── TreatmentPlanEventArgs.cs— Lab 13
 │
 ├── Enums/
 │   ├── BloodType.cs             — Lab 04
 │   ├── Speciality.cs            — Lab 04
-│   └── AppointmentStatus.cs     — Lab 04
+│   ├── AppointmentStatus.cs     — Lab 04
+│   └── TreatmentStatus.cs       — Lab 11 (Planned/Active/Completed/Cancelled)
 │
 ├── Interfaces/
 │   ├── IPayable.cs              — Lab 07
@@ -315,7 +378,8 @@ src/
 │   ├── MedicalRecord.cs         — Lab 06 (abstract)
 │   ├── Diagnosis.cs             — Lab 06
 │   ├── LabResult.cs             — Lab 06
-│   └── Prescription.cs          — Lab 06
+│   ├── Prescription.cs          — Lab 06
+│   └── TreatmentPlan.cs         — Lab 11 (атрибути [Required][MaxLength][MinValue])
 │
 ├── Comparators/                 — Lab 10
 │   ├── DoctorStatsByRevenue.cs  — Lab 10 (IComparer<DoctorStats>)
@@ -326,15 +390,26 @@ src/
 ├── GrowablePatientManager.cs    — Lab 05 (зростаючий масив — концептуальний)
 │
 ├── Managers/
-│   ├── PatientManager.cs        — Lab 03 → Lab 04 (indexer, out, overloads) → Lab 09 (List<Patient>)
+│   ├── PatientManager.cs        — Lab 03 → Lab 04 → Lab 09 (List<Patient>) → Lab 13 (event PatientAdded)
 │   ├── DoctorManager.cs         — Lab 03 → Lab 04
-│   ├── AppointmentManager.cs    — Lab 03 → Lab 04 → Lab 07 (GetAll) → Lab 08 (BookUrgent, BookSpecialist)
+│   ├── AppointmentManager.cs    — Lab 03 → Lab 04 → Lab 07 → Lab 08 → Lab 13 (4 events: Booked/Urgent/Cancelled/Completed)
 │   ├── MedicalRecordManager.cs  — Lab 06
-│   ├── BillingManager.cs        — Lab 07
+│   ├── BillingManager.cs        — Lab 07 → Lab 13 (event PaymentReceived)
 │   ├── Repository.cs            — Lab 09 (generic Repository<T> where T : IIdentifiable)
-│   └── AnalyticsManager.cs      — Lab 10 (IEnumerable<DoctorStats/PatientStats> з yield return)
+│   ├── AnalyticsManager.cs      — Lab 10 (IEnumerable<DoctorStats/PatientStats> з yield return)
+│   └── TreatmentPlanManager.cs  — Lab 11 → Lab 13 (event PlanCompleted; методи Activate/Complete/Cancel)
 │
 └── Utils/
     ├── ClinicFormatter.cs       — Lab 04 (static: форматування)
-    └── ClinicValidator.cs       — Lab 05 (static: валідація)
+    ├── ClinicValidator.cs       — Lab 05 (static: валідація)
+    ├── ValidationResult.cs      — Lab 11 (контейнер помилок)
+    ├── ModelValidator.cs        — Lab 11 (static: рефлексія → валідація та PrintInfo)
+    ├── FormBuilder.cs           — Lab 11 (static: Build<T>() where T : new())
+    ├── ClinicLogger.cs          — Lab 12 (AppendAllText, GetLastLines); Lab 13 (7 обробників подій)
+    ├── ClinicExporter.cs        — Lab 12 (StreamWriter → reports/yyyy-MM-dd/)
+    ├── CsvImporter.cs           — Lab 12 (ReadAllLines, CSV-парсинг, ImportResult)
+    ├── ImportResult.cs          — Lab 12 (Imported/Skipped/Errors лічильники)
+    ├── SessionManager.cs        — Lab 12 (Save/Load session.dat з [PATIENTS][DOCTORS] секціями)
+    ├── PatientPassportWriter.cs — Lab 13 (підписник 3 подій → patients/passport_{id}.txt)
+    └── SessionEventTracker.cs   — Lab 13 (рахує події; WaitingRoom реакція; session_summary.txt)
 ```
