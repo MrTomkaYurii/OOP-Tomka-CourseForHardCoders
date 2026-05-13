@@ -116,6 +116,15 @@ Console.WriteLine(record.GetRecordType()); // "Діагноз" — виклик 
 📖 [virtual (C# Reference)](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/virtual)
 📖 [Inheritance (C# Programming Guide)](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance)
 
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `MedicalRecord` (abstract) | `GuestRecord` (abstract) | `OrderRecord` (abstract) | `AcademicRecord` (abstract) | `ServiceRecord` (abstract) | `LibraryRecord` (abstract) | `GymRecord` (abstract) |
+| `Diagnosis` (перший підклас) | `Complaint` | `FeedbackEntry` | `GradeEntry` | `DamageReport` | `LoanRecord` | `ProgressEntry` |
+| `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` |
+| `virtual GetRecordType()` → `"Медичний запис"` | → `"Запис гостя"` | → `"Замовлення"` | → `"Академічний запис"` | → `"Сервісний запис"` | → `"Бібліотечний запис"` | → `"Запис у клубі"` |
+
 ### Коміт
 
 ```bash
@@ -202,12 +211,12 @@ for (int i = 0; i < records.Length; i++)
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `MedicalRecord` | `GuestRecord` | `OrderRecord` | `AcademicRecord` | `ServiceRecord` |
-| `Diagnosis` | `Complaint` | `FeedbackEntry` | `GradeEntry` | `DamageReport` |
-| `LabResult` | `RoomInspection` | `QualityCheck` | `ExamResult` | `TechInspection` |
-| `Prescription` | `ServiceRequest` | `SpecialOrder` | `Assignment` | `RepairOrder` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `MedicalRecord` | `GuestRecord` | `OrderRecord` | `AcademicRecord` | `ServiceRecord` | `LibraryRecord` | `GymRecord` |
+| `Diagnosis` | `Complaint` | `FeedbackEntry` | `GradeEntry` | `DamageReport` | `LoanRecord` | `ProgressEntry` |
+| `LabResult` | `RoomInspection` | `QualityCheck` | `ExamResult` | `TechInspection` | `BookReturn` | `FitnessTest` |
+| `Prescription` | `ServiceRequest` | `SpecialOrder` | `Assignment` | `RepairOrder` | `FineNotice` | `TrainingPlan` |
 
 ### Коміт
 
@@ -313,6 +322,15 @@ manager.DisplayPatientSummary(1);
 📖 [Type-testing operators and cast expressions](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/type-testing-and-cast)
 📖 [Pattern matching overview](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/functional/pattern-matching)
 
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `GetDiagnoses(patientId)` | `GetComplaints(guestId)` | `GetFeedback(customerId)` | `GetGrades(studentId)` | `GetDamageReports(clientId)` | `GetLoanRecords(readerId)` | `GetProgress(memberId)` |
+| `GetLabResults(patientId)` | `GetRoomInspections(guestId)` | `GetQualityChecks(customerId)` | `GetExamResults(studentId)` | `GetTechInspections(clientId)` | `GetReturns(readerId)` | `GetFitnessTests(memberId)` |
+| `GetActivePrescriptions(patientId)` | `GetActiveRequests(guestId)` | `GetActiveOrders(customerId)` | `GetActiveAssignments(studentId)` | `GetActiveRepairs(clientId)` | `GetActiveFines(readerId)` | `GetActivePlans(memberId)` |
+| `DisplayPatientSummary` | `DisplayGuestSummary` | `DisplayCustomerSummary` | `DisplayStudentSummary` | `DisplayClientSummary` | `DisplayReaderSummary` | `DisplayMemberSummary` |
+
 ### Коміт
 
 ```bash
@@ -400,10 +418,10 @@ for (int i = 0; i < records.Length; i++)
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `Clinic.MedicalRecords` | `Hotel.GuestHistory` | `Restaurant.OrderHistory` | `University.AcademicHistory` | `Fleet.ServiceHistory` |
-| Меню "Медична картка" | "Історія гостя" | "Замовлення" | "Успішність" | "Сервісна книжка" |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Clinic.MedicalRecords` | `Hotel.GuestHistory` | `Restaurant.OrderHistory` | `University.AcademicHistory` | `Fleet.ServiceHistory` | `Library.LibraryRecords` | `GymCenter.GymRecords` |
+| Меню "Медична картка" | "Історія гостя" | "Замовлення" | "Успішність" | "Сервісна книжка" | "Картка читача" | "Картка учасника" |
 
 ### Коміт
 

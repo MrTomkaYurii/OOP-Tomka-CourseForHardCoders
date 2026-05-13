@@ -82,11 +82,11 @@ if (Status == AppointmentStatus.Scheduled) ...
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `AppointmentStatus` | `BookingStatus` | `ReservationStatus` | `EnrollmentStatus` | `RentalStatus` |
-| `BloodType` | `RoomType` | `DishCategory` | `Faculty` | `CarClass` |
-| `Speciality` | `Department` | `CuisineType` | `Subject` | `CarBrand` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `AppointmentStatus` | `BookingStatus` | `ReservationStatus` | `EnrollmentStatus` | `RentalStatus` | `LoanStatus` | `SessionStatus` |
+| `BloodType` | `RoomType` | `DishCategory` | `Faculty` | `CarClass` | `BookGenre` | `FitnessLevel` |
+| `Speciality` | `Department` | `CuisineType` | `Subject` | `CarBrand` | `LibrarySection` | `TrainingType` |
 
 ### Коміт
 
@@ -175,9 +175,9 @@ WorkSchedule copy = morning;
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `WorkSchedule` (Start, End) | `BookingPeriod` (CheckIn, CheckOut) | `ServiceHours` (Open, Close) | `LectureSlot` (StartHour, EndHour) | `RentalPeriod` (PickupHour, ReturnHour) |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `WorkSchedule` (Start, End) | `BookingPeriod` (CheckIn, CheckOut) | `ServiceHours` (Open, Close) | `LectureSlot` (StartHour, EndHour) | `RentalPeriod` (PickupHour, ReturnHour) | `ShiftSchedule` (Start, End) | `TrainingSlot` (Start, End) |
 
 ### Коміт
 
@@ -272,10 +272,10 @@ Doctor second = clinic.Doctors[1];
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `ClinicFormatter.FormatBloodType` | `HotelFormatter.FormatRoomType` | `RestaurantFormatter.FormatCategory` | `UnivFormatter.FormatFaculty` | `RentalFormatter.FormatCarClass` |
-| `PatientManager[i]` | `GuestManager[i]` | `CustomerManager[i]` | `StudentManager[i]` | `ClientManager[i]` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `ClinicFormatter.FormatBloodType` | `HotelFormatter.FormatRoomType` | `RestaurantFormatter.FormatCategory` | `UnivFormatter.FormatFaculty` | `RentalFormatter.FormatCarClass` | `LibraryFormatter.FormatGenre` | `GymFormatter.FormatTrainingType` |
+| `PatientManager[i]` | `GuestManager[i]` | `CustomerManager[i]` | `StudentManager[i]` | `ClientManager[i]` | `ReaderManager[i]` | `MemberManager[i]` |
 
 ### Коміт
 
@@ -366,10 +366,10 @@ Console.WriteLine(name);  // не знайдено
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `FindBySpeciality(Speciality)` | `FindByDepartment(Department)` | `FindByCategory(DishCategory)` | `FindByFaculty(Faculty)` | `FindByClass(CarClass)` |
-| `TryFindById(id, out Patient)` | `TryFindById(id, out Guest)` | `TryFindById(id, out Customer)` | `TryFindById(id, out Student)` | `TryFindById(id, out Client)` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `FindBySpeciality(Speciality)` | `FindByDepartment(Department)` | `FindByCategory(DishCategory)` | `FindByFaculty(Faculty)` | `FindByClass(CarClass)` | `FindBySection(LibrarySection)` | `FindByType(TrainingType)` |
+| `TryFindById(id, out Patient)` | `TryFindById(id, out Guest)` | `TryFindById(id, out Customer)` | `TryFindById(id, out Student)` | `TryFindById(id, out Client)` | `TryFindById(id, out Reader)` | `TryFindById(id, out Member)` |
 
 ### Коміт
 

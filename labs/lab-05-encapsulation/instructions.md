@@ -116,6 +116,15 @@ src/
 📖 [Namespaces (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/namespaces)
 📖 [Organizing and testing projects (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/core/tutorials/testing-with-cli)
 
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `ClinicApp.Models` | `HotelApp.Models` | `RestaurantApp.Models` | `UniversityApp.Models` | `RentalApp.Models` | `LibraryApp.Models` | `GymApp.Models` |
+| `ClinicApp.Enums` | `HotelApp.Enums` | `RestaurantApp.Enums` | `UniversityApp.Enums` | `RentalApp.Enums` | `LibraryApp.Enums` | `GymApp.Enums` |
+| `ClinicApp.Managers` | `HotelApp.Managers` | `RestaurantApp.Managers` | `UniversityApp.Managers` | `RentalApp.Managers` | `LibraryApp.Managers` | `GymApp.Managers` |
+| `ClinicApp.Utils` | `HotelApp.Utils` | `RestaurantApp.Utils` | `UniversityApp.Utils` | `RentalApp.Utils` | `LibraryApp.Utils` | `GymApp.Utils` |
+
 ### Коміт
 
 ```bash
@@ -190,6 +199,13 @@ public string FirstName
 
 📖 [Properties (C# Programming Guide)](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/properties)
 📖 [Access Modifiers](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/access-modifiers)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Patient`, `Doctor`, `Appointment` | `Guest`, `Staff`, `Booking` | `Customer`, `Waiter`, `TableReservation` | `Student`, `Lecturer`, `Enrollment` | `Client`, `Manager`, `Rental` | `Reader`, `Librarian`, `BookLoan` | `Member`, `Trainer`, `Session` |
+| `_firstName`, `_lastName`, `_phone` | `_firstName`, `_lastName`, `_phone` | `_firstName`, `_lastName`, `_phone` | `_firstName`, `_lastName`, `_phone` | `_firstName`, `_lastName`, `_phone` | `_firstName`, `_lastName`, `_phone` | `_firstName`, `_lastName`, `_phone` |
 
 ### Коміт
 
@@ -280,6 +296,15 @@ Patient p = new Patient("", "Петренко", new DateTime(1990, 1, 1), BloodT
 📖 [throw (C# Reference)](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/exception-handling-statements#the-throw-statement)
 📖 [ArgumentException](https://learn.microsoft.com/en-us/dotnet/api/system.argumentexception)
 📖 [ArgumentOutOfRangeException](https://learn.microsoft.com/en-us/dotnet/api/system.argumentoutofrangeexception)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `FirstName`/`LastName` не порожні | `FirstName`/`LastName` не порожні | `FirstName`/`LastName` не порожні | `FirstName`/`LastName` не порожні | `FirstName`/`LastName` не порожні | `FirstName`/`LastName` не порожні | `FirstName`/`LastName` не порожні |
+| `DateOfBirth` не в майбутньому | `CheckInDate` не в минулому | `ReservationDate` не в минулому | `EnrollmentDate` в межах року | `RentalStart` не в минулому | `LoanDate` не в майбутньому | `SessionDate` не в минулому |
+| `DurationMinutes` > 0 | `StayNights` > 0 | `Duration` > 0 | `CourseDays` > 0 | `RentalDays` > 0 | `LoanDays` > 0 | `DurationMinutes` > 0 |
+| `WorkSchedule(start, end)`: start < end | аналогічно | аналогічно | аналогічно | аналогічно | аналогічно | аналогічно |
 
 ### Коміт
 
@@ -425,12 +450,12 @@ catch (ArgumentException e)
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `ClinicValidator` | `HotelValidator` | `RestaurantValidator` | `UnivValidator` | `RentalValidator` |
-| `ValidateName` | `ValidateGuestName` | `ValidateDishName` | `ValidateStudentName` | `ValidateClientName` |
-| `ValidatePhone` | `ValidatePhone` | `ValidatePhone` | `ValidatePhone` | `ValidatePhone` |
-| `ValidateDate` | `ValidateCheckInDate` | `ValidateReservationDate` | `ValidateEnrollmentDate` | `ValidateRentalDate` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `ClinicValidator` | `HotelValidator` | `RestaurantValidator` | `UnivValidator` | `RentalValidator` | `LibraryValidator` | `GymValidator` |
+| `ValidateName` | `ValidateGuestName` | `ValidateDishName` | `ValidateStudentName` | `ValidateClientName` | `ValidateReaderName` | `ValidateMemberName` |
+| `ValidatePhone` | `ValidatePhone` | `ValidatePhone` | `ValidatePhone` | `ValidatePhone` | `ValidatePhone` | `ValidatePhone` |
+| `ValidateDate` | `ValidateCheckInDate` | `ValidateReservationDate` | `ValidateEnrollmentDate` | `ValidateRentalDate` | `ValidateLoanDate` | `ValidateSessionDate` |
 
 ### Коміт
 
