@@ -73,14 +73,14 @@ public class RegularAppointment : Appointment
 2. Якщо `GetDescription()` в `ToString()` — то `ToString()` автоматично показуватиме рядок підкласу при виводі `Appointment[]`. Це і є поліморфізм.
 3. [virtual keyword — docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/virtual)
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `Appointment` | ваша операційна сутність (Booking, Order, Loan...) |
-| `GetDescription()` | опис типу операції |
-| `GetCost()` | формула вартості |
-| `RegularAppointment` | базовий тип вашої операції |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Appointment` | `Booking` | `TableReservation` | `Enrollment` | `Rental` | `BookLoan` | `Session` |
+| `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` |
+| `virtual GetCost()` | `virtual GetCost()` | `virtual GetCost()` | `virtual GetCost()` | `virtual GetCost()` | `virtual GetFine()` | `virtual GetCost()` |
+| `RegularAppointment` | `StandardBooking` | `RegularReservation` | `RegularEnrollment` | `BasicRental` | `RegularLoan` | `RegularSession` |
 
 ### Коміт
 
@@ -174,13 +174,14 @@ for (int i = 0; i < appointments.Length; i++)
 4. [sealed modifier — docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/sealed)
 5. [override keyword — docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/override)
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `UrgentAppointment` | пріоритетна / термінова версія вашої операції |
-| `SpecialistAppointment` | преміум / спеціалізована версія |
-| `* 1.5m` | ваш коефіцієнт ціни |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `UrgentAppointment` (×1.5) | `SuiteBooking` (×2.0) | `PrivateRoomReservation` (×1.5) | `OnlineEnrollment` (×0.9) | `PremiumRental` (×1.3) | `DigitalLoan` (інша логіка) | `PersonalTraining` (×2.0) |
+| `SpecialistAppointment` (×1.3) | `CorporateBooking` (×0.8) | `EventReservation` (×2.0) | `IntensiveCourse` (×1.4) | `LongTermRental` (×0.8) | `ResearchLoan` (довший термін) | `GroupSession` (×0.6) |
+| `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` |
+| `sealed class SpecialistAppointment` | `sealed class CorporateBooking` | `sealed class EventReservation` | `sealed class IntensiveCourse` | `sealed class LongTermRental` | `sealed class ResearchLoan` | `sealed class GroupSession` |
 
 ### Коміт
 

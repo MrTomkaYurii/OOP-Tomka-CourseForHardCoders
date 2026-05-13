@@ -54,13 +54,13 @@ git checkout -b feature/generics
 
 Після змін поведінка системи не повинна змінитись. Запусти `dotnet run` — меню `1. Пацієнти` працює так само, але тепер немає обмеження на 100 пацієнтів.
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `PatientManager` | менеджер вашої основної сутності |
-| `Patient[]` → `List<Patient>` | `YourEntity[]` → `List<YourEntity>` |
-| `_count` зникає | замість нього `_items.Count` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `PatientManager` | `GuestManager` | `CustomerManager` | `StudentManager` | `ClientManager` | `ReaderManager` | `MemberManager` |
+| `Patient[]` → `List<Patient>` | `Guest[]` → `List<Guest>` | `Customer[]` → `List<Customer>` | `Student[]` → `List<Student>` | `Client[]` → `List<Client>` | `Reader[]` → `List<Reader>` | `Member[]` → `List<Member>` |
+| `_count` → `_patients.Count` | `_count` → `_guests.Count` | `_count` → `_customers.Count` | `_count` → `_students.Count` | `_count` → `_clients.Count` | `_count` → `_readers.Count` | `_count` → `_members.Count` |
 
 ### Коміт
 
@@ -110,13 +110,13 @@ q.Enqueue("A"); q.Enqueue("B"); q.Enqueue("C");
 ```
 Переконайся що `Dequeue` на порожній черзі кидає виняток.
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `WaitingQueue<Patient>` | черга ваших клієнтів/заявок |
-| `Enqueue` / `Dequeue` | додати в кінець / взяти першого |
-| `Peek` | подивитись хто наступний |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `WaitingQueue<Patient>` | `WaitingQueue<Guest>` | `WaitingQueue<Customer>` | `WaitingQueue<Student>` | `WaitingQueue<Client>` | `WaitingQueue<Reader>` | `WaitingQueue<Member>` |
+| черга на прийом | черга на заїзд | черга на столик | черга на зарахування | черга на авто | черга на книгу | черга до тренера |
+| `Enqueue` / `Dequeue` / `Peek` | `Enqueue` / `Dequeue` / `Peek` | `Enqueue` / `Dequeue` / `Peek` | `Enqueue` / `Dequeue` / `Peek` | `Enqueue` / `Dequeue` / `Peek` | `Enqueue` / `Dequeue` / `Peek` | `Enqueue` / `Dequeue` / `Peek` |
 
 ### Коміт
 
@@ -162,12 +162,12 @@ public WaitingQueue<Patient> WaitingRoom { get; }
 
 Запусти `dotnet run`. Відкрий `6. Черга`. Додай кількох пацієнтів. Виклич "Прийняти першого" двічі — переконайся що порядок правильний (FIFO). Спробуй "Прийняти" з порожньої черги — повинно вивести повідомлення, а не крашнутись.
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `WaitingRoom` | черга ваших замовлень/клієнтів |
-| `6. Черга` | назва вашого нового розділу |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Clinic.WaitingRoom` | `Hotel.CheckInQueue` | `Restaurant.DiningQueue` | `University.EnrollmentQueue` | `CarRental.RentalQueue` | `Library.BorrowQueue` | `GymCenter.TrainingQueue` |
+| `6. Черга — очікування, прийом` | `6. Черга — реєстрація` | `6. Черга — на столик` | `6. Черга — зарахування` | `6. Черга — на авто` | `6. Черга — на книгу` | `6. Черга — до тренера` |
 
 ### Коміт
 

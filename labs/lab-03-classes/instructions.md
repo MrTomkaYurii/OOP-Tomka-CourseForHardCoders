@@ -155,13 +155,13 @@ public class Patient { ... }
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `Patient` | `Guest` | `Customer` | `Student` | `Client` |
-| `DateOfBirth` / `Age` | `CheckInDate` / `StayDays` | `LastVisit` | `EnrollmentYear` | `DriverSince` |
-| `BloodType` | `RoomPreference` | `DietaryRestrictions` | `Faculty` | `LicenseCategory` |
-| `IsAdult` | `IsVip` | `IsRegular` | `IsFinalYear` | `HasFullLicense` |
-| `GetAgeCategory()` | `GetTierCategory()` | `GetLoyaltyCategory()` | `GetYearCategory()` | `GetRiskCategory()` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Patient` | `Guest` | `Customer` | `Student` | `Client` | `Reader` | `Member` |
+| `DateOfBirth` / `Age` | `CheckInDate` / `StayDays` | `LastVisit` | `EnrollmentYear` | `DriverSince` | `MemberSince` / `YearsActive` | `JoinDate` / `MembershipDays` |
+| `BloodType` | `RoomPreference` | `DietaryRestrictions` | `Faculty` | `LicenseCategory` | `ReaderCategory` | `MembershipType` |
+| `IsAdult` | `IsVip` | `IsRegular` | `IsFinalYear` | `HasFullLicense` | `IsActive` | `IsActiveMember` |
+| `GetAgeCategory()` | `GetTierCategory()` | `GetLoyaltyCategory()` | `GetYearCategory()` | `GetRiskCategory()` | `GetCategoryName()` | `GetMemberCategory()` |
 
 ### Коміт
 
@@ -234,13 +234,13 @@ git commit -m "Lab03 Task1: add Patient class with 3 constructors and computed p
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `Doctor` | `Staff` | `Waiter` | `Lecturer` | `Manager` |
-| `Speciality` | `Department` | `Section` | `Subject` | `CarClass` |
-| `WorkStartHour/WorkEndHour` | `ShiftStart/ShiftEnd` | `ShiftStart/ShiftEnd` | `LectureStartHour/LectureEndHour` | `WorkStartHour/WorkEndHour` |
-| `IsAvailableNow` | `IsOnShift` | `IsOnDuty` | `IsTeachingNow` | `IsAvailable` |
-| `CanAcceptAt(hour)` | `CanCheckInAt(hour)` | `CanServeAt(hour)` | `CanTeachAt(hour)` | `CanHandleAt(hour)` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Doctor` | `Staff` | `Waiter` | `Lecturer` | `Manager` | `Librarian` | `Trainer` |
+| `Speciality` | `Department` | `Section` | `Subject` | `CarClass` | `Section` | `Specialty` |
+| `WorkStartHour/WorkEndHour` | `ShiftStart/ShiftEnd` | `ShiftStart/ShiftEnd` | `LectureStartHour/LectureEndHour` | `WorkStartHour/WorkEndHour` | `ShiftStart/ShiftEnd` | `WorkStartHour/WorkEndHour` |
+| `IsAvailableNow` | `IsOnShift` | `IsOnDuty` | `IsTeachingNow` | `IsAvailable` | `IsOnShift` | `IsAvailableNow` |
+| `CanAcceptAt(hour)` | `CanCheckInAt(hour)` | `CanServeAt(hour)` | `CanTeachAt(hour)` | `CanHandleAt(hour)` | `CanIssueAt(hour)` | `CanTrainAt(hour)` |
 
 ### Коміт
 
@@ -348,12 +348,12 @@ git commit -m "Lab03 Task2: add Doctor class with int work hours and availabilit
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `PatientManager` | `GuestManager` | `CustomerManager` | `StudentManager` | `ClientManager` |
-| `Patient[100]` | `Guest[200]` | `Customer[500]` | `Student[300]` | `Client[150]` |
-| `FindByName` | `FindByName` | `FindByName` | `FindByName` | `FindByName` |
-| середній вік у статистиці | середня к-сть ночей | середня к-сть відвідин | середній бал | середній вік водія |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `PatientManager` | `GuestManager` | `CustomerManager` | `StudentManager` | `ClientManager` | `ReaderManager` | `MemberManager` |
+| `Patient[100]` | `Guest[200]` | `Customer[500]` | `Student[300]` | `Client[150]` | `Reader[200]` | `Member[250]` |
+| `FindByName` | `FindByName` | `FindByName` | `FindByName` | `FindByName` | `FindByName` | `FindByName` |
+| середній вік у статистиці | середня к-сть ночей | середня к-сть відвідин | середній бал | середній вік водія | середня к-сть книг | середній вік учасника |
 
 ### Коміт
 
@@ -452,12 +452,12 @@ git commit -m "Lab03 Task3: add PatientManager with array storage, CRUD and stat
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `DoctorManager` | `StaffManager` | `WaiterManager` | `LecturerManager` | `ManagerList` |
-| `FindBySpeciality` | `FindByDepartment` | `FindBySection` | `FindBySubject` | `FindByCarClass` |
-| Унікальні спеціальності | По відділах | По залах | По кафедрах | По класах авто |
-| «Доступні зараз» | «На зміні» | «На зміні» | «Читають зараз» | «На роботі» |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `DoctorManager` | `StaffManager` | `WaiterManager` | `LecturerManager` | `ManagerList` | `LibrarianManager` | `TrainerManager` |
+| `FindBySpeciality` | `FindByDepartment` | `FindBySection` | `FindBySubject` | `FindByCarClass` | `FindBySection` | `FindBySpecialty` |
+| Унікальні спеціальності | По відділах | По залах | По кафедрах | По класах авто | По відділах | По спеціалізаціях |
+| «Доступні зараз» | «На зміні» | «На зміні» | «Читають зараз» | «На роботі» | «На зміні» | «Доступні зараз» |
 
 ### Коміт
 
@@ -537,13 +537,13 @@ git commit -m "Lab03 Task4: add DoctorManager with speciality search and stats"
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `Appointment` | `Booking` | `TableReservation` | `Enrollment` | `Rental` |
-| `PatientId` / `DoctorId` | `GuestId` / `RoomId` | `CustomerId` / `TableId` | `StudentId` / `CourseId` | `ClientId` / `CarId` |
-| `ScheduledAt` | `CheckIn` | `ReservedAt` | `StartDate` | `RentalStart` |
-| `DurationMinutes` | `StayNights` | `Duration` | `CourseDays` | `RentalDays` |
-| `Cancel` / `Complete` | `Cancel` / `CheckOut` | `Cancel` / `Seat` | `Withdraw` / `Complete` | `Cancel` / `Return` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Appointment` | `Booking` | `TableReservation` | `Enrollment` | `Rental` | `BookLoan` | `Session` |
+| `PatientId` / `DoctorId` | `GuestId` / `RoomId` | `CustomerId` / `TableId` | `StudentId` / `CourseId` | `ClientId` / `CarId` | `ReaderId` / `BookId` | `MemberId` / `TrainerId` |
+| `ScheduledAt` | `CheckIn` | `ReservedAt` | `StartDate` | `RentalStart` | `LoanDate` | `ScheduledAt` |
+| `DurationMinutes` | `StayNights` | `Duration` | `CourseDays` | `RentalDays` | `LoanDays` | `DurationMinutes` |
+| `Cancel` / `Complete` | `Cancel` / `CheckOut` | `Cancel` / `Seat` | `Withdraw` / `Complete` | `Cancel` / `Return` | `Cancel` / `Return` | `Cancel` / `Complete` |
 
 ### Коміт
 
@@ -640,12 +640,12 @@ git commit -m "Lab03 Task5: add Appointment class with status state machine"
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `AppointmentManager` | `BookingManager` | `ReservationManager` | `EnrollmentManager` | `RentalManager` |
-| `Book(patientId, doctorId, ...)` | `Book(guestId, roomId, ...)` | `Reserve(custId, tableId, ...)` | `Enroll(studentId, courseId, ...)` | `Rent(clientId, carId, ...)` |
-| `GetByPatient` | `GetByGuest` | `GetByCustomer` | `GetByStudent` | `GetByClient` |
-| `GetByDoctor` | `GetByRoom` | `GetByTable` | `GetByCourse` | `GetByCar` |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `AppointmentManager` | `BookingManager` | `ReservationManager` | `EnrollmentManager` | `RentalManager` | `LoanManager` | `SessionManager` |
+| `Book(patientId, doctorId, ...)` | `Book(guestId, roomId, ...)` | `Reserve(custId, tableId, ...)` | `Enroll(studentId, courseId, ...)` | `Rent(clientId, carId, ...)` | `Lend(readerId, bookId, ...)` | `Book(memberId, trainerId, ...)` |
+| `GetByPatient` | `GetByGuest` | `GetByCustomer` | `GetByStudent` | `GetByClient` | `GetByReader` | `GetByMember` |
+| `GetByDoctor` | `GetByRoom` | `GetByTable` | `GetByCourse` | `GetByCar` | `GetByBook` | `GetByTrainer` |
 
 ### Коміт
 
@@ -723,13 +723,13 @@ git commit -m "Lab03 Task6: add AppointmentManager with constructor injection an
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `Clinic` | `Hotel` | `Restaurant` | `University` | `CarRental` |
-| `Patients` | `Guests` | `Customers` | `Students` | `Clients` |
-| `Doctors` | `Rooms` або `Staff` | `Tables` або `Staff` | `Lecturers` | `Cars` |
-| `Appointments` | `Bookings` | `Reservations` | `Enrollments` | `Rentals` |
-| `GenerateReport()` | Звіт по заповненості | Звіт по бронюванням | Звіт по успішності | Звіт по флоту |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Clinic` | `Hotel` | `Restaurant` | `University` | `CarRental` | `Library` | `GymCenter` |
+| `Patients` | `Guests` | `Customers` | `Students` | `Clients` | `Readers` | `Members` |
+| `Doctors` | `Rooms` або `Staff` | `Tables` або `Staff` | `Lecturers` | `Cars` | `Librarians` | `Trainers` |
+| `Appointments` | `Bookings` | `Reservations` | `Enrollments` | `Rentals` | `Loans` | `Sessions` |
+| `GenerateReport()` | Звіт по заповненості | Звіт по бронюванням | Звіт по успішності | Звіт по флоту | Звіт по фонду | Звіт по завантаженості |
 
 ### Коміт
 
@@ -827,11 +827,11 @@ git commit -m "Lab03 Task7: add Clinic orchestrator with schedule and report"
 
 ### Адаптація до вашого домену
 
-| Клініка | Готель | Ресторан | Університет | Прокат авто |
-|---------|--------|----------|-------------|-------------|
-| `GrowablePatientManager` | `GrowableGuestManager` | `GrowableCustomerManager` | `GrowableStudentManager` | `GrowableClientManager` |
-| Початковий розмір 4 | Початковий розмір 4 | Початковий розмір 4 | Початковий розмір 4 | Початковий розмір 4 |
-| Виводити кількість пацієнтів / ємність | Гостей / ємність | Відвідувачів / ємність | Студентів / ємність | Клієнтів / ємність |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `GrowablePatientManager` | `GrowableGuestManager` | `GrowableCustomerManager` | `GrowableStudentManager` | `GrowableClientManager` | `GrowableReaderManager` | `GrowableMemberManager` |
+| Початковий розмір 4 | Початковий розмір 4 | Початковий розмір 4 | Початковий розмір 4 | Початковий розмір 4 | Початковий розмір 4 | Початковий розмір 4 |
+| Пацієнтів / ємність | Гостей / ємність | Відвідувачів / ємність | Студентів / ємність | Клієнтів / ємність | Читачів / ємність | Учасників / ємність |
 
 ### Коміт
 

@@ -64,14 +64,14 @@ git checkout -b feature/iterators
 
 Створи вручну кілька `DoctorStats` з різною кількістю прийомів, помісти в масив `DoctorStats[]`, виклич `Array.Sort()` — переконайся що лікар з найбільшою кількістю прийомів стоїть першим.
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `DoctorStats` | статистика по виконавцю (водій, вчитель, офіціант) |
-| `AppointmentCount` | кількість операцій |
-| `TotalRevenue` | загальна сума |
-| Природній порядок: більше прийомів = вище | найактивніший виконавець = перший |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `DoctorStats` | `StaffStats` | `WaiterStats` | `LecturerStats` | `ManagerStats` | `LibrarianStats` | `TrainerStats` |
+| `AppointmentCount` | к-сть check-in | к-сть столів | к-сть курсів | к-сть оренд | к-сть видач | к-сть сесій |
+| `TotalRevenue` | загальна виручка | загальна виручка | к-сть студентів | загальна виручка | к-сть повернень | загальна виручка |
+| більше прийомів = вище | більше обслугованих = вище | більше столів = вище | більше курсів = вище | більше оренд = вище | більше видач = вище | більше сесій = вище |
 
 ### Коміт
 
@@ -108,13 +108,14 @@ git commit -m "Lab10 Task1: add DoctorStats with IComparable<DoctorStats> by app
 
 Виклич `Array.Sort()` на масиві `PatientStats[]` — пацієнт з найбільшою кількістю візитів повинен бути першим.
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `PatientStats` | статистика по клієнту або замовнику |
-| `VisitCount` | кількість транзакцій |
-| `TotalSpent` | загальна сума витрат |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `PatientStats` | `GuestStats` | `CustomerStats` | `StudentStats` | `ClientStats` | `ReaderStats` | `MemberStats` |
+| `VisitCount` | к-сть ночей | к-сть відвідин | к-сть курсів | к-сть оренд | к-сть видач | к-сть тренувань |
+| `TotalSpent` | загальна сума | загальна сума | середній бал | загальна сума | штрафи сплачені | загальна сума |
+| більше візитів = вище | більше ночей = вище | більше відвідин = вище | більше курсів = вище | більше оренд = вище | більше видач = вище | більше тренувань = вище |
 
 ### Коміт
 
@@ -163,13 +164,14 @@ git commit -m "Lab10 Task2: add PatientStats with IComparable<PatientStats> by v
 - `.Sort(new DoctorStatsByRevenue())` — за виручкою
 - `.Sort(new DoctorStatsByName())` — за ім'ям
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `DoctorStatsByRevenue` | компаратор за сумою |
-| `DoctorStatsByName` | компаратор за ім'ям |
-| `PatientStatsByLastVisit` | компаратор за датою останньої активності |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `DoctorStatsByRevenue` | `StaffStatsByRevenue` | `WaiterStatsByRevenue` | `LecturerStatsByStudents` | `ManagerStatsByRevenue` | `LibrarianStatsByIssues` | `TrainerStatsByRevenue` |
+| `DoctorStatsByName` | `StaffStatsByName` | `WaiterStatsByName` | `LecturerStatsByName` | `ManagerStatsByName` | `LibrarianStatsByName` | `TrainerStatsByName` |
+| `PatientStatsBySpent` | `GuestStatsBySpent` | `CustomerStatsBySpent` | `StudentStatsByGrade` | `ClientStatsBySpent` | `ReaderStatsByIssues` | `MemberStatsBySpent` |
+| `PatientStatsByLastVisit` | `GuestStatsByLastStay` | `CustomerStatsByLastVisit` | `StudentStatsByLastCourse` | `ClientStatsByLastRental` | `ReaderStatsByLastLoan` | `MemberStatsByLastSession` |
 
 ### Коміт
 
@@ -233,13 +235,14 @@ AnalyticsManager(AppointmentManager appointments, DoctorManager doctors, Patient
 - Для лікаря без прийомів: `AppointmentCount == 0`, `TotalRevenue == 0`, `LastAppointmentDate == DateTime.MinValue`
 - `foreach` по результату без збереження в список — також працює
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `AnalyticsManager` | модуль звітності |
-| `ComputeDoctorStats()` | метод що лінаво генерує звіт по виконавцю |
-| `yield return` | кожен виконавець обчислюється по черзі |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` |
+| `ComputeDoctorStats()` | `ComputeStaffStats()` | `ComputeWaiterStats()` | `ComputeLecturerStats()` | `ComputeManagerStats()` | `ComputeLibrarianStats()` | `ComputeTrainerStats()` |
+| `ComputePatientStats()` | `ComputeGuestStats()` | `ComputeCustomerStats()` | `ComputeStudentStats()` | `ComputeClientStats()` | `ComputeReaderStats()` | `ComputeMemberStats()` |
+| `yield return` по кожному лікарю | по кожному співробітнику | по кожному офіціанту | по кожному викладачу | по кожному менеджеру | по кожному бібліотекарю | по кожному тренеру |
 
 ### Коміт
 
@@ -291,13 +294,15 @@ git commit -m "Lab10 Task4: add AnalyticsManager with yield return for IEnumerab
 - Після сортування за навантаженням і за виручкою порядок різний (якщо тестові дані різноманітні)
 - Пацієнти без жодного запису виводяться з `Візитів: 0` і датою `—`
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| "8. Аналітика" | "Звіти" або "Рейтинги" у вашому меню |
-| Лікарі за навантаженням | виконавці за кількістю операцій |
-| Пацієнти за витратами | клієнти за сумою замовлень |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `8. Аналітика` | `8. Аналітика` | `8. Аналітика` | `8. Аналітика` | `8. Аналітика` | `8. Аналітика` | `8. Аналітика` |
+| Лікарі за навантаженням | Персонал за check-in | Офіціанти за столами | Викладачі за курсами | Менеджери за орендами | Бібліотекарі за видачами | Тренери за сесіями |
+| Лікарі за виручкою | Персонал за виручкою | Офіціанти за виручкою | Викладачі за студентами | Менеджери за виручкою | Бібліотекарі за відділами | Тренери за виручкою |
+| Пацієнти за кількістю візитів | Гості за ночами | Клієнти за відвідинами | Студенти за курсами | Клієнти за орендами | Читачі за видачами | Учасники за тренуваннями |
+| Пацієнти за витратами | Гості за витратами | Клієнти за витратами | Студенти за балом | Клієнти за витратами | Читачі за штрафами | Учасники за витратами |
 
 ### Коміт
 

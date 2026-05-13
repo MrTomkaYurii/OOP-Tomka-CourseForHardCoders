@@ -66,13 +66,13 @@ public Appointment[] GetAll() { ... }
 3. `MarkPaid()` не повинен дозволяти оплату скасованого запису.
 4. [Interfaces — C# docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/interface)
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `Appointment` | ваша операційна сутність |
-| `GetCost()` | логіка розрахунку вартості вашої операції |
-| `DurationMinutes * 10m` | ваша формула |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Appointment` реалізує `IPayable` | `Booking` реалізує `IPayable` | `TableReservation` реалізує `IPayable` | `Enrollment` реалізує `IPayable` | `Rental` реалізує `IPayable` | `BookLoan` реалізує `IPayable` | `Session` реалізує `IPayable` |
+| `GetCost()` = `DurationMinutes * 10m` | `GetCost()` = `StayNights * RoomRate` | `GetCost()` = фіксована ставка | `GetCost()` = `CourseFee` | `GetCost()` = `RentalDays * DailyRate` | `GetFine()` = `OverdueDays * DailyFine` | `GetCost()` = `DurationMinutes * Rate` |
+| `IsPaid` / `MarkPaid()` | `IsPaid` / `MarkPaid()` | `IsPaid` / `MarkPaid()` | `IsPaid` / `MarkPaid()` | `IsPaid` / `MarkPaid()` | `IsPaid` / `MarkPaid()` | `IsPaid` / `MarkPaid()` |
 
 ### Коміт
 
@@ -122,12 +122,13 @@ public class Appointment : IPayable, ICancellable
 3. Спробуй написати метод що приймає `ICancellable[]` і скасовує всі де `!IsCancelled` та дата вже минула. Він не знає нічого про `Appointment` — тільки про контракт.
 4. [Multiple interfaces — C# docs](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces)
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `Appointment.Cancel()` | метод скасування вашої операції |
-| `CancellationReason` | причина скасування |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Appointment` реалізує `ICancellable` | `Booking` реалізує `ICancellable` | `TableReservation` реалізує `ICancellable` | `Enrollment` реалізує `ICancellable` | `Rental` реалізує `ICancellable` | `BookLoan` реалізує `ICancellable` | `Session` реалізує `ICancellable` |
+| `Cancel(reason)` | `Cancel(reason)` | `Cancel(reason)` | `Withdraw(reason)` | `Cancel(reason)` | `Cancel(reason)` | `Cancel(reason)` |
+| `CancellationReason` | `CancellationReason` | `CancellationReason` | `WithdrawalReason` | `CancellationReason` | `CancellationReason` | `CancellationReason` |
 
 ### Коміт
 
@@ -185,13 +186,14 @@ public class Doctor : ISchedulable
 3. `DisplayUnpaid` може використати `is Appointment a` щоб показати деталі (пацієнт, лікар, дата), але це необов'язково — можна вивести лише суму через інтерфейс.
 4. [Interface as parameter type](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces#interface-usage)
 
-### Адаптація
+### Адаптація до вашого домену
 
-| Клініка | Ваш домен |
-|---------|-----------|
-| `BillingManager` | ваш фінансовий менеджер |
-| `GetUnpaidByPatient` | `GetUnpaidByClient` / `GetUnpaidByGuest` |
-| `GetAvailableSlots` | вільні слоти вашої сутності B |
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Doctor` реалізує `ISchedulable` | `Staff` реалізує `ISchedulable` | `Waiter` реалізує `ISchedulable` | `Lecturer` реалізує `ISchedulable` | `Manager` реалізує `ISchedulable` | `Librarian` реалізує `ISchedulable` | `Trainer` реалізує `ISchedulable` |
+| `CanSchedule(DateTime)` | `CanCheckIn(DateTime)` | `CanServe(DateTime)` | `CanTeach(DateTime)` | `CanHandle(DateTime)` | `CanIssue(DateTime)` | `CanTrain(DateTime)` |
+| `BillingManager` | `BillingManager` | `BillingManager` | `BillingManager` | `BillingManager` | `FineManager` | `BillingManager` |
+| `GetUnpaidByPatient` | `GetUnpaidByGuest` | `GetUnpaidByCustomer` | `GetUnpaidByStudent` | `GetUnpaidByClient` | `GetUnpaidFinesByReader` | `GetUnpaidByMember` |
 
 ### Коміт
 
