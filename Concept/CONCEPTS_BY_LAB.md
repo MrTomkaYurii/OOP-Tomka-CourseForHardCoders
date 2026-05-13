@@ -67,8 +67,9 @@
 | `IComparer<T>`, `int Compare(T? x, T? y)` | 10 | |
 | `IEnumerable<T>` як тип повернення, `yield return` | 10 | ліниве обчислення |
 | `Attribute` (кастомний), `Reflection` | 11 | |
-| `delegate`, `event`, `EventArgs`, `+=` | 12 | |
-| LINQ (`.Where`, `.Select`, `.OrderBy`, `.GroupBy`, `.Join`, | 13 | |
+| `File`, `StreamWriter`, `StreamReader`, `Path`, `Directory` | 12 | |
+| `delegate`, `event`, `EventArgs`, `+=` | 13 | |
+| LINQ (`.Where`, `.Select`, `.OrderBy`, `.GroupBy`, `.Join`, | 14 | |
 |   `.FirstOrDefault`, `.Any`, `.Sum`, `.Average`, `.Min`, `.Max`, | | |
 |   `.Count(predicate)`, `.ToList()`, `.ToArray()`) | | |
 | `Func<>`, `Action<>`, `Predicate<>`, lambda як змінна | 14 | |
@@ -307,7 +308,23 @@
 
 ---
 
-### Lab 12 — Events (feature/events → зливається)
+### Lab 12 — File I/O (feature/files → злито в main)
+
+**Нові конструкції:**
+- `File.AppendAllText(path, text, Encoding.UTF8)` — дописати в кінець файлу
+- `File.ReadAllLines(path, Encoding.UTF8)` → `string[]`
+- `File.WriteAllText`, `File.Exists`, `File.Delete`
+- `StreamWriter(path, append: false, Encoding.UTF8)` + `using` — потік із гарантованим закриттям (`IDisposable`)
+- `Directory.CreateDirectory(path)` — рекурсивне створення, safe якщо існує
+- `Path.Combine(part1, part2, ...)` — платформо-незалежні шляхи
+- `Encoding.UTF8` — `using System.Text;`
+- `Environment.NewLine` — правильний перенос рядка під поточну ОС
+- `try/catch` per-iteration у CSV: помилка в рядку не зупиняє цикл
+- Секційний формат файлу `[SECTION]` — розпізнавання секцій при читанні
+
+---
+
+### Lab 13 — Events (feature/events → зливається)
 
 **Нові конструкції:**
 - `delegate void Handler(object? sender, EventArgs e)`
@@ -317,7 +334,7 @@
 
 ---
 
-### Lab 13 — LINQ (feature/linq → зливається)
+### Lab 14 — LINQ (feature/linq → зливається)
 
 **Нові конструкції (увесь LINQ!):**
 - `.Where(predicate)`, `.Select(selector)`, `.ToList()`, `.ToArray()`

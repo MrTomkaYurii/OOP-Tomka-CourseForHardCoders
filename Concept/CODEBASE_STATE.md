@@ -404,7 +404,42 @@ src/
 
 ---
 
-## Lab 12–21 — (детальніше після реалізації попередніх)
+## Lab 12 — File I/O (feature/files)
+
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/files` — ✅ зливається
+**Файли:**
+```
+src/
+└── Utils/
+    ├── ClinicLogger.cs      ← NEW: File.AppendAllText, ReadAllLines, GetLastLines(n)
+    ├── ImportResult.cs      ← NEW: контейнер результатів імпорту (Imported/Skipped/Errors)
+    ├── ClinicExporter.cs    ← NEW: StreamWriter, Path.Combine, Directory.CreateDirectory
+    ├── CsvImporter.cs       ← NEW: CSV-парсинг з try/catch per-line, повертає ImportResult
+    └── SessionManager.cs    ← NEW: Save/Load у session.dat, секційний формат [PATIENTS]
+```
+
+**Зміни в існуючих файлах:**
+- `Clinic.cs` — `Logger`, `Exporter`, `Importer`, `Session` властивості
+- `Program.cs` — завантаження сесії на старті, збереження при виході, `FilesMenu()`, пункт "10. Файли"
+
+**Нові концепції в Lab 12:**
+- `File.AppendAllText(path, text, encoding)` — дописати в кінець
+- `File.ReadAllLines(path, encoding)` — зчитати у `string[]`
+- `File.WriteAllText`, `File.Exists`, `File.Delete`
+- `StreamWriter(path, append, encoding)` + `using` — потік з гарантованим закриттям
+- `Directory.CreateDirectory(path)` — створює теки рекурсивно, не кидає якщо існує
+- `Path.Combine(...)` — платформо-незалежне з'єднання частин шляху
+- `Encoding.UTF8` — для кирилиці обов'язково
+- `Environment.NewLine` — правильний перенос рядка
+- `try/catch` per-line у CSV-парсингу — помилка в рядку не зупиняє решту
+- Секційний текстовий формат `[SECTION]` — простий спосіб зберігати різнотипні дані
+
+**Нове в меню:** пункт 10 "Файли", вихід з пропозицією збереження сесії
+
+---
+
+## Lab 13–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 
