@@ -4,7 +4,7 @@ import LabCard from "@/components/LabCard.astro";
 import SiteLayout from "@/layouts/SiteLayout.astro";
 import { getLabs } from "@/data/course";
 
-const labs = getLabs();
+const labs = await getLabs();
 ---
 
 <SiteLayout title="Лабораторні | OOP C# Course">

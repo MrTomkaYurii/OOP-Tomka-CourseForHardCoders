@@ -5,8 +5,8 @@ import ThemeToggle from "@/components/ThemeToggle.astro";
 import TopBar from "@/components/TopBar.astro";
 import BackToTop from "@/components/BackToTop.astro";
 
-const labs = getLabs();
-const lectures = getLectures();
+const labs = await getLabs();
+const lectures = await getLectures();
 const currentPath = pathWithoutBase(Astro.url.pathname);
 const lectureGroups = lectures.reduce<Array<{ title: string; items: Array<{ href: string; number: string; title: string; active: boolean }> }>>((groups, lecture) => {
   const lastGroup = groups[groups.length - 1];

@@ -4,7 +4,7 @@ import SiteLayout from "@/layouts/SiteLayout.astro";
 import { getLectures } from "@/data/course";
 import { sitePath } from "@/utils/paths";
 
-const lectures = getLectures();
+const lectures = await getLectures();
 const lectureGroups = lectures.reduce<Array<{ title: string; lectures: typeof lectures }>>((groups, lecture) => {
   const lastGroup = groups[groups.length - 1];
 

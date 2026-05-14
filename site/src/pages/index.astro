@@ -5,8 +5,8 @@ import SiteLayout from "@/layouts/SiteLayout.astro";
 import { courseStats, getLabs, getLectures } from "@/data/course";
 import { sitePath } from "@/utils/paths";
 
-const labs = getLabs();
-const lectures = getLectures();
+const labs = await getLabs();
+const lectures = await getLectures();
 const visibleLabs = labs.slice(0, 6);
 const visibleLectures = lectures.slice(0, 4);
 ---

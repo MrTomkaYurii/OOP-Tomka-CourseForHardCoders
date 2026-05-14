@@ -4,7 +4,7 @@ import SiteLayout from "@/layouts/SiteLayout.astro";
 import { getLabs } from "@/data/course";
 import { sitePath } from "@/utils/paths";
 
-const labs = getLabs();
+const labs = await getLabs();
 ---
 
 <SiteLayout title="Карта розвитку | OOP C# Course">

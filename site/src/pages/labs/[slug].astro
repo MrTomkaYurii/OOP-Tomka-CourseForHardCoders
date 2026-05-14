@@ -4,17 +4,17 @@ import SiteLayout from "@/layouts/SiteLayout.astro";
 import { getLab, getLabs } from "@/data/course";
 import { sitePath } from "@/utils/paths";
 
-export function getStaticPaths() {
-  return getLabs().map((lab) => ({ params: { slug: lab.slug } }));
+export async function getStaticPaths() {
+  return (await getLabs()).map((lab) => ({ params: { slug: lab.slug } }));
 }
 
-const lab = getLab(Astro.params.slug!);
+const lab = await getLab(Astro.params.slug!);
 
 if (!lab) {
   return Astro.redirect(sitePath("/labs/"));
 }
 
-const labs = getLabs();
+const labs = await getLabs();
 const currentIndex = labs.findIndex((item) => item.slug === lab.slug);
 const previousLab = currentIndex > 0 ? labs[currentIndex - 1] : undefined;
 const nextLab = currentIndex >= 0 && currentIndex < labs.length - 1 ? labs[currentIndex + 1] : undefined;

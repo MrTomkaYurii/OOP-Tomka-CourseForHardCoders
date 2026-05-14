@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { marked } from "marked";
+import { getSingletonHighlighter } from "shiki";
 
 export type LabStatus = "ready" | "draft" | "planned";
 
@@ -282,6 +283,14 @@ function getLectureSummaries() {
   return JSON.parse(readFileSync(lectureSummariesPath, "utf-8")) as Record<string, string>;
 }
 
+// ── Shiki singleton ────────────────────────────────────────────────────────
+async function getHighlighter() {
+  return getSingletonHighlighter({
+    themes: ["github-dark"],
+    langs: ["csharp", "typescript", "javascript", "json", "bash", "text", "markdown", "xml", "sql"],
+  });
+}
+
 function collectHeadings(markdown: string, minDepth = 2) {
   const counts = new Map<string, number>();
 
@@ -294,7 +303,10 @@ function collectHeadings(markdown: string, minDepth = 2) {
   }));
 }
 
-function renderMarkdown(markdown: string, options: { assetPrefix?: string } = {}) {
+async function renderMarkdown(markdown: string, options: { assetPrefix?: string } = {}) {
+  const highlighter = await getHighlighter();
+  const supportedLangs = highlighter.getLoadedLanguages();
+
   const renderHeadings = collectHeadings(markdown, 1);
   const headings = renderHeadings.filter((heading) => heading.depth >= 2);
   const renderer = new marked.Renderer();
@@ -311,6 +323,11 @@ function renderMarkdown(markdown: string, options: { assetPrefix?: string } = {}
     return `<h${depth} id="${id}">${text}</h${depth}>`;
   };
 
+  renderer.code = ({ text, lang }) => {
+    const language = lang && supportedLangs.includes(lang as any) ? (lang as any) : "text";
+    return highlighter.codeToHtml(text, { lang: language, theme: "github-dark" });
+  };
+
   const preparedMarkdown = options.assetPrefix
     ? markdown.replace(/\]\(assets\/docx\/([^)]+)\)/g, `](${options.assetPrefix}/$1)`)
     : markdown;
@@ -318,82 +335,102 @@ function renderMarkdown(markdown: string, options: { assetPrefix?: string } = {}
   return {
     headings,
     allHeadings: renderHeadings,
-    html: marked(preparedMarkdown, { renderer, gfm: true }) as string,
+    html: await marked(preparedMarkdown, { renderer, gfm: true }) as string,
   };
 }
 
-export function getLabs(): Lab[] {
-  if (!existsSync(labsDir)) {
-    return [];
-  }
+// ── Build-time cache (computed once per build) ─────────────────────────────
+let _labsCache: Promise<Lab[]> | null = null;
+let _lecturesCache: Promise<Lecture[]> | null = null;
 
-  return readdirSync(labsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .filter((slug) => Boolean(meta[slug]))
-    .map((slug) => {
-      const sourcePath = path.join(labsDir, slug, "instructions.md");
-      const markdown = readFileSync(sourcePath, "utf-8");
-      const rendered = renderMarkdown(markdown);
+export function getLabs(): Promise<Lab[]> {
+  if (_labsCache) return _labsCache;
 
-      return {
-        ...meta[slug],
-        sourcePath,
-        excerpt: stripMarkdown(markdown).slice(0, 180),
-        headings: rendered.headings,
-        html: rendered.html,
-      };
-    })
-    .sort((a, b) => a.number - b.number);
+  _labsCache = (async () => {
+    if (!existsSync(labsDir)) return [];
+
+    const slugs = readdirSync(labsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .filter((slug) => Boolean(meta[slug]));
+
+    const labs = await Promise.all(
+      slugs.map(async (slug) => {
+        const sourcePath = path.join(labsDir, slug, "instructions.md");
+        const markdown = readFileSync(sourcePath, "utf-8");
+        const rendered = await renderMarkdown(markdown);
+
+        return {
+          ...meta[slug],
+          sourcePath,
+          excerpt: stripMarkdown(markdown).slice(0, 180),
+          headings: rendered.headings,
+          html: rendered.html,
+        };
+      }),
+    );
+
+    return labs.sort((a, b) => a.number - b.number);
+  })();
+
+  return _labsCache;
 }
 
-export function getLab(slug: string) {
-  return getLabs().find((lab) => lab.slug === slug);
+export async function getLab(slug: string) {
+  return (await getLabs()).find((lab) => lab.slug === slug);
 }
 
-export function getLectures(): Lecture[] {
-  if (!existsSync(lectureSectionsDir)) {
-    return [];
-  }
+export function getLectures(): Promise<Lecture[]> {
+  if (_lecturesCache) return _lecturesCache;
 
-  const summaries = getLectureSummaries();
+  _lecturesCache = (async () => {
+    if (!existsSync(lectureSectionsDir)) return [];
 
-  return readdirSync(lectureSectionsDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && /^\d{2}-.+\.md$/.test(entry.name))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((entry) => {
-      const sourcePath = path.join(lectureSectionsDir, entry.name);
-      const rawMarkdown = readFileSync(sourcePath, "utf-8");
-      const { data, body: markdown } = parseFrontmatter(rawMarkdown);
-      const chapter = Number(data.chapter ?? entry.name.slice(0, 2));
-      const section = Number(data.section ?? entry.name.slice(3, 5));
-      const numberLabel = data.number ?? `${chapter}.${section}`;
-      const slug = entry.name.replace(/\.md$/, "");
-      const title = data.title ?? markdown.match(/^##\s+(.+)$/m)?.[1]?.trim() ?? `Лекція ${numberLabel}`;
-      const chapterTitle = data.chapterTitle ?? lectureChapterTitle(chapter);
-      const rendered = renderMarkdown(markdown, { assetPrefix: siteAssetPath("/lecture-assets/docx") });
-      const summary = summaries[slug];
+    const summaries = getLectureSummaries();
 
-      return {
-        slug,
-        number: chapter * 100 + section,
-        title,
-        chapter,
-        chapterTitle,
-        sections: [],
-        section,
-        numberLabel,
-        sourcePath,
-        excerpt: summary ?? stripMarkdown(markdown).slice(0, 210),
-        headings: rendered.headings,
-        html: rendered.html,
-      };
-    })
-    .sort((a, b) => a.chapter - b.chapter || Number(a.numberLabel.split(".")[1]) - Number(b.numberLabel.split(".")[1]));
+    const entries = readdirSync(lectureSectionsDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && /^\d{2}-.+\.md$/.test(entry.name))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const lectures = await Promise.all(
+      entries.map(async (entry) => {
+        const sourcePath = path.join(lectureSectionsDir, entry.name);
+        const rawMarkdown = readFileSync(sourcePath, "utf-8");
+        const { data, body: markdown } = parseFrontmatter(rawMarkdown);
+        const chapter = Number(data.chapter ?? entry.name.slice(0, 2));
+        const section = Number(data.section ?? entry.name.slice(3, 5));
+        const numberLabel = data.number ?? `${chapter}.${section}`;
+        const slug = entry.name.replace(/\.md$/, "");
+        const title = data.title ?? markdown.match(/^##\s+(.+)$/m)?.[1]?.trim() ?? `Лекція ${numberLabel}`;
+        const chapterTitle = data.chapterTitle ?? lectureChapterTitle(chapter);
+        const rendered = await renderMarkdown(markdown, { assetPrefix: siteAssetPath("/lecture-assets/docx") });
+        const summary = summaries[slug];
+
+        return {
+          slug,
+          number: chapter * 100 + section,
+          title,
+          chapter,
+          chapterTitle,
+          sections: [],
+          section,
+          numberLabel,
+          sourcePath,
+          excerpt: summary ?? stripMarkdown(markdown).slice(0, 210),
+          headings: rendered.headings,
+          html: rendered.html,
+        };
+      }),
+    );
+
+    return lectures.sort((a, b) => a.chapter - b.chapter || Number(a.numberLabel.split(".")[1]) - Number(b.numberLabel.split(".")[1]));
+  })();
+
+  return _lecturesCache;
 }
 
-export function getLecture(slug: string) {
-  return getLectures().find((lecture) => lecture.slug === slug);
+export async function getLecture(slug: string) {
+  return (await getLectures()).find((lecture) => lecture.slug === slug);
 }
 
 export const courseStats = {

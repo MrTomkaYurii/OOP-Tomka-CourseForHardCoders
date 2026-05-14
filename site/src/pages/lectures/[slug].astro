@@ -4,17 +4,17 @@ import SiteLayout from "@/layouts/SiteLayout.astro";
 import { getLecture, getLectures } from "@/data/course";
 import { sitePath } from "@/utils/paths";
 
-export function getStaticPaths() {
-  return getLectures().map((lecture) => ({ params: { slug: lecture.slug } }));
+export async function getStaticPaths() {
+  return (await getLectures()).map((lecture) => ({ params: { slug: lecture.slug } }));
 }
 
-const lecture = getLecture(Astro.params.slug!);
+const lecture = await getLecture(Astro.params.slug!);
 
 if (!lecture) {
   return Astro.redirect(sitePath("/lectures/"));
 }
 
-const lectures = getLectures();
+const lectures = await getLectures();
 const currentIndex = lectures.findIndex((item) => item.slug === lecture.slug);
 const previousLecture = currentIndex > 0 ? lectures[currentIndex - 1] : undefined;
 const nextLecture = currentIndex >= 0 && currentIndex < lectures.length - 1 ? lectures[currentIndex + 1] : undefined;

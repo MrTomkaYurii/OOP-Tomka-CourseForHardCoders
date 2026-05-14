@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "astro": "^5.0.0",
-    "marked": "^15.0.0"
+    "marked": "^15.0.0",
+    "shiki": "^4.0.2"
   },
   "devDependencies": {
     "typescript": "^5.6.0"
