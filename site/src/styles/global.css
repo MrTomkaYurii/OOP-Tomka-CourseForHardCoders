@@ -709,6 +709,144 @@ pre {
   gap: 14px;
 }
 
+.lecture-search {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.lecture-search-box {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(280px, 1.2fr);
+  gap: 18px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 90%, var(--panel-2));
+  box-shadow: 0 12px 34px rgba(16, 32, 29, 0.045);
+}
+
+.lecture-search-box label {
+  display: block;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.lecture-search-box p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.lecture-search-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.lecture-search-control input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  outline: none;
+}
+
+.lecture-search-control input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.lecture-search-control button {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lecture-search-control button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lecture-search-meta,
+.lecture-search-empty {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.lecture-search-results {
+  display: grid;
+  gap: 12px;
+}
+
+.lecture-search-card {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 12px 34px rgba(16, 32, 29, 0.045);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.lecture-search-card:hover {
+  transform: translateY(-2px);
+  border-color: #95d4ca;
+  box-shadow: var(--shadow);
+}
+
+.lecture-search-card > span {
+  display: grid;
+  min-height: 34px;
+  place-items: center;
+  align-self: start;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.lecture-search-card strong {
+  display: block;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.lecture-search-card em {
+  display: block;
+  margin-top: 4px;
+  color: var(--accent);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.lecture-search-card p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .lecture-chapter {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1659,6 +1797,8 @@ pre {
   .lab-grid,
   .lecture-grid,
   .lecture-strip,
+  .lecture-search-box,
+  .lecture-search-control,
   .lab-nav,
   .timeline-row,
   .split-section,

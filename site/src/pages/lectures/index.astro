@@ -16,6 +16,27 @@ const lectureGroups = lectures.reduce<Array<{ title: string; lectures: typeof le
   groups.push({ title: lecture.chapterTitle, lectures: [lecture] });
   return groups;
 }, []);
+
+function htmlToText(html: string) {
+  return html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const searchIndex = lectures.map((lecture) => ({
+  href: sitePath(`/lectures/${lecture.slug}/`),
+  number: lecture.numberLabel,
+  title: lecture.title,
+  chapter: lecture.chapterTitle,
+  excerpt: lecture.excerpt,
+  headings: lecture.headings.map((heading) => heading.text).join(" "),
+  body: htmlToText(lecture.html),
+}));
+
+const searchIndexJson = JSON.stringify(searchIndex).replace(/</g, "\\u003c");
 ---
 
 <SiteLayout title="Лекції | OOP C# Course">
@@ -26,7 +47,23 @@ const lectureGroups = lectures.reduce<Array<{ title: string; lectures: typeof le
       <p>Теоретичні матеріали згруповані за розділами курсу. Оберіть підрозділ, щоб перейти до пояснень, прикладів і ключових понять.</p>
     </section>
 
-    <section class="lecture-accordion">
+    <section class="lecture-search" data-lecture-search>
+      <div class="lecture-search-box">
+        <div>
+          <label for="lecture-search-input">Пошук по лекціях</label>
+          <p>Шукає по номеру, назві, опису, заголовках і тексту всіх тем.</p>
+        </div>
+        <div class="lecture-search-control">
+          <input id="lecture-search-input" type="search" placeholder="Наприклад: delegate, enum, масив, ref, DateTime" autocomplete="off" />
+          <button type="button" data-search-clear aria-label="Очистити пошук">Очистити</button>
+        </div>
+      </div>
+      <div class="lecture-search-meta" data-search-meta>Введіть запит, щоб отримати рекомендовані теми для читання.</div>
+      <div class="lecture-search-results" data-search-results hidden></div>
+      <div class="lecture-search-empty" data-search-empty hidden>Нічого не знайшлося. Спробуйте інше слово або коротший запит.</div>
+    </section>
+
+    <section class="lecture-accordion" data-lecture-default>
       {lectureGroups.map((group, index) => (
         <details class="lecture-chapter" open={index < 2}>
           <summary>
@@ -48,5 +85,134 @@ const lectureGroups = lectures.reduce<Array<{ title: string; lectures: typeof le
         </details>
       ))}
     </section>
+
+    <script id="lecture-search-index" type="application/json" set:html={searchIndexJson}></script>
+    <script>
+      const searchRoot = document.querySelector("[data-lecture-search]");
+      const defaultLectures = document.querySelector("[data-lecture-default]");
+      const indexNode = document.querySelector("#lecture-search-index");
+      const searchInput = searchRoot?.querySelector("input");
+      const clearButton = searchRoot?.querySelector("[data-search-clear]");
+      const resultsNode = searchRoot?.querySelector("[data-search-results]");
+      const emptyNode = searchRoot?.querySelector("[data-search-empty]");
+      const metaNode = searchRoot?.querySelector("[data-search-meta]");
+      const lectures = JSON.parse(indexNode?.textContent || "[]");
+
+      const normalize = (value) =>
+        String(value || "")
+          .toLocaleLowerCase("uk-UA")
+          .replace(/[^\p{L}\p{N}.#]+/gu, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const escapeHtml = (value) =>
+        String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+
+      const getSnippet = (lecture, terms) => {
+        const source = lecture.body || lecture.excerpt || "";
+        const normalizedSource = normalize(source);
+        const foundTerm = terms.find((term) => normalizedSource.includes(term));
+
+        if (!foundTerm) {
+          return lecture.excerpt;
+        }
+
+        const index = normalizedSource.indexOf(foundTerm);
+        const start = Math.max(0, index - 80);
+        const end = Math.min(source.length, index + foundTerm.length + 170);
+        const prefix = start > 0 ? "..." : "";
+        const suffix = end < source.length ? "..." : "";
+
+        return `${prefix}${source.slice(start, end).trim()}${suffix}`;
+      };
+
+      const scoreLecture = (lecture, terms, query) => {
+        const title = normalize(`${lecture.number} ${lecture.title}`);
+        const chapter = normalize(lecture.chapter);
+        const excerpt = normalize(lecture.excerpt);
+        const headings = normalize(lecture.headings);
+        const body = normalize(lecture.body);
+        let score = 0;
+
+        if (title.includes(query)) score += 80;
+        if (lecture.number.toLocaleLowerCase("uk-UA") === query) score += 100;
+        if (chapter.includes(query)) score += 20;
+        if (headings.includes(query)) score += 45;
+        if (excerpt.includes(query)) score += 35;
+        if (body.includes(query)) score += 12;
+
+        for (const term of terms) {
+          if (title.includes(term)) score += 30;
+          if (headings.includes(term)) score += 20;
+          if (excerpt.includes(term)) score += 12;
+          if (body.includes(term)) score += 4;
+        }
+
+        return score;
+      };
+
+      const renderResults = (query) => {
+        const normalizedQuery = normalize(query);
+        const terms = normalizedQuery.split(" ").filter((term) => term.length > 1);
+
+        if (!normalizedQuery || terms.length === 0) {
+          if (resultsNode) {
+            resultsNode.hidden = true;
+            resultsNode.innerHTML = "";
+          }
+          if (emptyNode) emptyNode.hidden = true;
+          if (defaultLectures) defaultLectures.hidden = false;
+          if (metaNode) metaNode.textContent = "Введіть запит, щоб отримати рекомендовані теми для читання.";
+          return;
+        }
+
+        const results = lectures
+          .map((lecture) => ({
+            ...lecture,
+            score: scoreLecture(lecture, terms, normalizedQuery),
+            snippet: getSnippet(lecture, terms),
+          }))
+          .filter((lecture) => lecture.score > 0)
+          .sort((a, b) => b.score - a.score || a.number.localeCompare(b.number, "uk-UA", { numeric: true }));
+
+        if (defaultLectures) defaultLectures.hidden = true;
+
+        if (metaNode) {
+          metaNode.textContent = results.length
+            ? `Знайдено ${results.length} тем. Спочатку показані найімовірніше корисні.`
+            : "За цим запитом тем не знайдено.";
+        }
+
+        if (emptyNode) emptyNode.hidden = results.length > 0;
+        if (!resultsNode) return;
+
+        resultsNode.hidden = results.length === 0;
+        resultsNode.innerHTML = results
+          .map(
+            (lecture) => `
+              <a class="lecture-search-card" href="${escapeHtml(lecture.href)}">
+                <span>${escapeHtml(lecture.number)}</span>
+                <div>
+                  <strong>${escapeHtml(lecture.title)}</strong>
+                  <em>${escapeHtml(lecture.chapter)}</em>
+                  <p>${escapeHtml(lecture.snippet)}</p>
+                </div>
+              </a>
+            `,
+          )
+          .join("");
+      };
+
+      searchInput?.addEventListener("input", () => renderResults(searchInput.value));
+      clearButton?.addEventListener("click", () => {
+        searchInput.value = "";
+        searchInput.focus();
+        renderResults("");
+      });
+    </script>
   </AppShell>
 </SiteLayout>
