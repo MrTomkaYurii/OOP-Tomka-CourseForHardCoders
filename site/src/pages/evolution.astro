@@ -2,6 +2,7 @@
 import AppShell from "@/components/AppShell.astro";
 import SiteLayout from "@/layouts/SiteLayout.astro";
 import { evolutionSteps } from "@/data/evolution";
+import { sitePath } from "@/utils/paths";
 ---
 
 <SiteLayout title="Еволюція проєкту | OOP C# Course">
@@ -14,7 +15,7 @@ import { evolutionSteps } from "@/data/evolution";
 
     <section class="evolution-list">
       {evolutionSteps.map((step) => (
-        <article class="evolution-card">
+        <a class="evolution-card" href={sitePath(`/labs/${step.slug}/`)}>
           <div class="evolution-index">
             <span>Lab</span>
             <strong>{String(step.lab).padStart(2, "0")}</strong>
@@ -38,7 +39,7 @@ import { evolutionSteps } from "@/data/evolution";
               </div>
             </div>
           </div>
-        </article>
+        </a>
       ))}
     </section>
   </AppShell>

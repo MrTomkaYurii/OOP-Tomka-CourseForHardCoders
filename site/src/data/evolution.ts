@@ -1,5 +1,6 @@
 export type EvolutionStep = {
   lab: number;
+  slug: string;
   title: string;
   module: string;
   menu: string;
@@ -10,6 +11,7 @@ export type EvolutionStep = {
 export const evolutionSteps: EvolutionStep[] = [
   {
     lab: 1,
+    slug: "lab-01-intro",
     title: "Основи C#",
     module: "Sandbox",
     menu: "Окремий консольний проєкт",
@@ -18,6 +20,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 2,
+    slug: "lab-02-arrays",
     title: "Масиви",
     module: "Sandbox",
     menu: "Окремий консольний проєкт",
@@ -26,6 +29,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 3,
+    slug: "lab-03-classes",
     title: "Класи",
     module: "Catalog",
     menu: "Пацієнти, лікарі, записи, звіт",
@@ -34,6 +38,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 4,
+    slug: "lab-04-class-members",
     title: "Члени класу",
     module: "Core types",
     menu: "Типи крові, спеціальності, статистика, розклад",
@@ -42,6 +47,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 5,
+    slug: "lab-05-encapsulation",
     title: "Інкапсуляція",
     module: "Patients+",
     menu: "Валідація і зрозумілі помилки замість падіння",
@@ -50,6 +56,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 6,
+    slug: "lab-06-inheritance",
     title: "Наслідування",
     module: "MedicalRecords",
     menu: "Медична картка",
@@ -58,6 +65,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 7,
+    slug: "lab-07-interfaces",
     title: "Інтерфейси",
     module: "Billing",
     menu: "Рахунки",
@@ -66,6 +74,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 8,
+    slug: "lab-08-polymorphism",
     title: "Поліморфізм",
     module: "Appointments+",
     menu: "Внутрішні типи прийомів",
@@ -74,6 +83,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 9,
+    slug: "lab-09-generics",
     title: "Generics",
     module: "Waiting",
     menu: "Черга очікування",
@@ -82,10 +92,57 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     lab: 10,
+    slug: "lab-10-iterators",
     title: "Ітератори та компаратори",
     module: "Analytics",
     menu: "Аналітика",
     files: ["Models/DoctorStats.cs", "Models/PatientStats.cs", "Comparators/*", "Managers/AnalyticsManager.cs"],
     concepts: ["IComparable<T>", "IComparer<T>", "IEnumerable<T>", "yield return"],
+  },
+  {
+    lab: 11,
+    slug: "lab-11-reflection",
+    title: "Reflection & Attributes",
+    module: "Treatment plans",
+    menu: "Плани лікування, автогенерація форм",
+    files: [
+      "Attributes/RequiredFieldAttribute.cs",
+      "Attributes/MaxLengthAttribute.cs",
+      "Attributes/ValidRangeAttribute.cs",
+      "Utils/ModelValidator.cs",
+      "Utils/FormBuilder.cs",
+      "Models/TreatmentPlan.cs",
+      "Managers/TreatmentPlanManager.cs",
+    ],
+    concepts: ["Attribute", "AttributeUsage", "Reflection", "Type.GetProperties()", "PropertyInfo", "GetCustomAttributes()"],
+  },
+  {
+    lab: 12,
+    slug: "lab-12-files",
+    title: "File I/O",
+    module: "Persistence",
+    menu: "Журнал, імпорт, експорт, сесія",
+    files: [
+      "Utils/ClinicLogger.cs",
+      "Utils/CsvExporter.cs",
+      "Utils/CsvImporter.cs",
+      "Utils/SessionManager.cs",
+    ],
+    concepts: ["File.WriteAllText", "StreamWriter", "StreamReader", "File.AppendAllText", "CSV parsing", "try/catch з файлами"],
+  },
+  {
+    lab: 13,
+    slug: "lab-13-events",
+    title: "Events & Delegates",
+    module: "Automation",
+    menu: "Автоматичні реакції системи",
+    files: [
+      "Events/AppointmentEvents.cs",
+      "Events/PatientEvents.cs",
+      "Events/BillingEvents.cs",
+      "Utils/PatientPassportWriter.cs",
+      "Utils/SessionEventTracker.cs",
+    ],
+    concepts: ["delegate", "event", "EventHandler<T>", "EventArgs", "subscriber pattern", "+= / -="],
   },
 ];

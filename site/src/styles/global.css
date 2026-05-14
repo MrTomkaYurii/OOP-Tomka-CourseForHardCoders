@@ -1317,6 +1317,11 @@ pre {
   border-radius: 8px;
   background: var(--panel);
   box-shadow: 0 12px 34px rgba(16, 32, 29, 0.055);
+  transition: border-color 0.15s;
+}
+
+.evolution-card:hover {
+  border-color: #95d4ca;
 }
 
 .evolution-index {
