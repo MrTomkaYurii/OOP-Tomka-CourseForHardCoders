@@ -32,7 +32,7 @@ const visibleLectures = lectures.slice(0, 4);
         </div>
         <div>
           <span>Матеріали</span>
-          <strong>{labs.length} лаб / {lectures.length} лекцій</strong>
+          <strong>{labs.length} лаб / {lectures.length} теоретичних блоків</strong>
         </div>
         <div>
           <span>Повний план</span>
@@ -69,6 +69,15 @@ const visibleLectures = lectures.slice(0, 4);
           <p>{lecture.excerpt}</p>
         </a>
       ))}
+    </section>
+
+    <section class="author-section">
+      <img class="author-photo" src={sitePath("/author.jpg")} alt="Томка Юрій" />
+      <div class="author-info">
+        <p class="eyebrow">Авторський курс</p>
+        <h2>Томка Юрій</h2>
+        <p>Викладач об'єктно-орієнтованого програмування на C#. Курс побудований як реальний семестровий проєкт — студенти крок за кроком розробляють консольну систему медичної клініки, опановуючи мову від базового синтаксису до архітектурних патернів ООП.</p>
+      </div>
     </section>
 
     <section class="split-section">
