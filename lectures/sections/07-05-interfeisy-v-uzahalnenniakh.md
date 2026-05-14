@@ -1,13 +1,13 @@
 ﻿---
 chapter: 7
 chapterTitle: "Розділ 7. Інтерфейси"
-section: 6
-number: "7.6"
+section: 5
+number: "7.5"
 title: "Інтерфейси в узагальненнях"
 source: "../_combined/43-interfeisy-v-uzahalnenniakh.md"
 ---
 
-## 7.6. Інтерфейси в узагальненнях
+## 7.5. Інтерфейси в узагальненнях
 
 ### Інтерфейси як обмеження узагальнень
 

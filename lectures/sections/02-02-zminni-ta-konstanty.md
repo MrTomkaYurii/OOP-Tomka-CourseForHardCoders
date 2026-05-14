@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 2
 number: "2.2"
 title: "Змінні та константи"
-source: "../02-struktura-programy-zminni-ta-konstanty.md"
+source: "../_migration/source-chunks/02-struktura-programy-zminni-ta-konstanty.md"
 ---
 
 ## 2.2. Змінні та константи

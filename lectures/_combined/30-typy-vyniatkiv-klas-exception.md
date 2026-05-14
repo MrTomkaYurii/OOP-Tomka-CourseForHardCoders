@@ -121,4 +121,3 @@ catch (Exception ex)
 ```
 
 І в даному випадку блок `catch (Exception ex) {}` буде обробляти всі винятки крім DivideByZeroException та IndexOutOfRangeException. При цьому блоки catch для більш загальних, базових винятків слід поміщати в кінці - після блоків catch для більш конкретних, спеціалізованих типів. Так як CLR вибирає для обробки виняток перший блок catch, який відповідає типу згенерованого винятку. Тому в даному випадку спочатку обробляється виняток DivideByZeroException та IndexOutOfRangeException, і тільки потім Exception (оскільки DivideByZeroException і IndexOutOfRangeException успадковуються від класу Exception).
-

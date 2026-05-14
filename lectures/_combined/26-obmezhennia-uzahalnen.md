@@ -258,4 +258,3 @@ telegram.SendMessage(tom, bob, hello);
 Консольний вивід:
 
 ![Консольний вивід надсилання повідомлення через узагальнений Messenger](assets/docx/image90.png)
-

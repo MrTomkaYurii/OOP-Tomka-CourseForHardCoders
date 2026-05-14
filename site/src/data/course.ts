@@ -435,7 +435,7 @@ export async function getLecture(slug: string) {
 
 export const courseStats = {
   title: "OOP C# Course",
-  subtitle: "Лабораторний курс, де студенти поступово будують консольну систему медичної клініки.",
+  subtitle: "Курс, в рамках якого здієснюється розбудова консольної системи медичної клініки. Кожна практика - це невелика частина великого консольного проекту",
   totalLabs: 21,
   domain: "Медична клініка",
   language: "C# / .NET",

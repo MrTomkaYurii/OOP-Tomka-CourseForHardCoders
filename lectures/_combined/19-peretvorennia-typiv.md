@@ -219,4 +219,3 @@ else
     Console.WriteLine("НЕ є об'єктом типу Employee");
 }
 ```
-

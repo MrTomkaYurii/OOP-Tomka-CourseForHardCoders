@@ -142,16 +142,12 @@ Console.WriteLine(result2); //20
 int Sum(int[] numbers, IsEqual func)
 {
     int result = 0;
-```
-
-foreach (int i in numbers)
-
-```csharp
-{
-    if (func(i))
-    result += i;
-}
-return result;
+    foreach (int i in numbers)
+    {
+        if (func(i))
+            result += i;
+    }
+    return result;
 }
 delegate bool IsEqual(int x);
 ```
@@ -191,20 +187,20 @@ operation = SelectOperation(OperationType.Multiply);
 Console.WriteLine(operation(10, 4)); // 40
 Operation SelectOperation(OperationType opType)
 {
-```
-
-switch (opType)
-
-```csharp
-{
-    case OperationType.Add: return (x, y) => x + y;
-    case OperationType.Subtract: return (x, y) => x - y;
-    default: return (x, y) => x * y;
+    switch (opType)
+    {
+        case OperationType.Add: return (x, y) => x + y;
+        case OperationType.Subtract: return (x, y) => x - y;
+        default: return (x, y) => x * y;
+    }
 }
-}
-```
 
 enum OperationType
+{
+    Add,
+    Subtract,
+    Multiply
+}
+```
 
 В даному випадку метод SelectOperation() як параметр приймає перерахування типу OperationType. Цей перелік зберігає три константи, кожна з яких відповідає певній арифметичній операції. І в самому методі в залежності від значення параметра повертаємо певний лямбда-вираз.
-

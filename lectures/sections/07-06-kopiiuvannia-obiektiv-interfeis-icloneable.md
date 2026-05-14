@@ -1,13 +1,13 @@
 ﻿---
 chapter: 7
 chapterTitle: "Розділ 7. Інтерфейси"
-section: 7
-number: "7.7"
+section: 6
+number: "7.6"
 title: "Копіювання об'єктів. Інтерфейс ICloneable"
 source: "../_combined/44-kopiiuvannia-obiektiv-interfeis-icloneable.md"
 ---
 
-## 7.7. Копіювання об'єктів. Інтерфейс ICloneable
+## 7.6. Копіювання об'єктів. Інтерфейс ICloneable
 
 Оскільки класи представляють типи посилань, то це накладає деякі обмеження на їх використання. Зокрема, припустимо, ми маємо наступний клас:
 

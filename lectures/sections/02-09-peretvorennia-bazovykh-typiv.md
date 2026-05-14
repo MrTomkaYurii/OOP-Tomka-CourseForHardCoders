@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 9
 number: "2.9"
 title: "Перетворення базових типів даних"
-source: "../06-peretvorennia-typiv.md"
+source: "../_migration/source-chunks/06-peretvorennia-typiv.md"
 ---
 
 ## 2.9. Перетворення базових типів даних

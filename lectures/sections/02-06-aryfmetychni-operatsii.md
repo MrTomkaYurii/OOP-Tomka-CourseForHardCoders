@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 6
 number: "2.6"
 title: "Арифметичні операції мови C#"
-source: "../05-operatsii-ta-prysvoiennia.md"
+source: "../_migration/source-chunks/05-operatsii-ta-prysvoiennia.md"
 ---
 
 ## 2.6. Арифметичні операції мови C#

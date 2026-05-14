@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 5
 number: "2.5"
 title: "Консольне введення-виведення"
-source: "../04-konsolne-vvedennia-vyvedennia.md"
+source: "../_migration/source-chunks/04-konsolne-vvedennia-vyvedennia.md"
 ---
 
 ## 2.5. Консольне введення-виведення

@@ -1,13 +1,13 @@
 ﻿---
 chapter: 7
 chapterTitle: "Розділ 7. Інтерфейси"
-section: 5
-number: "7.5"
+section: 4
+number: "7.4"
 title: "Успадкування інтерфейсів"
 source: "../_combined/42-uspadkuvannia-interfeisiv.md"
 ---
 
-## 7.5. Успадкування інтерфейсів
+## 7.4. Успадкування інтерфейсів
 
 Інтерфейси, як і класи, можуть успадковуватися:
 

@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 3
 chapterTitle: "Розділ 3. Класи, структури та простір імен"
 section: 1
 number: "3.1"
 title: "Класи та об'єкти"
-source: "../13-klasy-ta-obiekty.md"
+source: "../_migration/source-chunks/13-klasy-ta-obiekty.md"
 ---
 
 ## 3.1. Класи та об'єкти

@@ -1,5 +1,5 @@
 ﻿
-## 6.6. Делегати Action, Predicate та Func
+## 6.5. Делегати Action, Predicate та Func
 
 У .NET є кілька вбудованих делегатів, які використовуються у різних ситуаціях. І найбільш використовуваними, з якими часто доводиться стикатися, є Action, Predicate та Func.
 
@@ -239,4 +239,3 @@ Console.WriteLine(fn(5)); // 25
 Console.WriteLine(fn(6)); // 30
 Console.WriteLine(fn(7)); // 35
 ```
-

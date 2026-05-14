@@ -143,4 +143,3 @@ class Employee : Person
     public new const string typeName = "Employee";
 }
 ```
-

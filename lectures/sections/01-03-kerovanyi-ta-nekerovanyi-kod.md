@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 1
 chapterTitle: "Розділ 1. Вступ"
 section: 3
 number: "1.3"
 title: "Керований та некерований код"
-source: "../01-vstup.md"
+source: "../_migration/source-chunks/01-vstup.md"
 ---
 
 ## 1.3. Керований та некерований код

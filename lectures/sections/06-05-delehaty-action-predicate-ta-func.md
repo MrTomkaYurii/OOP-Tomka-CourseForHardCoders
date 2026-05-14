@@ -1,13 +1,13 @@
 ﻿---
 chapter: 6
 chapterTitle: "Розділ 6. Делегати, події та лямбди"
-section: 6
-number: "6.6"
+section: 5
+number: "6.5"
 title: "Делегати Action, Predicate та Func"
 source: "../_combined/38-delehaty-action-predicate-ta-func.md"
 ---
 
-## 6.6. Делегати Action, Predicate та Func
+## 6.5. Делегати Action, Predicate та Func
 
 У .NET є кілька вбудованих делегатів, які використовуються у різних ситуаціях. І найбільш використовуваними, з якими часто доводиться стикатися, є Action, Predicate та Func.
 

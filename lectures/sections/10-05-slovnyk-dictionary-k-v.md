@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 10
 chapterTitle: "Розділ 10. Колекції"
 section: 5

@@ -281,4 +281,3 @@ Employee tom = new Employee("Tom", 22, "Microsoft");
 Виконується тіло конструктора `Person(string name, int age)`, потім виконання повертається конструктору `Employee(string name, int age, string company)`.
 
 Виконується тіло конструктора `Employee(string name, int age, string company)`. У результаті створюється об'єкт `Employee`.
-

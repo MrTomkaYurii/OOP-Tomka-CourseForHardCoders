@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 4
 number: "2.4"
 title: "Типи даних"
-source: "../03-literaly-ta-typy-danykh.md"
+source: "../_migration/source-chunks/03-literaly-ta-typy-danykh.md"
 ---
 
 ## 2.4. Типи даних

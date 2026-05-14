@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 11
 chapterTitle: "Розділ 11. Робота з рядками"
 section: 3

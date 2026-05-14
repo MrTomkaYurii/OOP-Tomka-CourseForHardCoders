@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 8
 number: "2.8"
 title: "Операції присвоєння"
-source: "../05-operatsii-ta-prysvoiennia.md"
+source: "../_migration/source-chunks/05-operatsii-ta-prysvoiennia.md"
 ---
 
 ## 2.8. Операції присвоєння

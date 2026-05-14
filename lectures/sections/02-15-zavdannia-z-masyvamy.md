@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 15
 number: "2.15"
 title: "Завдання з масивами"
-source: "../08-masyvy.md"
+source: "../_migration/source-chunks/08-masyvy.md"
 ---
 
 ## 2.15. Завдання з масивами

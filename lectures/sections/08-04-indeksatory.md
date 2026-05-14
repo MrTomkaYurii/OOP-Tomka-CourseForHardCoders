@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 8
 chapterTitle: "Розділ 8. Додаткові можливості ООП у C#"
 section: 4

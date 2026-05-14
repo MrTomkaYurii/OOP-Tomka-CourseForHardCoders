@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 19
 number: "2.19"
 title: "Передача параметрів за посиланням та значенням. Вихідні параметри"
-source: "../10-parametry-ref-out-in-params.md"
+source: "../_migration/source-chunks/10-parametry-ref-out-in-params.md"
 ---
 
 ## 2.19. Передача параметрів за посиланням та значенням. Вихідні параметри

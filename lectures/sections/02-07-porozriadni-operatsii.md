@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 7
 number: "2.7"
 title: "Порозрядні операції"
-source: "../05-operatsii-ta-prysvoiennia.md"
+source: "../_migration/source-chunks/05-operatsii-ta-prysvoiennia.md"
 ---
 
 ## 2.7. Порозрядні операції

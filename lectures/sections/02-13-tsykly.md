@@ -1,10 +1,10 @@
-﻿---
+---
 chapter: 2
 chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 13
 number: "2.13"
 title: "Цикли"
-source: "../07-umovni-vyrazy-ta-cykly.md"
+source: "../_migration/source-chunks/07-umovni-vyrazy-ta-cykly.md"
 ---
 
 ## 2.13. Цикли
