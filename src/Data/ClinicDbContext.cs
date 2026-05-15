@@ -17,8 +17,9 @@ public class ClinicDbContext : DbContext
 {
     // DbSet<T> — це "таблиця" в C#-термінах.
     // LINQ-запити до DbSet<Patient> EF перетворює на SQL SELECT * FROM Patients.
-    public DbSet<Patient> Patients => Set<Patient>();
-    public DbSet<Doctor>  Doctors  => Set<Doctor>();
+    public DbSet<Patient>     Patients     => Set<Patient>();
+    public DbSet<Doctor>      Doctors      => Set<Doctor>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
 
     // ─────────────────────────────────────────────────────────────
     // Task 1: Рядок підключення до SQL Server LocalDB
@@ -132,6 +133,73 @@ public class ClinicDbContext : DbContext
                   .HasMaxLength(10)
                   .IsRequired();
         });
+
+        // ── Task 2 (Lab 18): Таблиця Appointments — One-to-Many ───
+        // TPH (Table Per Hierarchy) — усі підтипи Appointment в одній таблиці.
+        // EF розрізняє їх через стовпець-дискримінатор "AppointmentType".
+        modelBuilder.Entity<Appointment>(entity =>
+        {
+            entity.ToTable("Appointments");
+
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.Id).ValueGeneratedOnAdd();
+
+            entity.Property(a => a.ScheduledAt).IsRequired();
+
+            entity.Property(a => a.DurationMinutes)
+                  .IsRequired()
+                  .HasDefaultValue(30);
+
+            entity.Property(a => a.Status)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
+            entity.Property(a => a.Notes)
+                  .HasMaxLength(500)
+                  .HasDefaultValue("");
+
+            entity.Property(a => a.IsPaid)
+                  .HasDefaultValue(false);
+
+            // HasDiscriminator — стовпець що визначає конкретний тип запису.
+            // TPH: RegularAppointment, UrgentAppointment, SpecialistAppointment
+            // зберігаються в одній таблиці Appointments, розрізняються "AppointmentType".
+            entity.HasDiscriminator<string>("AppointmentType")
+                  .HasValue<Appointment>("Base")
+                  .HasValue<RegularAppointment>("Regular")
+                  .HasValue<UrgentAppointment>("Urgent")
+                  .HasValue<SpecialistAppointment>("Specialist");
+
+            // ── One-to-Many: Patient → Appointments ──────────────
+            // HasOne: "один Patient"; WithMany: "багато Appointments"
+            // HasForeignKey: стовпець FK у таблиці Appointments
+            // OnDelete Cascade: видалення Patient → видаляє всі його Appointments
+            entity.HasOne(a => a.Patient)
+                  .WithMany(p => p.Appointments)
+                  .HasForeignKey(a => a.PatientId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // ── One-to-Many: Doctor → Appointments ───────────────
+            // OnDelete Restrict: заборона видалити Doctor, якщо є Appointments
+            // Причина: SQL Server не дозволяє дві каскадні доріжки до однієї таблиці
+            entity.HasOne(a => a.Doctor)
+                  .WithMany(d => d.Appointments)
+                  .HasForeignKey(a => a.DoctorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Індекси для FK — прискорюють JOIN і фільтрацію
+            entity.HasIndex(a => a.PatientId).HasDatabaseName("IX_Appointments_PatientId");
+            entity.HasIndex(a => a.DoctorId).HasDatabaseName("IX_Appointments_DoctorId");
+            entity.HasIndex(a => a.ScheduledAt).HasDatabaseName("IX_Appointments_ScheduledAt");
+        });
+
+        // Субтипи Appointment: оголошуємо їх і конфігуруємо унікальні стовпці
+        modelBuilder.Entity<UrgentAppointment>()
+            .Property(u => u.UrgencyNote).HasMaxLength(200).HasDefaultValue("");
+
+        modelBuilder.Entity<SpecialistAppointment>()
+            .Property(s => s.ConsultationTopic).HasMaxLength(200).HasDefaultValue("");
     }
 
     // ─────────────────────────────────────────────────────────────
