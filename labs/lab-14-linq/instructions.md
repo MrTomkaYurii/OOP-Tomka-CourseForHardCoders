@@ -2,15 +2,7 @@
 
 ## Мета
 
-Навчитися використовувати LINQ-оператори для роботи з колекціями: фільтрація (`.Where`), проєкція (`.Select`), групування (`.GroupBy`), агрегація (`.Sum`, `.Count`, `.Max`), з'єднання (`.Join`), та ланцюгове складання запитів.
-
-## Контекст
-
-До цієї лаби аналітика клініки рахувалася вручну — через вкладені `for`-цикли зі змінними-лічильниками. LINQ дозволяє виразити той самий алгоритм декларативно: _що_ потрібно отримати, а не _як_ ітерувати.
-
-У цій роботі ви:
-1. Перепишете існуючий `AnalyticsManager` з циклів на LINQ.
-2. Створите новий `ReportManager` із сімома різними звітами.
+Зрозуміти різницю між імперативним і декларативним стилем роботи з колекціями. Навчитись виражати запити до даних через LINQ-оператори: `.Where`, `.Select`, `.GroupBy`, `.Join`, `.OrderBy`, `.Any`, `.Sum`, `.Count`, `.Max`, `.Take`, `.Distinct` — і розуміти коли і чому кожен з них доречний.
 
 ## Гілка
 
@@ -20,191 +12,220 @@ feature/linq
 
 ---
 
-## Завдання 1. Рефакторинг `AnalyticsManager`
+## Чому виник LINQ
 
-Відкрийте `src/Managers/AnalyticsManager.cs`. Обидва методи (`ComputeDoctorStats`, `ComputePatientStats`) зараз використовують `for`-цикли для підрахунку кількості прийомів та виручки на кожного лікаря/пацієнта.
+Відкрийте `src/Managers/AnalyticsManager.cs`. Знайдіть метод `ComputeDoctorStats`. Він рахує статистику по кожному лікарю: скільки прийомів, яка виручка, коли останній прийом. Подивіться на код — скільки рядків займає ця логіка? Що саме вона робить?
 
-Перепишіть обидва методи з використанням LINQ:
+Тепер прочитайте той самий алгоритм словами:
+> *"Для кожного лікаря — знайди всі його прийоми, порахуй їх кількість, склади вартість, знайди найпізнішу дату."*
 
-- `.Select()` — для трансформації кожного лікаря/пацієнта у `DoctorStats`/`PatientStats`
-- `.Where()` — для фільтрації прийомів, що належать цьому лікарю/пацієнту
-- `.Count()`, `.Sum()`, `.Max()`, `.Any()` — для агрегованих значень
+Одне речення. А у коді — десятки рядків із вкладеними циклами і тимчасовими змінними.
 
-**Підказка для `ComputeDoctorStats`:**
+**LINQ** (Language Integrated Query) — це набір методів що дозволяє писати запити до колекцій так само лаконічно, як ви їх описуєте словами. Це не нова мова — це бібліотека методів розширення над `IEnumerable<T>`, яку ви вже знаєте з Lab 10.
 
-```csharp
-return _doctors.GetAll().Select(d =>
-{
-    var own = appointments.Where(a => a.DoctorId == d.Id);
-    return new DoctorStats(
-        d.Id,
-        d.FullName,
-        own.Count(),
-        own.Sum(a => a.GetCost()),
-        own.Any() ? own.Max(a => a.ScheduledAt) : DateTime.MinValue
-    );
-});
-```
+Головна відмінність від циклів:
 
-Зверніть увагу: `own.Any()` перевіряється перед `own.Max()`, бо `Max` на порожній послідовності кидає виняток.
+| Цикл (imperative) | LINQ (declarative) |
+|-------------------|--------------------|
+| Описує **як** перебирати | Описує **що** отримати |
+| Тимчасові змінні-лічильники | Результат — вираз |
+| Важко читати з першого погляду | Читається майже як речення |
 
 ---
 
-## Завдання 2. DTO `SpecialityReport`
+## Завдання 1. Рефакторинг `AnalyticsManager` ⭐⭐
 
-Створіть файл `src/Models/SpecialityReport.cs`:
+### Що зараз
 
-```csharp
-public class SpecialityReport
-{
-    public Speciality Speciality { get; }
-    public int DoctorCount { get; }
-    public int AppointmentCount { get; }
-    public decimal TotalRevenue { get; }
+Відкрийте `src/Managers/AnalyticsManager.cs` і уважно прочитайте обидва методи. Спробуйте відповісти:
 
-    public SpecialityReport(Speciality speciality, int doctorCount,
-                             int appointmentCount, decimal totalRevenue) { ... }
+- Яка роль змінних-лічильників (`count`, `revenue`, `lastDate`)?
+- Що відбувається якщо лікар не має жодного прийому?
+- Що означає умова `if (a.DoctorId == d.Id)`?
 
-    public override string ToString() => ...;
-}
-```
+### Ідея рефакторингу
 
-Клас зберігає агреговані дані по одній спеціальності: скільки лікарів, скільки прийомів і яка загальна виручка.
+Кожен `for`-цикл по прийомах всередині циклу по лікарях — це по суті **фільтрація** (`Where`) і **агрегація** (`Count`, `Sum`, `Max`). LINQ дозволяє виразити це в один вираз.
 
----
+Для кожного лікаря ми хочемо:
+1. **Відібрати** його прийоми — `.Where(a => a.DoctorId == d.Id)`
+2. **Порахувати** кількість — `.Count()`
+3. **Скласти** виручку — `.Sum(a => a.GetCost())`
+4. **Знайти** останній прийом — `.Max(a => a.ScheduledAt)`
 
-## Завдання 3. Новий клас `ReportManager`
+Всіх лікарів разом — **трансформувати** через `.Select()`.
 
-Створіть `src/Managers/ReportManager.cs`. Клас приймає у конструктор ті ж залежності, що й `AnalyticsManager`: `AppointmentManager`, `DoctorManager`, `PatientManager`.
+### Важлива деталь
 
-### Метод `GetSpecialityStats` — `GroupBy`
+Перед тим як викликати `.Max()`, перевірте чи є хоч один прийом через `.Any()`. Якщо прийомів немає — `.Max()` кине виняток на порожній послідовності. У такому разі повертайте `DateTime.MinValue` як "немає дати".
 
-Згрупуйте лікарів за спеціальністю (`.GroupBy(d => d.Speciality)`). Для кожної групи підрахуйте кількість лікарів, прийомів і загальну виручку. Поверніть `IEnumerable<SpecialityReport>`, відсортований за виручкою спадно.
+### Що потрібно зробити
 
-```csharp
-return doctors
-    .GroupBy(d => d.Speciality)
-    .Select(g =>
-    {
-        int[] ids = g.Select(d => d.Id).ToArray();
-        var groupApps = appointments.Where(a => ids.Contains(a.DoctorId));
-        return new SpecialityReport(g.Key, g.Count(),
-                                    groupApps.Count(), groupApps.Sum(a => a.GetCost()));
-    })
-    .OrderByDescending(r => r.TotalRevenue);
-```
+Перепишіть обидва методи — `ComputeDoctorStats` і `ComputePatientStats` — замінивши `for`-цикли на LINQ-ланцюг. Сигнатури методів і тип результату не змінюються.
 
-### Метод `FindBusiestDoctorName` — `OrderByDescending` + `FirstOrDefault`
+Після переписування запустіть програму, відкрийте пункт "8. Аналітика" і переконайтесь що всі сортування дають ті самі результати що й раніше.
 
-Знайдіть лікаря з найбільшою кількістю прийомів. Поверніть його ім'я (`string?`).
+### Ключові питання
 
-```csharp
-return _doctors.GetAll()
-    .OrderByDescending(d => appointments.Count(a => a.DoctorId == d.Id))
-    .Select(d => d.FullName)
-    .FirstOrDefault();
-```
-
-### Метод `GetPatientsWithMultipleVisits(int minVisits)` — `GroupBy` + `Join`
-
-Згрупуйте прийоми за `PatientId`, залиште групи де кількість записів >= `minVisits`, а потім з'єднайте з таблицею пацієнтів щоб отримати їхні імена.
-
-```csharp
-return _appointments.GetAll()
-    .GroupBy(a => a.PatientId)
-    .Where(g => g.Count() >= minVisits)
-    .Join(patients,
-        g => g.Key,
-        p => p.Id,
-        (g, p) => p.FullName);
-```
-
-### Метод `GetTopEarners(int n)` — `OrderByDescending` + `Take`
-
-Поверніть топ-N лікарів за виручкою у вигляді `IEnumerable<DoctorStats>`. Логіка формування `DoctorStats` — як у `AnalyticsManager`, але в кінці ланцюга додається `.OrderByDescending(s => s.TotalRevenue).Take(n)`.
-
-### Метод `HasAnyUrgentAppointments` — `Any`
-
-Перевірте, чи є в системі хоч один прийом типу `UrgentAppointment`:
-
-```csharp
-return _appointments.GetAll().Any(a => a is UrgentAppointment);
-```
-
-### Метод `GetActiveSpecialities` — `Distinct` + `OrderBy`
-
-Отримайте список унікальних спеціальностей лікарів, які реально є у клініці:
-
-```csharp
-return _doctors.GetAll()
-    .Select(d => d.Speciality)
-    .Distinct()
-    .OrderBy(s => s.ToString());
-```
-
-### Метод `GetMonthlyRevenue` — `GroupBy` анонімним типом
-
-Згрупуйте прийоми за роком і місяцем, підрахуйте виручку в кожному місяці. Поверніть `IEnumerable<(int Year, int Month, decimal Total)>`.
-
-```csharp
-return _appointments.GetAll()
-    .GroupBy(a => new { a.ScheduledAt.Year, a.ScheduledAt.Month })
-    .Select(g => (g.Key.Year, g.Key.Month, g.Sum(a => a.GetCost())))
-    .OrderBy(r => r.Year)
-    .ThenBy(r => r.Month);
-```
+- Чому `.Select()` всередині містить блок `{ var own = ...; return ...; }` а не просто вираз?
+- Чи змінюється поведінка якщо прибрати `Appointment[] appointments = _appointments.GetAll()` на початку і звертатись до `_appointments.GetAll()` кожного разу всередині `.Select()`? Чому це погано?
 
 ---
 
-## Завдання 4. Підключення до `Clinic` і `Program`
+## Завдання 2. DTO `SpecialityReport` ⭐
 
-**`src/Clinic.cs`** — додайте властивість і ініціалізацію в конструкторі:
+### Навіщо окремий клас
 
+Звіт по спеціальностях повертатиме кілька числових полів для кожної спеціальності одночасно: кількість лікарів, кількість прийомів, загальна виручка. Можна було б повертати tuple — але іменований клас читається краще і дозволяє додати `ToString()`.
+
+### Що потрібно зробити
+
+Створіть `src/Models/SpecialityReport.cs`.
+
+Клас повинен містити чотири readonly-властивості: `Speciality` (тип `Speciality` з enum), `DoctorCount`, `AppointmentCount`, `TotalRevenue`. Всі заповнюються через конструктор.
+
+Реалізуйте `ToString()` так, щоб результат читався в одному рядку і містив усі чотири значення. Подивіться на `DoctorStats.ToString()` як на зразок форматування.
+
+---
+
+## Завдання 3. `ReportManager` — нові звіти через LINQ ⭐⭐⭐
+
+### Чому новий клас, а не додавати в `AnalyticsManager`
+
+`AnalyticsManager` вже має чітку відповідальність — статистика по лікарях і пацієнтах для сортування. Нові звіти мають іншу природу: групування по спеціальностях, пошук топ-N, місячна виручка. Це окремий модуль звітності.
+
+Створіть `src/Managers/ReportManager.cs`. Конструктор приймає ті самі три залежності що й `AnalyticsManager`.
+
+---
+
+### Метод `GetSpecialityStats()` — GroupBy ⭐⭐
+
+**Задача:** для кожної спеціальності показати скільки лікарів з цією спеціальністю є у клініці, скільки прийомів вони провели разом і яка загальна виручка.
+
+**Що таке GroupBy.** Уявіть що у вас список лікарів і ви раскладаєте їх у стопки за спеціальністю. `.GroupBy(d => d.Speciality)` повертає колекцію груп — кожна група має `Key` (спеціальність) і елементи (лікарі з цією спеціальністю).
+
+**Алгоритм:**
+1. Згрупувати лікарів за `Speciality`
+2. Для кожної групи: взяти ID всіх лікарів групи, знайти в масиві прийомів ті що належать цим лікарям
+3. Зібрати `SpecialityReport` з `g.Key`, `g.Count()`, кількістю та сумою прийомів
+4. Відсортувати за виручкою спадно
+
+Підказка: щоб відфільтрувати прийоми для групи лікарів, отримайте їхні ID у масив і використовуйте `.Contains()`.
+
+---
+
+### Метод `FindBusiestDoctorName()` — OrderByDescending + FirstOrDefault ⭐
+
+**Задача:** знайти лікаря з найбільшою кількістю записів і повернути його ім'я.
+
+**Підхід:** відсортувати лікарів за кількістю їхніх прийомів спадно і взяти першого. `.FirstOrDefault()` повертає `null` якщо список порожній — тому тип повернення `string?`.
+
+Подумайте: `.Count(a => a.DoctorId == d.Id)` всередині `.OrderByDescending()` — це ефективно? Для невеликої системи — так. Що можна зробити щоб уникнути повторного перебору?
+
+---
+
+### Метод `GetPatientsWithMultipleVisits(int minVisits)` — GroupBy + Join ⭐⭐
+
+**Задача:** знайти пацієнтів що мають щонайменше `minVisits` записів і повернути їхні імена.
+
+**Що таке Join.** Якщо у вас є дві колекції — `groups` (згруповані прийоми) і `patients` (список пацієнтів) — `.Join()` дозволяє їх з'єднати за спільним ключем, як `JOIN` у SQL.
+
+**Алгоритм:**
+1. Згрупувати прийоми за `PatientId`
+2. Залишити тільки групи де кількість `>= minVisits`
+3. З'єднати з масивом пацієнтів: ключ з групи — `g.Key` (PatientId), ключ з пацієнта — `p.Id`
+4. Результат — `p.FullName`
+
+---
+
+### Метод `GetTopEarners(int n)` — OrderByDescending + Take ⭐
+
+**Задача:** топ-N лікарів за виручкою.
+
+**`.Take(n)`** — обрізає послідовність до перших N елементів. Ставиться після сортування.
+
+Логіка формування `DoctorStats` для кожного лікаря — така сама як у `AnalyticsManager` після рефакторингу в Завданні 1. Не копіюйте код — подумайте чи є спосіб уникнути дублювання. (Якщо ні — скопіюйте, але усвідомте проблему.)
+
+---
+
+### Метод `HasAnyUrgentAppointments()` — Any ⭐
+
+**Задача:** чи є в системі хоч один терміновий прийом?
+
+**`.Any(predicate)`** — повертає `true` як тільки знаходить перший елемент що відповідає умові. Це ефективніше ніж `.Count() > 0` — не перебирає всю колекцію.
+
+Перевірте тип через `is`: `a is UrgentAppointment`.
+
+---
+
+### Метод `GetActiveSpecialities()` — Distinct + OrderBy ⭐
+
+**Задача:** список унікальних спеціальностей лікарів що є у клініці.
+
+**`.Distinct()`** — прибирає дублікати. Якщо є три кардіологи — `Cardiology` з'явиться один раз. Для enum-значень порівняння відбувається за значенням — жодних додаткових налаштувань не потрібно.
+
+---
+
+### Метод `GetMonthlyRevenue()` — GroupBy з анонімним типом ⭐⭐
+
+**Задача:** виручка клініки по кожному місяцю.
+
+**Анонімний тип у GroupBy.** Щоб згрупувати одночасно за роком і місяцем, ключем GroupBy стає анонімний об'єкт:
 ```csharp
-public ReportManager Reports { get; }
-// ...
-Reports = new ReportManager(Appointments, Doctors, Patients);
+.GroupBy(a => new { a.ScheduledAt.Year, a.ScheduledAt.Month })
 ```
+Потім `g.Key.Year` і `g.Key.Month`.
 
-**`src/Program.cs`** — додайте пункт `11` у головне меню і реалізуйте `ReportsMenu(Clinic clinic)` з підменю:
+**Value tuple як тип повернення.** Замість окремого DTO поверніть кортеж:
+```csharp
+IEnumerable<(int Year, int Month, decimal Total)>
+```
+У `Select` формуєте: `(g.Key.Year, g.Key.Month, g.Sum(a => a.GetCost()))`.
 
-| Пункт | Метод                              |
-|-------|------------------------------------|
-| 1     | `GetSpecialityStats()`             |
-| 2     | `FindBusiestDoctorName()`          |
-| 3     | `GetPatientsWithMultipleVisits(n)` |
-| 4     | `GetTopEarners(3)`                 |
-| 5     | `HasAnyUrgentAppointments()`       |
-| 6     | `GetActiveSpecialities()`          |
-| 7     | `GetMonthlyRevenue()`              |
+Відсортуйте за роком, потім за місяцем — `.OrderBy(...).ThenBy(...)`.
+
+---
+
+## Завдання 4. Підключення до `Clinic` і `Program` ⭐
+
+### Clinic.cs
+
+`ReportManager` — новий компонент системи. За аналогією з `AnalyticsManager` додайте публічну readonly-властивість і ініціалізуйте її в конструкторі. Передайте ті самі три менеджери: `Appointments`, `Doctors`, `Patients`.
+
+### Program.cs
+
+Додайте пункт **11** у головне меню. Реалізуйте `ReportsMenu(Clinic clinic)` — підменю з 7 пунктами по одному на кожен метод `ReportManager`.
+
+Зверніть увагу на пункт "3. Пацієнти з кількома візитами": запитайте у користувача мінімальну кількість візитів перед викликом методу.
+
+Зверніть увагу на пункт "4. Топ-3 лікарів": передайте константу `3` у `GetTopEarners(3)` і виводьте з нумерацією.
 
 ---
 
 ## Перевірка
 
-Запустіть програму:
-
 ```
 dotnet run --project src
 ```
 
-Перейдіть у розділ **11. Звіти** і перевірте:
+Перевірте у розділі **11. Звіти**:
 
-- Пункт 1 показує список спеціальностей з кількістю лікарів і виручкою.
-- Пункт 2 виводить ім'я лікаря з найбільшою кількістю записів.
-- Пункт 3 при введенні `1` показує всіх пацієнтів, що мають хоч один запис.
-- Пункт 5 виводить `"У системі є термінові записи."` (якщо є `UrgentAppointment`).
-- Пункт 7 виводить рядки виду `2025/06 — 1350.00 грн`.
+- [ ] Пункт 1: показує спеціальності з кількістю лікарів і виручкою, відсортовані за виручкою
+- [ ] Пункт 2: виводить ім'я лікаря що має найбільше записів
+- [ ] Пункт 3 при введенні `1`: всі пацієнти що мають хоч один запис
+- [ ] Пункт 4: три лікарі відсортовані за виручкою спадно
+- [ ] Пункт 5: повідомлення про наявність або відсутність термінових записів
+- [ ] Пункт 7: рядки виду `2026/05 — 1350.00 грн`
 
-## Збереження
+Також перевірте що пункт **8. Аналітика** (з Lab 10) продовжує працювати коректно після рефакторингу `AnalyticsManager`.
 
-```
-git add src/Models/SpecialityReport.cs
-git add src/Managers/ReportManager.cs
-git add src/Clinic.cs
-git add src/Program.cs
-git add src/Managers/AnalyticsManager.cs
-git commit -m "lab-14: LINQ — AnalyticsManager rewrite + ReportManager"
-git checkout main
-git merge feature/linq
-```
+---
+
+## Питання для самоперевірки
+
+1. Чим `.Where()` відрізняється від `.Select()`? Що кожен з них повертає?
+2. Чому `.Max()` на порожній послідовності кидає виняток, а `.FirstOrDefault()` — ні?
+3. Що таке `g.Key` у `.GroupBy()`? Якого типу він у `GetSpecialityStats` і у `GetMonthlyRevenue`?
+4. `.Any()` і `.Count() > 0` дають однаковий результат. В чому різниця з точки зору продуктивності?
+5. `.Take(n)` стоїть **після** `.OrderByDescending()`. Що станеться якщо поміняти їх місцями?
+6. У `GetMonthlyRevenue` ключ GroupBy — анонімний тип `new { Year, Month }`. Як C# порівнює два такі об'єкти на рівність?
