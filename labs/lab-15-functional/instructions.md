@@ -1,18 +1,8 @@
-# Лабораторна робота №15. Functional C#
+# Лабораторна робота №15. Функціональне програмування у C#
 
 ## Мета
 
-Навчитися використовувати `Func<>`, `Action<>`, `Predicate<>` як повноцінні значення — передавати їх у методи, зберігати у полях, комбінувати. Зрозуміти що таке замикання (closure) та методи розширення (`extension methods`).
-
-## Контекст
-
-До цієї лаби всі умови фільтрації були захардкоджені у методах менеджерів або у LINQ-запитах. Тепер ми робимо поведінку **параметром**: замість того щоб писати "що фільтрувати" всередині методу — передаємо цей опис ззовні як `Func<Appointment, bool>`.
-
-У цій лабі ви:
-1. Напишете **методи розширення** на колекціях — як влаштовані `.Where()`, `.Select()` зсередини.
-2. Створите **`AppointmentFilter`** — клас що збирає предикати та комбінує їх через AND/OR.
-3. Створите **`AppointmentProcessor`** — клас що виконує `Action<Appointment>` для кожного прийому.
-4. Зберете все разом у **`AppointmentPipeline`** — фільтр → дія в одному ланцюгу.
+Зрозуміти як у C# методи можна передавати як значення — зберігати у змінних, передавати у параметри, комбінувати між собою. Навчитися будувати гнучкий код через `Func<>`, `Action<>`, замикання та методи розширення.
 
 ## Гілка
 
@@ -22,279 +12,300 @@ feature/functional
 
 ---
 
-## Теорія: що таке Func<> і Action<>
+## Чому виникла потреба в цій темі
 
-`Func<T, TResult>` — це тип для методу що **приймає `T` і повертає `TResult`**.  
-`Action<T>` — це тип для методу що **приймає `T` і нічого не повертає**.
+Відкрийте будь-який менеджер у проєкті — `AppointmentManager`, `AnalyticsManager`. Знайдіть місця де ви фільтруєте прийоми: умови написані безпосередньо всередині методу. Якщо завтра потрібна нова умова фільтрації — треба або змінити метод, або написати новий.
+
+Проблема: **логіка що змінюється захардкоджена всередині логіки що не змінюється**. Метод "знає" конкретну умову — хоча його задача просто "застосувати умову до колекції".
+
+Рішення — зробити умову **параметром**. Замість `if (a.IsPaid == false)` всередині методу — передати `Func<Appointment, bool> predicate` ззовні. Метод не знає що перевіряти. Він просто виконує те що йому передали.
+
+Саме так влаштований `.Where()` у LINQ: він не знає вашу умову заздалегідь — він отримує її як параметр кожного разу.
+
+---
+
+## Що таке `Func<>` і `Action<>`
+
+У C# метод — це теж значення. Його можна зберегти у змінну і передати в інший метод.
+
+**`Func<T, TResult>`** — це тип для "методу що приймає `T` і повертає `TResult`". Наприклад, `Func<Appointment, bool>` — це функція що перевіряє прийом і повертає true/false (предикат).
+
+**`Action<T>`** — це тип для "методу що приймає `T` і нічого не повертає". Наприклад, `Action<Appointment>` — це дія над прийомом: вивести на екран, позначити як оплачений, надіслати сповіщення.
+
+Лямбда-вираз — це скорочений спосіб записати такий анонімний метод:
 
 ```csharp
 Func<Appointment, bool> isUrgent = a => a is UrgentAppointment;
 Action<Appointment> print = a => Console.WriteLine(a);
 ```
 
-Лямбда — це просто короткий спосіб написати анонімний метод. Вона може бути збережена у змінну, передана у метод як аргумент, або збережена у поле класу.
+Після присвоєння `isUrgent` і `print` — це звичайні змінні, їх можна передати у метод як аргументи.
 
 ---
 
-## Завдання 1. Методи розширення для `Appointment`
+## Що таке замикання (closure)
 
-Створіть файл `src/Extensions/AppointmentExtensions.cs`.
+Замикання — це коли лямбда "захоплює" змінну з навколишнього коду і запам'ятовує її.
 
 ```csharp
-namespace ClinicApp.Extensions;
+decimal threshold = 300;
+Func<Appointment, bool> expensive = a => a.GetCost() > threshold;
+```
 
+Лямбда `expensive` не скопіювала значення `300`. Вона зберігає **посилання на змінну** `threshold`. Якщо пізніше `threshold` зміниться — результат лямбди теж зміниться.
+
+Це потужний механізм — і потенційно небезпечний. У Завданні 3 ви побачите критичний приклад де замикання на неправильну змінну ламає логіку.
+
+---
+
+## Що таке методи розширення
+
+Методи розширення дозволяють дописати методи до існуючого типу не змінюючи його клас.
+
+Технічно це звичайний статичний метод у статичному класі — але перший параметр позначений ключовим словом `this`:
+
+```csharp
 public static class AppointmentExtensions
 {
     public static IEnumerable<Appointment> Unpaid(this IEnumerable<Appointment> source)
         => source.Where(a => !a.IsPaid && !a.IsCancelled);
-
-    public static IEnumerable<Appointment> Upcoming(this IEnumerable<Appointment> source)
-        => source.Where(a => a.IsUpcoming);
-
-    public static IEnumerable<Appointment> ByDoctor(this IEnumerable<Appointment> source, int doctorId)
-        => source.Where(a => a.DoctorId == doctorId);
-
-    public static IEnumerable<Appointment> ByPatient(this IEnumerable<Appointment> source, int patientId)
-        => source.Where(a => a.PatientId == patientId);
-
-    public static IEnumerable<Appointment> Overdue(this IEnumerable<Appointment> source)
-        => source.Where(a => a.ScheduledAt < DateTime.Now && !a.IsCancelled && !a.IsPaid);
-
-    public static IEnumerable<Appointment> CostAbove(this IEnumerable<Appointment> source, decimal minCost)
-        => source.Where(a => a.GetCost() > minCost);
-
-    public static decimal TotalCost(this IEnumerable<Appointment> source)
-        => source.Sum(a => a.GetCost());
 }
 ```
 
-**Ключове:** `this IEnumerable<Appointment> source` — перший параметр з `this` перетворює звичайний статичний метод на метод розширення. Після цього можна писати `appointments.Unpaid()` замість `AppointmentExtensions.Unpaid(appointments)`.
+Після цього можна писати:
+```csharp
+appointments.Unpaid()
+```
 
-**Зверніть увагу на `CostAbove(decimal minCost)`:** параметр `minCost` — це **замикання** (closure). Лямбда `a => a.GetCost() > minCost` "захоплює" змінну `minCost` з зовнішнього контексту і пам'ятає її значення навіть після того як метод завершився.
+Ніби метод `Unpaid` завжди існував на `IEnumerable<Appointment>`. Саме так влаштовані всі LINQ-методи — `.Where()`, `.Select()`, `.GroupBy()` — це методи розширення над `IEnumerable<T>` у бібліотеці .NET.
 
 ---
 
-## Завдання 2. Методи розширення для `Patient` та `Doctor`
+## Завдання 1. Методи розширення для `Appointment` ⭐
 
-Створіть `src/Extensions/PatientExtensions.cs`:
+### Чого не вистачає
 
-```csharp
-public static class PatientExtensions
-{
-    public static IEnumerable<Patient> Adults(this IEnumerable<Patient> source)
-        => source.Where(p => p.Age >= 18);
+Зараз щоб отримати "неоплачені майбутні прийоми" — потрібно кожного разу писати LINQ-умову вручну. Якщо така потреба є у п'яти місцях — умова повторюється п'ять разів. Зміна в умові вимагає пошуку і виправлення в усіх місцях.
 
-    public static IEnumerable<Patient> ByBloodType(this IEnumerable<Patient> source, BloodType bloodType)
-        => source.Where(p => p.BloodType == bloodType);
+Методи розширення вирішують це: **називаємо умову одним словом** і пишемо її один раз.
 
-    public static IEnumerable<Patient> WithAppointments(
-        this IEnumerable<Patient> source, IEnumerable<Appointment> appointments)
-        => source.Where(p => appointments.Any(a => a.PatientId == p.Id));
-}
-```
+### Що потрібно зробити
 
-Створіть `src/Extensions/DoctorExtensions.cs`:
+Створіть `src/Extensions/AppointmentExtensions.cs`. Клас має бути `public static class` у просторі імен `ClinicApp.Extensions`.
 
-```csharp
-public static class DoctorExtensions
-{
-    public static IEnumerable<Doctor> BySpeciality(this IEnumerable<Doctor> source, Speciality speciality)
-        => source.Where(d => d.Speciality == speciality);
+Реалізуйте сім методів розширення на `IEnumerable<Appointment>`:
 
-    public static IEnumerable<Doctor> Available(this IEnumerable<Doctor> source)
-        => source.Where(d => d.IsAvailableNow);
+| Метод | Умова |
+|-------|-------|
+| `Unpaid()` | не оплачено і не скасовано |
+| `Upcoming()` | `IsUpcoming == true` |
+| `ByDoctor(int doctorId)` | `DoctorId` збігається |
+| `ByPatient(int patientId)` | `PatientId` збігається |
+| `Overdue()` | дата в минулому, не скасовано, не оплачено |
+| `CostAbove(decimal minCost)` | `GetCost() > minCost` |
+| `TotalCost()` | повертає `decimal` — суму через `.Sum()` |
 
-    public static IEnumerable<Doctor> WithAppointments(
-        this IEnumerable<Doctor> source, IEnumerable<Appointment> appointments)
-        => source.Where(d => appointments.Any(a => a.DoctorId == d.Id));
-}
-```
+`TotalCost()` — єдиний метод що повертає не `IEnumerable<Appointment>` а `decimal`. Він "термінальний" — результат виразу, не подальший ланцюг.
 
-Усі три класи мають бути `public static class` і знаходитись у просторі імен `ClinicApp.Extensions`.
+### Ключова ідея `CostAbove`
+
+`CostAbove(decimal minCost)` — зверніть увагу: параметр `minCost` потрапляє всередину лямбди. Це замикання. Лямбда пам'ятає значення `minCost` навіть після того як метод `CostAbove` завершив виконання.
+
+### Ключові питання
+
+- Чому клас і метод мають бути `static`?
+- Чому перший параметр `this IEnumerable<Appointment> source` а не просто `IEnumerable<Appointment> source`?
+- Чим відрізняється `Unpaid()` від `.Where(a => !a.IsPaid && !a.IsCancelled)` за результатом? А за зручністю використання?
 
 ---
 
-## Завдання 3. Клас `AppointmentFilter`
+## Завдання 2. Методи розширення для `Patient` і `Doctor` ⭐
+
+### Де зараз проблема
+
+Аналогічна ситуація: фільтрація пацієнтів за типом крові або фільтрація лікарів за спеціальністю — умови розкидані по коду або відсутні взагалі.
+
+### Що потрібно зробити
+
+Створіть `src/Extensions/PatientExtensions.cs` — `public static class` у `ClinicApp.Extensions`.
+
+Три методи розширення на `IEnumerable<Patient>`:
+- `Adults()` — вік 18 і більше
+- `ByBloodType(BloodType bloodType)` — збіг типу крові
+- `WithAppointments(IEnumerable<Appointment> appointments)` — пацієнти у яких є хоч один запис
+
+Для `WithAppointments` підказка: `.Any()` по прийомах перевіряє наявність хоч одного запису для конкретного пацієнта.
+
+Створіть `src/Extensions/DoctorExtensions.cs` — аналогічно.
+
+Три методи розширення на `IEnumerable<Doctor>`:
+- `BySpeciality(Speciality speciality)` — збіг спеціальності
+- `Available()` — `IsAvailableNow == true`
+- `WithAppointments(IEnumerable<Appointment> appointments)` — лікарі у яких є хоч один запис
+
+### Ключові питання
+
+- `WithAppointments` отримує колекцію прийомів як параметр — чому не звертається до репозиторію напряму?
+- Методи `Adults()` і `ByBloodType()` — яке з них використовує замикання, а яке ні?
+
+---
+
+## Завдання 3. Клас `AppointmentFilter` ⭐⭐
+
+### Проблема: жорстка фільтрація
+
+Уявіть що користувач хоче відфільтрувати прийоми за кількома умовами одразу — наприклад: "термінові і не оплачені". Зараз це виглядає як `.Where(a => a is UrgentAppointment && !a.IsPaid)`. Умови зліплені разом, їх не можна скласти з окремих частин.
+
+`AppointmentFilter` вирішує це: він збирає предикати по одному і комбінує їх.
+
+### Як він влаштований
+
+Клас зберігає одне поле `Func<Appointment, bool>? _combined` — поточний комбінований предикат. Спочатку він `null` (фільтр порожній — пропускає все).
+
+Кожен виклик методу `Add` додає новий предикат через AND. Якщо `_combined` вже є — новий предикат комбінується з ним: `a => old(a) && new(a)`. Якщо `_combined` ще `null` — новий предикат стає першим.
+
+Методи `Or` і `Negate` — аналогічно, але через `||` та `!`.
+
+Метод `Apply` запускає фільтр на колекції: якщо `_combined == null` — повертає всю колекцію, інакше — `.Where(_combined)`.
+
+Метод `Reset` скидає `_combined` в `null`.
+
+### КРИТИЧНИЙ момент — замикання на поле
+
+Усередині `Add` наївна реалізація:
+```csharp
+_combined = a => _combined(a) && predicate(a);  // НЕПРАВИЛЬНО
+```
+
+Лямбда захоплює **поле `_combined`** — а не його значення. Коли вона виконається пізніше — `_combined` вже матиме нове значення (сама себе!). Це нескінченна рекурсія.
+
+Правильний підхід: зберегти поточний стан у **локальну змінну** перед створенням нової лямбди:
+```csharp
+var prev = _combined;
+_combined = a => prev(a) && predicate(a);  // ПРАВИЛЬНО — захоплює локальну prev
+```
+
+`prev` — локальна копія, вона не змінюється після свого створення.
+
+### Що потрібно зробити
 
 Створіть `src/Managers/AppointmentFilter.cs`.
 
-Клас зберігає **один комбінований предикат** типу `Func<Appointment, bool>?`. Кожен виклик `Add` або `And` комбінує новий предикат з існуючим через AND. `Or` — через OR. `Negate` — інвертує все.
+Реалізуйте методи: `Add`, `And` (псевдонім для `Add`), `Or`, `Negate`, `Apply`, `Reset`. Усі методи крім `Apply` і `Reset` повертають `this` для підтримки fluent-ланцюга.
 
-```csharp
-public class AppointmentFilter
-{
-    private Func<Appointment, bool>? _combined;
+### Ключові питання
 
-    public AppointmentFilter Add(Func<Appointment, bool> predicate)
-    {
-        if (_combined == null)
-            _combined = predicate;
-        else
-        {
-            var prev = _combined;           // захоплюємо поточний стан у замикання
-            _combined = a => prev(a) && predicate(a);
-        }
-        return this;                        // повертаємо this для ланцюга
-    }
-
-    public AppointmentFilter And(Func<Appointment, bool> predicate) => Add(predicate);
-
-    public AppointmentFilter Or(Func<Appointment, bool> predicate)
-    {
-        if (_combined == null)
-            _combined = predicate;
-        else
-        {
-            var prev = _combined;
-            _combined = a => prev(a) || predicate(a);
-        }
-        return this;
-    }
-
-    public AppointmentFilter Negate()
-    {
-        if (_combined != null)
-        {
-            var prev = _combined;
-            _combined = a => !prev(a);
-        }
-        return this;
-    }
-
-    public IEnumerable<Appointment> Apply(IEnumerable<Appointment> source)
-    {
-        if (_combined == null) return source;
-        return source.Where(_combined);
-    }
-
-    public void Reset() => _combined = null;
-}
-```
-
-**Зверніть увагу:** `var prev = _combined;` всередині методу — це **критично важливо**. Без цього рядка лямбда `a => prev(a) && predicate(a)` захопить посилання на поле `_combined`, яке продовжує змінюватись. Локальна копія `prev` фіксує **поточний стан** предиката в момент виклику.
+- Що станеться якщо викликати `Apply` на порожній фільтр (без жодного `Add`)? Яка поведінка правильна?
+- `And` і `Add` дають однаковий результат. Навіщо тоді `And`?
+- Де ще у ваших попередніх лабах ви бачили `return this`? Що це дозволяє?
 
 ---
 
-## Завдання 4. Клас `AppointmentProcessor`
+## Завдання 4. Клас `AppointmentProcessor` ⭐⭐
+
+### Проблема: одна дія над колекцією
+
+Зараз якщо треба "для кожного запису зробити X" — пишуть `foreach` і дію всередині. Що як дій кілька і вони визначаються динамічно — не в момент написання, а в момент виконання програми?
+
+`AppointmentProcessor` накопичує дії і виконує їх усі разом.
+
+### Як він влаштований
+
+Клас зберігає `List<Action<Appointment>> _actions` — список дій. Кожен виклик `Run` додає дію до списку. `Execute` проходить по всіх прийомах і для кожного — виконує всі дії зі списку.
+
+Метод `RunIf(Func<Appointment, bool> predicate, Action<Appointment> action)` — умовна дія. Він добавляє в список лямбду що сама перевіряє предикат і викликає `action` тільки якщо умова виконана. Ззовні — один запис у список. Всередині — перевірка умови.
+
+Метод `Combine(Action<Appointment> first, Action<Appointment> second)` — добавляє одну лямбду що послідовно викликає `first`, потім `second`. Дозволяє об'єднати дві незалежні дії в одну.
+
+### Що потрібно зробити
 
 Створіть `src/Managers/AppointmentProcessor.cs`.
 
-Клас зберігає список дій `List<Action<Appointment>>` і виконує їх усі для кожного прийому.
+Реалізуйте: `Run`, `RunIf`, `Combine`, `Execute`, `Clear`. Методи `Run`, `RunIf`, `Combine` повертають `this`.
 
-```csharp
-public class AppointmentProcessor
-{
-    private readonly List<Action<Appointment>> _actions = new();
+### Ключові питання
 
-    public AppointmentProcessor Run(Action<Appointment> action)
-    {
-        _actions.Add(action);
-        return this;
-    }
-
-    public AppointmentProcessor RunIf(Func<Appointment, bool> predicate, Action<Appointment> action)
-    {
-        _actions.Add(a => { if (predicate(a)) action(a); });
-        return this;
-    }
-
-    public AppointmentProcessor Combine(Action<Appointment> first, Action<Appointment> second)
-    {
-        _actions.Add(a => { first(a); second(a); });
-        return this;
-    }
-
-    public void Execute(IEnumerable<Appointment> appointments)
-    {
-        foreach (Appointment a in appointments)
-            foreach (Action<Appointment> action in _actions)
-                action(a);
-    }
-
-    public void Clear() => _actions.Clear();
-}
-```
-
-**`Combine`** — об'єднує дві незалежні дії в одну лямбду. Це аналог `+=` для делегатів але ручний. Студент передає дві дії, і процесор завжди виконує обидві разом.
-
-**`RunIf`** — умовна дія: лямбда перевіряє предикат і викликає `action` тільки якщо умова виконана. Сама умова і дія залишаються зовні — процесор їх не знає.
+- `RunIf` отримує і предикат і дію. Хто вирішує коли виконувати дію — виклик `Execute` чи сама лямбда всередині списку?
+- Чому `Combine` не просто викликає `Run(first); Run(second)` — адже результат здається однаковим?
+- Якщо викликати `Execute` двічі — дії виконаються двічі. Як цього уникнути?
 
 ---
 
-## Завдання 5. Клас `AppointmentPipeline`
+## Завдання 5. Клас `AppointmentPipeline` ⭐
 
-Створіть `src/Managers/AppointmentPipeline.cs`.
+### Навіщо третій клас
 
-Пайплайн — це фасад над `AppointmentFilter` + `AppointmentProcessor`. Він забезпечує зручний fluent-інтерфейс: спочатку всі умови фільтрації, потім усі дії.
+`AppointmentFilter` знає як фільтрувати. `AppointmentProcessor` знає як обробляти. Але вони не пов'язані між собою — студент сам має скласти порядок: спочатку фільтр, потім процесор.
 
+`AppointmentPipeline` — це **фасад**: один клас що ховає обидва і надає простий інтерфейс "спочатку опиши умови, потім опиши дії, потім запусти".
+
+### Як він влаштований
+
+Клас містить два поля: `AppointmentFilter _filter` і `AppointmentProcessor _processor`. Обидва створюються в конструкторі.
+
+Метод `Filter(Func<Appointment, bool> predicate)` — делегує до `_filter.Add(predicate)` і повертає `this`.
+
+Метод `Then(Action<Appointment> action)` — делегує до `_processor.Run(action)` і повертає `this`.
+
+Метод `Execute(IEnumerable<Appointment> source)`:
+1. Застосовує фільтр: `_filter.Apply(source)` — отримує відфільтровані прийоми
+2. Матеріалізує результат у масив (важливо: `.ToArray()` — щоб виконати фільтр один раз)
+3. Запускає процесор на відфільтрованих
+4. Повертає кількість оброблених прийомів (`int`)
+
+Метод `Reset()` — скидає і фільтр і процесор.
+
+### Fluent-ланцюг
+
+Після реалізації стає можливим:
 ```csharp
-public class AppointmentPipeline
-{
-    private readonly AppointmentFilter _filter = new();
-    private readonly AppointmentProcessor _processor = new();
-
-    public AppointmentPipeline Filter(Func<Appointment, bool> predicate)
-    {
-        _filter.Add(predicate);
-        return this;
-    }
-
-    public AppointmentPipeline Then(Action<Appointment> action)
-    {
-        _processor.Run(action);
-        return this;
-    }
-
-    public int Execute(IEnumerable<Appointment> source)
-    {
-        Appointment[] filtered = _filter.Apply(source).ToArray();
-        _processor.Execute(filtered);
-        return filtered.Length;     // повертає кількість оброблених записів
-    }
-
-    public void Reset()
-    {
-        _filter.Reset();
-        _processor.Clear();
-    }
-}
-```
-
-Приклад використання:
-```csharp
-pipeline
+int count = pipeline
     .Filter(a => !a.IsPaid)
     .Filter(a => a.IsUpcoming)
     .Then(a => Console.WriteLine(a))
-    .Then(a => logger.Log(a.ToString()));
-
-int processed = pipeline.Execute(appointments);
+    .Execute(allAppointments);
 ```
+
+Кожен рядок — одна думка. Читається як опис дії.
+
+### Що потрібно зробити
+
+Створіть `src/Managers/AppointmentPipeline.cs`. Реалізуйте `Filter`, `Then`, `Execute`, `Reset`.
+
+### Ключові питання
+
+- Чому `Execute` матеріалізує фільтр у масив перед тим як передати процесору? Що станеться якщо не матеріалізувати?
+- `AppointmentPipeline` — це фасад. Що означає цей патерн? Що він ховає від зовнішнього коду?
+- `Filter` і `Then` повертають `this`. До чого саме відноситься `this` тут?
 
 ---
 
-## Завдання 6. Підключення до `Clinic` і `Program`
+## Завдання 6. Підключення до `Clinic` і `Program` ⭐
 
-**`src/Clinic.cs`** — додайте властивість і ініціалізацію:
+### Clinic.cs
 
-```csharp
-public AppointmentPipeline Pipeline { get; }
-// у конструкторі:
-Pipeline = new AppointmentPipeline();
-```
+`AppointmentPipeline` — новий компонент системи. За аналогією з іншими менеджерами додайте публічну readonly-властивість `Pipeline` типу `AppointmentPipeline` і ініціалізуйте її в конструкторі. Вона не потребує залежностей — `new AppointmentPipeline()`.
 
-**`src/Program.cs`** — додайте `using ClinicApp.Extensions;` на початку файлу, пункт `12` у головне меню і реалізуйте `FunctionalMenu(Clinic clinic)` з підменю:
+### Program.cs
 
-| Пункт | Що демонструє | Концепція |
-|-------|--------------|-----------|
-| 1 | `.Unpaid()` + `.TotalCost()` | метод розширення |
-| 2 | `.Upcoming().CostAbove(threshold)` | замикання на `threshold` |
-| 3 | `.Adults()` | метод розширення на Patient |
-| 4 | `.WithAppointments(allApps)` | метод розширення на Doctor |
-| 5 | `filter.Add(...).And(...)` | `Func<>` + AND-комбінація |
-| 6 | `filter.Add(...).Or(...)` | OR-комбінація |
-| 7 | `processor.Combine(print, log)` | `Action<>` + Combine |
-| 8 | `pipeline.Filter(...).Then(...)` | пайплайн цілком |
+Додайте `using ClinicApp.Extensions;` на початку файлу — щоб методи розширення стали доступні.
+
+Додайте пункт **12** у головне меню: `"12. Фільтри — Func, Action, Pipeline"`. Реалізуйте `FunctionalMenu(Clinic clinic)` — підменю з 8 пунктами:
+
+| Пункт | Що показує | Яку концепцію демонструє |
+|-------|------------|--------------------------|
+| 1 | Неоплачені прийоми і їх загальна сума | `.Unpaid()` + `.TotalCost()` — методи розширення |
+| 2 | Майбутні дорожче N грн (ввести поріг) | `.Upcoming().CostAbove(threshold)` — замикання |
+| 3 | Повнолітні пацієнти | `.Adults()` — розширення на Patient |
+| 4 | Лікарі з хоч одним записом | `.WithAppointments(appointments)` — розширення на Doctor |
+| 5 | AND-фільтр: термінові + майбутні | `filter.Add(...).And(...)` — Func + AND |
+| 6 | OR-фільтр: термінові або прострочені | `filter.Add(...).Or(...)` — OR-комбінація |
+| 7 | Дві дії через `Combine` | `processor.Combine(print, log)` — Action + Combine |
+| 8 | Повний пайплайн: фільтр → дія | `pipeline.Filter(...).Then(...)` — фасад |
+
+У пункті 2 запитайте порогову суму у користувача перед фільтрацією.
+
+У пункті 8 після виконання виведіть: `$"Оброблено: {count} записів."`.
 
 ---
 
@@ -304,26 +315,23 @@ Pipeline = new AppointmentPipeline();
 dotnet run --project src
 ```
 
-Перейдіть у розділ **12. Фільтри та пайплайн** і перевірте:
+Перейдіть у **12. Фільтри та пайплайн** і переконайтесь:
 
-- Пункт 1 виводить список неоплачених записів і суму.
-- Пункт 2 запитує поріг — введіть `300`, отримаєте майбутні записи дорожче 300 грн.
-- Пункт 5 виводить тільки термінові майбутні — перетин двох умов.
-- Пункт 6 виводить більше записів — об'єднання двох умов.
-- Пункт 8 виводить "Оброблено: N записів."
+- [ ] Пункт 1 виводить неоплачені прийоми і загальну суму
+- [ ] Пункт 2 при порозі `300` показує тільки майбутні записи дорожче 300 грн
+- [ ] Пункт 5 показує записи що є одночасно терміновими і майбутніми (перетин)
+- [ ] Пункт 6 показує більше записів — об'єднання двох умов
+- [ ] Пункт 8 виводить кількість оброблених записів
+
+Також перевірте що пункт **8. Аналітика** і **11. Звіти** продовжують працювати коректно.
 
 ---
 
-## Збереження
+## Питання для самоперевірки
 
-```
-git add src/Extensions/
-git add src/Managers/AppointmentFilter.cs
-git add src/Managers/AppointmentProcessor.cs
-git add src/Managers/AppointmentPipeline.cs
-git add src/Clinic.cs
-git add src/Program.cs
-git commit -m "lab-15: Functional — extensions, AppointmentFilter, Processor, Pipeline"
-git checkout main
-git merge --no-ff feature/functional -m "Merge feature/functional: Lab15 Functional"
-```
+1. Чим `Func<Appointment, bool>` відрізняється від `bool Check(Appointment a)` як оголошення методу? Що у них спільне?
+2. Яка різниця між `Action<Appointment>` і `Func<Appointment, bool>`? Коли використовується кожен?
+3. У `AppointmentFilter.Add` є рядок `var prev = _combined`. Що відбудеться якщо його прибрати і писати `_combined` безпосередньо у лямбді?
+4. Методи розширення можна викликати і як звичайні статичні методи: `AppointmentExtensions.Unpaid(source)`. Чому краще використовувати синтаксис `source.Unpaid()`?
+5. `AppointmentPipeline.Execute` повертає `int` — кількість оброблених. Навіщо це значення? Хто може його використати?
+6. Fluent-інтерфейс означає що методи повертають `this`. Де ще у вашому проєкті є такий патерн?
