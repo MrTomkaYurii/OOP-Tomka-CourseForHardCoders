@@ -21,7 +21,7 @@ source: "../_combined/88-dynamichne-zavantazhennia-zbirok-ta-piznie-zviazuvannia
 
 Припустимо, у нас є два проєкти:
 
-![Два проєкти для прикладу динамічного завантаження збірки](/lecture-assets/docx/image106.png)
+![Два проєкти для прикладу динамічного завантаження збірки](assets/docx/image106.png)
 
 Нехай у проєкті `MyApp`, який компілюється у збірку `MyApp.dll`, є файл `Program.cs` з наступним кодом:
 
