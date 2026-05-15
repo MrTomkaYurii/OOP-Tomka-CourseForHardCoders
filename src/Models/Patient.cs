@@ -49,12 +49,17 @@ public class Patient : IIdentifiable
     public ICollection<MedicalRecord> MedicalRecords { get; private set; } = new List<MedicalRecord>();
 
     // Owned Entity — EmergencyContact зберігається в таблиці Patients (не окрема таблиця)
-    // null — якщо контакт не вказано
     public EmergencyContact? EmergencyContact { get; set; }
 
-    // Concurrency Token — EF порівнює при UPDATE; кидає DbUpdateConcurrencyException якщо різні
-    // SQL Server автоматично оновлює RowVersion при кожній зміні рядка
+    // Concurrency Token — EF перевіряє при UPDATE/DELETE; кидає DbUpdateConcurrencyException якщо застарілий
     public byte[]? RowVersion { get; private set; }
+
+    // Soft Delete — замість фізичного DELETE: позначаємо IsDeleted = true
+    // Global Query Filter: HasQueryFilter(p => !p.IsDeleted) — EF автоматично додає WHERE IsDeleted = 0
+    public bool IsDeleted { get; private set; }
+
+    // "Видалити" — встановлює прапор, а не фізично видаляє з БД
+    public void SoftDelete() { IsDeleted = true; }
 
     public string FullName => FirstName + " " + LastName;
 
