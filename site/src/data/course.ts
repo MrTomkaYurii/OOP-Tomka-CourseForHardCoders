@@ -226,6 +226,18 @@ const meta: Record<string, Omit<Lab, "sourcePath" | "excerpt" | "html" | "headin
     menu: "автоматичні реакції системи",
     difficulty: 3,
   },
+  "lab-14-linq": {
+    slug: "lab-14-linq",
+    number: 14,
+    title: "LINQ",
+    topic: "Where, Select, GroupBy, Join, агрегати",
+    status: "ready",
+    module: "Reports",
+    branch: "feature/linq",
+    merge: "main",
+    menu: "звіти по спеціальностях, топ, місячна виручка",
+    difficulty: 3,
+  },
 };
 
 function slugify(value: string) {
