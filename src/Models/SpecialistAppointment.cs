@@ -2,7 +2,11 @@ namespace ClinicApp.Models;
 
 public sealed class SpecialistAppointment : Appointment
 {
-    public string ConsultationTopic { get; }
+    // private set — EF Core (TPH) встановлює при завантаженні
+    public string ConsultationTopic { get; private set; } = "";
+
+    // sealed клас — не може мати protected ctor. EF Core використовує private через рефлексію.
+    private SpecialistAppointment() { }
 
     public SpecialistAppointment(int patientId, int doctorId, DateTime scheduledAt,
                                   string topic = "", int durationMinutes = 45)

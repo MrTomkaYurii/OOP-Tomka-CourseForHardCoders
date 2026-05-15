@@ -44,6 +44,10 @@ public class Patient : IIdentifiable
 
     public string? Email { get; set; }
 
+    // Navigation property — EF Core заповнює цю колекцію через .Include(p => p.Appointments)
+    // Без .Include() — залишається порожньою (lazy loading за замовчуванням вимкнено)
+    public ICollection<Appointment> Appointments { get; private set; } = new List<Appointment>();
+
     public string FullName => FirstName + " " + LastName;
 
     public int Age

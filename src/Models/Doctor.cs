@@ -49,6 +49,9 @@ public class Doctor : ISchedulable, IIdentifiable
 
     public WorkSchedule Schedule { get; set; }
 
+    // Navigation property — EF Core заповнює через .Include(d => d.Appointments)
+    public ICollection<Appointment> Appointments { get; private set; } = new List<Appointment>();
+
     public string FullName => FirstName + " " + LastName;
     public bool IsAvailableNow => Schedule.IsNow;
 

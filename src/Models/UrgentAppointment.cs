@@ -2,7 +2,10 @@ namespace ClinicApp.Models;
 
 public class UrgentAppointment : Appointment
 {
-    public string UrgencyNote { get; }
+    // private set — EF Core (TPH) встановлює при завантаженні з дискримінатором
+    public string UrgencyNote { get; private set; } = "";
+
+    protected UrgentAppointment() { }
 
     public UrgentAppointment(int patientId, int doctorId, DateTime scheduledAt,
                               string urgencyNote = "", int durationMinutes = 30)
