@@ -238,6 +238,18 @@ const meta: Record<string, Omit<Lab, "sourcePath" | "excerpt" | "html" | "headin
     menu: "звіти по спеціальностях, топ, місячна виручка",
     difficulty: 3,
   },
+  "lab-15-functional": {
+    slug: "lab-15-functional",
+    number: 15,
+    title: "Functional C#",
+    topic: "Func<>, Action<>, замикання, методи розширення",
+    status: "ready",
+    module: "Filters",
+    branch: "feature/functional",
+    merge: "main",
+    menu: "фільтри, процесор, пайплайн",
+    difficulty: 3,
+  },
 };
 
 function slugify(value: string) {

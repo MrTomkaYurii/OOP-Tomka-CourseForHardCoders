@@ -1,5 +1,6 @@
 using System.Text;
 using ClinicApp;
+using ClinicApp.Extensions;
 using ClinicApp.Attributes;
 using ClinicApp.Comparators;
 using ClinicApp.Enums;
@@ -91,6 +92,7 @@ while (running)
     Console.WriteLine("║  9. Плани лікування — рефлексія, атрибути   ║");
     Console.WriteLine("║ 10. Файли           — експорт, імпорт, лог  ║");
     Console.WriteLine("║ 11. Звіти           — LINQ-аналітика        ║");
+    Console.WriteLine("║ 12. Фільтри         — Func, Action, Pipeline ║");
     Console.WriteLine("║  0. Вийти (зберегти сесію)                  ║");
     Console.WriteLine("╚══════════════════════════════════════════════╝");
     Console.Write("Оберіть розділ: ");
@@ -111,6 +113,7 @@ while (running)
         case "9":  TreatmentPlansMenu(clinic); break;
         case "10": FilesMenu(clinic); break;
         case "11": ReportsMenu(clinic); break;
+        case "12": FunctionalMenu(clinic); break;
         case "0":
             clinic.Tracker.PrintSummary();
             clinic.Tracker.SaveSummary();
@@ -883,6 +886,124 @@ static void ReportsMenu(Clinic clinic)
                 Console.WriteLine("=== Виручка по місяцях ===");
                 foreach (var (year, month, total) in clinic.Reports.GetMonthlyRevenue())
                     Console.WriteLine("  " + year + "/" + month.ToString("D2") + " — " + total.ToString("F2") + " грн");
+                break;
+
+            case "0":
+                inMenu = false;
+                break;
+
+            default:
+                Console.WriteLine("Невідома команда.");
+                break;
+        }
+        Console.WriteLine();
+    }
+}
+
+// ──────────────────────────────────────────────
+//  Меню фільтрів та пайплайну (Lab 15 — Functional)
+// ──────────────────────────────────────────────
+static void FunctionalMenu(Clinic clinic)
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        Console.WriteLine("── Фільтри та пайплайн ───────────────────");
+        Console.WriteLine("  1. Розширення: неоплачені записи");
+        Console.WriteLine("  2. Розширення: майбутні записи дорожче порогу (замикання)");
+        Console.WriteLine("  3. Розширення: дорослі пацієнти");
+        Console.WriteLine("  4. Розширення: лікарі з активними записами");
+        Console.WriteLine("  5. Фільтр: AND — термінові + майбутні");
+        Console.WriteLine("  6. Фільтр: OR — термінові або дорожче 600 грн");
+        Console.WriteLine("  7. Процесор: вивести + логувати кожен запис");
+        Console.WriteLine("  8. Пайплайн: фільтр → вивести результат");
+        Console.WriteLine("  0. Назад");
+        Console.Write("Оберіть: ");
+
+        string cmd = Console.ReadLine() ?? "";
+        Console.WriteLine();
+
+        switch (cmd)
+        {
+            case "1":
+                // Task 1: метод розширення .Unpaid()
+                Appointment[] unpaid = clinic.Appointments.GetAll().Unpaid().ToArray();
+                Console.WriteLine("Неоплачені записи (" + unpaid.Length + "):");
+                foreach (Appointment a in unpaid) Console.WriteLine("  " + a);
+                Console.WriteLine("Загальна сума: " + unpaid.TotalCost().ToString("F2") + " грн");
+                break;
+
+            case "2":
+                // Task 2: замикання — поріг захоплюється з локальної змінної
+                Console.Write("Мінімальна вартість (грн): ");
+                decimal.TryParse(Console.ReadLine(), out decimal threshold);
+                Appointment[] expensive = clinic.Appointments.GetAll()
+                    .Upcoming()
+                    .CostAbove(threshold)
+                    .ToArray();
+                Console.WriteLine("Майбутні записи дорожче " + threshold + " грн (" + expensive.Length + "):");
+                foreach (Appointment a in expensive) Console.WriteLine("  " + a);
+                break;
+
+            case "3":
+                // Task 3: метод розширення .Adults() на пацієнтах
+                Patient[] adults = clinic.Patients.GetAll().Adults().ToArray();
+                Console.WriteLine("Повнолітні пацієнти (" + adults.Length + "):");
+                foreach (Patient p in adults) Console.WriteLine("  " + p);
+                break;
+
+            case "4":
+                // Task 4: .WithAppointments() — лікарі що мають хоч один запис
+                Appointment[] allApps = clinic.Appointments.GetAll();
+                Doctor[] active = clinic.Doctors.GetAll().WithAppointments(allApps).ToArray();
+                Console.WriteLine("Лікарі з активними записами (" + active.Length + "):");
+                foreach (Doctor d in active) Console.WriteLine("  " + d);
+                break;
+
+            case "5":
+                // Task 5: AppointmentFilter з AND-ланцюгом
+                var filterAnd = new ClinicApp.Managers.AppointmentFilter();
+                filterAnd
+                    .Add(a => a is ClinicApp.Models.UrgentAppointment)
+                    .And(a => a.IsUpcoming);
+                Appointment[] andResult = filterAnd.Apply(clinic.Appointments.GetAll()).ToArray();
+                Console.WriteLine("Термінові + майбутні (" + andResult.Length + "):");
+                foreach (Appointment a in andResult) Console.WriteLine("  " + a);
+                break;
+
+            case "6":
+                // Task 6: AppointmentFilter з OR
+                var filterOr = new ClinicApp.Managers.AppointmentFilter();
+                filterOr
+                    .Add(a => a is ClinicApp.Models.UrgentAppointment)
+                    .Or(a => a.GetCost() > 600m);
+                Appointment[] orResult = filterOr.Apply(clinic.Appointments.GetAll()).ToArray();
+                Console.WriteLine("Термінові АБО дорожче 600 грн (" + orResult.Length + "):");
+                foreach (Appointment a in orResult) Console.WriteLine("  " + a);
+                break;
+
+            case "7":
+                // Task 7: AppointmentProcessor з Combine (дві дії в одній)
+                var processor = new ClinicApp.Managers.AppointmentProcessor();
+                processor.Combine(
+                    a => Console.WriteLine("  [ВИВІД] " + a),
+                    a => clinic.Logger.LogInfo("Processed: appointment #" + a.Id)
+                );
+                Appointment[] upcoming = clinic.Appointments.GetAll().Upcoming().ToArray();
+                Console.WriteLine("Обробка майбутніх записів (" + upcoming.Length + "):");
+                processor.Execute(upcoming);
+                break;
+
+            case "8":
+                // Task 8: AppointmentPipeline — фільтр → дія в одному ланцюгу
+                clinic.Pipeline.Reset();
+                clinic.Pipeline
+                    .Filter(a => !a.IsPaid && !a.IsCancelled)
+                    .Filter(a => a.ScheduledAt >= DateTime.Today)
+                    .Then(a => Console.WriteLine("  → " + a));
+                Console.WriteLine("Пайплайн: неоплачені майбутні записи:");
+                int count = clinic.Pipeline.Execute(clinic.Appointments.GetAll());
+                Console.WriteLine("Оброблено: " + count + " записів.");
                 break;
 
             case "0":

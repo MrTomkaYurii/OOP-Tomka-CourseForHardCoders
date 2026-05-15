@@ -15,6 +15,7 @@ public class Clinic
     public WaitingQueue<Patient> WaitingRoom { get; }
     public AnalyticsManager Analytics { get; }
     public ReportManager Reports { get; }
+    public AppointmentPipeline Pipeline { get; }
     public TreatmentPlanManager TreatmentPlans { get; }
     public ClinicLogger Logger { get; }
     public ClinicExporter Exporter { get; }
@@ -34,6 +35,7 @@ public class Clinic
         WaitingRoom = new WaitingQueue<Patient>();
         Analytics = new AnalyticsManager(Appointments, Doctors, Patients);
         Reports = new ReportManager(Appointments, Doctors, Patients);
+        Pipeline = new AppointmentPipeline();
         TreatmentPlans = new TreatmentPlanManager();
         Logger = new ClinicLogger();
         Exporter = new ClinicExporter(this);

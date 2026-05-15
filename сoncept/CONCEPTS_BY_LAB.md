@@ -72,7 +72,10 @@
 | LINQ (`.Where`, `.Select`, `.OrderBy`, `.GroupBy`, `.Join`, | 14 | |
 |   `.FirstOrDefault`, `.Any`, `.Sum`, `.Average`, `.Min`, `.Max`, | | |
 |   `.Count(predicate)`, `.ToList()`, `.ToArray()`) | | |
-| `Func<>`, `Action<>`, `Predicate<>`, lambda як змінна | 15 | |
+| `Func<T, TResult>`, `Action<T>` — lambda як змінна/поле | 15 | |
+| Closure (замикання) — захоплення зовнішньої змінної | 15 | |
+| `public static class` + `this T` — метод розширення | 15 | |
+| Fluent interface — `return this` для ланцюга | 15 | |
 | `Stream`, `StreamReader/Writer`, `File`, `Directory` | 16 | |
 | `System.Text.Json` (серіалізація) | 15 | |
 | `Console.Clear()`, `ConsoleColor`, `SetCursorPosition` | 16 | |
@@ -363,18 +366,22 @@
 
 ---
 
-### Lab 15 — Functional (feature/functional → чекає)
+### Lab 15 — Functional C# (feature/functional → злито в main) ✅
 
-**Нові конструкції:**
-- `Func<T, TResult>`, `Action<T>`, `Predicate<T>`
-- Lambda як змінна: `Func<Patient, bool> isAdult = p => p.Age >= 18;`
-- Higher-order методи: `ApplyTo(IEnumerable<T> items, Func<T,bool> filter)`
-- Замикання (closures)
-- Методи розширення: `static T MyMethod(this IEnumerable<T> source)`
+**Нові концепції:**
+- `Func<T, TResult>` — лямбда що повертає значення; зберігається як поле/змінна
+- `Action<T>` — лямбда без повернення; зберігається у `List<Action<T>>`
+- Замикання (closure) — лямбда захоплює змінну зовнішнього контексту
+- `var prev = field` — фіксація стану поля для безпечного замикання
+- `public static class` + `this T source` — метод розширення
+- Fluent interface — метод повертає `this` для ланцюга
+- Higher-order методи — `Func<>` та `Action<>` як параметри одного методу
+
+**Нові файли:** `Extensions/` (3 файли), `AppointmentFilter`, `AppointmentProcessor`, `AppointmentPipeline`
 
 ---
 
-### Lab 16 — Streams & Files (feature/storage → зливається)
+### Lab 16 — Streams & JSON (feature/storage → зливається)
 
 **Нові конструкції:**
 - `StreamWriter`, `StreamReader`
