@@ -672,7 +672,53 @@ src/
 
 ---
 
-## Lab 18–21 — (детальніше після реалізації попередніх)
+## Lab 18 — EF Core: Relations (feature/ef-core)
+
+**Статус:** 🔄 В РОБОТІ
+**Гілка:** `feature/ef-core` — НЕ злито
+**Файли:**
+```
+src/
+├── Data/
+│   ├── ClinicDbContext.cs   ← UPD: DbSet<Appointment>, One-to-Many Fluent API, TPH
+│   ├── DbSeeder.cs          ← UPD: SeedAppointments (Regular, Urgent, Specialist)
+│   └── ClinicRepository.cs  ← NEW: .Include() queries з Eager Loading
+├── Migrations/              ← NEW: AddAppointmentsWithRelations
+├── Models/
+│   ├── Appointment.cs       ← UPD: Id+PatientId+DoctorId private set, IsPaid private set
+│   │                             + Patient? Doctor? navigation props + protected ctor
+│   ├── RegularAppointment.cs← UPD: protected ctor
+│   ├── UrgentAppointment.cs ← UPD: UrgencyNote private set + protected ctor
+│   ├── SpecialistAppointment.cs ← UPD: ConsultationTopic private set + private ctor
+│   ├── Patient.cs           ← UPD: ICollection<Appointment> Appointments
+│   └── Doctor.cs            ← UPD: ICollection<Appointment> Appointments
+```
+
+**ClinicRepository — API:**
+
+| Метод | Include | Примітка |
+|-------|---------|---------|
+| `GetPatientWithAppointments(id)` | `.Include(p => p.Appointments)` | Eager loading |
+| `GetDoctorWithAppointments(id)` | `.Include(d => d.Appointments)` | |
+| `GetUpcomingAppointments()` | `.Include(Patient) + .Include(Doctor)` | 2 JOIN |
+| `GetAppointmentsByPatient(id)` | `.Include(a => a.Doctor)` | Ordered desc |
+| `GetDoctorStats()` | `.AsNoTracking() + .Include` | Read-only projection |
+| `GetPatientsWithActiveAppointments()` | `.Include + .Any()` | Subquery filter |
+
+**Нові концепції в Lab 18:**
+- Navigation Property — `ICollection<T>` (колекція) і `T?` (посилання) у зв'язаних класах
+- Eager Loading — `.Include(lambda)` → один SQL JOIN замість N+1 запитів
+- Проблема N+1 — що це, як виникає, як вирішити через `.Include()`
+- `HasOne/WithMany/HasForeignKey/OnDelete` — Fluent API для One-to-Many
+- `DeleteBehavior.Cascade` vs `DeleteBehavior.Restrict` — і чому не можна два Cascade до однієї таблиці
+- TPH (Table Per Hierarchy) — `HasDiscriminator<string>("Col").HasValue<T>("val")`
+- Підтипи в TPH: одна таблиця, nullable стовпці для специфічних полів
+- `AsNoTracking()` — відключення Change Tracker для read-only запитів
+- `ClinicRepository` — Repository pattern: інкапсуляція складних запитів
+
+---
+
+## Lab 19–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 
