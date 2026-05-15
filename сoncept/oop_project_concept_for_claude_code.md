@@ -309,8 +309,8 @@ git push
 
 ## Поточний стан проєкту
 
-**Завершено:** Lab 00–16 ✅
-**Наступний крок:** Lab 17 — `feature/ef-basic` — EF Core, DbContext, міграції
+**Завершено:** Lab 00–16 ✅, Lab 17 ✅, Lab 18 ✅, Lab 19 ✅, Lab 20 🔄 (в роботі, фінальна на гілці feature/ef-core)
+**Наступний крок:** злити feature/ef-core → main (--no-ff), потім LOC analysis MD файл
 
 **Домен еталону:** Клініка (варіант А).
 

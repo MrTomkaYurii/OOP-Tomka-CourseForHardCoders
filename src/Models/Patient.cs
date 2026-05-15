@@ -13,7 +13,8 @@ public class Patient : IIdentifiable
     private DateTime _dateOfBirth;
     private string _phone = "";
 
-    public int Id { get; }
+    // private set — дозволяє EF Core встановлювати Id після збереження в БД
+    public int Id { get; private set; }
 
     public string FirstName
     {
@@ -43,6 +44,23 @@ public class Patient : IIdentifiable
 
     public string? Email { get; set; }
 
+    // Navigation properties
+    public ICollection<Appointment>   Appointments   { get; private set; } = new List<Appointment>();
+    public ICollection<MedicalRecord> MedicalRecords { get; private set; } = new List<MedicalRecord>();
+
+    // Owned Entity — EmergencyContact зберігається в таблиці Patients (не окрема таблиця)
+    public EmergencyContact? EmergencyContact { get; set; }
+
+    // Concurrency Token — EF перевіряє при UPDATE/DELETE; кидає DbUpdateConcurrencyException якщо застарілий
+    public byte[]? RowVersion { get; private set; }
+
+    // Soft Delete — замість фізичного DELETE: позначаємо IsDeleted = true
+    // Global Query Filter: HasQueryFilter(p => !p.IsDeleted) — EF автоматично додає WHERE IsDeleted = 0
+    public bool IsDeleted { get; private set; }
+
+    // "Видалити" — встановлює прапор, а не фізично видаляє з БД
+    public void SoftDelete() { IsDeleted = true; }
+
     public string FullName => FirstName + " " + LastName;
 
     public int Age
@@ -57,6 +75,10 @@ public class Patient : IIdentifiable
     }
 
     public bool IsAdult => Age >= 18;
+
+    // public Patient() нижче слугує і як EF Core hydration constructor.
+    // EF Core може використовувати будь-який parameterless ctor (public, protected або private).
+    // Оскільки клас вже має public Patient(), окремий protected ctor не потрібен.
 
     public Patient()
         : this("Невідомий", "Пацієнт", new DateTime(2000, 1, 1), BloodType.Unknown, "0000000000")

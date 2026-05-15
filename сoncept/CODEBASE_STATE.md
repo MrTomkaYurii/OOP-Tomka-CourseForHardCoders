@@ -608,7 +608,197 @@ src/
 
 ---
 
-## Lab 17–21 — (детальніше після реалізації попередніх)
+## Lab 17 — EF Core Basic (feature/ef-core)
+
+**Статус:** 🔄 В РОБОТІ
+**Гілка:** `feature/ef-core` — НЕ злито (зливається тільки після Lab 20)
+**Файли:**
+```
+src/
+├── Data/
+│   ├── ClinicDbContext.cs   ← NEW: DbContext з DbSet<Patient>, DbSet<Doctor>
+│   └── DbSeeder.cs          ← NEW: ідемпотентне наповнення 5 пацієнтів + 5 лікарів
+├── Migrations/              ← NEW: auto-generated EF Core
+│   ├── 20260515215137_InitialCreate.cs
+│   ├── 20260515215137_InitialCreate.Designer.cs
+│   └── ClinicDbContextModelSnapshot.cs
+├── Models/
+│   ├── Patient.cs           ← UPD: Id { get; private set; } для EF Core
+│   └── Doctor.cs            ← UPD: Id { get; private set; } для EF Core
+└── ClinicApp.csproj         ← UPD: EF Core 8.0.0 пакети
+```
+
+**Нові пакети:**
+- `Microsoft.EntityFrameworkCore 8.0.0`
+- `Microsoft.EntityFrameworkCore.SqlServer 8.0.0`
+- `Microsoft.EntityFrameworkCore.Design 8.0.0`
+
+**ClinicDbContext — API:**
+
+| Частина | Код | Опис |
+|---------|-----|------|
+| `DbSet<Patient>` | `Set<Patient>()` | Таблиця Patients у вигляді C# |
+| `DbSet<Doctor>` | `Set<Doctor>()` | Таблиця Doctors |
+| `OnConfiguring` | `UseSqlServer(...)` | LocalDB, `(localdb)\mssqllocaldb` |
+| `OnModelCreating` | Fluent API | Правила відображення |
+| Patient конфіг | `HasKey`, `HasMaxLength`, `IsRequired` | Структура таблиці |
+| Patient індекс | `HasIndex(p => p.LastName)` | `IX_Patients_LastName` |
+| Doctor LicenseNumber | `.IsUnique()` | `UX_Doctors_License` |
+| Enum → string | `HasConversion<string>()` | `BloodType`, `Speciality` як текст |
+| WorkSchedule | `ValueConverter<WorkSchedule, string>` | `"8-17"` → `new WorkSchedule(8,17)` |
+
+**Нові концепції в Lab 17:**
+- `DbContext` — посередник між C#-об'єктами і БД; відстежує зміни (Unit of Work)
+- `DbSet<T>` — "таблиця" в C#; LINQ-запити → SQL
+- `OnConfiguring(DbContextOptionsBuilder)` — де і який провайдер
+- `UseSqlServer(connectionString)` — підключення до SQL Server / LocalDB
+- `OnModelCreating(ModelBuilder)` — Fluent API конфігурація
+- `HasKey`, `Property`, `HasMaxLength`, `IsRequired`, `HasColumnName` — налаштування стовпців
+- `ValueGeneratedOnAdd()` — IDENTITY стовпець у БД
+- `HasConversion<string>()` — enum → текстовий рядок у БД
+- `ValueConverter<TModel, TProvider>` — конвертер для struct (WorkSchedule)
+- `HasIndex().IsUnique()` — унікальний індекс
+- `dotnet ef migrations add <Name>` — генерація класу міграції
+- `dotnet ef database update` — застосування міграції до БД
+- `context.SaveChanges()` — фіксація всіх змін однією транзакцією
+- `context.XxxSet.AddRange(items)` — додати колекцію
+- `context.XxxSet.Any()` — `SELECT TOP 1` без завантаження всіх даних
+- Ідемпотентний Seeder: `if (Any()) return`
+
+**Що з'явилося в системі:**
+- База даних `ClinicApp` в LocalDB з таблицями `Patients` і `Doctors`
+- Початкові дані: 5 пацієнтів, 5 лікарів (DbSeeder)
+- `Migrations/` — версійована схема БД
+
+---
+
+## Lab 18 — EF Core: Relations (feature/ef-core)
+
+**Статус:** 🔄 В РОБОТІ
+**Гілка:** `feature/ef-core` — НЕ злито
+**Файли:**
+```
+src/
+├── Data/
+│   ├── ClinicDbContext.cs   ← UPD: DbSet<Appointment>, One-to-Many Fluent API, TPH
+│   ├── DbSeeder.cs          ← UPD: SeedAppointments (Regular, Urgent, Specialist)
+│   └── ClinicRepository.cs  ← NEW: .Include() queries з Eager Loading
+├── Migrations/              ← NEW: AddAppointmentsWithRelations
+├── Models/
+│   ├── Appointment.cs       ← UPD: Id+PatientId+DoctorId private set, IsPaid private set
+│   │                             + Patient? Doctor? navigation props + protected ctor
+│   ├── RegularAppointment.cs← UPD: protected ctor
+│   ├── UrgentAppointment.cs ← UPD: UrgencyNote private set + protected ctor
+│   ├── SpecialistAppointment.cs ← UPD: ConsultationTopic private set + private ctor
+│   ├── Patient.cs           ← UPD: ICollection<Appointment> Appointments
+│   └── Doctor.cs            ← UPD: ICollection<Appointment> Appointments
+```
+
+**ClinicRepository — API:**
+
+| Метод | Include | Примітка |
+|-------|---------|---------|
+| `GetPatientWithAppointments(id)` | `.Include(p => p.Appointments)` | Eager loading |
+| `GetDoctorWithAppointments(id)` | `.Include(d => d.Appointments)` | |
+| `GetUpcomingAppointments()` | `.Include(Patient) + .Include(Doctor)` | 2 JOIN |
+| `GetAppointmentsByPatient(id)` | `.Include(a => a.Doctor)` | Ordered desc |
+| `GetDoctorStats()` | `.AsNoTracking() + .Include` | Read-only projection |
+| `GetPatientsWithActiveAppointments()` | `.Include + .Any()` | Subquery filter |
+
+**Нові концепції в Lab 18:**
+- Navigation Property — `ICollection<T>` (колекція) і `T?` (посилання) у зв'язаних класах
+- Eager Loading — `.Include(lambda)` → один SQL JOIN замість N+1 запитів
+- Проблема N+1 — що це, як виникає, як вирішити через `.Include()`
+- `HasOne/WithMany/HasForeignKey/OnDelete` — Fluent API для One-to-Many
+- `DeleteBehavior.Cascade` vs `DeleteBehavior.Restrict` — і чому не можна два Cascade до однієї таблиці
+- TPH (Table Per Hierarchy) — `HasDiscriminator<string>("Col").HasValue<T>("val")`
+- Підтипи в TPH: одна таблиця, nullable стовпці для специфічних полів
+- `AsNoTracking()` — відключення Change Tracker для read-only запитів
+- `ClinicRepository` — Repository pattern: інкапсуляція складних запитів
+
+---
+
+## Lab 19 — EF Core Advanced (feature/ef-core)
+
+**Статус:** 🔄 В РОБОТІ
+**Гілка:** `feature/ef-core` — НЕ злито
+**Файли:**
+```
+src/
+├── Data/
+│   ├── ClinicDbContext.cs  ← UPD: DbSet<MedicalRecord>, TPH, OwnsOne, RowVersion
+│   └── DbSeeder.cs         ← UPD: SeedMedicalRecords + EmergencyContact
+├── Migrations/             ← NEW: AddMedicalRecordsAndOwnedEntities
+├── Models/
+│   ├── MedicalRecord.cs    ← UPD: private set на Id/PatientId/DoctorId/Date, protected ctor, Patient? nav prop
+│   ├── Diagnosis.cs        ← UPD: protected ctor
+│   ├── LabResult.cs        ← UPD: protected ctor
+│   ├── Prescription.cs     ← UPD: protected ctor + Instructions default ""
+│   ├── EmergencyContact.cs ← NEW: Owned Entity (Name, Phone, Relationship)
+│   └── Patient.cs          ← UPD: ICollection<MedicalRecord>, EmergencyContact?, byte[] RowVersion
+```
+
+**Нові концепції в Lab 19:**
+- TPH для abstract класу: `HasDiscriminator` на `MedicalRecord` → Diagnosis/LabResult/Prescription
+- Nullable стовпці для підтипових полів: `IsRequired(false)` у Fluent API
+- Owned Entity — `OwnsOne(p => p.EmergencyContact, ec => {...})` → стовпці EC_* у Patients
+- Різниця OwnsOne vs ValueConverter: N стовпців (OwnsOne) vs 1 серіалізований рядок (ValueConverter)
+- `IsRowVersion()` — Concurrency Token для Optimistic Concurrency
+- `DbUpdateConcurrencyException` — виняток при конкурентному редагуванні
+- Порядок Seeder: Patients → Doctors → Appointments → MedicalRecords (залежність від реальних Ids)
+
+---
+
+## Lab 20 — EF Core Queries (feature/ef-core)
+
+**Статус:** 🔄 В РОБОТІ (остання лаба на цій гілці)
+**Гілка:** `feature/ef-core` — НЕ злито (злиття після фіналу)
+**Файли:**
+```
+src/
+├── Data/
+│   ├── ClinicDbContext.cs     ← UPD: HasQueryFilter(!IsDeleted), IsDeleted default false
+│   └── ClinicQueryService.cs  ← NEW: IQueryable demo, Skip/Take, Select DTO, IgnoreQueryFilters
+├── Migrations/                ← NEW: AddSoftDeleteAndQueryFilter (IsDeleted column)
+├── Models/
+│   ├── Patient.cs             ← UPD: bool IsDeleted + SoftDelete()
+│   ├── PatientSummaryDto.cs   ← NEW: record DTO
+│   └── AppointmentSummaryDto.cs ← NEW: record DTO
+```
+
+**ClinicQueryService — API:**
+
+| Метод | Концепція | Опис |
+|-------|-----------|------|
+| `QueryPatients()` | IQueryable | Повертає невиконаний запит |
+| `DemoQueryableVsEnumerable(filter)` | IQueryable vs IEnumerable | Демо різниці |
+| `GetPatientsPaged(page, size, orderBy)` | Skip/Take | Пагінація + Count |
+| `GetAppointmentsPaged(page, size, status?, patientId?)` | Dynamic filter | Nullable умови |
+| `GetPatientSummaries(page, size)` | Projection | Select → PatientSummaryDto |
+| `GetAppointmentSummaries(page, size, status?)` | Projection | Select → AppointmentSummaryDto |
+| `SoftDeletePatient(id)` | Soft Delete | IsDeleted = true |
+| `GetAllPatientsIncludingDeleted()` | IgnoreQueryFilters | Всі включно з видаленими |
+| `GetDeletedPatients()` | IgnoreQueryFilters + filter | Тільки видалені |
+| `GetDoctorRevenueSummary()` | Tuple projection | AsNoTracking + Sum |
+
+**Нові концепції в Lab 20:**
+- `IQueryable<T>` — відкладене виконання (Expression Tree → SQL при матеріалізації)
+- Матеріалізація: `.ToList()`, `.Count()`, `.FirstOrDefault()`, `foreach` — виконують SQL
+- `.ToList()` в середині ланцюга → решта LINQ в C#, не SQL (антипатерн)
+- `.Skip(n).Take(m)` → SQL `OFFSET n ROWS FETCH NEXT m ROWS ONLY` (пагінація)
+- Обов'язковість `.OrderBy()` перед `.Skip()/.Take()`
+- `(List<T> Items, int TotalCount)` — результат пагінованого запиту
+- `Select(p => new DTO(...))` — проєкція тільки потрібних стовпців
+- `record` тип для DTO — immutable, автогенеровані Equals/GetHashCode
+- `HasQueryFilter(expr)` — Global Query Filter (автоматичний WHERE у кожному запиті)
+- `IsDeleted` + `SoftDelete()` — патерн м'якого видалення
+- `.IgnoreQueryFilters()` — скасування Global Filter для конкретного запиту
+- Nullable параметри як умовні фільтри: `if (x.HasValue) query = query.Where(...)`
+- EF попередження про Global Filter + required end of relationship
+
+---
+
+## Lab 21 — (після злиття EF Core гілки)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 

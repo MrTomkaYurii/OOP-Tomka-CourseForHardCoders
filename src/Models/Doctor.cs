@@ -13,7 +13,8 @@ public class Doctor : ISchedulable, IIdentifiable
     private string _licenseNumber = "";
     private string _phone = "";
 
-    public int Id { get; }
+    // private set — дозволяє EF Core встановлювати Id після збереження в БД
+    public int Id { get; private set; }
 
     public string FirstName
     {
@@ -48,8 +49,14 @@ public class Doctor : ISchedulable, IIdentifiable
 
     public WorkSchedule Schedule { get; set; }
 
+    // Navigation property — EF Core заповнює через .Include(d => d.Appointments)
+    public ICollection<Appointment> Appointments { get; private set; } = new List<Appointment>();
+
     public string FullName => FirstName + " " + LastName;
     public bool IsAvailableNow => Schedule.IsNow;
+
+    // public Doctor() нижче слугує і як EF Core hydration constructor.
+    // EF Core після виклику parameterless ctor встановлює кожну властивість через setter.
 
     public Doctor()
         : this("Невідомий", "Лікар", Speciality.General, "LIC-000", "0000000000")

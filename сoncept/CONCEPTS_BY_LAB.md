@@ -85,10 +85,35 @@
 | `new SelectionPrompt<string>()`, `new TextPrompt<T>()` | 16 | |
 | `new BarChart()`, `AnsiConsole.Status()` (spinner) | 16 | |
 | Фасад-патерн над бібліотекою: `ClinicRenderer` | 16 | |
-| EF Core: `DbContext`, `DbSet<T>`, міграції | 17 | |
-| EF: One-to-Many, Many-to-Many, зовнішні ключі | 18 | |
-| EF: TPH, Owned Entity, Concurrency | 19 | |
-| EF: `IQueryable<T>`, `.Skip/.Take`, проєкції | 20 | |
+| `DbContext`, `DbSet<T>`, `OnConfiguring`, `OnModelCreating` | 17 | EF Core ядро |
+| `UseSqlServer(connectionString)` — LocalDB провайдер | 17 | |
+| Fluent API: `HasKey`, `Property`, `HasMaxLength`, `IsRequired` | 17 | |
+| `ValueGeneratedOnAdd()` — IDENTITY стовпець | 17 | |
+| `HasConversion<string>()` — enum → рядок у БД | 17 | |
+| `ValueConverter<TModel, TProvider>` — конвертер для struct | 17 | WorkSchedule → "8-17" |
+| `HasIndex().IsUnique()` — унікальний індекс | 17 | |
+| `dotnet ef migrations add`, `dotnet ef database update` | 17 | CLI міграцій |
+| `context.SaveChanges()` — транзакція всіх змін | 17 | |
+| `context.Set.Any()` — `SELECT TOP 1` без завантаження | 17 | |
+| `Id { get; private set; }` — EF Core сумісність | 17 | патерн для Value Object |
+| EF: Navigation Properties — `ICollection<T>` (колекція) і `T?` (посилання) | 18 | |
+| EF: Eager Loading `.Include(lambda)` → SQL JOIN (вирішення N+1) | 18 | |
+| EF: `HasOne/WithMany/HasForeignKey/OnDelete` — One-to-Many Fluent API | 18 | |
+| EF: `DeleteBehavior.Cascade` vs `.Restrict` — і чому не два Cascade | 18 | |
+| EF: `HasDiscriminator<string>().HasValue<T>()` — TPH дискримінатор | 18 | |
+| EF: Repository pattern — `ClinicRepository` з `.Include()` запитами | 18 | |
+| EF: TPH для abstract класу — nullable стовпці підтипів | 19 | MedicalRecord ієрархія |
+| EF: `OwnsOne(p => p.Contact, ec => {...})` — Owned Entity | 19 | EmergencyContact |
+| EF: `IsRowVersion()` — Optimistic Concurrency Token | 19 | |
+| EF: `DbUpdateConcurrencyException` — конкурентне редагування | 19 | |
+| `record` — immutable тип, автогенеровані Equals/ToString | 20 | DTO патерн |
+| EF: `IQueryable<T>` — відкладене виконання, Expression Tree | 20 | |
+| EF: `.ToList()` в середині chain → LINQ to Objects (антипатерн) | 20 | |
+| EF: `.Skip(n).Take(m)` → SQL OFFSET/FETCH NEXT (пагінація) | 20 | |
+| EF: `Select(p => new DTO(...))` — проєкція конкретних стовпців | 20 | |
+| EF: `HasQueryFilter(expr)` — Global Query Filter (автоматичний WHERE) | 20 | |
+| EF: `.IgnoreQueryFilters()` — скасування глобального фільтра | 20 | |
+| Soft Delete патерн: `IsDeleted` bool + `SoftDelete()` метод | 20 | |
 | DI контейнер, SOLID принципи | 21 | |
 
 ---

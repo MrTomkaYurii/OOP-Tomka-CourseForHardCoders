@@ -26,9 +26,12 @@ public class Prescription : MedicalRecord
         set { ClinicValidator.ValidatePositive(value, "Тривалість курсу"); _durationDays = value; }
     }
 
-    public string Instructions { get; set; }
+    public string Instructions { get; set; } = "";
 
     public DateTime ExpiresAt => Date.AddDays(DurationDays);
+
+    // EF Core hydration constructor
+    protected Prescription() { }
 
     public Prescription(int patientId, int doctorId, DateTime date,
                         string medicationName, string dosage,
