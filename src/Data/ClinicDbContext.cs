@@ -78,6 +78,14 @@ public class ClinicDbContext : DbContext
 
             // Індекс для прискорення пошуку за прізвищем
             entity.HasIndex(p => p.LastName).HasDatabaseName("IX_Patients_LastName");
+
+            // Soft Delete — IsDeleted прапор замість фізичного DELETE
+            entity.Property(p => p.IsDeleted).HasDefaultValue(false);
+
+            // Global Query Filter (Lab 20): автоматично додає WHERE IsDeleted = 0 до кожного запиту.
+            // Не потрібно писати .Where(p => !p.IsDeleted) вручну скрізь.
+            // Щоб побачити "видалені" — використати .IgnoreQueryFilters()
+            entity.HasQueryFilter(p => !p.IsDeleted);
         });
 
         // ── Task 3: Таблиця Doctors ───────────────────────────────
