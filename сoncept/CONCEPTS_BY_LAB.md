@@ -78,7 +78,13 @@
 | Fluent interface — `return this` для ланцюга | 15 | |
 | `Stream`, `StreamReader/Writer`, `File`, `Directory` | 16 | |
 | `System.Text.Json` (серіалізація) | 15 | |
-| `Console.Clear()`, `ConsoleColor`, `SetCursorPosition` | 16 | |
+| NuGet-пакет: `dotnet add package`, `<PackageReference>` | 16 | |
+| `using Spectre.Console;` — зовнішня бібліотека | 16 | |
+| `AnsiConsole.MarkupLine("[color]...[/]")`, `Markup.Escape()` | 16 | |
+| `new Rule(...)`, `new Table()`, `new Panel()`, `new Tree()` | 16 | |
+| `new SelectionPrompt<string>()`, `new TextPrompt<T>()` | 16 | |
+| `new BarChart()`, `AnsiConsole.Status()` (spinner) | 16 | |
+| Фасад-патерн над бібліотекою: `ClinicRenderer` | 16 | |
 | EF Core: `DbContext`, `DbSet<T>`, міграції | 17 | |
 | EF: One-to-Many, Many-to-Many, зовнішні ключі | 18 | |
 | EF: TPH, Owned Entity, Concurrency | 19 | |
@@ -381,14 +387,28 @@
 
 ---
 
-### Lab 16 — Streams & JSON (feature/storage → зливається)
+### Lab 16 — Console UI — Spectre.Console (feature/console-ui → злито в main) ✅
 
-**Нові конструкції:**
-- `StreamWriter`, `StreamReader`
-- `File.WriteAllText()`, `File.ReadAllText()`
-- `FileInfo`, `DirectoryInfo`, `Path`
-- `JsonSerializer.Serialize/Deserialize<T>()`
-- `using` statement для IDisposable
+**Нові концепції:**
+- NuGet-пакет: `dotnet add package`, `<PackageReference>` у `.csproj`
+- `using Spectre.Console;` — підключення зовнішньої бібліотеки
+- `AnsiConsole.MarkupLine("[color]...[/]")` — ANSI-розмітка
+- `Markup.Escape(text)` — захист від markup injection
+- `new Rule(...)` — горизонтальний роздільник із заголовком
+- `new Table().Border(...).AddColumn(...).AddRow(...)` — таблиця з рамкою
+- `new TableColumn(...).Centered()/.RightAligned()` — вирівнювання колонок
+- `new SelectionPrompt<string>().Title(...).AddChoices(...)` — меню зі стрілками
+- `new TextPrompt<T>().ValidationErrorMessage(...)` — типізоване введення з авто-валідацією
+- `new ConfirmationPrompt(...)` — запит yes/no
+- `new Panel(content) { Header, Border, Padding }` — рамка навколо контенту
+- `new Tree(root).AddNode(branch).AddNode(leaf)` — ієрархічне відображення
+- `new BarChart().AddItem(label, value, color)` — стовпчаста діаграма
+- `AnsiConsole.Status().Spinner(Known.Dots).Start(msg, ctx => {...})` — спіннер
+- Фасад-патерн: `ClinicRenderer` ховає Spectre.Console від `Program.cs`
+- SRP: `Program.cs` вирішує "що показати"; `ClinicRenderer` вирішує "як"
+
+**Нова папка:** `src/UI/ClinicRenderer.cs`
+**Зміни:** `Program.cs` повністю переписано на `ClinicRenderer.*`
 
 ---
 
