@@ -403,7 +403,7 @@ export function getLectures(): Promise<Lecture[]> {
         const slug = entry.name.replace(/\.md$/, "");
         const title = data.title ?? markdown.match(/^##\s+(.+)$/m)?.[1]?.trim() ?? `Лекція ${numberLabel}`;
         const chapterTitle = data.chapterTitle ?? lectureChapterTitle(chapter);
-        const rendered = await renderMarkdown(markdown, { assetPrefix: siteAssetPath("/lecture-assets/docx") });
+        const rendered = await renderMarkdown(markdown, { assetPrefix: siteAssetPath("/_assets/_docx") });
         const summary = summaries[slug];
 
         return {
