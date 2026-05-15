@@ -90,6 +90,7 @@ while (running)
     Console.WriteLine("║  8. Аналітика      — статистика, рейтинги   ║");
     Console.WriteLine("║  9. Плани лікування — рефлексія, атрибути   ║");
     Console.WriteLine("║ 10. Файли           — експорт, імпорт, лог  ║");
+    Console.WriteLine("║ 11. Звіти           — LINQ-аналітика        ║");
     Console.WriteLine("║  0. Вийти (зберегти сесію)                  ║");
     Console.WriteLine("╚══════════════════════════════════════════════╝");
     Console.Write("Оберіть розділ: ");
@@ -109,6 +110,7 @@ while (running)
         case "8": AnalyticsMenu(clinic); break;
         case "9":  TreatmentPlansMenu(clinic); break;
         case "10": FilesMenu(clinic); break;
+        case "11": ReportsMenu(clinic); break;
         case "0":
             clinic.Tracker.PrintSummary();
             clinic.Tracker.SaveSummary();
@@ -806,6 +808,93 @@ static void PrintPatientStats(List<PatientStats> stats)
 {
     for (int i = 0; i < stats.Count; i++)
         Console.WriteLine("  " + (i + 1) + ". " + stats[i]);
+}
+
+// ──────────────────────────────────────────────
+//  Меню звітів (Lab 14 — LINQ)
+// ──────────────────────────────────────────────
+static void ReportsMenu(Clinic clinic)
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        Console.WriteLine("── Звіти (LINQ) ──────────────────────");
+        Console.WriteLine("  1. Статистика по спеціальностях");
+        Console.WriteLine("  2. Найзайнятіший лікар");
+        Console.WriteLine("  3. Пацієнти з кількома візитами");
+        Console.WriteLine("  4. Топ-3 лікарів за виручкою");
+        Console.WriteLine("  5. Чи є термінові записи?");
+        Console.WriteLine("  6. Активні спеціальності");
+        Console.WriteLine("  7. Виручка по місяцях");
+        Console.WriteLine("  0. Назад");
+        Console.Write("Оберіть: ");
+
+        string cmd = Console.ReadLine() ?? "";
+        Console.WriteLine();
+
+        switch (cmd)
+        {
+            case "1":
+                Console.WriteLine("=== Статистика по спеціальностях ===");
+                foreach (var r in clinic.Reports.GetSpecialityStats())
+                    Console.WriteLine("  " + r);
+                break;
+
+            case "2":
+                string? busiest = clinic.Reports.FindBusiestDoctorName();
+                Console.WriteLine("Найзайнятіший лікар: " + (busiest ?? "немає даних"));
+                break;
+
+            case "3":
+                Console.Write("Мінімальна кількість візитів: ");
+                int.TryParse(Console.ReadLine(), out int minVisits);
+                var names = clinic.Reports.GetPatientsWithMultipleVisits(minVisits).ToList();
+                if (names.Count == 0)
+                    Console.WriteLine("Таких пацієнтів немає.");
+                else
+                {
+                    Console.WriteLine("Пацієнти з " + minVisits + "+ візитами (" + names.Count + "):");
+                    foreach (string name in names)
+                        Console.WriteLine("  — " + name);
+                }
+                break;
+
+            case "4":
+                Console.WriteLine("=== Топ-3 лікарів за виручкою ===");
+                int rank = 1;
+                foreach (DoctorStats s in clinic.Reports.GetTopEarners(3))
+                    Console.WriteLine("  " + rank++ + ". " + s);
+                break;
+
+            case "5":
+                bool hasUrgent = clinic.Reports.HasAnyUrgentAppointments();
+                Console.WriteLine(hasUrgent
+                    ? "У системі є термінові записи."
+                    : "Термінових записів немає.");
+                break;
+
+            case "6":
+                Console.WriteLine("Активні спеціальності:");
+                foreach (var spec in clinic.Reports.GetActiveSpecialities())
+                    Console.WriteLine("  — " + spec);
+                break;
+
+            case "7":
+                Console.WriteLine("=== Виручка по місяцях ===");
+                foreach (var (year, month, total) in clinic.Reports.GetMonthlyRevenue())
+                    Console.WriteLine("  " + year + "/" + month.ToString("D2") + " — " + total.ToString("F2") + " грн");
+                break;
+
+            case "0":
+                inMenu = false;
+                break;
+
+            default:
+                Console.WriteLine("Невідома команда.");
+                break;
+        }
+        Console.WriteLine();
+    }
 }
 
 // Lab13 Task1: простий обробник для демонстрації механіки події
