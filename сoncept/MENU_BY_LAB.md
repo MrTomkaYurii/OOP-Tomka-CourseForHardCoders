@@ -7,19 +7,20 @@
 
 ## Головне меню — еволюція
 
-| Пункт меню                    | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 | Lab 09 | Lab 10 | Lab 11 | Lab 12 | Lab 13 |
-|-------------------------------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
-| 1. Пацієнти                   | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 2. Лікарі                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 3. Записи                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 4. Медична картка             | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 5. Рахунки                    | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
-| 6. Черга — очікування, прийом | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     |
-| 7. Звіт                       | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (7) | ✅ (7) | ✅ (7) | ✅ (7) | ✅ (7) |
-| 8. Аналітика                  | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     |
-| 9. Плани лікування            | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     |
-| 10. Файли                     | —      | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     |
-| 0. Вийти (зберегти сесію)     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅ UPD | ✅ UPD |
+| Пункт меню                    | Lab 03 | Lab 04 | Lab 05 | Lab 06 | Lab 07 | Lab 08 | Lab 09 | Lab 10 | Lab 11 | Lab 12 | Lab 13 | Lab 14 |
+|-------------------------------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
+| 1. Пацієнти                   | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 2. Лікарі                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 3. Записи                     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 4. Медична картка             | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 5. Рахунки                    | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 6. Черга — очікування, прийом | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     | ✅     |
+| 7. Звіт                       | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (6) | ✅ (7) | ✅ (7) | ✅ (7) | ✅ (7) | ✅ (7) | ✅ (7) |
+| 8. Аналітика                  | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     | ✅     |
+| 9. Плани лікування            | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     | ✅     |
+| 10. Файли                     | —      | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW | ✅     | ✅     |
+| 11. Звіти (LINQ)              | —      | —      | —      | —      | —      | —      | —      | —      | —      | —      | —      | ✅ NEW |
+| 0. Вийти (зберегти сесію)     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅     | ✅ UPD | ✅ UPD | ✅     |
 
 > Lab 07: головне меню отримало **описи через дефіс** (напр. "1. Пацієнти — реєстрація, пошук").  
 > Lab 08: меню **не змінюється** — внутрішні зміни (підкласи Appointment).  
@@ -27,7 +28,8 @@
 > Lab 10: доданий пункт **8. Аналітика** — новий модуль статистики.  
 > Lab 11: доданий пункт **9. Плани лікування** — рефлексія та атрибути.  
 > Lab 12: доданий пункт **10. Файли**; вихід тепер пропонує зберегти сесію.  
-> Lab 13: меню **не змінюється** — авто-поведінка: лог у файл, паспорт пацієнта, алерти, трекер сесії.
+> Lab 13: меню **не змінюється** — авто-поведінка: лог у файл, паспорт пацієнта, алерти, трекер сесії.  
+> Lab 14: доданий пункт **11. Звіти** — LINQ-аналітика по спеціальностях, топ, місячна виручка.
 
 ---
 
@@ -323,6 +325,34 @@
 
 ---
 
+## 11. Звіти — LINQ-аналітика *(додано в Lab 14)*
+
+| Підпункт                          | Метод                              | LINQ-оператори                          |
+|-----------------------------------|------------------------------------|-----------------------------------------|
+| 1. Статистика по спеціальностях   | `Reports.GetSpecialityStats()`     | `GroupBy` + `Select` + `OrderByDescending` |
+| 2. Найзайнятіший лікар            | `Reports.FindBusiestDoctorName()`  | `OrderByDescending` + `FirstOrDefault`  |
+| 3. Пацієнти з кількома візитами   | `Reports.GetPatientsWithMultipleVisits(n)` | `GroupBy` + `Where` + `Join`   |
+| 4. Топ-3 лікарів за виручкою      | `Reports.GetTopEarners(3)`         | `Select` + `OrderByDescending` + `Take` |
+| 5. Чи є термінові записи?         | `Reports.HasAnyUrgentAppointments()` | `Any` + `is`                          |
+| 6. Активні спеціальності          | `Reports.GetActiveSpecialities()`  | `Select` + `Distinct` + `OrderBy`      |
+| 7. Виручка по місяцях             | `Reports.GetMonthlyRevenue()`      | `GroupBy` (анонімний тип) + `ThenBy`   |
+
+**Нові класи в Lab 14:**
+
+| Клас / файл          | Простір імен           | Призначення                                            |
+|----------------------|------------------------|--------------------------------------------------------|
+| `SpecialityReport`   | `ClinicApp.Models`     | DTO: Speciality, DoctorCount, AppointmentCount, TotalRevenue |
+| `ReportManager`      | `ClinicApp.Managers`   | 7 LINQ-звітів; залежить від Appointment/Doctor/Patient |
+
+**`AnalyticsManager` — рефакторинг в Lab 14:**
+
+| Метод | До (Lab 10) | Після (Lab 14) |
+|-------|-------------|----------------|
+| `ComputeDoctorStats()` | `yield return` з вкладеними `for` | `.Select()` + `.Where()` + `.Count()` + `.Sum()` + `.Max()` + `.Any()` |
+| `ComputePatientStats()` | `yield return` з вкладеними `for` | те саме — без `yield return` |
+
+---
+
 ## Тестові дані (seeded при старті)
 
 | Що               | Кількість | Додано  | Примітка                                                  |
@@ -374,6 +404,7 @@ src/
 │   ├── WaitingQueue.cs          — Lab 09 (generic WaitingQueue<T> над Queue<T>)
 │   ├── DoctorStats.cs           — Lab 10 (IComparable<DoctorStats>)
 │   ├── PatientStats.cs          — Lab 10 (IComparable<PatientStats>)
+│   ├── SpecialityReport.cs      — Lab 14 (DTO: Speciality, DoctorCount, AppointmentCount, TotalRevenue)
 │   ├── WorkSchedule.cs          — Lab 04 (struct)
 │   ├── MedicalRecord.cs         — Lab 06 (abstract)
 │   ├── Diagnosis.cs             — Lab 06
@@ -396,7 +427,8 @@ src/
 │   ├── MedicalRecordManager.cs  — Lab 06
 │   ├── BillingManager.cs        — Lab 07 → Lab 13 (event PaymentReceived)
 │   ├── Repository.cs            — Lab 09 (generic Repository<T> where T : IIdentifiable)
-│   ├── AnalyticsManager.cs      — Lab 10 (IEnumerable<DoctorStats/PatientStats> з yield return)
+│   ├── AnalyticsManager.cs      — Lab 10 (yield return) → Lab 14 (LINQ rewrite)
+│   ├── ReportManager.cs         — Lab 14 (7 LINQ-звітів: GroupBy, Join, OrderBy+Take, Any, Distinct)
 │   └── TreatmentPlanManager.cs  — Lab 11 → Lab 13 (event PlanCompleted; методи Activate/Complete/Cancel)
 │
 └── Utils/

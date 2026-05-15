@@ -478,7 +478,53 @@ src/
 
 ---
 
-## Lab 14–21 — (детальніше після реалізації попередніх)
+## Lab 14 — LINQ (feature/linq)
+
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/linq` — ✅ злито в main
+**Файли:**
+```
+src/
+├── Models/
+│   └── SpecialityReport.cs      ← NEW: DTO — спеціальність, кількість лікарів, прийомів, виручка
+└── Managers/
+    ├── AnalyticsManager.cs      ← REWRITE: for-цикли → LINQ (.Select/.Where/.Count/.Sum/.Max/.Any)
+    └── ReportManager.cs         ← NEW: 7 LINQ-звітів (GroupBy, Join, OrderBy+Take, Any, Distinct, місяць)
+```
+
+**Зміни в існуючих файлах:**
+- `Clinic.cs` — `public ReportManager Reports { get; }` + ініціалізація
+- `Program.cs` — пункт "11. Звіти — LINQ-аналітика", `ReportsMenu()`
+
+**Нові концепції в Lab 14:**
+- `.Where(predicate)`, `.Select(selector)` — фільтрація та проєкція
+- `.Count()`, `.Sum()`, `.Max()`, `.Any()` — агрегати
+- `.OrderBy()`, `.OrderByDescending()`, `.ThenBy()` — сортування
+- `.GroupBy(key)` — групування за ключем
+- `.Join(...)` — з'єднання двох колекцій
+- `.FirstOrDefault()` — перший або null
+- `.Take(n)` — взяти перші N елементів
+- `.Distinct()` — унікальні значення
+- Анонімний тип у `GroupBy`: `new { a.Year, a.Month }`
+- Value tuple як тип повернення: `(int Year, int Month, decimal Total)`
+
+**Нові методи ReportManager:**
+
+| Метод | LINQ-оператори | Результат |
+|-------|----------------|-----------|
+| `GetSpecialityStats()` | `GroupBy` + `Select` + `Contains` + `OrderByDescending` | статистика по спеціальностях |
+| `FindBusiestDoctorName()` | `OrderByDescending` + `Select` + `FirstOrDefault` | ім'я найзайнятішого лікаря |
+| `GetPatientsWithMultipleVisits(n)` | `GroupBy` + `Where` + `Join` | імена пацієнтів з N+ візитами |
+| `GetTopEarners(n)` | `Select` + `OrderByDescending` + `Take` | топ-N лікарів за виручкою |
+| `HasAnyUrgentAppointments()` | `Any` + `is` | чи є термінові записи |
+| `GetActiveSpecialities()` | `Select` + `Distinct` + `OrderBy` | унікальні спеціальності |
+| `GetMonthlyRevenue()` | `GroupBy` (анонімний тип) + `Select` (tuple) + `OrderBy` + `ThenBy` | виручка по місяцях |
+
+**Нове в меню:** пункт 11 "Звіти — LINQ-аналітика" → 7 підпунктів
+
+---
+
+## Lab 15–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 

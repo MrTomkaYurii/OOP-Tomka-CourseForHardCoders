@@ -72,8 +72,8 @@
 | LINQ (`.Where`, `.Select`, `.OrderBy`, `.GroupBy`, `.Join`, | 14 | |
 |   `.FirstOrDefault`, `.Any`, `.Sum`, `.Average`, `.Min`, `.Max`, | | |
 |   `.Count(predicate)`, `.ToList()`, `.ToArray()`) | | |
-| `Func<>`, `Action<>`, `Predicate<>`, lambda як змінна | 14 | |
-| `Stream`, `StreamReader/Writer`, `File`, `Directory` | 15 | |
+| `Func<>`, `Action<>`, `Predicate<>`, lambda як змінна | 15 | |
+| `Stream`, `StreamReader/Writer`, `File`, `Directory` | 16 | |
 | `System.Text.Json` (серіалізація) | 15 | |
 | `Console.Clear()`, `ConsoleColor`, `SetCursorPosition` | 16 | |
 | EF Core: `DbContext`, `DbSet<T>`, міграції | 17 | |
@@ -347,21 +347,23 @@
 
 ---
 
-### Lab 14 — LINQ (feature/linq → зливається)
+### Lab 14 — LINQ (feature/linq → злито в main) ✅
 
-**Нові конструкції (увесь LINQ!):**
+**Нові конструкції:**
 - `.Where(predicate)`, `.Select(selector)`, `.ToList()`, `.ToArray()`
 - `.OrderBy(key)`, `.OrderByDescending(key)`, `.ThenBy(key)`
-- `.GroupBy(key)`, `.Join(...)`, `.First/FirstOrDefault()`
-- `.Any(pred)`, `.All(pred)`, `.Count(pred)`
-- `.Sum()`, `.Average()`, `.Min()`, `.Max()`, `.MinBy()`, `.MaxBy()`
-- Query syntax: `from x in source where ... select ...`
+- `.GroupBy(key)`, `.Join(...)`, `.FirstOrDefault()`
+- `.Any(pred)`, `.Count(pred)`, `.Sum()`, `.Max()`
+- `.Take(n)`, `.Distinct()`
+- Анонімний тип у `GroupBy`: `new { a.Year, a.Month }`
+- Value tuple як тип повернення: `(int Year, int Month, decimal Total)`
 
-**Перехід:** Усі Manager-методи з Lab 03-12 що використовували ручні цикли для пошуку/фільтрації можна спростити через LINQ
+**Що змінилось:** `AnalyticsManager` — рефакторинг з `yield return` + `for` → LINQ-ланцюги.  
+**Що додалось:** `SpecialityReport` (DTO), `ReportManager` (7 звітів), пункт меню 11.
 
 ---
 
-### Lab 14 — Functional (feature/functional → чекає Lab15)
+### Lab 15 — Functional (feature/functional → чекає)
 
 **Нові конструкції:**
 - `Func<T, TResult>`, `Action<T>`, `Predicate<T>`
@@ -372,7 +374,7 @@
 
 ---
 
-### Lab 15 — Streams & Files (feature/storage → зливається)
+### Lab 16 — Streams & Files (feature/storage → зливається)
 
 **Нові конструкції:**
 - `StreamWriter`, `StreamReader`
