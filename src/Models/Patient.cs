@@ -13,7 +13,8 @@ public class Patient : IIdentifiable
     private DateTime _dateOfBirth;
     private string _phone = "";
 
-    public int Id { get; }
+    // private set — дозволяє EF Core встановлювати Id після збереження в БД
+    public int Id { get; private set; }
 
     public string FirstName
     {
@@ -57,6 +58,10 @@ public class Patient : IIdentifiable
     }
 
     public bool IsAdult => Age >= 18;
+
+    // public Patient() нижче слугує і як EF Core hydration constructor.
+    // EF Core може використовувати будь-який parameterless ctor (public, protected або private).
+    // Оскільки клас вже має public Patient(), окремий protected ctor не потрібен.
 
     public Patient()
         : this("Невідомий", "Пацієнт", new DateTime(2000, 1, 1), BloodType.Unknown, "0000000000")
