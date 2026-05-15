@@ -44,9 +44,17 @@ public class Patient : IIdentifiable
 
     public string? Email { get; set; }
 
-    // Navigation property — EF Core заповнює цю колекцію через .Include(p => p.Appointments)
-    // Без .Include() — залишається порожньою (lazy loading за замовчуванням вимкнено)
-    public ICollection<Appointment> Appointments { get; private set; } = new List<Appointment>();
+    // Navigation properties
+    public ICollection<Appointment>   Appointments   { get; private set; } = new List<Appointment>();
+    public ICollection<MedicalRecord> MedicalRecords { get; private set; } = new List<MedicalRecord>();
+
+    // Owned Entity — EmergencyContact зберігається в таблиці Patients (не окрема таблиця)
+    // null — якщо контакт не вказано
+    public EmergencyContact? EmergencyContact { get; set; }
+
+    // Concurrency Token — EF порівнює при UPDATE; кидає DbUpdateConcurrencyException якщо різні
+    // SQL Server автоматично оновлює RowVersion при кожній зміні рядка
+    public byte[]? RowVersion { get; private set; }
 
     public string FullName => FirstName + " " + LastName;
 

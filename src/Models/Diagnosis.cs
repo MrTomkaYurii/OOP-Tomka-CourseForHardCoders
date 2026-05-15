@@ -21,6 +21,9 @@ public class Diagnosis : MedicalRecord
 
     public bool IsChronic { get; set; }
 
+    // EF Core hydration constructor
+    protected Diagnosis() { }
+
     public Diagnosis(int patientId, int doctorId, DateTime date,
                      string diagnosisCode, string description, bool isChronic = false)
         : base(patientId, doctorId, date)

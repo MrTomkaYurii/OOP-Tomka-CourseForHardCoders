@@ -30,6 +30,9 @@ public class LabResult : MedicalRecord
 
     public bool IsNormal { get; set; }
 
+    // EF Core hydration constructor
+    protected LabResult() { }
+
     public LabResult(int patientId, int doctorId, DateTime date,
                      string testName, double value, string unit,
                      string referenceRange, bool isNormal)
