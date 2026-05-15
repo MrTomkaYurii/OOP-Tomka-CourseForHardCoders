@@ -309,8 +309,8 @@ git push
 
 ## Поточний стан проєкту
 
-**Завершено:** Lab 00–16 ✅, Lab 17 ✅, Lab 18 🔄 (в роботі, гілка feature/ef-core)
-**Наступний крок:** Lab 19 — MedicalRecord TPH, Owned Entity, Value Objects
+**Завершено:** Lab 00–16 ✅, Lab 17 ✅, Lab 18 ✅, Lab 19 🔄 (в роботі, гілка feature/ef-core)
+**Наступний крок:** Lab 20 — IQueryable, pagination, projections, raw SQL
 
 **Домен еталону:** Клініка (варіант А).
 

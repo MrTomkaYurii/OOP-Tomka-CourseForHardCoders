@@ -718,7 +718,38 @@ src/
 
 ---
 
-## Lab 19–21 — (детальніше після реалізації попередніх)
+## Lab 19 — EF Core Advanced (feature/ef-core)
+
+**Статус:** 🔄 В РОБОТІ
+**Гілка:** `feature/ef-core` — НЕ злито
+**Файли:**
+```
+src/
+├── Data/
+│   ├── ClinicDbContext.cs  ← UPD: DbSet<MedicalRecord>, TPH, OwnsOne, RowVersion
+│   └── DbSeeder.cs         ← UPD: SeedMedicalRecords + EmergencyContact
+├── Migrations/             ← NEW: AddMedicalRecordsAndOwnedEntities
+├── Models/
+│   ├── MedicalRecord.cs    ← UPD: private set на Id/PatientId/DoctorId/Date, protected ctor, Patient? nav prop
+│   ├── Diagnosis.cs        ← UPD: protected ctor
+│   ├── LabResult.cs        ← UPD: protected ctor
+│   ├── Prescription.cs     ← UPD: protected ctor + Instructions default ""
+│   ├── EmergencyContact.cs ← NEW: Owned Entity (Name, Phone, Relationship)
+│   └── Patient.cs          ← UPD: ICollection<MedicalRecord>, EmergencyContact?, byte[] RowVersion
+```
+
+**Нові концепції в Lab 19:**
+- TPH для abstract класу: `HasDiscriminator` на `MedicalRecord` → Diagnosis/LabResult/Prescription
+- Nullable стовпці для підтипових полів: `IsRequired(false)` у Fluent API
+- Owned Entity — `OwnsOne(p => p.EmergencyContact, ec => {...})` → стовпці EC_* у Patients
+- Різниця OwnsOne vs ValueConverter: N стовпців (OwnsOne) vs 1 серіалізований рядок (ValueConverter)
+- `IsRowVersion()` — Concurrency Token для Optimistic Concurrency
+- `DbUpdateConcurrencyException` — виняток при конкурентному редагуванні
+- Порядок Seeder: Patients → Doctors → Appointments → MedicalRecords (залежність від реальних Ids)
+
+---
+
+## Lab 20–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 
