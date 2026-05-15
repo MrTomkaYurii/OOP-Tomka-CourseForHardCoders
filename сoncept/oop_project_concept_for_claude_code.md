@@ -309,8 +309,8 @@ git push
 
 ## Поточний стан проєкту
 
-**Завершено:** Lab 00–16 ✅
-**Наступний крок:** Lab 17 — `feature/ef-basic` — EF Core, DbContext, міграції
+**Завершено:** Lab 00–16 ✅, Lab 17 🔄 (в роботі, гілка feature/ef-core)
+**Наступний крок:** Lab 18 — Navigation Properties, One-to-Many, `.Include()`
 
 **Домен еталону:** Клініка (варіант А).
 

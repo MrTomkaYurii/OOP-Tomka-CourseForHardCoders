@@ -85,10 +85,25 @@
 | `new SelectionPrompt<string>()`, `new TextPrompt<T>()` | 16 | |
 | `new BarChart()`, `AnsiConsole.Status()` (spinner) | 16 | |
 | Фасад-патерн над бібліотекою: `ClinicRenderer` | 16 | |
-| EF Core: `DbContext`, `DbSet<T>`, міграції | 17 | |
-| EF: One-to-Many, Many-to-Many, зовнішні ключі | 18 | |
-| EF: TPH, Owned Entity, Concurrency | 19 | |
-| EF: `IQueryable<T>`, `.Skip/.Take`, проєкції | 20 | |
+| `DbContext`, `DbSet<T>`, `OnConfiguring`, `OnModelCreating` | 17 | EF Core ядро |
+| `UseSqlServer(connectionString)` — LocalDB провайдер | 17 | |
+| Fluent API: `HasKey`, `Property`, `HasMaxLength`, `IsRequired` | 17 | |
+| `ValueGeneratedOnAdd()` — IDENTITY стовпець | 17 | |
+| `HasConversion<string>()` — enum → рядок у БД | 17 | |
+| `ValueConverter<TModel, TProvider>` — конвертер для struct | 17 | WorkSchedule → "8-17" |
+| `HasIndex().IsUnique()` — унікальний індекс | 17 | |
+| `dotnet ef migrations add`, `dotnet ef database update` | 17 | CLI міграцій |
+| `context.SaveChanges()` — транзакція всіх змін | 17 | |
+| `context.Set.Any()` — `SELECT TOP 1` без завантаження | 17 | |
+| `Id { get; private set; }` — EF Core сумісність | 17 | патерн для Value Object |
+| EF: One-to-Many, Many-to-Many, Navigation Properties | 18 | |
+| EF: `.Include()`, зовнішні ключі, `.ThenInclude()` | 18 | |
+| EF: TPH (Table Per Hierarchy) — ієрархія в одній таблиці | 19 | |
+| EF: Owned Entity — вбудовані value objects | 19 | |
+| EF: `IQueryable<T>` vs `IEnumerable<T>` | 20 | |
+| EF: `.Skip().Take()` — пагінація | 20 | |
+| EF: `.AsNoTracking()` — оптимізація для читання | 20 | |
+| EF: проєкції `Select(new { ... })` — DTO без завантаження всіх полів | 20 | |
 | DI контейнер, SOLID принципи | 21 | |
 
 ---

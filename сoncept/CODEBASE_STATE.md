@@ -608,7 +608,71 @@ src/
 
 ---
 
-## Lab 17–21 — (детальніше після реалізації попередніх)
+## Lab 17 — EF Core Basic (feature/ef-core)
+
+**Статус:** 🔄 В РОБОТІ
+**Гілка:** `feature/ef-core` — НЕ злито (зливається тільки після Lab 20)
+**Файли:**
+```
+src/
+├── Data/
+│   ├── ClinicDbContext.cs   ← NEW: DbContext з DbSet<Patient>, DbSet<Doctor>
+│   └── DbSeeder.cs          ← NEW: ідемпотентне наповнення 5 пацієнтів + 5 лікарів
+├── Migrations/              ← NEW: auto-generated EF Core
+│   ├── 20260515215137_InitialCreate.cs
+│   ├── 20260515215137_InitialCreate.Designer.cs
+│   └── ClinicDbContextModelSnapshot.cs
+├── Models/
+│   ├── Patient.cs           ← UPD: Id { get; private set; } для EF Core
+│   └── Doctor.cs            ← UPD: Id { get; private set; } для EF Core
+└── ClinicApp.csproj         ← UPD: EF Core 8.0.0 пакети
+```
+
+**Нові пакети:**
+- `Microsoft.EntityFrameworkCore 8.0.0`
+- `Microsoft.EntityFrameworkCore.SqlServer 8.0.0`
+- `Microsoft.EntityFrameworkCore.Design 8.0.0`
+
+**ClinicDbContext — API:**
+
+| Частина | Код | Опис |
+|---------|-----|------|
+| `DbSet<Patient>` | `Set<Patient>()` | Таблиця Patients у вигляді C# |
+| `DbSet<Doctor>` | `Set<Doctor>()` | Таблиця Doctors |
+| `OnConfiguring` | `UseSqlServer(...)` | LocalDB, `(localdb)\mssqllocaldb` |
+| `OnModelCreating` | Fluent API | Правила відображення |
+| Patient конфіг | `HasKey`, `HasMaxLength`, `IsRequired` | Структура таблиці |
+| Patient індекс | `HasIndex(p => p.LastName)` | `IX_Patients_LastName` |
+| Doctor LicenseNumber | `.IsUnique()` | `UX_Doctors_License` |
+| Enum → string | `HasConversion<string>()` | `BloodType`, `Speciality` як текст |
+| WorkSchedule | `ValueConverter<WorkSchedule, string>` | `"8-17"` → `new WorkSchedule(8,17)` |
+
+**Нові концепції в Lab 17:**
+- `DbContext` — посередник між C#-об'єктами і БД; відстежує зміни (Unit of Work)
+- `DbSet<T>` — "таблиця" в C#; LINQ-запити → SQL
+- `OnConfiguring(DbContextOptionsBuilder)` — де і який провайдер
+- `UseSqlServer(connectionString)` — підключення до SQL Server / LocalDB
+- `OnModelCreating(ModelBuilder)` — Fluent API конфігурація
+- `HasKey`, `Property`, `HasMaxLength`, `IsRequired`, `HasColumnName` — налаштування стовпців
+- `ValueGeneratedOnAdd()` — IDENTITY стовпець у БД
+- `HasConversion<string>()` — enum → текстовий рядок у БД
+- `ValueConverter<TModel, TProvider>` — конвертер для struct (WorkSchedule)
+- `HasIndex().IsUnique()` — унікальний індекс
+- `dotnet ef migrations add <Name>` — генерація класу міграції
+- `dotnet ef database update` — застосування міграції до БД
+- `context.SaveChanges()` — фіксація всіх змін однією транзакцією
+- `context.XxxSet.AddRange(items)` — додати колекцію
+- `context.XxxSet.Any()` — `SELECT TOP 1` без завантаження всіх даних
+- Ідемпотентний Seeder: `if (Any()) return`
+
+**Що з'явилося в системі:**
+- База даних `ClinicApp` в LocalDB з таблицями `Patients` і `Doctors`
+- Початкові дані: 5 пацієнтів, 5 лікарів (DbSeeder)
+- `Migrations/` — версійована схема БД
+
+---
+
+## Lab 18–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 
