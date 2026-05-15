@@ -17,9 +17,10 @@ public class ClinicDbContext : DbContext
 {
     // DbSet<T> — це "таблиця" в C#-термінах.
     // LINQ-запити до DbSet<Patient> EF перетворює на SQL SELECT * FROM Patients.
-    public DbSet<Patient>     Patients     => Set<Patient>();
-    public DbSet<Doctor>      Doctors      => Set<Doctor>();
-    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<Patient>        Patients        => Set<Patient>();
+    public DbSet<Doctor>         Doctors         => Set<Doctor>();
+    public DbSet<Appointment>    Appointments    => Set<Appointment>();
+    public DbSet<MedicalRecord>  MedicalRecords  => Set<MedicalRecord>();
 
     // ─────────────────────────────────────────────────────────────
     // Task 1: Рядок підключення до SQL Server LocalDB
@@ -200,6 +201,87 @@ public class ClinicDbContext : DbContext
 
         modelBuilder.Entity<SpecialistAppointment>()
             .Property(s => s.ConsultationTopic).HasMaxLength(200).HasDefaultValue("");
+
+        // ── Task 1-3 (Lab 19): Таблиця MedicalRecords — TPH ──────────────────
+        // Всі підтипи (Diagnosis, LabResult, Prescription) в одній таблиці.
+        // Стовпець "RecordType" відрізняє типи.
+        // NULL-стовпці для полів які стосуються лише одного підтипу.
+        modelBuilder.Entity<MedicalRecord>(entity =>
+        {
+            entity.ToTable("MedicalRecords");
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Id).ValueGeneratedOnAdd();
+
+            entity.Property(r => r.Date).IsRequired();
+            entity.Property(r => r.Notes).HasMaxLength(500).HasDefaultValue("");
+
+            // TPH дискримінатор для MedicalRecord ієрархії
+            entity.HasDiscriminator<string>("RecordType")
+                  .HasValue<Diagnosis>("Diagnosis")
+                  .HasValue<LabResult>("LabResult")
+                  .HasValue<Prescription>("Prescription");
+
+            // One-to-Many: Patient → MedicalRecords (Cascade)
+            entity.HasOne(r => r.Patient)
+                  .WithMany(p => p.MedicalRecords)
+                  .HasForeignKey(r => r.PatientId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // DoctorId — просто FK без navigation (спрощення для Lab 19)
+            entity.HasOne<Doctor>()
+                  .WithMany()
+                  .HasForeignKey(r => r.DoctorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(r => r.PatientId).HasDatabaseName("IX_MedicalRecords_PatientId");
+            entity.HasIndex(r => r.DoctorId).HasDatabaseName("IX_MedicalRecords_DoctorId");
+        });
+
+        // Diagnosis специфічні стовпці
+        modelBuilder.Entity<Diagnosis>(entity =>
+        {
+            entity.Property(d => d.DiagnosisCode).HasMaxLength(20).HasDefaultValue("").IsRequired(false);
+            entity.Property(d => d.Description).HasMaxLength(500).HasDefaultValue("").IsRequired(false);
+        });
+
+        // LabResult специфічні стовпці
+        modelBuilder.Entity<LabResult>(entity =>
+        {
+            entity.Property(l => l.TestName).HasMaxLength(200).HasDefaultValue("").IsRequired(false);
+            entity.Property(l => l.Unit).HasMaxLength(30).HasDefaultValue("").IsRequired(false);
+            entity.Property(l => l.ReferenceRange).HasMaxLength(50).HasDefaultValue("").IsRequired(false);
+        });
+
+        // Prescription специфічні стовпці
+        modelBuilder.Entity<Prescription>(entity =>
+        {
+            entity.Property(p => p.MedicationName).HasMaxLength(200).HasDefaultValue("").IsRequired(false);
+            entity.Property(p => p.Dosage).HasMaxLength(100).HasDefaultValue("").IsRequired(false);
+            entity.Property(p => p.Instructions).HasMaxLength(500).HasDefaultValue("").IsRequired(false);
+        });
+
+        // ── Task 2 (Lab 19): OwnsOne — EmergencyContact у таблиці Patients ────
+        // OwnsOne: Owned Entity — декілька стовпців власника без окремої таблиці.
+        // Відмінність від ValueConverter: OwnsOne → окремі стовпці (EmergencyContact_Name тощо).
+        // ValueConverter (WorkSchedule) → один стовпець з серіалізованим значенням.
+        modelBuilder.Entity<Patient>().OwnsOne(p => p.EmergencyContact, ec =>
+        {
+            // Префікс "EC_" для ясності в таблиці (замість дефолтного "EmergencyContact_")
+            ec.Property(e => e.Name)        .HasColumnName("EC_Name")        .HasMaxLength(100);
+            ec.Property(e => e.Phone)       .HasColumnName("EC_Phone")       .HasMaxLength(20);
+            ec.Property(e => e.Relationship).HasColumnName("EC_Relationship").HasMaxLength(50);
+        });
+
+        // ── Task 3 (Lab 19): Concurrency Token — RowVersion ──────────────────
+        // IsConcurrencyToken + ValueGeneratedOnAddOrUpdate:
+        //   SQL Server автоматично оновлює rowversion при кожному UPDATE.
+        //   EF додає "WHERE RowVersion = @original" до UPDATE/DELETE.
+        //   Якщо за час між SELECT і UPDATE інший процес змінив запис —
+        //   rowversion інша → WHERE не знаходить рядка → DbUpdateConcurrencyException.
+        modelBuilder.Entity<Patient>()
+            .Property(p => p.RowVersion)
+            .IsRowVersion()     // це і є IsConcurrencyToken + ValueGeneratedOnAddOrUpdate
+            .HasColumnName("RowVersion");
     }
 
     // ─────────────────────────────────────────────────────────────
