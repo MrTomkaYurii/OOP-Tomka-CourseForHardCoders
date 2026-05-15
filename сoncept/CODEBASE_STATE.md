@@ -749,7 +749,56 @@ src/
 
 ---
 
-## Lab 20–21 — (детальніше після реалізації попередніх)
+## Lab 20 — EF Core Queries (feature/ef-core)
+
+**Статус:** 🔄 В РОБОТІ (остання лаба на цій гілці)
+**Гілка:** `feature/ef-core` — НЕ злито (злиття після фіналу)
+**Файли:**
+```
+src/
+├── Data/
+│   ├── ClinicDbContext.cs     ← UPD: HasQueryFilter(!IsDeleted), IsDeleted default false
+│   └── ClinicQueryService.cs  ← NEW: IQueryable demo, Skip/Take, Select DTO, IgnoreQueryFilters
+├── Migrations/                ← NEW: AddSoftDeleteAndQueryFilter (IsDeleted column)
+├── Models/
+│   ├── Patient.cs             ← UPD: bool IsDeleted + SoftDelete()
+│   ├── PatientSummaryDto.cs   ← NEW: record DTO
+│   └── AppointmentSummaryDto.cs ← NEW: record DTO
+```
+
+**ClinicQueryService — API:**
+
+| Метод | Концепція | Опис |
+|-------|-----------|------|
+| `QueryPatients()` | IQueryable | Повертає невиконаний запит |
+| `DemoQueryableVsEnumerable(filter)` | IQueryable vs IEnumerable | Демо різниці |
+| `GetPatientsPaged(page, size, orderBy)` | Skip/Take | Пагінація + Count |
+| `GetAppointmentsPaged(page, size, status?, patientId?)` | Dynamic filter | Nullable умови |
+| `GetPatientSummaries(page, size)` | Projection | Select → PatientSummaryDto |
+| `GetAppointmentSummaries(page, size, status?)` | Projection | Select → AppointmentSummaryDto |
+| `SoftDeletePatient(id)` | Soft Delete | IsDeleted = true |
+| `GetAllPatientsIncludingDeleted()` | IgnoreQueryFilters | Всі включно з видаленими |
+| `GetDeletedPatients()` | IgnoreQueryFilters + filter | Тільки видалені |
+| `GetDoctorRevenueSummary()` | Tuple projection | AsNoTracking + Sum |
+
+**Нові концепції в Lab 20:**
+- `IQueryable<T>` — відкладене виконання (Expression Tree → SQL при матеріалізації)
+- Матеріалізація: `.ToList()`, `.Count()`, `.FirstOrDefault()`, `foreach` — виконують SQL
+- `.ToList()` в середині ланцюга → решта LINQ в C#, не SQL (антипатерн)
+- `.Skip(n).Take(m)` → SQL `OFFSET n ROWS FETCH NEXT m ROWS ONLY` (пагінація)
+- Обов'язковість `.OrderBy()` перед `.Skip()/.Take()`
+- `(List<T> Items, int TotalCount)` — результат пагінованого запиту
+- `Select(p => new DTO(...))` — проєкція тільки потрібних стовпців
+- `record` тип для DTO — immutable, автогенеровані Equals/GetHashCode
+- `HasQueryFilter(expr)` — Global Query Filter (автоматичний WHERE у кожному запиті)
+- `IsDeleted` + `SoftDelete()` — патерн м'якого видалення
+- `.IgnoreQueryFilters()` — скасування Global Filter для конкретного запиту
+- Nullable параметри як умовні фільтри: `if (x.HasValue) query = query.Where(...)`
+- EF попередження про Global Filter + required end of relationship
+
+---
+
+## Lab 21 — (після злиття EF Core гілки)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 

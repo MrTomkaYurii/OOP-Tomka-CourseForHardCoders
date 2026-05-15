@@ -96,14 +96,24 @@
 | `context.SaveChanges()` — транзакція всіх змін | 17 | |
 | `context.Set.Any()` — `SELECT TOP 1` без завантаження | 17 | |
 | `Id { get; private set; }` — EF Core сумісність | 17 | патерн для Value Object |
-| EF: One-to-Many, Many-to-Many, Navigation Properties | 18 | |
-| EF: `.Include()`, зовнішні ключі, `.ThenInclude()` | 18 | |
-| EF: TPH (Table Per Hierarchy) — ієрархія в одній таблиці | 19 | |
-| EF: Owned Entity — вбудовані value objects | 19 | |
-| EF: `IQueryable<T>` vs `IEnumerable<T>` | 20 | |
-| EF: `.Skip().Take()` — пагінація | 20 | |
-| EF: `.AsNoTracking()` — оптимізація для читання | 20 | |
-| EF: проєкції `Select(new { ... })` — DTO без завантаження всіх полів | 20 | |
+| EF: Navigation Properties — `ICollection<T>` (колекція) і `T?` (посилання) | 18 | |
+| EF: Eager Loading `.Include(lambda)` → SQL JOIN (вирішення N+1) | 18 | |
+| EF: `HasOne/WithMany/HasForeignKey/OnDelete` — One-to-Many Fluent API | 18 | |
+| EF: `DeleteBehavior.Cascade` vs `.Restrict` — і чому не два Cascade | 18 | |
+| EF: `HasDiscriminator<string>().HasValue<T>()` — TPH дискримінатор | 18 | |
+| EF: Repository pattern — `ClinicRepository` з `.Include()` запитами | 18 | |
+| EF: TPH для abstract класу — nullable стовпці підтипів | 19 | MedicalRecord ієрархія |
+| EF: `OwnsOne(p => p.Contact, ec => {...})` — Owned Entity | 19 | EmergencyContact |
+| EF: `IsRowVersion()` — Optimistic Concurrency Token | 19 | |
+| EF: `DbUpdateConcurrencyException` — конкурентне редагування | 19 | |
+| `record` — immutable тип, автогенеровані Equals/ToString | 20 | DTO патерн |
+| EF: `IQueryable<T>` — відкладене виконання, Expression Tree | 20 | |
+| EF: `.ToList()` в середині chain → LINQ to Objects (антипатерн) | 20 | |
+| EF: `.Skip(n).Take(m)` → SQL OFFSET/FETCH NEXT (пагінація) | 20 | |
+| EF: `Select(p => new DTO(...))` — проєкція конкретних стовпців | 20 | |
+| EF: `HasQueryFilter(expr)` — Global Query Filter (автоматичний WHERE) | 20 | |
+| EF: `.IgnoreQueryFilters()` — скасування глобального фільтра | 20 | |
+| Soft Delete патерн: `IsDeleted` bool + `SoftDelete()` метод | 20 | |
 | DI контейнер, SOLID принципи | 21 | |
 
 ---
