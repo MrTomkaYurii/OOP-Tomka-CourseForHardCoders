@@ -17,6 +17,7 @@ public static class DbSeeder
         SeedPatients(context);
         SeedDoctors(context);
         SeedAppointments(context);
+        SeedMedicalRecords(context);
     }
 
     private static void SeedPatients(ClinicDbContext context)
@@ -105,5 +106,48 @@ public static class DbSeeder
         context.SaveChanges();
 
         Console.WriteLine($"[DbSeeder] Додано {appointments.Length} записів на прийом.");
+    }
+
+    private static void SeedMedicalRecords(ClinicDbContext context)
+    {
+        if (context.MedicalRecords.Any()) return;
+
+        var patients = context.Patients.ToList();
+        var doctors  = context.Doctors.ToList();
+
+        if (patients.Count < 1 || doctors.Count < 1)
+        {
+            Console.WriteLine("[DbSeeder] Недостатньо даних для медичних записів.");
+            return;
+        }
+
+        var p0 = patients[0];
+        var p1 = patients[1 % patients.Count];
+        var d0 = doctors[0];
+        var d1 = doctors[1 % doctors.Count];
+        var past = DateTime.Today.AddMonths(-3);
+
+        var records = new MedicalRecord[]
+        {
+            new Diagnosis(p0.Id, d0.Id, past,
+                "K29.7", "Хронічний гастрит", isChronic: true),
+            new Diagnosis(p1.Id, d1.Id, past.AddDays(10),
+                "J06.9", "ГРВІ", isChronic: false),
+            new LabResult(p0.Id, d0.Id, past.AddDays(5),
+                "Гемоглобін", 130.0, "г/л", "120-160", isNormal: true),
+            new Prescription(p0.Id, d0.Id, past,
+                "Омепразол", "20 мг × 2 рази/день", 14,
+                "Приймати за 30 хв до їди"),
+        };
+
+        // EmergencyContact — Owned Entity: зберігається в таблиці Patients
+        // Встановлюємо для першого пацієнта
+        p0.EmergencyContact = new EmergencyContact("Іванна Коваль", "0671111000", "Дружина");
+        context.Patients.Update(p0);
+
+        context.MedicalRecords.AddRange(records);
+        context.SaveChanges();
+
+        Console.WriteLine($"[DbSeeder] Додано {records.Length} медичних записів і EmergencyContact.");
     }
 }
