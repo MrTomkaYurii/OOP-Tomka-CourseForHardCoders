@@ -106,7 +106,7 @@ class Person
 
 Таким чином, ми можемо продовжувати писати програми верхнього рівня без явного визначення методу `Main`. Або ми можемо явно визначити метод `Main` і клас `Program`:
 
-![Явне визначення класу Program і методу Main](assets/docx/image45.png)
+![Явне визначення класу Program і методу Main](_assets/_docx/image45.png)
 
 ```csharp
 class Program

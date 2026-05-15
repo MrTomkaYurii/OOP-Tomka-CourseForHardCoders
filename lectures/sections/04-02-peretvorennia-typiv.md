@@ -50,7 +50,7 @@ class Client : Person
 
 У цій ієрархії класів ми можемо простежити наступний ланцюг успадкування: `Object` (всі класи неявно успадковуються від типу `Object`) -> `Person` -> `Employee | Client`.
 
-![Ієрархія класів Object, Person, Employee і Client](assets/docx/image85.png)
+![Ієрархія класів Object, Person, Employee і Client](_assets/_docx/image85.png)
 
 Причому у цій ієрархії класів базові типи перебувають угорі, а похідні типи - внизу.
 
@@ -68,7 +68,7 @@ Console.WriteLine(person.Name);
 
 У результаті змінні `employee` і `person` будуть вказувати на той самий об'єкт у пам'яті, але змінної `person` буде доступна тільки та частина, яка представляє функціонал типу `Person`.
 
-![Висхідне перетворення від Employee до Person](assets/docx/image86.png)
+![Висхідне перетворення від Employee до Person](_assets/_docx/image86.png)
 
 Подібним чином робляться й інші висхідні перетворення:
 

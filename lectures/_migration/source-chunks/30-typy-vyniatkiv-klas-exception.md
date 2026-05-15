@@ -26,7 +26,7 @@ catch (Exception ex)
 }
 ```
 
-![Виведення властивостей винятку Exception](../assets/docx/image93.png)
+![Виведення властивостей винятку Exception](_assets/_docx/image93.png)
 
 Однак так як тип Exception є базовим типом для всіх винятків, вираз `catch (Exception ex)` буде обробляти всі винятки, які можуть виникнути.
 

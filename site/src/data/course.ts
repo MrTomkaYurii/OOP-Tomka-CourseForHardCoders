@@ -329,7 +329,7 @@ async function renderMarkdown(markdown: string, options: { assetPrefix?: string 
   };
 
   const preparedMarkdown = options.assetPrefix
-    ? markdown.replace(/\]\(assets\/docx\/([^)]+)\)/g, `](${options.assetPrefix}/$1)`)
+    ? markdown.replace(/\]\(_assets\/_docx\/([^)]+)\)/g, `](${options.assetPrefix}/$1)`)
     : markdown;
 
   return {

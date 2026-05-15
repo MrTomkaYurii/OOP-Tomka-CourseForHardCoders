@@ -226,7 +226,7 @@ void People_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e
 
 Тут як обробник змін колекції виступає метод `People_CollectionChanged`, в якому за допомогою параметра `NotifyCollectionChangedEventArgs` отримуємо інформацію про зміну. Консольний вивід програми:
 
-![Рисунок з оригінального документа](assets/docx/image102.png)
+![Рисунок з оригінального документа](_assets/_docx/image102.png)
 
 ```text
 Додано новий об'єкт: Bob

@@ -65,7 +65,7 @@ class TestClass
 
 У цьому випадку стек викликів виглядає так: метод Main викликає метод Method1, який, своєю чергою, викликає метод Method2. І в методі Method2 генерується виняток DivideByZeroException. Візуально стек викликів можна представити так:
 
-![Схема стеку викликів Main, Method1, Method2](../assets/docx/image95.png)
+![Схема стеку викликів Main, Method1, Method2](_assets/_docx/image95.png)
 
 Внизу стека метод Main, з якого почалося виконання, і на вершині метод Method2.
 
@@ -168,4 +168,4 @@ Console.WriteLine("Кінець методу Main");
 
 Консольний вивід програми:
 
-![Консольний вивід пошуку catch у стеку викликів](../assets/docx/image96.png)
+![Консольний вивід пошуку catch у стеку викликів](_assets/_docx/image96.png)
