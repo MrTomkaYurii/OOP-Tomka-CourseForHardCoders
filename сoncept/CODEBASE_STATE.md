@@ -559,7 +559,56 @@ src/
 
 ---
 
-## Lab 16–21 — (детальніше після реалізації попередніх)
+## Lab 16 — Console UI — Spectre.Console (feature/console-ui)
+
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/console-ui` — ✅ злито в main
+**Файли:**
+```
+src/
+└── UI/
+    └── ClinicRenderer.cs   ← NEW: статичний UI-фасад над Spectre.Console
+```
+
+**Зміни в існуючих файлах:**
+- `ClinicApp.csproj` — `<PackageReference Include="Spectre.Console" Version="0.55.2"/>`
+- `Program.cs` — всі меню через `SelectionPrompt`, списки через `Table`, введення через `TextPrompt`, картки через `Panel`, медкартка через `Tree`, повідомлення кольорові
+
+**ClinicRenderer — публічне API:**
+
+| Група | Методи |
+|-------|--------|
+| Текст | `PrintHeader`, `PrintSuccess`, `PrintError`, `PrintWarning`, `PrintInfo` |
+| Меню | `SelectMenu(title, options[])` → SelectionPrompt |
+| Введення | `PromptInt`, `PromptString`, `PromptDecimal`, `PromptConfirm`, `PromptDate`, `PromptDateTime` |
+| Таблиці | `RenderPatients`, `RenderDoctors`, `RenderAppointments` |
+| Картки | `RenderPatientCard`, `RenderDoctorCard` |
+| Ієрархія | `RenderMedicalRecord` (Tree з гілками Діагнози/Аналізи/Рецепти) |
+| Звіти | `RenderSpecialityStats` (Table), `RenderMonthlyRevenue` (BarChart) |
+| Утиліти | `WithSpinner(msg, action)` — Status spinner |
+
+**Нові концепції в Lab 16:**
+- NuGet-пакети: `dotnet add package`, `<PackageReference>` у `.csproj`
+- `using Spectre.Console;` — підключення зовнішньої бібліотеки
+- `AnsiConsole.MarkupLine("[color]text[/]")` — ANSI-розмітка з кольорами
+- `Markup.Escape(text)` — захист від markup injection
+- `new Rule(...)` — горизонтальний роздільник
+- `new Table().AddColumn().AddRow()` — таблиця з рамкою
+- `new SelectionPrompt<string>().AddChoices(...)` — меню зі стрілками
+- `new TextPrompt<T>()` з авто-валідацією і повторним запитом
+- `new ConfirmationPrompt(...)` — запит так/ні
+- `new Panel(content)` з `PanelHeader` і `BoxBorder` — рамка навколо тексту
+- `new Tree(root).AddNode(branch).AddNode(leaf)` — ієрархічне відображення
+- `new BarChart().AddItem(label, value, color)` — стовпчаста діаграма
+- `AnsiConsole.Status().Spinner(Known.Dots).Start(msg, ctx => {...})` — спіннер
+- Фасад-патерн: `ClinicRenderer` ховає Spectre.Console від `Program.cs`
+- SRP: `Program.cs` = "що"; `ClinicRenderer` = "як"
+
+**Нове в меню:** меню тепер навігуються стрілками (SelectionPrompt). Новий пункт "← Назад" замість "0. Вийти". Медична картка показується як Tree.
+
+---
+
+## Lab 17–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 
