@@ -37,7 +37,8 @@ OOP-Tomka-CourseForHardCoders/
  │    ├── Interfaces/     ← Lab 07+: IPayable, ICancellable, ISchedulable
  │    ├── Attributes/     ← Lab 11: RequiredAttribute, MaxLengthAttribute, MinValueAttribute
  │    ├── Events/         ← Lab 13: XxxEventArgs
- │    ├── Managers/       ← Lab 14: + ReportManager (7 LINQ-звітів)
+ │    ├── Extensions/     ← Lab 15: AppointmentExtensions, PatientExtensions, DoctorExtensions
+ │    ├── Managers/       ← Lab 14: + ReportManager; Lab 15: + AppointmentFilter, Processor, Pipeline
  │    ├── Models/         ← Lab 14: + SpecialityReport (DTO)
  │    └── Utils/          ← Lab 04: ClinicFormatter; Lab 05: ClinicValidator; Lab 11: ModelValidator, FormBuilder; Lab 12: ClinicLogger, ClinicExporter, CsvImporter, SessionManager; Lab 13: PatientPassportWriter, SessionEventTracker
  ├── labs/

@@ -524,7 +524,42 @@ src/
 
 ---
 
-## Lab 15–21 — (детальніше після реалізації попередніх)
+## Lab 15 — Functional C# (feature/functional)
+
+**Статус:** ✅ ЗАВЕРШЕНО
+**Гілка:** `feature/functional` — ✅ злито в main
+**Файли:**
+```
+src/
+├── Extensions/                      ← НОВА ПАПКА
+│   ├── AppointmentExtensions.cs     ← NEW: .Unpaid() .Upcoming() .ByDoctor() .Overdue() .CostAbove() .TotalCost()
+│   ├── PatientExtensions.cs         ← NEW: .Adults() .ByBloodType() .WithAppointments()
+│   └── DoctorExtensions.cs          ← NEW: .BySpeciality() .Available() .WithAppointments()
+└── Managers/
+    ├── AppointmentFilter.cs         ← NEW: Func<Appointment,bool> — Add/And/Or/Negate/Apply
+    ├── AppointmentProcessor.cs      ← NEW: Action<Appointment> — Run/RunIf/Combine/Execute
+    └── AppointmentPipeline.cs       ← NEW: фасад Filter+Processor, fluent Filter().Then().Execute()
+```
+
+**Зміни в існуючих файлах:**
+- `Clinic.cs` — `public AppointmentPipeline Pipeline { get; }` + ініціалізація
+- `Program.cs` — `using ClinicApp.Extensions;`, пункт "12. Фільтри", `FunctionalMenu()`
+
+**Нові концепції в Lab 15:**
+- `Func<T, TResult>` — тип для лямбди що повертає значення; зберігається у змінній/полі
+- `Action<T>` — тип для лямбди без повернення; зберігається у `List<Action<T>>`
+- Замикання (closure) — лямбда захоплює локальну змінну (`minCost`, `prev`)
+- `var prev = _combined` — фіксація стану при комбінуванні предикатів
+- Методи розширення — `static` метод з `this T source` → `source.MyMethod()`
+- `public static class` — обов'язкова умова для extension methods
+- Fluent interface — кожен метод повертає `this` для ланцюга викликів
+- Higher-order методи — `RunIf(Func<> predicate, Action<> action)` — обидва як параметри
+
+**Нове в меню:** пункт 12 "Фільтри — Func, Action, Pipeline" → 8 підпунктів
+
+---
+
+## Lab 16–21 — (детальніше після реалізації попередніх)
 
 Дивись COURSE_DESIGN.md для опису завдань.
 
