@@ -16,6 +16,7 @@ public static class DbSeeder
     {
         SeedPatients(context);
         SeedDoctors(context);
+        SeedAppointments(context);
     }
 
     private static void SeedPatients(ClinicDbContext context)
@@ -58,5 +59,51 @@ public static class DbSeeder
         context.SaveChanges();
 
         Console.WriteLine($"[DbSeeder] Додано {doctors.Length} лікарів.");
+    }
+
+    private static void SeedAppointments(ClinicDbContext context)
+    {
+        if (context.Appointments.Any()) return;
+
+        // Отримуємо реальні Id з БД (після SaveChanges в SeedPatients/SeedDoctors)
+        var patients = context.Patients.ToList();
+        var doctors  = context.Doctors.ToList();
+
+        if (patients.Count < 2 || doctors.Count < 2)
+        {
+            Console.WriteLine("[DbSeeder] Недостатньо пацієнтів або лікарів для записів.");
+            return;
+        }
+
+        // Дати для тестових записів
+        var now  = DateTime.Now;
+        var past = now.AddDays(-7);
+        var future = now.AddDays(3);
+
+        var appointments = new Appointment[]
+        {
+            // Звичайний запис (минулий)
+            new RegularAppointment(patients[0].Id, doctors[0].Id, past.Date.AddHours(9), 30),
+            // Терміновий (майбутній)
+            new UrgentAppointment(patients[1].Id, doctors[1].Id, future.Date.AddHours(10), "Гострий біль", 45),
+            // Консультація (минула, оплачена)
+            new SpecialistAppointment(patients[2 % patients.Count].Id, doctors[2 % doctors.Count].Id,
+                past.Date.AddHours(14), "Серцева аритмія", 60),
+            // Ще один звичайний (майбутній)
+            new RegularAppointment(patients[0].Id, doctors[2 % doctors.Count].Id, future.Date.AddHours(15), 30),
+        };
+
+        // Відзначаємо перший запис як завершений і оплачений
+        appointments[0].Complete();
+        appointments[0].MarkPaid();
+
+        // Третій — завершений і оплачений
+        appointments[2].Complete();
+        appointments[2].MarkPaid();
+
+        context.Appointments.AddRange(appointments);
+        context.SaveChanges();
+
+        Console.WriteLine($"[DbSeeder] Додано {appointments.Length} записів на прийом.");
     }
 }
