@@ -138,7 +138,25 @@
 | `TaskCanceledException when (!ct.IsCancellationRequested)` — таймаут HttpClient | 21 | |
 | `Uri.EscapeDataString(s)` — кодування URL-параметрів | 21 | |
 | EF async: `ToListAsync`, `FirstOrDefaultAsync`, `CountAsync`, `AnyAsync`, `SumAsync`, `SaveChangesAsync` | 21 | |
-| DI контейнер, SOLID принципи | 22 | |
+| S: Single Responsibility Principle — одна причина для зміни | 22 | |
+| O: Open/Closed Principle — відкритий для розширення, закритий для змін | 22 | |
+| L: Liskov Substitution Principle — підтипи замінні для базових типів | 22 | (аналіз) |
+| I: Interface Segregation Principle — маленькі інтерфейси | 22 | |
+| D: Dependency Inversion Principle — залежність від абстракцій | 22 | |
+| Strategy pattern: `ICostStrategy`, реалізації | 22 | OCP |
+| Decorator pattern: `LoggingPatientService(IPatientService inner)` | 22 | ISP+DIP |
+| Primary constructor (C# 12): `class Foo(BarDep dep)` | 22 | |
+| `IServiceCollection`, `ServiceCollection` | 22 | Microsoft.Extensions.DI |
+| `services.AddSingleton<T>()`, `AddScoped<T>()`, `AddTransient<T>()` | 22 | |
+| `services.AddScoped<IFoo, FooImpl>()` — interface → implementation | 22 | |
+| `services.AddScoped<IFoo>(sp => new Decorator(sp.GetRequired<Impl>()))` | 22 | DI Decorator |
+| `services.BuildServiceProvider()` → `IServiceProvider` | 22 | |
+| `provider.GetRequiredService<T>()` — кидає якщо не зареєстровано | 22 | |
+| `provider.GetService<T>()` — null якщо не зареєстровано | 22 | |
+| `provider.CreateScope()` → `IServiceScope` | 22 | |
+| `ReferenceEquals(a, b)` — перевірка ідентичності об'єктів | 22 | lifetime demo |
+| `services.AddDbContext<T>()` — EF Core реєстрація у DI | 22 | |
+| `record ClinicConfig(...)` — конфігурація як immutable record | 22 | SRP |
 
 ---
 
@@ -517,6 +535,42 @@
 - `Uri.EscapeDataString(s)` — кодування спецсимволів у URL
 - `response.IsSuccessStatusCode` — перевірка HTTP 2xx
 - FDA Open API: публічний API без реєстрації (`api.fda.gov/drug/label.json`)
+
+---
+
+### Lab 22 — SOLID + Dependency Injection (feature/solid-di → злито в main) ✅
+
+**Task 1 — S: SRP:**
+- `ClinicConfig` record — конфігурація виділена з `Clinic`
+- `public Clinic(ClinicConfig config)` + `Clinic(string name) : this(new ClinicConfig(name))`
+- `public string Name => Config.Name` — делегат замість поля
+- Документація порушень SRP що залишились
+
+**Task 2 — O: OCP (Strategy pattern):**
+- `ICostStrategy` — інтерфейс з `Description` і `Calculate(Appointment)`
+- `RegularCostStrategy`, `UrgentCostStrategy(multiplier)`, `DiscountCostStrategy(percent)`
+- `AppointmentProcessor.WithCostStrategy()` — fluent розширення без зміни існуючої логіки
+- `CalculateCost(a)` — `_costStrategy?.Calculate(a) ?? a.GetCost()`
+- Тест OCP: `NightShiftCostStrategy` без зміни жодного існуючого файлу
+
+**Tasks 3+4 — I+D: ISP + DIP:**
+- `IPatientService`, `IDoctorService`, `IAppointmentService` — маленькі інтерфейси (ISP)
+- `PatientService(ClinicDbContext context)` — primary constructor C# 12 (DIP)
+- `DoctorService`, `AppointmentService` — аналогічно
+
+**Task 5 — IServiceCollection + Decorator:**
+- `ServiceContainer.Build()` — `ServiceCollection` + `BuildServiceProvider()`
+- `AddSingleton<ClinicLogger>()`, `AddScoped<ClinicDbContext>()`, `AddScoped<I, Impl>()`
+- `LoggingPatientService(IPatientService inner, ClinicLogger logger)` — Decorator
+- DI реєстрація Decorator через фабричну лямбду `sp => new LoggingPatientService(...)`
+- Перевірка Singleton: `ReferenceEquals(a, b) == true`
+- Перевірка Scoped: різні scope → різні екземпляри
+
+**Task 6 — GetRequiredService + LSP аналіз:**
+- `GetRequiredService<T>()` — InvalidOperationException якщо незареєстровано
+- `GetService<T>()` — null якщо незареєстровано
+- `provider.CreateScope()` — scope для Scoped-сервісів в консольному застосунку
+- LSP аналіз: `Appointment` ієрархія замінна (демонстрація)
 
 ---
 

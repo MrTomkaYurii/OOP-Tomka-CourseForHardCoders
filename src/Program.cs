@@ -2,7 +2,11 @@ using ClinicApp;
 using ClinicApp.Comparators;
 using ClinicApp.Data;
 using ClinicApp.Enums;
+using ClinicApp.Infrastructure;
+using ClinicApp.Services;
+using ClinicApp.Strategies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using ClinicApp.Events;
 using ClinicApp.Extensions;
 using ClinicApp.Managers;
@@ -87,6 +91,7 @@ while (running)
         "Фільтри (Functional)",
         "База даних (EF Core)",
         "Async (Lab 21)",
+        "SOLID + DI (Lab 22)",
         "Вийти"
     });
 
@@ -106,6 +111,7 @@ while (running)
         case "Фільтри (Functional)": FunctionalMenu(clinic);      break;
         case "База даних (EF Core)": EfCoreMenu();               break;
         case "Async (Lab 21)":       await AsyncMenu();           break;
+        case "SOLID + DI (Lab 22)":  await SolidDiMenu();         break;
         case "Вийти":
             clinic.Tracker.PrintSummary();
             clinic.Tracker.SaveSummary();
@@ -979,6 +985,170 @@ static void TreatmentPlansMenu(Clinic clinic)
                 break;
         }
     }
+}
+
+// ──────────────────────────────────────────────
+//  SOLID + DI меню (Lab 22)
+// ──────────────────────────────────────────────
+static async Task SolidDiMenu()
+{
+    // Будуємо DI-контейнер один раз (Task 5-6)
+    var provider = ServiceContainer.Build();
+
+    bool inMenu = true;
+    while (inMenu)
+    {
+        ClinicRenderer.PrintHeader("SOLID + Dependency Injection (Lab 22)");
+        string cmd = ClinicRenderer.SelectMenu("Оберіть демонстрацію", new[]
+        {
+            "Task 1 (S): ClinicConfig — SRP аналіз",
+            "Task 2 (O): ICostStrategy — порівняти стратегії",
+            "Task 3 (I): ISP — інтерфейси сервісів",
+            "Task 4 (D): DIP — IPatientService через DI",
+            "Task 5: Lifetimes — Singleton vs Scoped",
+            "Task 5: Decorator — LoggingPatientService",
+            "Task 6: GetRequiredService vs GetService",
+            "← Назад"
+        });
+
+        if (cmd == "← Назад") { inMenu = false; break; }
+
+        switch (cmd)
+        {
+            // Task 1: SRP — показати ClinicConfig
+            case "Task 1 (S): ClinicConfig — SRP аналіз":
+                var config = new ClinicApp.Models.ClinicConfig(
+                    "Медична Клініка «Здоров'я»",
+                    "вул. Хрещатик, 1, Київ",
+                    new DateTime(2010, 3, 15));
+                AnsiConsole.MarkupLine($"[bold]ClinicConfig:[/] {Markup.Escape(config.ToString())}");
+                AnsiConsole.MarkupLine($"  Рік заснування: [green]{config.FoundedYear}[/]");
+                AnsiConsole.MarkupLine("\n[dim]SRP порушення в Clinic.cs:[/]");
+                AnsiConsole.MarkupLine("  [red]❌[/] Відповідальність 1: конфігурація → [green]✅ виділено в ClinicConfig[/]");
+                AnsiConsole.MarkupLine("  [red]❌[/] Відповідальність 2: 16 менеджерів у конструкторі");
+                AnsiConsole.MarkupLine("  [red]❌[/] Відповідальність 3: event wire-up (SubscribeEvents)");
+                AnsiConsole.MarkupLine("  [red]❌[/] Відповідальність 4: GenerateReport()");
+                AnsiConsole.MarkupLine("  [red]❌[/] Відповідальність 5: DisplaySchedule()");
+                break;
+
+            // Task 2: OCP — порівняти стратегії вартості
+            case "Task 2 (O): ICostStrategy — порівняти стратегії":
+                try
+                {
+                    using var db2 = new ClinicDbContext();
+                    db2.Database.EnsureCreated();
+                    var appointments = db2.Appointments.AsNoTracking().Take(3).ToList();
+                    if (appointments.Count == 0) { ClinicRenderer.PrintWarning("БД порожня — спочатку засійте дані."); break; }
+
+                    var strategies = new ICostStrategy[]
+                    {
+                        new RegularCostStrategy(),
+                        new UrgentCostStrategy(1.5m),
+                        new DiscountCostStrategy(0.2m),
+                    };
+
+                    var table = new Spectre.Console.Table().Border(Spectre.Console.TableBorder.Rounded);
+                    table.AddColumn("Прийом");
+                    foreach (var s in strategies) table.AddColumn(Markup.Escape(s.Description));
+
+                    foreach (var a in appointments)
+                    {
+                        var cols = strategies.Select(s => $"{s.Calculate(a):F2} грн").ToArray();
+                        table.AddRow(new[] { $"ID {a.Id} ({a.DurationMinutes} хв)" }.Concat(cols).ToArray());
+                    }
+                    AnsiConsole.Write(table);
+                    AnsiConsole.MarkupLine("[dim]OCP: новий тип ціноутворення = новий клас, AppointmentProcessor не змінюється.[/]");
+                }
+                catch (Exception ex) { ClinicRenderer.PrintError(ex.Message); }
+                break;
+
+            // Task 3: ISP — показати інтерфейси
+            case "Task 3 (I): ISP — інтерфейси сервісів":
+                AnsiConsole.MarkupLine("[bold]ISP: три маленьких інтерфейси замість одного великого[/]");
+                AnsiConsole.MarkupLine("  [green]IPatientService[/]     — GetAll, GetById, Search, Add, SoftDelete, Count");
+                AnsiConsole.MarkupLine("  [green]IDoctorService[/]      — GetAll, GetById, GetBySpeciality, Count");
+                AnsiConsole.MarkupLine("  [green]IAppointmentService[/] — GetUpcoming, GetByPatient, Book, Cancel, Complete, GetRevenue");
+                AnsiConsole.MarkupLine("\n[dim]Клас що потребує тільки лікарів — залежить від IDoctorService.");
+                AnsiConsole.MarkupLine("Він не знає про пацієнтів або записи.[/]");
+                break;
+
+            // Task 4: DIP — отримати IPatientService через DI
+            case "Task 4 (D): DIP — IPatientService через DI":
+                try
+                {
+                    using var scope4 = provider.CreateScope();
+                    var db4 = scope4.ServiceProvider.GetRequiredService<ClinicDbContext>();
+                    db4.Database.EnsureCreated();
+                    await DbSeeder.SeedAsync(db4);
+
+                    // DIP: код залежить від IPatientService, не від PatientService
+                    var patSvc = scope4.ServiceProvider.GetRequiredService<IPatientService>();
+                    var patients = await patSvc.GetAllAsync();
+                    AnsiConsole.MarkupLine($"[bold]IPatientService.GetAllAsync()[/] → {patients.Count} пацієнтів");
+                    ClinicRenderer.RenderPatients(patients);
+                    AnsiConsole.MarkupLine("[dim]DIP: Program.cs не знає що це LoggingPatientService(PatientService(DbContext)).[/]");
+                }
+                catch (Exception ex) { ClinicRenderer.PrintError(ex.Message); }
+                break;
+
+            // Task 5: Lifetimes
+            case "Task 5: Lifetimes — Singleton vs Scoped":
+                AnsiConsole.MarkupLine("[bold]Lifetimes демонстрація:[/]");
+                var logger1 = provider.GetRequiredService<ClinicApp.Utils.ClinicLogger>();
+                var logger2 = provider.GetRequiredService<ClinicApp.Utils.ClinicLogger>();
+                AnsiConsole.MarkupLine($"  Singleton (ClinicLogger): той самий? [green]{ReferenceEquals(logger1, logger2)}[/]");
+
+                using (var s1 = provider.CreateScope())
+                using (var s2 = provider.CreateScope())
+                {
+                    var svc1 = s1.ServiceProvider.GetRequiredService<IAppointmentService>();
+                    var svc2 = s2.ServiceProvider.GetRequiredService<IAppointmentService>();
+                    var svcSame = s1.ServiceProvider.GetRequiredService<IAppointmentService>();
+                    AnsiConsole.MarkupLine($"  Scoped (різні scopes): той самий? [red]{ReferenceEquals(svc1, svc2)}[/]");
+                    AnsiConsole.MarkupLine($"  Scoped (той самий scope): той самий? [green]{ReferenceEquals(svc1, svcSame)}[/]");
+                }
+                break;
+
+            // Task 5: Decorator
+            case "Task 5: Decorator — LoggingPatientService":
+                try
+                {
+                    using var scopeDec = provider.CreateScope();
+                    var db = scopeDec.ServiceProvider.GetRequiredService<ClinicDbContext>();
+                    db.Database.EnsureCreated();
+                    await DbSeeder.SeedAsync(db);
+
+                    var svc = scopeDec.ServiceProvider.GetRequiredService<IPatientService>();
+                    AnsiConsole.MarkupLine("[dim]Тип реального об'єкта:[/] " + svc.GetType().Name);
+                    AnsiConsole.MarkupLine("[dim]Викликаємо GetAllAsync — дивись лог файл після виконання:[/]");
+                    var result = await svc.GetAllAsync();
+                    AnsiConsole.MarkupLine($"[green]Отримано {result.Count} пацієнтів.[/]");
+                    AnsiConsole.MarkupLine("[dim]Decorator додав логування прозоро — PatientService не змінювався.[/]");
+                }
+                catch (Exception ex) { ClinicRenderer.PrintError(ex.Message); }
+                break;
+
+            // Task 6: GetRequiredService vs GetService
+            case "Task 6: GetRequiredService vs GetService":
+                AnsiConsole.MarkupLine("[bold]GetRequiredService&lt;T&gt;() vs GetService&lt;T&gt;():[/]");
+                var registered   = provider.GetRequiredService<ClinicApp.Utils.ClinicLogger>();
+                var registeredOpt = provider.GetService<ClinicApp.Utils.ClinicLogger>();
+                var notRegistered = provider.GetService<IDoctorService>(); // зареєстровано (не null)
+                var notReg2      = provider.GetService<ClinicApp.Utils.SessionManager>(); // не зареєстровано
+
+                AnsiConsole.MarkupLine($"  GetRequiredService&lt;ClinicLogger&gt;:  [green]{registered is not null}[/] (або кидає виняток)");
+                AnsiConsole.MarkupLine($"  GetService&lt;ClinicLogger&gt;:          [green]{registeredOpt is not null}[/] (або null)");
+                AnsiConsole.MarkupLine($"  GetService&lt;IDoctorService&gt;:        [green]{notRegistered is not null}[/] (зареєстровано)");
+                AnsiConsole.MarkupLine($"  GetService&lt;SessionManager&gt;:        [yellow]{notReg2 is null}[/] = null (не зареєстровано)");
+                AnsiConsole.MarkupLine("\n[dim]Правило: GetRequiredService — коли сервіс обов'язковий.");
+                AnsiConsole.MarkupLine("GetService — коли сервіс опціональний (nullable).[/]");
+                break;
+        }
+    }
+
+    // Dispose провайдера при виході з меню
+    if (provider is IDisposable disposable)
+        disposable.Dispose();
 }
 
 // Lab13: обробник для демонстрації механіки події

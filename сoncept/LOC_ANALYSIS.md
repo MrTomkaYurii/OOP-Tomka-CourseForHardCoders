@@ -29,9 +29,10 @@
 | Lab 19 | EmergencyContact | 35 | DbContext: MedicalRecord TPH, OwnsOne, RowVersion | ⭐⭐ |
 | Lab 20 | ClinicQueryService, PatientSummaryDto, AppointmentSummaryDto | 288 | DbContext: HasQueryFilter; Patient: IsDeleted | ⭐⭐⭐ |
 | Lab 21 | AsyncClinicService, ClinicHttpClient, ClinicDashboard | ~420 | DbSeeder: SeedAsync; ClinicRepository: async variants; Program.cs: AsyncMenu+EfCoreMenu | ⭐⭐⭐⭐ |
+| Lab 22 | ClinicConfig, 3 Strategies, 3 Interfaces, 3 Services, LoggingPatientService, ServiceContainer | ~480 | Clinic: ClinicConfig refactor; AppointmentProcessor: +strategy; Program.cs: SolidDiMenu | ⭐⭐⭐⭐ |
 
-**Разом нових файлів: 71**  
-**Загальний LOC `src/` (без Migrations):** ~5 280 рядків
+**Разом нових файлів: 84**  
+**Загальний LOC `src/` (без Migrations):** ~5 900 рядків
 
 ---
 
