@@ -863,6 +863,56 @@ src/Program.cs                ← using ClinicApp.Data + using Microsoft.EntityF
 
 ---
 
+## Lab 22 — SOLID + Dependency Injection (feature/solid-di → злито в main)
+
+**Статус:** ✅ ЗАВЕРШЕНО  
+**Гілка:** `feature/solid-di` → зливається в `main`
+
+**Нові файли:**
+```
+src/Models/ClinicConfig.cs              ← record: Name, Address, Founded (SRP)
+src/Strategies/ICostStrategy.cs         ← interface (OCP)
+src/Strategies/RegularCostStrategy.cs   ← базова ставка
+src/Strategies/UrgentCostStrategy.cs    ← коефіцієнт ×multiplier
+src/Strategies/DiscountCostStrategy.cs  ← знижка (1 - percent)
+src/Services/IPatientService.cs         ← 6 методів (ISP)
+src/Services/IDoctorService.cs          ← 4 методи (ISP)
+src/Services/IAppointmentService.cs     ← 7 методів (ISP)
+src/Services/PatientService.cs          ← primary ctor, EF Core (DIP)
+src/Services/DoctorService.cs           ← primary ctor, EF Core
+src/Services/AppointmentService.cs      ← primary ctor, EF Core
+src/Services/LoggingPatientService.cs   ← Decorator над IPatientService
+src/Infrastructure/ServiceContainer.cs  ← IServiceCollection wiring
+```
+
+**Змінені файли:**
+```
+src/Clinic.cs                          ← ClinicConfig + ctor delegation + SRP comments
+src/Managers/AppointmentProcessor.cs   ← WithCostStrategy(), CalculateCost(), CompareCost()
+src/Program.cs                         ← SolidDiMenu() + using Infrastructure/Services/Strategies
+```
+
+**API нових сервісів:**
+| Сервіс | Методи |
+|--------|--------|
+| `IPatientService` | `GetAllAsync`, `GetByIdAsync`, `SearchAsync`, `AddAsync`, `SoftDeleteAsync`, `CountAsync` |
+| `IDoctorService` | `GetAllAsync`, `GetByIdAsync`, `GetBySpecialityAsync`, `CountAsync` |
+| `IAppointmentService` | `GetUpcomingAsync`, `GetByPatientAsync`, `GetByDoctorAsync`, `BookAsync`, `CancelAsync`, `CompleteAsync`, `GetTotalRevenueAsync` |
+
+**Нові концепції в Lab 22:**
+- SOLID: S, O, L (аналіз), I, D
+- Strategy pattern (`ICostStrategy`)
+- Decorator pattern (`LoggingPatientService`)
+- Primary constructor C# 12
+- `IServiceCollection`, `ServiceCollection`, `BuildServiceProvider()`
+- `AddSingleton/AddScoped/AddTransient` lifetimes
+- DI Decorator через фабричну лямбду `sp => new Decorator(...)`
+- `GetRequiredService<T>()` vs `GetService<T>()`
+- `provider.CreateScope()` → `IServiceScope`
+- `ReferenceEquals(a,b)` для перевірки lifetime-поведінки
+
+---
+
 ## Правила для нових лаб
 
 1. **Перевір CONCEPTS_BY_LAB.md** — чи всі конструкції вже введені
