@@ -32,6 +32,12 @@ Thumbs.db
 # Logs
 *.log
 
+# Runtime-generated files (clinic app output)
+src/alerts/
+src/patients/
+src/session.dat
+src/session_summary.txt
+
 # Course site
 site/node_modules/
 site/dist/
