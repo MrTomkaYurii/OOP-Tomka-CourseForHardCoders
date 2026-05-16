@@ -28,9 +28,10 @@
 | Lab 18 | ClinicRepository | 91 | DbContext: Appointments+TPH; моделі: nav props | ⭐⭐⭐ |
 | Lab 19 | EmergencyContact | 35 | DbContext: MedicalRecord TPH, OwnsOne, RowVersion | ⭐⭐ |
 | Lab 20 | ClinicQueryService, PatientSummaryDto, AppointmentSummaryDto | 288 | DbContext: HasQueryFilter; Patient: IsDeleted | ⭐⭐⭐ |
+| Lab 21 | AsyncClinicService, ClinicHttpClient, ClinicDashboard | ~420 | DbSeeder: SeedAsync; ClinicRepository: async variants; Program.cs: AsyncMenu+EfCoreMenu | ⭐⭐⭐⭐ |
 
-**Разом нових файлів: 68**  
-**Загальний LOC `src/` (без Migrations):** ~4 720 рядків
+**Разом нових файлів: 71**  
+**Загальний LOC `src/` (без Migrations):** ~5 280 рядків
 
 ---
 
@@ -241,6 +242,19 @@
 | `Models/AppointmentSummaryDto.cs` | 17 |
 | **Підсумок** | **288** |
 > + DbContext: `HasQueryFilter` + `IsDeleted` на Patient
+
+---
+
+### Lab 21 — Async / Await
+| Файл | LOC |
+|------|-----|
+| `Data/AsyncClinicService.cs` | ~230 |
+| `Data/ClinicHttpClient.cs` | ~140 |
+| `Models/ClinicDashboard.cs` | 25 |
+| **Підсумок нових** | **~395** |
+> + `DbSeeder.cs`: +80 LOC (SeedAsync + 4 async private методи)
+> + `ClinicRepository.cs`: +55 LOC (5 async варіантів з ConfigureAwait)
+> + `Program.cs`: +200 LOC (EfCoreMenu, AsyncMenu, using директиви)
 
 ---
 
