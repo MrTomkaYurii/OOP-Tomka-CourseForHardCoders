@@ -304,46 +304,10 @@ git commit -m "Lab03 Task2: add Doctor class with int work hours and availabilit
    private int _count = 0;
    ```
 2. `Add` — перевірте ліміт, потім `_patients[_count] = patient; _count++;`
-3. `FindById` — простий `for` від 0 до `_count`:
-   ```csharp
-   for (int i = 0; i < _count; i++)
-       if (_patients[i].Id == id)
-           return _patients[i];
-   return null!;
-   ```
-4. `FindByName` — два проходи (патерн з Лаби 02: спочатку порахувати збіги, потім заповнити масив точного розміру):
-   ```csharp
-   int matchCount = 0;
-   for (int i = 0; i < _count; i++)
-       if (/* ім'я містить запит */) matchCount++;
-
-   Patient[] result = new Patient[matchCount];
-   int idx = 0;
-   for (int i = 0; i < _count; i++)
-       if (/* ім'я містить запит */) result[idx++] = _patients[i];
-   return result;
-   ```
-   Для нечутливого пошуку: `_patients[i].FirstName.ToLower().Contains(query.ToLower())`
-5. `Remove` — знайдіть індекс, потім зсуньте елементи:
-   ```csharp
-   for (int j = i; j < _count - 1; j++)
-       _patients[j] = _patients[j + 1];
-   _patients[_count - 1] = null!;
-   _count--;
-   ```
-6. `DisplayStats` — один прохід для суми та min/max, зберігайте індекс (не лише значення):
-   ```csharp
-   double totalAge = 0;
-   int minAge = _patients[0].Age, maxAge = _patients[0].Age;
-   int minIdx = 0, maxIdx = 0, adultsCount = 0;
-   for (int i = 0; i < _count; i++)
-   {
-       totalAge += _patients[i].Age;
-       if (_patients[i].Age < minAge) { minAge = _patients[i].Age; minIdx = i; }
-       if (_patients[i].Age > maxAge) { maxAge = _patients[i].Age; maxIdx = i; }
-       if (_patients[i].IsAdult) adultsCount++;
-   }
-   ```
+3. `FindById` — лінійний пошук: цикл від `0` до `_count`, порівняйте `_patients[i].Id == id`. Якщо не знайдено — поверніть `null!`.
+4. `FindByName` — двопрохідний патерн з Лаби 02: один цикл рахує кількість збігів, потім виділяється масив точного розміру, другий цикл його заповнює. Порівняння регістронезалежне: `FirstName.ToLower().Contains(query.ToLower())` або аналогічно для `LastName`.
+5. `Remove` — знайдіть індекс елемента (через цикл або `FindById`), зсуньте решту масиву ліворуч (`_patients[j] = _patients[j+1]`), встановіть останній слот у `null!`, зменшіть `_count`.
+6. `DisplayStats` — один прохід по масиву: накопичуйте суму вікУ (`totalAge`), відстежуйте індекси мінімального та максимального елемента, рахуйте кількість дорослих. Середнє — `totalAge / _count`. Виводьте ім'я через `_patients[minIdx].FullName`.
 7. У `Program.cs` ізолюйте підменю в окрему функцію `static void PatientsMenu(Clinic clinic)`.
 
 ### Адаптація до вашого домену
@@ -409,40 +373,9 @@ git commit -m "Lab03 Task3: add PatientManager with array storage, CRUD and stat
 
 ### Підказки
 
-1. `FindBySpeciality` — той самий двопрохідний патерн що в `PatientManager.FindByName`:
-   ```csharp
-   string q = query.ToLower();
-   int matchCount = 0;
-   for (int i = 0; i < _count; i++)
-       if (_doctors[i].Speciality.ToLower().Contains(q)) matchCount++;
-   Doctor[] result = new Doctor[matchCount];
-   int idx = 0;
-   for (int i = 0; i < _count; i++)
-       if (_doctors[i].Speciality.ToLower().Contains(q)) result[idx++] = _doctors[i];
-   return result;
-   ```
-2. `GetAll()` — виділіть масив розміром `_count` та скопіюйте:
-   ```csharp
-   Doctor[] result = new Doctor[_count];
-   for (int i = 0; i < _count; i++) result[i] = _doctors[i];
-   return result;
-   ```
-3. `DisplayStats()` — для унікальних спеціальностей: зовнішній цикл по `i`, внутрішній перевіряє чи вже була ця спеціальність серед `j < i`. Якщо нова — ще один цикл для підрахунку:
-   ```csharp
-   for (int i = 0; i < _count; i++)
-   {
-       bool alreadySeen = false;
-       for (int j = 0; j < i; j++)
-           if (_doctors[j].Speciality == _doctors[i].Speciality) { alreadySeen = true; break; }
-       if (!alreadySeen)
-       {
-           int specCount = 0;
-           for (int k = 0; k < _count; k++)
-               if (_doctors[k].Speciality == _doctors[i].Speciality) specCount++;
-           Console.WriteLine("  " + _doctors[i].Speciality + ": " + specCount);
-       }
-   }
-   ```
+1. `FindBySpeciality` — той самий двопрохідний патерн що і `PatientManager.FindByName`. Умова порівняння: `_doctors[i].Speciality.ToLower().Contains(q)`.
+2. `GetAll()` — виділіть масив розміром `_count`, скопіюйте перші `_count` елементів з `_doctors`, поверніть.
+3. `DisplayStats()` — для унікальних спеціальностей: зовнішній цикл по `i`, внутрішній (`j < i`) перевіряє чи спеціальність вже зустрічалась раніше. Якщо нова — третій цикл (`k`) рахує кількість лікарів з цією спеціальністю.
 4. Кількість доступних: простий `for` з лічильником, `if (_doctors[i].IsAvailableNow) availableNow++;`
 5. При введенні години роботи з консолі використовуйте `int.TryParse`:
    ```csharp
@@ -795,28 +728,8 @@ git commit -m "Lab03 Task7: add Clinic orchestrator with schedule and report"
 
 ### Підказки
 
-1. Приватний метод `Grow()` виконує подвоєння:
-   ```csharp
-   private void Grow()
-   {
-       int newCapacity = _patients.Length * 2;
-       Patient[] newArray = new Patient[newCapacity];
-       for (int i = 0; i < _count; i++)
-           newArray[i] = _patients[i];
-       _patients = newArray;
-       Console.WriteLine("  Масив заповнений! Розширення: " + (_count) + " → " + newCapacity);
-   }
-   ```
-2. `Add` перевіряє заповненість перед додаванням:
-   ```csharp
-   public void Add(Patient patient)
-   {
-       if (_count == _patients.Length)
-           Grow();
-       _patients[_count] = patient;
-       _count++;
-   }
-   ```
+1. Приватний метод `Grow()`: обчисліть нову ємність (`_patients.Length * 2`), виділіть новий масив, скопіюйте перші `_count` елементів зі старого циклом, присвойте `_patients = newArray`. Виведіть рядок із старою та новою ємністю.
+2. `Add`: якщо `_count == _patients.Length` — викличте `Grow()`. Потім присвойте елемент і збільшіть `_count`.
 3. Починайте з малого початкового розміру (`new Patient[4]`) — так ви побачите кілька розширень навіть на малих даних.
 4. `_patients = newArray;` — після цього старий масив більше не потрібен. C# автоматично звільнить пам'ять.
 5. Додайте `Capacity` властивість: `public int Capacity => _patients.Length;` — для виводу поточного розміру.

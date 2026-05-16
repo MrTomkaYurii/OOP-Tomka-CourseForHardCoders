@@ -359,40 +359,21 @@ namespace ClinicApp.Utils;
 
 public static class ClinicValidator
 {
-    public static void ValidateName(string value, string fieldName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException(fieldName + " не може бути порожнім.");
-        if (value.Length > 50)
-            throw new ArgumentException(fieldName + " занадто довге (макс. 50 символів).");
-    }
+    // Перевіряє: не null/whitespace, довжина ≤ 50
+    public static void ValidateName(string value, string fieldName) { ... }
 
-    public static void ValidatePhone(string phone)
-    {
-        if (string.IsNullOrWhiteSpace(phone))
-            throw new ArgumentException("Телефон не може бути порожнім.");
-        if (phone.Length != 10)
-            throw new ArgumentException("Телефон має містити рівно 10 цифр.");
-        for (int i = 0; i < phone.Length; i++)
-            if (phone[i] < '0' || phone[i] > '9')
-                throw new ArgumentException("Телефон має містити тільки цифри.");
-    }
+    // Перевіряє: не null/whitespace, рівно 10 символів, тільки цифри
+    public static void ValidatePhone(string phone) { ... }
 
-    public static void ValidateDate(DateTime value, string fieldName)
-    {
-        if (value > DateTime.Today)
-            throw new ArgumentOutOfRangeException(fieldName, "Дата не може бути в майбутньому.");
-        if (value.Year < 1900)
-            throw new ArgumentOutOfRangeException(fieldName, "Дата не може бути раніше 1900 року.");
-    }
+    // Перевіряє: не в майбутньому, не раніше 1900
+    public static void ValidateDate(DateTime value, string fieldName) { ... }
 
-    public static void ValidatePositive(int value, string fieldName)
-    {
-        if (value <= 0)
-            throw new ArgumentOutOfRangeException(fieldName, fieldName + " має бути більше нуля.");
-    }
+    // Перевіряє: value > 0
+    public static void ValidatePositive(int value, string fieldName) { ... }
 }
 ```
+
+Тіла методів реалізуйте самостійно, спираючись на перевірки з Задачі 3 (вони вже написані — тепер централізуйте їх тут). Тип винятку: `ArgumentException` або `ArgumentOutOfRangeException` відповідно до правил з Задачі 3.
 
 ### Приклад
 
@@ -403,20 +384,9 @@ public string FirstName
     get => _firstName;
     set { ClinicValidator.ValidateName(value, "Ім'я"); _firstName = value; }
 }
-
-// Сеттер WorkSchedule — у конструкторі:
-public WorkSchedule(int start, int end)
-{
-    if (start < 0 || start > 23)
-        throw new ArgumentOutOfRangeException("start", "Початок роботи має бути від 0 до 23.");
-    if (end < 1 || end > 24)
-        throw new ArgumentOutOfRangeException("end", "Кінець роботи має бути від 1 до 24.");
-    if (start >= end)
-        throw new ArgumentException("Кінець роботи має бути пізніше за початок.");
-    Start = start;
-    End = end;
-}
 ```
+
+Аналогічно перепишіть інші сеттери у `Patient`, `Doctor`, `Appointment`, `WorkSchedule`. Для `WorkSchedule` валідація розташована у конструкторі — він не підтримує звичайних сеттерів, перевіряйте параметри безпосередньо перед присвоєнням.
 
 ```csharp
 // Program.cs — обробка помилки при введенні користувача:

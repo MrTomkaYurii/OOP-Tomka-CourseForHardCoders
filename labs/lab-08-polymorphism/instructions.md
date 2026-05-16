@@ -51,7 +51,7 @@ public override string ToString()
 }
 ```
 
-**`Models/RegularAppointment.cs`** — новий файл:
+**`Models/RegularAppointment.cs`** — новий файл. Клас успадковує `Appointment`, конструктор викликає `base(...)`, `GetDescription()` повертає рядок-опис:
 
 ```csharp
 public class RegularAppointment : Appointment
@@ -59,7 +59,7 @@ public class RegularAppointment : Appointment
     public RegularAppointment(int patientId, int doctorId, DateTime scheduledAt, int durationMinutes = 30)
         : base(patientId, doctorId, scheduledAt, durationMinutes) { }
 
-    public override string GetDescription() => "Звичайний прийом";
+    public override string GetDescription() => /* рядок що описує тип прийому */;
 }
 ```
 
@@ -101,9 +101,9 @@ git commit -m "Lab08 Task1: make GetCost() and GetDescription() virtual, add Reg
 
 **`Models/UrgentAppointment.cs`** — новий файл:
 
-- Поле `string UrgencyNote` (причина терміновості)
-- `override GetCost()` → `base.GetCost() * 1.5m` (на 50% дорожче)
-- `sealed override GetDescription()` → рядок з UrgencyNote
+- Поле `string UrgencyNote` (причина терміновості, ініціалізується в конструкторі)
+- `override GetCost()` → на 50% дорожче за базову ставку (`base.GetCost()`)
+- `sealed override GetDescription()` → рядок "Терміновий" + UrgencyNote (якщо не порожній)
 - `new int GetPriority() => 1` — **не** override (навмисно, пояснення в Task 3)
 
 ```csharp
@@ -118,9 +118,8 @@ public class UrgentAppointment : Appointment
         UrgencyNote = urgencyNote;
     }
 
-    public override decimal GetCost() => base.GetCost() * 1.5m;
-    public sealed override string GetDescription() =>
-        "Терміновий" + (UrgencyNote.Length > 0 ? " (" + UrgencyNote + ")" : "");
+    public override decimal GetCost() { /* base.GetCost() × коефіцієнт */ }
+    public sealed override string GetDescription() { /* "Терміновий" + UrgencyNote */ }
     public new int GetPriority() => 1;
 }
 ```
@@ -128,9 +127,9 @@ public class UrgentAppointment : Appointment
 **`Models/SpecialistAppointment.cs`** — новий файл:
 
 - Клас **sealed** (не можна далі успадковувати)
-- Поле `string ConsultationTopic`
-- `override GetCost()` → `base.GetCost() * 1.3m` (на 30% дорожче)
-- `override GetDescription()` → рядок з темою
+- Поле `string ConsultationTopic` (ініціалізується в конструкторі)
+- `override GetCost()` → на 30% дорожче за базову ставку
+- `override GetDescription()` → рядок "Консультація спеціаліста" + тема
 
 ```csharp
 public sealed class SpecialistAppointment : Appointment
@@ -144,9 +143,8 @@ public sealed class SpecialistAppointment : Appointment
         ConsultationTopic = topic;
     }
 
-    public override decimal GetCost() => base.GetCost() * 1.3m;
-    public override string GetDescription() =>
-        "Консультація спеціаліста" + (ConsultationTopic.Length > 0 ? ": " + ConsultationTopic : "");
+    public override decimal GetCost() { /* base.GetCost() × коефіцієнт */ }
+    public override string GetDescription() { /* "Консультація спеціаліста" + тема */ }
 }
 ```
 

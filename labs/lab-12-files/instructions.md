@@ -116,19 +116,13 @@ public class ClinicExporter
         string path = Path.Combine(PrepareDir(), "patients.txt");
 
         using StreamWriter writer = new StreamWriter(path, false, Encoding.UTF8);
-        writer.WriteLine("=== Список пацієнтів ===");
-        writer.WriteLine($"Дата: {DateTime.Now:dd.MM.yyyy HH:mm}");
-        writer.WriteLine(new string('─', 50));
-
-        Patient[] patients = _clinic.Patients.GetAll();
-        for (int i = 0; i < patients.Length; i++)
-            writer.WriteLine($"{i + 1,3}. {patients[i]}");
-
-        writer.WriteLine($"Всього: {patients.Length}");
+        // заголовок: назва, дата генерації, роздільник
+        // цикл: для кожного пацієнта з clinic.Patients.GetAll() → writer.WriteLine(...)
+        // підсумок: кількість пацієнтів
         return path;
     }
 
-    // ExportAppointments(), ExportBilling(), ExportTreatmentPlans() — аналогічно
+    // ExportAppointments(), ExportBilling(), ExportTreatmentPlans() — аналогічна структура
 
     public void ExportAll() { ... }
 }
@@ -305,12 +299,11 @@ public class SessionManager
     public void Save(Clinic clinic)
     {
         using StreamWriter writer = new StreamWriter(_sessionPath, false, Encoding.UTF8);
-
-        writer.WriteLine("[PATIENTS]");
-        foreach (Patient p in clinic.Patients.GetAll())
-            writer.WriteLine($"{p.FirstName},{p.LastName},{p.DateOfBirth:dd.MM.yyyy},{p.BloodType},{p.Phone}");
-
-        writer.WriteLine("[END]");
+        // Запишіть секцію [PATIENTS]
+        // Для кожного пацієнта — один рядок у форматі:
+        //   FirstName,LastName,DateOfBirth,BloodType,Phone
+        // (DateOfBirth форматуйте через :dd.MM.yyyy)
+        // Закрийте секцію [END]
     }
 
     public int Load(Clinic clinic)

@@ -309,10 +309,10 @@ public static class ServiceContainer
         services.AddSingleton<ClinicLogger>();          // Singleton
         services.AddScoped<IDoctorService,      DoctorService>();
         services.AddScoped<IAppointmentService, AppointmentService>();
-        // IPatientService через Decorator:
-        services.AddScoped<IPatientService>(sp => new LoggingPatientService(
-            new PatientService(sp.GetRequiredService<ClinicDbContext>()),
-            sp.GetRequiredService<ClinicLogger>()));
+        // IPatientService через Decorator — зареєструйте через фабрику (lambda sp => ...):
+        // new LoggingPatientService(new PatientService(...), ...)
+        // Отримуйте залежності через sp.GetRequiredService<T>()
+        services.AddScoped<IPatientService>(sp => /* ваша фабрика */);
         return services.BuildServiceProvider();
     }
 }
@@ -325,12 +325,12 @@ public class LoggingPatientService(IPatientService inner, ClinicLogger logger) :
 {
     public async Task<List<Patient>> GetAllAsync(CancellationToken ct = default)
     {
-        logger.LogInfo("GetAllAsync викликано");
-        var result = await inner.GetAllAsync(ct);  // делегування
-        logger.LogInfo($"→ {result.Count} пацієнтів");
-        return result;
+        // 1. logger.LogInfo — фіксуємо виклик
+        // 2. await inner.GetAllAsync(ct) — делегуємо до "справжнього" сервісу
+        // 3. logger.LogInfo — фіксуємо результат (кількість записів)
+        // 4. return result
     }
-    // інші методи — делегують без логування (або з)
+    // інші методи — реалізуйте аналогічно (з логуванням або без)
 }
 ```
 
