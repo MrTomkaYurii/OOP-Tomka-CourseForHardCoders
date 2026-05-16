@@ -309,8 +309,8 @@ git push
 
 ## Поточний стан проєкту
 
-**Завершено:** Lab 00–16 ✅, Lab 17 ✅, Lab 18 ✅, Lab 19 ✅, Lab 20 🔄 (в роботі, фінальна на гілці feature/ef-core)
-**Наступний крок:** злити feature/ef-core → main (--no-ff), потім LOC analysis MD файл
+**Завершено:** Lab 00–20 ✅ (злито в main), Lab 21 ✅ (гілка feature/async, очікує злиття)
+**Наступний крок:** злити feature/async → main (--no-ff), потім Lab 22 (SOLID + DI)
 
 **Домен еталону:** Клініка (варіант А).
 

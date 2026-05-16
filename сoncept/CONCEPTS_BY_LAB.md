@@ -114,7 +114,31 @@
 | EF: `HasQueryFilter(expr)` — Global Query Filter (автоматичний WHERE) | 20 | |
 | EF: `.IgnoreQueryFilters()` — скасування глобального фільтра | 20 | |
 | Soft Delete патерн: `IsDeleted` bool + `SoftDelete()` метод | 20 | |
-| DI контейнер, SOLID принципи | 21 | |
+| `async Task`, `async Task<T>` — правильні типи async методів | 21 | |
+| `async void` — заборонений патерн (тільки event handlers) | 21 | |
+| `await` — звільнення потоку під час очікування I/O | 21 | |
+| `CancellationToken`, `CancellationTokenSource` — скасування | 21 | |
+| `CancellationTokenSource(TimeSpan)` — автоматичний таймаут | 21 | |
+| `ct.ThrowIfCancellationRequested()` — явна перевірка токену | 21 | |
+| `Task.WhenAll(t1, t2, ...)` — паралельне виконання, чекати всіх | 21 | |
+| `Task.WhenAny(t1, t2)` — race, перемагає перший завершений | 21 | |
+| `Parallel.ForEachAsync(col, options, async (item,ct) => {})` | 21 | .NET 6+ |
+| `ParallelOptions { MaxDegreeOfParallelism, CancellationToken }` | 21 | |
+| `Interlocked.Increment(ref count)` — атомарний thread-safe інкремент | 21 | |
+| `AggregateException`, `.InnerExceptions` — помилки паралельних задач | 21 | |
+| `ContinueWith(t => ..., TaskContinuationOptions.OnlyOnFaulted)` | 21 | |
+| `task.IsCompletedSuccessfully`, `task.IsFaulted`, `task.IsCanceled` | 21 | |
+| `IProgress<T>`, `Progress<T>` — звітування про прогрес | 21 | |
+| `progress?.Report(value)` — null-safe виклик прогресу | 21 | |
+| `ConfigureAwait(false)` — у бібліотечному/DAL-коді | 21 | |
+| `HttpClient` (singleton), `BaseAddress`, `Timeout` | 21 | |
+| `GetFromJsonAsync<T>(url, ct)` — GET + JSON десеріалізація | 21 | System.Net.Http.Json |
+| `[JsonPropertyName("snake_case")]` — маппінг JSON → C# | 21 | System.Text.Json |
+| `HttpRequestException` — мережева помилка | 21 | |
+| `TaskCanceledException when (!ct.IsCancellationRequested)` — таймаут HttpClient | 21 | |
+| `Uri.EscapeDataString(s)` — кодування URL-параметрів | 21 | |
+| EF async: `ToListAsync`, `FirstOrDefaultAsync`, `CountAsync`, `AnyAsync`, `SumAsync`, `SaveChangesAsync` | 21 | |
+| DI контейнер, SOLID принципи | 22 | |
 
 ---
 
@@ -434,6 +458,65 @@
 
 **Нова папка:** `src/UI/ClinicRenderer.cs`
 **Зміни:** `Program.cs` повністю переписано на `ClinicRenderer.*`
+
+---
+
+### Lab 17-20 — EF Core (feature/ef-core → злито в main) ✅
+
+Детально — у `CODEBASE_STATE.md` секції Lab 17-20.
+
+---
+
+### Lab 21 — Async / Await (feature/async → злито в main) ✅
+
+**Нові концепції:**
+
+**Task 1 — async Task Main + SeedAsync:**
+- `async Task` — правильний тип для async void-методів
+- `await` у top-level statements → компілятор генерує `async Task Main`
+- `AnyAsync(ct)`, `SaveChangesAsync(ct)` — async EF методи в DbSeeder
+- `CancellationToken ct = default` — опціональний параметр (CancellationToken.None якщо не передано)
+
+**Task 2 — AsyncClinicService базові методи:**
+- `ToListAsync(ct)`, `FirstOrDefaultAsync(p => ..., ct)` — EF Core async методи
+- `SaveChangesAsync(ct)` — async INSERT/UPDATE без блокування потоку
+- `ConfigureAwait(false)` — в ClinicRepository (DAL): не захоплювати SynchronizationContext
+- Конвенція: `GetPatients()` → `GetPatientsAsync(CancellationToken ct = default)`
+
+**Task 3 — WhenAll, WhenAny, Parallel.ForEachAsync:**
+- `Task.WhenAll(t1, t2, t3)` — запускає всі паралельно, чекає поки всі завершать
+- Результати через `.Result` після `WhenAll` — безпечно, бо Task вже завершений
+- `Task.WhenAny(apiTask, timeoutTask)` — перемагає перший; решту скасовуємо через `CancellationTokenSource`
+- `Parallel.ForEachAsync` з `MaxDegreeOfParallelism` — обмеження паралелізму
+- `Interlocked.Increment(ref count)` — thread-safe лічильник замість `count++`
+- DbContext антипатерн: не викликати `FindAsync` всередині `Parallel.ForEachAsync` на одному контексті
+- Правильний патерн: завантажити → обробити в пам'яті → зберегти одним SaveChangesAsync
+- `CancellationTokenSource(TimeSpan)` — автоматичний таймаут
+- `OperationCanceledException` — окремий catch від загального `Exception`
+
+**Task 4 — AggregateException:**
+- `AggregateException.InnerExceptions` — всі помилки, не тільки перша
+- `await Task.WhenAll(...)` → розгортає до першого `InnerException`
+- `ContinueWith(t => ..., TaskContinuationOptions.OnlyOnFaulted)` — обробник тільки для помилок
+- `TaskContinuationOptions`: `OnlyOnFaulted`, `OnlyOnCanceled`, `OnlyOnRanToCompletion`
+- `task.IsCompletedSuccessfully` — перевірка без виключення
+
+**Task 5 — IProgress\<T\>:**
+- `IProgress<T>` — абстракція: метод не знає про UI, тільки викликає `Report(value)`
+- `Progress<T>(callback)` — маршалює `Report()` на UI-потік (SynchronizationContext)
+- `progress?.Report(...)` — null-safe: якщо caller не передав progress — нічого не відбувається
+- `ct.ThrowIfCancellationRequested()` — явна перевірка на кожній ітерації циклу
+
+**Task 6 — HttpClient:**
+- `HttpClient` як singleton: один статичний екземпляр замість `using var http = new HttpClient()`
+- `HttpClient.BaseAddress`, `HttpClient.Timeout` — конфігурація
+- `GetFromJsonAsync<T>(url, ct)` — GET + JSON → T в один виклик
+- `[JsonPropertyName("...")]` на `record` властивостях — маппінг snake_case JSON
+- `HttpRequestException` — мережева помилка (немає з'єднання, HTTP error)
+- `TaskCanceledException when (!ct.IsCancellationRequested)` — таймаут HttpClient (не скасування)
+- `Uri.EscapeDataString(s)` — кодування спецсимволів у URL
+- `response.IsSuccessStatusCode` — перевірка HTTP 2xx
+- FDA Open API: публічний API без реєстрації (`api.fda.gov/drug/label.json`)
 
 ---
 

@@ -97,4 +97,65 @@ public class ClinicRepository
             .OrderBy(p => p.LastName)
             .ToList();
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Lab 21: Async варіанти методів ClinicRepository
+    //
+    // Кожен синхронний метод дублюється з суфіксом Async і CancellationToken.
+    // Це стандартна конвенція .NET:
+    //   — sync: GetPatientWithAppointments(id)
+    //   — async: GetPatientWithAppointmentsAsync(id, ct)
+    //
+    // ConfigureAwait(false): у бібліотечному/DAL-коді доцільно додавати,
+    // щоб не захоплювати SynchronizationContext (актуально для WinForms/WPF).
+    // ─────────────────────────────────────────────────────────────────────
+
+    public async Task<Patient?> GetPatientWithAppointmentsAsync(int patientId, CancellationToken ct = default)
+    {
+        return await _context.Patients
+            .Include(p => p.Appointments)
+            .FirstOrDefaultAsync(p => p.Id == patientId, ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<Doctor?> GetDoctorWithAppointmentsAsync(int doctorId, CancellationToken ct = default)
+    {
+        return await _context.Doctors
+            .Include(d => d.Appointments)
+            .FirstOrDefaultAsync(d => d.Id == doctorId, ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<List<Appointment>> GetUpcomingAppointmentsAsync(CancellationToken ct = default)
+    {
+        return await _context.Appointments
+            .Include(a => a.Patient)
+            .Include(a => a.Doctor)
+            .Where(a => a.Status == AppointmentStatus.Scheduled
+                       && a.ScheduledAt > DateTime.Now)
+            .OrderBy(a => a.ScheduledAt)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<List<Appointment>> GetAppointmentsByPatientAsync(int patientId, CancellationToken ct = default)
+    {
+        return await _context.Appointments
+            .Include(a => a.Doctor)
+            .Where(a => a.PatientId == patientId)
+            .OrderByDescending(a => a.ScheduledAt)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<List<Patient>> GetPatientsWithActiveAppointmentsAsync(CancellationToken ct = default)
+    {
+        return await _context.Patients
+            .AsNoTracking()
+            .Include(p => p.Appointments)
+            .Where(p => p.Appointments.Any(a => a.Status == AppointmentStatus.Scheduled))
+            .OrderBy(p => p.LastName)
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+    }
 }

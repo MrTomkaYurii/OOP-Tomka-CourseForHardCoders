@@ -1,6 +1,8 @@
 using ClinicApp;
 using ClinicApp.Comparators;
+using ClinicApp.Data;
 using ClinicApp.Enums;
+using Microsoft.EntityFrameworkCore;
 using ClinicApp.Events;
 using ClinicApp.Extensions;
 using ClinicApp.Managers;
@@ -83,6 +85,8 @@ while (running)
         "Файли",
         "Звіти (LINQ)",
         "Фільтри (Functional)",
+        "База даних (EF Core)",
+        "Async (Lab 21)",
         "Вийти"
     });
 
@@ -98,8 +102,10 @@ while (running)
         case "Аналітика":          AnalyticsMenu(clinic);        break;
         case "Плани лікування":    TreatmentPlansMenu(clinic);   break;
         case "Файли":              FilesMenu(clinic);            break;
-        case "Звіти (LINQ)":       ReportsMenu(clinic);          break;
-        case "Фільтри (Functional)": FunctionalMenu(clinic);    break;
+        case "Звіти (LINQ)":         ReportsMenu(clinic);          break;
+        case "Фільтри (Functional)": FunctionalMenu(clinic);      break;
+        case "База даних (EF Core)": EfCoreMenu();               break;
+        case "Async (Lab 21)":       await AsyncMenu();           break;
         case "Вийти":
             clinic.Tracker.PrintSummary();
             clinic.Tracker.SaveSummary();
@@ -980,4 +986,250 @@ static void OnAppointmentBookedConsole(object? sender, AppointmentEventArgs e)
 {
     ClinicRenderer.PrintInfo(
         $"[EVENT] Запис #{e.AppointmentId} створено — пацієнт {e.PatientId}, лікар {e.DoctorId}");
+}
+
+// ──────────────────────────────────────────────
+//  Меню EF Core (Labs 17-20)
+// ──────────────────────────────────────────────
+static void EfCoreMenu()
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        ClinicRenderer.PrintHeader("База даних — EF Core (Labs 17-20)");
+        string cmd = ClinicRenderer.SelectMenu("Оберіть демонстрацію", new[]
+        {
+            "Ініціалізувати БД та засіяти дані",
+            "Всі пацієнти з БД",
+            "Всі лікарі з БД",
+            "Майбутні записи (Eager Loading)",
+            "Пацієнт з записами (Include)",
+            "Статистика лікарів",
+            "Пацієнти з активними записами",
+            "← Назад"
+        });
+
+        if (cmd == "← Назад") { inMenu = false; break; }
+
+        try
+        {
+            using var db = new ClinicDbContext();
+            db.Database.EnsureCreated();
+            var repo = new ClinicRepository(db);
+            var qs   = new ClinicQueryService(db);
+
+            switch (cmd)
+            {
+                case "Ініціалізувати БД та засіяти дані":
+                    DbSeeder.Seed(db);
+                    ClinicRenderer.PrintSuccess("БД ініціалізовано.");
+                    break;
+
+                case "Всі пацієнти з БД":
+                    var patients = db.Patients.AsNoTracking()
+                        .OrderBy(p => p.LastName).ToList();
+                    ClinicRenderer.RenderPatients(patients);
+                    break;
+
+                case "Всі лікарі з БД":
+                    var doctors = db.Doctors.AsNoTracking()
+                        .OrderBy(d => d.LastName).ToList();
+                    foreach (var d in doctors)
+                        AnsiConsole.MarkupLine($"  [{d.Id}] {Markup.Escape(d.FullName)} — {d.Speciality}");
+                    break;
+
+                case "Майбутні записи (Eager Loading)":
+                    var upcoming = repo.GetUpcomingAppointments();
+                    if (upcoming.Count == 0) { ClinicRenderer.PrintWarning("Немає майбутніх записів."); break; }
+                    foreach (var a in upcoming)
+                        AnsiConsole.MarkupLine($"  {a.ScheduledAt:dd.MM HH:mm} — " +
+                            $"{Markup.Escape(a.Patient?.FullName ?? "?")} → {Markup.Escape(a.Doctor?.FullName ?? "?")}");
+                    break;
+
+                case "Пацієнт з записами (Include)":
+                    int pid = ClinicRenderer.PromptInt("ID пацієнта");
+                    var p = repo.GetPatientWithAppointments(pid);
+                    if (p is null) { ClinicRenderer.PrintError("Не знайдено."); break; }
+                    AnsiConsole.MarkupLine($"[bold]{Markup.Escape(p.FullName)}[/] — записів: {p.Appointments.Count}");
+                    break;
+
+                case "Статистика лікарів":
+                    foreach (var (doc, cnt, rev) in repo.GetDoctorStats())
+                        AnsiConsole.MarkupLine($"  {Markup.Escape(doc.FullName)}: {cnt} записів, {rev:F2} грн");
+                    break;
+
+                case "Пацієнти з активними записами":
+                    ClinicRenderer.RenderPatients(repo.GetPatientsWithActiveAppointments());
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            ClinicRenderer.PrintError($"Помилка БД: {ex.Message}");
+        }
+    }
+}
+
+// ──────────────────────────────────────────────
+//  Async меню (Lab 21)
+// ──────────────────────────────────────────────
+// async Task — тому що містить await виклики
+// Top-level statements в C# підтримують await напряму
+static async Task AsyncMenu()
+{
+    bool inMenu = true;
+    while (inMenu)
+    {
+        ClinicRenderer.PrintHeader("Async / Await (Lab 21)");
+        string cmd = ClinicRenderer.SelectMenu("Оберіть демонстрацію", new[]
+        {
+            "Task 1: SeedAsync — async ініціалізація БД",
+            "Task 2: Базові async методи (GetAllPatientsAsync)",
+            "Task 3: Task.WhenAll — Dashboard паралельно",
+            "Task 3: WhenAny — Dashboard з таймаутом",
+            "Task 3: Parallel.ForEachAsync — масова оплата",
+            "Task 3: CancellationToken — пошук з таймаутом",
+            "Task 4: AggregateException — звіт по пацієнту",
+            "Task 5: IProgress<T> — масова обробка записів",
+            "Task 6: HttpClient — інфо про ліки (FDA API)",
+            "Task 6: Health check API",
+            "← Назад"
+        });
+
+        if (cmd == "← Назад") { inMenu = false; break; }
+
+        try
+        {
+            await using var db = new ClinicDbContext();
+            db.Database.EnsureCreated();
+            var asyncSvc = new AsyncClinicService(db);
+            var httpClient = new ClinicHttpClient();
+
+            switch (cmd)
+            {
+                // Task 1: SeedAsync
+                case "Task 1: SeedAsync — async ініціалізація БД":
+                    ClinicRenderer.PrintInfo("Запускаємо DbSeeder.SeedAsync()...");
+                    await DbSeeder.SeedAsync(db);
+                    ClinicRenderer.PrintSuccess("Async seed завершено.");
+                    break;
+
+                // Task 2: Базові async методи
+                case "Task 2: Базові async методи (GetAllPatientsAsync)":
+                    ClinicRenderer.PrintInfo("await GetAllPatientsAsync()...");
+                    var allPatients = await asyncSvc.GetAllPatientsAsync();
+                    ClinicRenderer.RenderPatients(allPatients);
+                    break;
+
+                // Task 3: Task.WhenAll — Dashboard
+                case "Task 3: Task.WhenAll — Dashboard паралельно":
+                    ClinicRenderer.PrintInfo("await GetDashboardAsync() — 5 паралельних запитів...");
+                    var dashboard = await asyncSvc.GetDashboardAsync();
+                    ClinicRenderer.PrintSuccess(dashboard.ToString());
+                    break;
+
+                // Task 3: WhenAny — таймаут
+                case "Task 3: WhenAny — Dashboard з таймаутом":
+                    int timeout = ClinicRenderer.PromptInt("Таймаут (мс, напр. 3000)");
+                    var result = await asyncSvc.GetDashboardWithTimeoutAsync(timeout);
+                    if (result is not null)
+                        ClinicRenderer.PrintSuccess($"Отримано: {result}");
+                    else
+                        ClinicRenderer.PrintWarning("Таймаут — дані не отримано.");
+                    break;
+
+                // Task 3: Parallel.ForEachAsync
+                case "Task 3: Parallel.ForEachAsync — масова оплата":
+                    var unpaidIds = db.Appointments.AsNoTracking()
+                        .Where(a => !a.IsPaid)
+                        .Select(a => a.Id)
+                        .ToList();
+                    if (unpaidIds.Count == 0) { ClinicRenderer.PrintWarning("Всі записи вже оплачені."); break; }
+                    int paid = await asyncSvc.MarkAppointmentsAsPaidAsync(unpaidIds);
+                    ClinicRenderer.PrintSuccess($"Parallel.ForEachAsync: оплачено {paid} записів.");
+                    break;
+
+                // Task 3: CancellationToken
+                case "Task 3: CancellationToken — пошук з таймаутом":
+                    string query = ClinicRenderer.PromptString("Пошук пацієнта");
+                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2)))
+                    {
+                        try
+                        {
+                            var found = await asyncSvc.SearchPatientsAsync(query, cts.Token);
+                            ClinicRenderer.RenderPatients(found);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            ClinicRenderer.PrintWarning("Операцію скасовано (таймаут 2 сек).");
+                        }
+                    }
+                    break;
+
+                // Task 4: AggregateException
+                case "Task 4: AggregateException — звіт по пацієнту":
+                    int patId = ClinicRenderer.PromptInt("ID пацієнта");
+                    try
+                    {
+                        var report = await asyncSvc.BuildPatientReportAsync(patId);
+                        AnsiConsole.MarkupLine($"[bold]{Markup.Escape(report.Patient.FullName)}[/]");
+                        AnsiConsole.MarkupLine($"  Записів: {report.RecentAppointments.Count}");
+                        AnsiConsole.MarkupLine($"  Медкарта: {report.MedicalRecords.Count} записів");
+                        AnsiConsole.MarkupLine($"  Дашборд: {report.Dashboard}");
+                    }
+                    catch (Exception ex)
+                    {
+                        ClinicRenderer.PrintError(ex.Message);
+                    }
+                    break;
+
+                // Task 5: IProgress<T>
+                case "Task 5: IProgress<T> — масова обробка записів":
+                    ClinicRenderer.PrintInfo("Запускаємо BulkProcessAppointmentsAsync з IProgress...");
+                    var progress = new Progress<(int Current, int Total, string Message)>(p =>
+                    {
+                        if (p.Total > 0)
+                            AnsiConsole.MarkupLine($"  [{p.Current}/{p.Total}] {Markup.Escape(p.Message)}");
+                        else
+                            AnsiConsole.MarkupLine($"  {Markup.Escape(p.Message)}");
+                    });
+                    int processed = await asyncSvc.BulkProcessAppointmentsAsync(
+                        AppointmentStatus.Completed, progress);
+                    ClinicRenderer.PrintSuccess($"Оброблено {processed} записів.");
+                    break;
+
+                // Task 6: HttpClient — FDA API
+                case "Task 6: HttpClient — інфо про ліки (FDA API)":
+                    string drug = ClinicRenderer.PromptString("Назва препарату (англ., напр. Aspirin)");
+                    ClinicRenderer.PrintInfo("Запит до FDA Open API...");
+                    var info = await httpClient.GetDrugInfoAsync(drug);
+                    if (info is null)
+                    {
+                        ClinicRenderer.PrintWarning("Інформацію не знайдено або сервіс недоступний.");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine($"[bold]{Markup.Escape(info.Name)}[/]");
+                        AnsiConsole.MarkupLine($"  Призначення: {Markup.Escape(info.Purpose)}");
+                        AnsiConsole.MarkupLine($"  Попередження: {Markup.Escape(info.Warnings)}");
+                        AnsiConsole.MarkupLine($"  Дозування: {Markup.Escape(info.Dosage)}");
+                    }
+                    break;
+
+                // Task 6: Health check
+                case "Task 6: Health check API":
+                    ClinicRenderer.PrintInfo("Перевіряємо доступність FDA API...");
+                    bool available = await httpClient.IsApiAvailableAsync();
+                    if (available)
+                        ClinicRenderer.PrintSuccess("FDA API доступний.");
+                    else
+                        ClinicRenderer.PrintWarning("FDA API недоступний.");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            ClinicRenderer.PrintError($"Async помилка: {ex.Message}");
+        }
+    }
 }

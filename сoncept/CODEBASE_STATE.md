@@ -798,9 +798,68 @@ src/
 
 ---
 
-## Lab 21 — (після злиття EF Core гілки)
+## Lab 21 — Async / Await (feature/async)
 
-Дивись COURSE_DESIGN.md для опису завдань.
+**Статус:** ✅ ЗАВЕРШЕНО  
+**Гілка:** `feature/async` → зливається в `main`
+
+**Нові файли:**
+```
+src/Models/ClinicDashboard.cs       ← record з 5 полями (PatientCount, DoctorCount, TotalRevenue, UpcomingCount, TodayCount)
+src/Data/AsyncClinicService.cs      ← Tasks 2-5: async EF методи, WhenAll, Parallel.ForEachAsync, AggregateException, IProgress<T>
+src/Data/ClinicHttpClient.cs        ← Task 6: HttpClient, GetFromJsonAsync, Task.WhenAny race
+```
+
+**Змінені файли:**
+```
+src/Data/DbSeeder.cs          ← додано SeedAsync() + async private методи (Task 1)
+src/Data/ClinicRepository.cs  ← додано async варіанти всіх методів з ConfigureAwait(false)
+src/Program.cs                ← using ClinicApp.Data + using Microsoft.EntityFrameworkCore
+                                 + меню "База даних (EF Core)" + "Async (Lab 21)"
+                                 + EfCoreMenu() + AsyncMenu()
+```
+
+**API AsyncClinicService:**
+| Метод | Task |
+|-------|------|
+| `GetAllPatientsAsync(ct)` | 2 |
+| `GetPatientByIdAsync(id, ct)` | 2 |
+| `GetDoctorByIdAsync(id, ct)` | 2 |
+| `GetUpcomingAppointmentsAsync(ct)` | 2 |
+| `SaveAppointmentAsync(a, ct)` | 2 |
+| `GetDashboardAsync(ct)` | 3 — Task.WhenAll x5 |
+| `GetDashboardWithTimeoutAsync(ms)` | 3 — Task.WhenAny race |
+| `MarkAppointmentsAsPaidAsync(ids, ct)` | 3 — Parallel.ForEachAsync |
+| `SearchPatientsAsync(query, ct)` | 3 — CancellationToken |
+| `BuildPatientReportAsync(id, ct)` | 4 — AggregateException + ContinueWith |
+| `BulkProcessAppointmentsAsync(status, progress, ct)` | 5 — IProgress<T> |
+| `GoodFireAndForgetAsync(ct)` | 1 — async void vs async Task |
+
+**API ClinicHttpClient:**
+| Метод | Що демонструє |
+|-------|--------------|
+| `GetDrugInfoAsync(name, ct)` | GetFromJsonAsync, HttpRequestException, TaskCanceledException |
+| `IsApiAvailableAsync(ct)` | async bool, fail-safe |
+| `GetDrugInfoWithRaceAsync(name, ms)` | Task.WhenAny race з таймаутом |
+
+**Нові концепції в Lab 21:**
+- `async Task`, `async Task<T>` — правильні типи повернення
+- `async void` — заборонений патерн (тільки event handlers)
+- `await` — звільнення потоку під час очікування I/O
+- `CancellationToken`, `CancellationTokenSource` — скасування операцій
+- `Task.WhenAll(t1, t2, ...)` — паралельне виконання, чекати всіх
+- `Task.WhenAny(t1, t2)` — race, перемагає перший
+- `Parallel.ForEachAsync(collection, options, async (item, ct) => ...)` — паралельна обробка колекцій
+- `Interlocked.Increment` — атомарний інкремент (thread-safe counter)
+- `AggregateException`, `InnerExceptions` — помилки з паралельних задач
+- `ContinueWith(TaskContinuationOptions.OnlyOnFaulted)` — обробник для помилкового стану
+- `task.IsCompletedSuccessfully`, `task.IsFaulted` — перевірка статусу
+- `IProgress<T>`, `Progress<T>` — звітування про прогрес
+- `HttpClient` (singleton pattern), `GetFromJsonAsync<T>` — HTTP async запити
+- `[JsonPropertyName("...")]` — маппінг JSON → C# властивість
+- `ConfigureAwait(false)` — у бібліотечному коді
+- `ct.ThrowIfCancellationRequested()` — явна перевірка токену
+- `OperationCanceledException` vs `TaskCanceledException` vs `HttpRequestException` — різні типи помилок async
 
 ---
 
