@@ -124,7 +124,7 @@ public class AsyncClinicService
         var doctorCountTask   = _context.Doctors.CountAsync(ct);
         var revenueTask       = _context.Appointments
                                     .Where(a => a.IsPaid)
-                                    .SumAsync(a => a.Cost, ct);
+                                    .SumAsync(a => (decimal)a.DurationMinutes * 10m, ct);
         var upcomingCountTask = _context.Appointments
                                     .CountAsync(a => a.Status == AppointmentStatus.Scheduled
                                                      && a.ScheduledAt > DateTime.Now, ct);
