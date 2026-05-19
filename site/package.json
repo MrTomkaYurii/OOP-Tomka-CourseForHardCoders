@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "astro dev --host 127.0.0.1",
     "build": "astro build",
-    "preview": "astro preview --host 127.0.0.1"
+    "preview": "astro preview --host 127.0.0.1",
+    "build:runner": "cd ../runner && dotnet publish -c Release -p:PublishDir=../site/public/runner/wwwroot && cp -r ../site/public/runner/wwwroot/. ../site/public/runner/ && rm -rf ../site/public/runner/wwwroot"
   },
   "dependencies": {
     "astro": "^5.0.0",

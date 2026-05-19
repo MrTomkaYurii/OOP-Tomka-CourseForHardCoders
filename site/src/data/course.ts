@@ -438,8 +438,16 @@ async function renderMarkdown(markdown: string, options: { assetPrefix?: string 
 
     if (isRunnable) {
       const encoded = Buffer.from(text, "utf-8").toString("base64");
-      const src = siteAssetPath(`/embed?code=${encodeURIComponent(encoded)}`);
-      return `<iframe src="${src}" style="width:100%;height:420px;border:0;border-radius:8px;display:block;margin:1.25rem 0;" loading="lazy" allow=""></iframe>`;
+      const src = siteAssetPath(`/runner/?code=${encodeURIComponent(encoded)}`);
+      // Розраховуємо висоту iframe під кількість рядків коду
+      const lines = text.split("\n").length;
+      const TOOLBAR   = 37;  // 36px + 1px border-bottom
+      const LINE_H    = 21;  // 13px font * 1.6 line-height ≈ 20.8 → 21
+      const ED_PAD    = 28;  // 14px top + 14px bottom padding textarea
+      const OUTPUT    = 70;  // output-head + ghost рядок + padding
+      const BORDER    = 2;   // 1px top + 1px bottom .runner
+      const height = TOOLBAR + lines * LINE_H + ED_PAD + OUTPUT + BORDER;
+      return `<iframe src="${src}" style="width:100%;height:${height}px;border:0;border-radius:8px;display:block;margin:1.25rem 0;" loading="lazy" allow=""></iframe>`;
     }
 
     return highlighter.codeToHtml(text, { lang: language, theme: "github-dark" });

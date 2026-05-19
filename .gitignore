@@ -45,3 +45,4 @@ site/.astro/
 site/.env
 site/.env.*
 site/dev-server*.log
+site/public/runner/

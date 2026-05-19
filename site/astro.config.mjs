@@ -1,5 +1,5 @@
 import { defineConfig } from "astro/config";
-import { createReadStream, cpSync, existsSync, mkdirSync, statSync } from "fs";
+import { createReadStream, cpSync, existsSync, mkdirSync, statSync, readFileSync } from "fs";
 import { resolve, join, extname } from "path";
 import { fileURLToPath } from "url";
 
@@ -20,6 +20,30 @@ const MIME = {
   ".gif": "image/gif",
   ".webp": "image/webp",
 };
+
+const runnerDir = resolve(fileURLToPath(import.meta.url), "../public/runner");
+
+/** Vite plugin: serve /runner/ → /runner/index.html (Blazor SPA fallback) */
+function blazorRunnerDevPlugin() {
+  return {
+    name: "blazor-runner-dev",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.split("?")[0] ?? "";
+        // Serve index.html for /runner/ so Blazor router works correctly
+        if (url === "/runner" || url === "/runner/") {
+          const indexPath = join(runnerDir, "index.html");
+          if (existsSync(indexPath)) {
+            res.setHeader("Content-Type", "text/html");
+            createReadStream(indexPath).pipe(res);
+            return;
+          }
+        }
+        next();
+      });
+    },
+  };
+}
 
 /** Vite plugin: serve lectures/_assets during dev server */
 function lectureAssetsDevPlugin() {
@@ -60,7 +84,7 @@ export default defineConfig({
   site: repositoryOwner ? `https://${repositoryOwner}.github.io` : "http://localhost:4321",
   base: isGitHubActions && repositoryName && !isUserPagesRepository ? `/${repositoryName}` : "/",
   vite: {
-    plugins: [lectureAssetsDevPlugin()],
+    plugins: [blazorRunnerDevPlugin(), lectureAssetsDevPlugin()],
   },
   integrations: [copyLectureAssetsOnBuild()],
 });

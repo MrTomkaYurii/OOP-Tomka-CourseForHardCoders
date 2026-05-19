@@ -131,6 +131,22 @@ Patient patient1 = new(); // те саме що new Patient()
 Доступ до полів і методів об'єкта — через крапку:
 
 ```csharp run
+using System;
+
+// читаємо значення полів
+Patient patient1 = new Patient();
+Console.WriteLine(patient1.Name);        // Невідомий
+Console.WriteLine($"Вік: {patient1.Age}"); // 0
+
+// встановлюємо нові значення
+patient1.Name = "Олена Коваль";
+patient1.Phone = "0501234567";
+patient1.Age = 32;
+
+// викликаємо методи
+patient1.Display();
+Console.WriteLine(patient1.GetShortInfo());
+
 class Patient
 {
     public string Name = "Невідомий";
@@ -147,20 +163,6 @@ class Patient
         return $"{Name} ({Age} р.)";
     }
 }
-
-// читаємо значення полів
-Patient patient1 = new Patient();
-Console.WriteLine(patient1.Name);  // Невідомий
-Console.WriteLine(patient1.Age);   // 0
-
-// встановлюємо нові значення
-patient1.Name = "Олена Коваль";
-patient1.Phone = "0501234567";
-patient1.Age = 32;
-
-// викликаємо методи
-patient1.Display();
-Console.WriteLine(patient1.GetShortInfo());
 ```
 
 ---

@@ -15,6 +15,18 @@ const { title = "OOP C# Course", description = "Лабораторний кур�
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       document.documentElement.dataset.theme = savedTheme ?? (prefersDark ? "dark" : "light");
     </script>
+    <script is:inline>
+      window.addEventListener('message', function (e) {
+        if (!e.data || e.data.type !== 'runner-height') return;
+        var iframes = document.querySelectorAll('iframe');
+        for (var i = 0; i < iframes.length; i++) {
+          if (iframes[i].contentWindow === e.source) {
+            iframes[i].style.height = (e.data.height + 2) + 'px';
+            break;
+          }
+        }
+      });
+    </script>
     <title>{title}</title>
   </head>
   <body>

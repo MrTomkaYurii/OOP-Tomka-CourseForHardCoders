@@ -1,79 +1,120 @@
 @page "/"
-@inject CSharpRunner Runner
+@inject runner.Services.CSharpRunner Runner
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
-<div class="toolbar">
-    <span class="lang-badge">C#</span>
-    <button class="run-btn @(_running ? "running" : "")"
-            @onclick="RunCode"
-            disabled="@_running"
-            title="Ctrl+Enter">
-        @if (_running)
-        {
-            <span class="spinner"></span>
-        }
-        else
-        {
-            <span>▶</span>
-        }
-        Запустити
-    </button>
-    <a class="fiddle-btn"
-       href="https://dotnetfiddle.net"
-       target="_blank"
-       rel="noopener">↗ dotnetfiddle</a>
-    <span class="spacer"></span>
-    <span class="status @_statusClass">@_status</span>
-</div>
+<div class="runner">
 
-<textarea class="editor"
-          @bind="_code"
-          @bind:event="oninput"
-          @onkeydown="OnKeyDown"
-          spellcheck="false"
-          autocorrect="off"
-          autocapitalize="off"
-          placeholder="// Введіть C# код..."></textarea>
+    <div class="toolbar">
+        <span class="badge">C#</span>
+        <button class="btn btn-primary" @onclick="RunCode" disabled="@_running" title="Ctrl+Enter">
+            @if (_running)
+            {
+                <span class="spinner"></span>
+                <span>Виконується</span>
+            }
+            else
+            {
+                <svg class="ico" viewBox="0 0 12 12"><path d="M3 2L10 6L3 10Z" fill="currentColor"/></svg>
+                <span>Запустити</span>
+            }
+        </button>
+        <a class="btn btn-ghost" href="https://dotnetfiddle.net" target="_blank" rel="noopener">
+            <span>dotnetfiddle</span>
+            <svg class="ico" viewBox="0 0 12 12">
+                <path d="M4.5 2H10V7.5M10 2L5 7M3 4H2V10H8V9"
+                      fill="none" stroke="currentColor" stroke-width="1.2"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+        <div class="spacer"></div>
+        <div class="status @_statusClass">
+            <span class="dot"></span>
+            <span>@_statusText</span>
+        </div>
+    </div>
 
-<div class="output-panel">
-    <div class="output-header">Вивід</div>
-    <pre class="output @(_isError ? "error" : "ok")">@_output</pre>
+    <div class="editor-wrap">
+        <div class="gutter" id="gutter">@_gutterText</div>
+        <textarea class="code-area"
+                  id="codearea"
+                  value="@_code"
+                  @oninput="OnCodeInput"
+                  @onkeydown="OnKeyDown"
+                  spellcheck="false"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  placeholder="// Введіть C# код…"></textarea>
+    </div>
+
+    <div class="output">
+        <div class="output-head">
+            <span>Вивід</span>
+            @if (_hasRun)
+            {
+                <button class="clear" @onclick="ClearOutput">очистити</button>
+            }
+        </div>
+        <pre class="output-body @(_isError ? "err" : "")">@_outputDisplay</pre>
+    </div>
+
 </div>
 
 @code {
     private string _code = "";
-    private string _output = "Ctrl+Enter або ▶ Запустити";
-    private string _status = "";
-    private string _statusClass = "";
+    private string _output = "";
+    private string _statusText = "готово";
+    private string _statusClass = "idle";
     private bool _running = false;
     private bool _isError = false;
-    protected override void OnAfterRender(bool firstRender)
+    private bool _hasRun = false;
+    private string _gutterText = "1";
+
+    private MarkupString _outputDisplay =>
+        _hasRun
+            ? new MarkupString(System.Web.HttpUtility.HtmlEncode(_output))
+            : new MarkupString("<span class=\"ghost\">натисни ▶ або Ctrl+Enter, щоб запустити</span>");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
-
-        // Зчитуємо код з URL параметра ?code=BASE64
-        var uri = new Uri(Nav.Uri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        var encoded = query["code"];
-
-        if (!string.IsNullOrWhiteSpace(encoded))
+        if (firstRender)
         {
-            try
+            var uri = new Uri(Nav.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var encoded = query["code"];
+            if (!string.IsNullOrWhiteSpace(encoded))
             {
-                var bytes = Convert.FromBase64String(encoded);
-                _code = System.Text.Encoding.UTF8.GetString(bytes);
-                StateHasChanged();
+                try
+                {
+                    var bytes = Convert.FromBase64String(encoded);
+                    _code = System.Text.Encoding.UTF8.GetString(bytes);
+                    UpdateGutter();
+                    StateHasChanged();
+                }
+                catch { }
             }
-            catch { }
+            await JS.InvokeVoidAsync("runnerJs.initScrollSync", "codearea", "gutter");
         }
+        await JS.InvokeVoidAsync("runnerJs.autoResizeAndReport", "codearea");
+    }
+
+    private async Task OnCodeInput(ChangeEventArgs e)
+    {
+        _code = e.Value?.ToString() ?? "";
+        UpdateGutter();
+        await JS.InvokeVoidAsync("runnerJs.autoResizeAndReport", "codearea");
+    }
+
+    private void UpdateGutter()
+    {
+        var lines = Math.Max(1, (_code ?? "").Split('\n').Length);
+        _gutterText = string.Join("\n", Enumerable.Range(1, lines));
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
         if ((e.CtrlKey || e.MetaKey) && e.Key == "Enter")
-        {
             await RunCode();
-        }
     }
 
     private async Task RunCode()
@@ -81,44 +122,46 @@
         if (_running || string.IsNullOrWhiteSpace(_code)) return;
 
         _running = true;
-        _status = "компілюємо…";
-        _statusClass = "";
+        _statusText = "виконується…";
+        _statusClass = "run";
         _output = "";
         _isError = false;
         StateHasChanged();
 
         var t0 = DateTime.UtcNow;
-
         try
         {
             var result = await Runner.RunAsync(_code);
             var ms = (int)(DateTime.UtcNow - t0).TotalMilliseconds;
-
             _output = string.IsNullOrEmpty(result.Output) ? "(порожній вивід)" : result.Output;
             _isError = !result.Success;
-
-            if (result.Success)
-            {
-                _status = $"ok · {ms} мс";
-                _statusClass = "ok";
-            }
-            else
-            {
-                _status = $"помилка · {ms} мс";
-                _statusClass = "err";
-            }
+            _hasRun = true;
+            _statusText = result.Success ? $"ok · {ms} мс" : $"помилка · {ms} мс";
+            _statusClass = result.Success ? "ok" : "err";
         }
         catch (Exception ex)
         {
             _output = $"Внутрішня помилка: {ex.Message}";
             _isError = true;
-            _status = "помилка";
+            _hasRun = true;
+            _statusText = "помилка";
             _statusClass = "err";
         }
         finally
         {
             _running = false;
             StateHasChanged();
+            await JS.InvokeVoidAsync("runnerJs.reportHeight");
         }
+    }
+
+    private async Task ClearOutput()
+    {
+        _output = "";
+        _hasRun = false;
+        _statusText = "готово";
+        _statusClass = "idle";
+        StateHasChanged();
+        await JS.InvokeVoidAsync("runnerJs.reportHeight");
     }
 }

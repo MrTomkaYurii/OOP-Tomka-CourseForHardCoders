@@ -1,0 +1,11 @@
+<linker>
+  <!-- Зберігаємо всі методи Console щоб Console.WriteLine(int/bool/etc.) не тримувались -->
+  <assembly fullname="System.Console">
+    <type fullname="System.Console" preserve="all"/>
+  </assembly>
+  <!-- Зберігаємо рефлексію для запуску скомпільованого коду користувача -->
+  <assembly fullname="System.Private.CoreLib">
+    <type fullname="System.Reflection.MethodBase" preserve="all"/>
+    <type fullname="System.Reflection.MethodInfo" preserve="all"/>
+  </assembly>
+</linker>
