@@ -432,12 +432,21 @@ async function renderMarkdown(markdown: string, options: { assetPrefix?: string 
   };
 
   renderer.code = ({ text, lang }) => {
-    const language = lang && supportedLangs.includes(lang as any) ? (lang as any) : "text";
+    const parts = (lang ?? "").split(/\s+/);
+    const language = parts[0] && supportedLangs.includes(parts[0] as any) ? (parts[0] as any) : "text";
+    const isRunnable = parts.includes("run");
+
+    if (isRunnable) {
+      const encoded = Buffer.from(text, "utf-8").toString("base64");
+      const src = siteAssetPath(`/embed?code=${encodeURIComponent(encoded)}`);
+      return `<iframe src="${src}" style="width:100%;height:420px;border:0;border-radius:8px;display:block;margin:1.25rem 0;" loading="lazy" allow=""></iframe>`;
+    }
+
     return highlighter.codeToHtml(text, { lang: language, theme: "github-dark" });
   };
 
   const preparedMarkdown = options.assetPrefix
-    ? markdown.replace(/\]\(_assets\/_docx\/([^)]+)\)/g, `](${options.assetPrefix}/$1)`)
+    ? markdown.replace(/\]\(_assets\/([^)]+)\)/g, `](${options.assetPrefix}/$1)`)
     : markdown;
 
   return {
@@ -511,7 +520,7 @@ export function getLectures(): Promise<Lecture[]> {
         const slug = entry.name.replace(/\.md$/, "");
         const title = data.title ?? markdown.match(/^##\s+(.+)$/m)?.[1]?.trim() ?? `Лекція ${numberLabel}`;
         const chapterTitle = data.chapterTitle ?? lectureChapterTitle(chapter);
-        const rendered = await renderMarkdown(markdown, { assetPrefix: siteAssetPath("/_assets/_docx") });
+        const rendered = await renderMarkdown(markdown, { assetPrefix: siteAssetPath("/_assets") });
         const summary = summaries[slug];
 
         return {

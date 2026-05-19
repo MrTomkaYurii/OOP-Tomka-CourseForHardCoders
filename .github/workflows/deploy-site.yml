@@ -30,9 +30,15 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
+      # ── Astro site ────────────────────────────────────────────
       - name: Install dependencies
         working-directory: site
         run: npm ci
@@ -43,6 +49,35 @@ jobs:
           ASTRO_TELEMETRY_DISABLED: "1"
         run: npm run build
 
+      # ── Blazor WASM runner ────────────────────────────────────
+      - name: Determine runner base path
+        id: base
+        run: |
+          REPO="${{ github.event.repository.name }}"
+          OWNER="${{ github.repository_owner }}"
+          if [ "$REPO" = "${OWNER}.github.io" ]; then
+            echo "path=/runner/" >> $GITHUB_OUTPUT
+          else
+            echo "path=/${REPO}/runner/" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set runner base href
+        run: |
+          sed -i "s|<base href=\"/runner/\" />|<base href=\"${{ steps.base.outputs.path }}\" />|" runner/wwwroot/index.html
+
+      - name: Build Blazor runner
+        working-directory: runner
+        run: dotnet publish -c Release -o ../site/dist/runner
+
+      # Blazor publish кладе файли в publish/wwwroot — переміщаємо
+      - name: Move runner output
+        run: |
+          if [ -d "site/dist/runner/wwwroot" ]; then
+            cp -r site/dist/runner/wwwroot/. site/dist/runner/
+            rm -rf site/dist/runner/wwwroot
+          fi
+
+      # ── Deploy ────────────────────────────────────────────────
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

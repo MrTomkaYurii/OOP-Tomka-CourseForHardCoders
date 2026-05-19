@@ -1,0 +1,133 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    height: 100%;
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: 'Consolas', 'Courier New', monospace;
+    overflow: hidden;
+}
+
+body { display: flex; flex-direction: column; }
+
+/* ── toolbar ── */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    flex-shrink: 0;
+}
+
+.lang-badge {
+    font-size: 11px;
+    font-family: sans-serif;
+    color: #79c0ff;
+    background: #1f3457;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.run-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    background: #238636;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: 500;
+}
+.run-btn:hover:not(:disabled) { background: #2ea043; }
+.run-btn:disabled { background: #2d3f2e; color: #6e7f6f; cursor: not-allowed; }
+
+.spinner {
+    display: inline-block;
+    width: 11px; height: 11px;
+    border: 2px solid #6e7f6f;
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.fiddle-btn {
+    display: flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: transparent;
+    color: #8b949e;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: sans-serif;
+    text-decoration: none;
+}
+.fiddle-btn:hover { color: #e6edf3; border-color: #6e7681; }
+
+.spacer { flex: 1; }
+
+.status {
+    font-size: 11px;
+    font-family: sans-serif;
+    color: #8b949e;
+}
+.status.ok  { color: #3fb950; }
+.status.err { color: #f85149; }
+
+/* ── editor ── */
+.editor {
+    flex: 1;
+    background: #0d1117;
+    color: #e6edf3;
+    border: none;
+    resize: none;
+    padding: 12px 14px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13.5px;
+    line-height: 1.65;
+    outline: none;
+    tab-size: 4;
+    min-height: 0;
+}
+
+/* ── output ── */
+.output-panel {
+    flex-shrink: 0;
+    border-top: 1px solid #30363d;
+    background: #010409;
+    display: flex;
+    flex-direction: column;
+    height: 130px;
+}
+
+.output-header {
+    font-size: 10px;
+    font-family: sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #8b949e;
+    padding: 3px 12px;
+    background: #161b22;
+    border-bottom: 1px solid #21262d;
+    flex-shrink: 0;
+}
+
+.output {
+    padding: 8px 14px;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-y: auto;
+    flex: 1;
+    color: #e6edf3;
+}
+.output.error { color: #f85149; }

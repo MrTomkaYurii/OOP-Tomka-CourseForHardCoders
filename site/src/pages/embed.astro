@@ -1,0 +1,7 @@
+---
+// Редирект на Blazor WASM runner
+const code = Astro.url.searchParams.get("code") ?? "";
+const runnerUrl = new URL("../runner/", Astro.url);
+runnerUrl.searchParams.set("code", code);
+return Astro.redirect(runnerUrl.toString());
+---

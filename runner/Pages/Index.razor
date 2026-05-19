@@ -1,0 +1,124 @@
+@page "/"
+@inject CSharpRunner Runner
+@inject NavigationManager Nav
+
+<div class="toolbar">
+    <span class="lang-badge">C#</span>
+    <button class="run-btn @(_running ? "running" : "")"
+            @onclick="RunCode"
+            disabled="@_running"
+            title="Ctrl+Enter">
+        @if (_running)
+        {
+            <span class="spinner"></span>
+        }
+        else
+        {
+            <span>▶</span>
+        }
+        Запустити
+    </button>
+    <a class="fiddle-btn"
+       href="https://dotnetfiddle.net"
+       target="_blank"
+       rel="noopener">↗ dotnetfiddle</a>
+    <span class="spacer"></span>
+    <span class="status @_statusClass">@_status</span>
+</div>
+
+<textarea class="editor"
+          @bind="_code"
+          @bind:event="oninput"
+          @onkeydown="OnKeyDown"
+          spellcheck="false"
+          autocorrect="off"
+          autocapitalize="off"
+          placeholder="// Введіть C# код..."></textarea>
+
+<div class="output-panel">
+    <div class="output-header">Вивід</div>
+    <pre class="output @(_isError ? "error" : "ok")">@_output</pre>
+</div>
+
+@code {
+    private string _code = "";
+    private string _output = "Ctrl+Enter або ▶ Запустити";
+    private string _status = "";
+    private string _statusClass = "";
+    private bool _running = false;
+    private bool _isError = false;
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Зчитуємо код з URL параметра ?code=BASE64
+        var uri = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var encoded = query["code"];
+
+        if (!string.IsNullOrWhiteSpace(encoded))
+        {
+            try
+            {
+                var bytes = Convert.FromBase64String(encoded);
+                _code = System.Text.Encoding.UTF8.GetString(bytes);
+                StateHasChanged();
+            }
+            catch { }
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if ((e.CtrlKey || e.MetaKey) && e.Key == "Enter")
+        {
+            await RunCode();
+        }
+    }
+
+    private async Task RunCode()
+    {
+        if (_running || string.IsNullOrWhiteSpace(_code)) return;
+
+        _running = true;
+        _status = "компілюємо…";
+        _statusClass = "";
+        _output = "";
+        _isError = false;
+        StateHasChanged();
+
+        var t0 = DateTime.UtcNow;
+
+        try
+        {
+            var result = await Runner.RunAsync(_code);
+            var ms = (int)(DateTime.UtcNow - t0).TotalMilliseconds;
+
+            _output = string.IsNullOrEmpty(result.Output) ? "(порожній вивід)" : result.Output;
+            _isError = !result.Success;
+
+            if (result.Success)
+            {
+                _status = $"ok · {ms} мс";
+                _statusClass = "ok";
+            }
+            else
+            {
+                _status = $"помилка · {ms} мс";
+                _statusClass = "err";
+            }
+        }
+        catch (Exception ex)
+        {
+            _output = $"Внутрішня помилка: {ex.Message}";
+            _isError = true;
+            _status = "помилка";
+            _statusClass = "err";
+        }
+        finally
+        {
+            _running = false;
+            StateHasChanged();
+        }
+    }
+}
