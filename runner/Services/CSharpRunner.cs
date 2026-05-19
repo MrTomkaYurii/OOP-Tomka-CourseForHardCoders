@@ -1,3 +1,4 @@
+using Basic.Reference.Assemblies;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Reflection;
@@ -5,54 +6,29 @@ using System.Text;
 
 namespace runner.Services;
 
-public record RunResult(bool Success, string Output, int ExitCode = 0);
+public record RunResult(bool Success, string Output);
 
 public class CSharpRunner
 {
-    private readonly HttpClient _http;
-    private List<MetadataReference>? _references;
+    // Reference assemblies вбудовані в пакет Basic.Reference.Assemblies.Net90
+    // Ніяких HTTP запитів, ніяких проблем з _framework/
+    private static readonly IReadOnlyList<MetadataReference> References = Net90.References.All;
 
-    // Базові збірки для типових консольних програм C#
-    private static readonly string[] ReferenceAssemblies =
-    [
-        "System.Private.CoreLib.dll",
-        "System.Runtime.dll",
-        "System.Console.dll",
-        "System.Linq.dll",
-        "System.Linq.Expressions.dll",
-        "System.Collections.dll",
-        "System.Collections.Concurrent.dll",
-        "System.Text.RegularExpressions.dll",
-        "System.Threading.dll",
-        "System.Threading.Tasks.dll",
-        "System.IO.dll",
-        "System.Runtime.Extensions.dll",
-        "System.ObjectModel.dll",
-        "System.Text.Json.dll",
-        "netstandard.dll",
-        "mscorlib.dll",
-    ];
+    public Task<RunResult> RunAsync(string code) => Task.Run(() => Run(code));
 
-    public CSharpRunner(HttpClient http) => _http = http;
-
-    public async Task<RunResult> RunAsync(string code)
+    private RunResult Run(string code)
     {
-        // Завантажуємо reference збірки один раз, далі кешуємо
-        if (_references is null)
-        {
-            _references = await LoadReferencesAsync();
-        }
-
-        // Парсимо та компілюємо
         var syntaxTree = CSharpSyntaxTree.ParseText(code);
 
         var compilation = CSharpCompilation.Create(
-            assemblyName: "UserCode_" + Guid.NewGuid().ToString("N"),
+            assemblyName: "UserCode",
             syntaxTrees: [syntaxTree],
-            references: _references,
-            options: new CSharpCompilationOptions(OutputKind.ConsoleApplication,
+            references: References,
+            options: new CSharpCompilationOptions(
+                OutputKind.ConsoleApplication,
                 optimizationLevel: OptimizationLevel.Release,
-                allowUnsafe: false));
+                allowUnsafe: false,
+                concurrentBuild: false));
 
         using var ms = new MemoryStream();
         var emitResult = compilation.Emit(ms);
@@ -61,8 +37,11 @@ public class CSharpRunner
         {
             var errors = emitResult.Diagnostics
                 .Where(d => d.Severity == DiagnosticSeverity.Error)
-                .Select(d => $"{d.GetMessage()} (рядок {d.Location.GetLineSpan().StartLinePosition.Line + 1})")
-                .ToArray();
+                .Select(d =>
+                {
+                    var line = d.Location.GetLineSpan().StartLinePosition.Line + 1;
+                    return $"Рядок {line}: {d.GetMessage()}";
+                });
 
             return new RunResult(false, string.Join("\n", errors));
         }
@@ -73,16 +52,15 @@ public class CSharpRunner
         var entryPoint = assembly.EntryPoint;
 
         if (entryPoint is null)
-        {
-            return new RunResult(false, "Помилка: точку входу не знайдено.");
-        }
+            return new RunResult(false, "Помилка: точку входу (Main) не знайдено.");
 
         var sb = new StringBuilder();
         var oldOut = Console.Out;
         var oldErr = Console.Error;
+        var writer = new StringWriter(sb);
 
-        Console.SetOut(new StringWriter(sb));
-        Console.SetError(new StringWriter(sb));
+        Console.SetOut(writer);
+        Console.SetError(writer);
 
         try
         {
@@ -95,7 +73,7 @@ public class CSharpRunner
         catch (TargetInvocationException ex)
         {
             var inner = ex.InnerException ?? ex;
-            sb.Append($"\n[Exception] {inner.GetType().Name}: {inner.Message}");
+            sb.Append($"\n[{inner.GetType().Name}] {inner.Message}");
             return new RunResult(false, sb.ToString());
         }
         catch (Exception ex)
@@ -110,25 +88,5 @@ public class CSharpRunner
         }
 
         return new RunResult(true, sb.ToString());
-    }
-
-    private async Task<List<MetadataReference>> LoadReferencesAsync()
-    {
-        var refs = new List<MetadataReference>();
-
-        foreach (var name in ReferenceAssemblies)
-        {
-            try
-            {
-                var bytes = await _http.GetByteArrayAsync($"_framework/{name}");
-                refs.Add(MetadataReference.CreateFromImage(bytes));
-            }
-            catch
-            {
-                // Якщо збірку не знайдено — пропускаємо
-            }
-        }
-
-        return refs;
     }
 }
