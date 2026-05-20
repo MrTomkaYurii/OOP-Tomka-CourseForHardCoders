@@ -15,7 +15,37 @@ const { title = "OOP C# Course", description = "Лабораторний кур�
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       document.documentElement.dataset.theme = savedTheme ?? (prefersDark ? "dark" : "light");
     </script>
+    <style>
+      .runner-embed { margin: 1.25rem 0; }
+      .runner-embed iframe {
+        margin: 0 !important;
+        border-radius: 8px 8px 0 0 !important;
+        display: block;
+      }
+      .runner-resize-handle {
+        height: 10px;
+        background: #151c19;
+        border: 1px solid #2c3531;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        cursor: ns-resize;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 120ms;
+      }
+      .runner-resize-handle:hover { background: #1c2924; }
+      .runner-resize-grip {
+        width: 32px;
+        height: 3px;
+        background: #2c3531;
+        border-radius: 2px;
+        transition: background 120ms;
+      }
+      .runner-resize-handle:hover .runner-resize-grip { background: #76c7ad; }
+    </style>
     <script is:inline>
+      // postMessage: оновлюємо висоту iframe після запуску коду
       window.addEventListener('message', function (e) {
         if (!e.data || e.data.type !== 'runner-height') return;
         var iframes = document.querySelectorAll('iframe');
@@ -25,6 +55,45 @@ const { title = "OOP C# Course", description = "Лабораторний кур�
             break;
           }
         }
+      });
+
+      // Drag-handle знизу кожного runner iframe
+      document.addEventListener('DOMContentLoaded', function () {
+        var iframes = document.querySelectorAll('iframe[src*="/runner/"]');
+        iframes.forEach(function (iframe) {
+          var wrapper = document.createElement('div');
+          wrapper.className = 'runner-embed';
+          iframe.parentNode.insertBefore(wrapper, iframe);
+          wrapper.appendChild(iframe);
+
+          var handle = document.createElement('div');
+          handle.className = 'runner-resize-handle';
+          var grip = document.createElement('div');
+          grip.className = 'runner-resize-grip';
+          handle.appendChild(grip);
+          wrapper.appendChild(handle);
+
+          handle.addEventListener('mousedown', function (e) {
+            var startY = e.clientY;
+            var startH = iframe.offsetHeight;
+            document.body.style.cursor = 'ns-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+
+            function onMove(e) {
+              var newH = Math.max(150, startH + (e.clientY - startY));
+              iframe.style.height = newH + 'px';
+            }
+            function onUp() {
+              document.body.style.cursor = '';
+              document.body.style.userSelect = '';
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          });
+        });
       });
     </script>
     <title>{title}</title>

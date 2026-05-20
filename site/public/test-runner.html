@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Runner Test</title>
+  <style>
+    body { margin: 0; background: #1a1a1a; font-family: sans-serif; color: #ccc; padding: 20px; }
+    h2 { margin-bottom: 8px; font-size: 14px; color: #888; }
+    .info { background: #222; padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 12px; }
+    #iframe-wrap { border: 2px solid #444; border-radius: 10px; overflow: hidden; }
+    iframe { display: block; width: 100%; border: 0; }
+    #height-log { margin-top: 10px; font-size: 12px; color: #76c7ad; }
+  </style>
+</head>
+<body>
+  <div class="info">
+    Тестова сторінка runner. Відкрий DevTools → Console щоб бачити postMessage висоти.<br>
+    <strong>Що тестувати:</strong> 1) Додай рядки коду — має з'явитись скролбар у редакторі (iframe НЕ росте). 2) Натисни Запустити — iframe має підрости на висоту output.
+  </div>
+
+  <h2>Поточна висота iframe: <span id="h-display">—</span>px</h2>
+  <div id="iframe-wrap">
+    <iframe id="runner" src="/runner/" style="height: 400px;"></iframe>
+  </div>
+  <div id="height-log"></div>
+
+  <script>
+    const iframe = document.getElementById('runner');
+    const hDisplay = document.getElementById('h-display');
+    const log = document.getElementById('height-log');
+
+    hDisplay.textContent = iframe.style.height.replace('px','');
+
+    window.addEventListener('message', function(e) {
+      if (!e.data || e.data.type !== 'runner-height') return;
+      const newH = e.data.height + 2;
+      const oldH = parseInt(iframe.style.height);
+      const msg = `postMessage: ${e.data.height}px → встановлено ${newH}px (було ${oldH}px)`;
+      console.log(msg);
+      log.innerHTML = msg + '<br>' + log.innerHTML;
+      iframe.style.height = newH + 'px';
+      hDisplay.textContent = newH;
+    });
+  </script>
+</body>
+</html>

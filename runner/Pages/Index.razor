@@ -75,34 +75,36 @@
             ? new MarkupString(System.Web.HttpUtility.HtmlEncode(_output))
             : new MarkupString("<span class=\"ghost\">натисни ▶ або Ctrl+Enter, щоб запустити</span>");
 
+    protected override Task OnInitializedAsync()
+    {
+        var uri = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var encoded = query["code"];
+        if (!string.IsNullOrWhiteSpace(encoded))
+        {
+            try
+            {
+                var bytes = Convert.FromBase64String(encoded);
+                _code = System.Text.Encoding.UTF8.GetString(bytes);
+                UpdateGutter();
+            }
+            catch { }
+        }
+        return Task.CompletedTask;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            var uri = new Uri(Nav.Uri);
-            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-            var encoded = query["code"];
-            if (!string.IsNullOrWhiteSpace(encoded))
-            {
-                try
-                {
-                    var bytes = Convert.FromBase64String(encoded);
-                    _code = System.Text.Encoding.UTF8.GetString(bytes);
-                    UpdateGutter();
-                    StateHasChanged();
-                }
-                catch { }
-            }
-            await JS.InvokeVoidAsync("runnerJs.initScrollSync", "codearea", "gutter");
-        }
-        await JS.InvokeVoidAsync("runnerJs.autoResizeAndReport", "codearea");
+        if (!firstRender) return;
+        await JS.InvokeVoidAsync("runnerJs.initScrollSync", "codearea", "gutter");
     }
 
     private async Task OnCodeInput(ChangeEventArgs e)
     {
         _code = e.Value?.ToString() ?? "";
-        UpdateGutter();
-        await JS.InvokeVoidAsync("runnerJs.autoResizeAndReport", "codearea");
+        // Гатер оновлюємо через JS — без StateHasChanged, без re-render
+        var lines = Math.Max(1, _code.Split('\n').Length);
+        await JS.InvokeVoidAsync("runnerJs.updateGutter", "gutter", lines);
     }
 
     private void UpdateGutter()

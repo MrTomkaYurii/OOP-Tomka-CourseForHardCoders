@@ -9,6 +9,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
+  height: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: var(--ui);
@@ -18,8 +19,20 @@ html, body {
   overflow: hidden;
 }
 
+body { display: flex; flex-direction: column; }
+
+/* Blazor mounts into #app — make it a flex passthrough so .runner fills 100% */
+#app {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── runner widget ── */
 .runner {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
@@ -116,8 +129,11 @@ html, body {
 
 /* 2. Editor */
 .editor-wrap {
+  flex: 1;
+  min-height: 100px;
   display: flex;
   background: var(--code-bg);
+  overflow: hidden;
 }
 
 .gutter {
@@ -150,19 +166,30 @@ html, body {
   tab-size: 4;
   -moz-tab-size: 4;
   white-space: pre;
-  overflow: hidden;
-  min-height: 60px;
+  overflow-x: auto;
+  overflow-y: auto;
   caret-color: var(--accent);
 }
 .code-area::placeholder { color: #3f4a45; }
 
-/* 3. Output */
+/* 3. Draggable splitter */
+.resizer {
+  flex: 0 0 5px;
+  background: var(--line);
+  cursor: ns-resize;
+  transition: background 120ms;
+}
+.resizer:hover,
+.resizer.dragging { background: var(--accent); }
+
+/* 4. Output */
 .output {
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  max-height: 480px;
   background: #080b0a;
-  border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .output-head {
@@ -201,7 +228,7 @@ html, body {
   color: var(--text);
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 200px;
+  max-height: 440px;
   overflow: auto;
 }
 .output-body.err   { color: var(--accent-2); }
@@ -209,5 +236,6 @@ html, body {
 
 /* Scrollbars */
 *::-webkit-scrollbar { width: 8px; height: 8px; }
-*::-webkit-scrollbar-thumb { background: #2c3531; border-radius: 4px; }
-*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #4a5c56; border-radius: 4px; }
+*::-webkit-scrollbar-thumb:hover { background: #607a72; }
+*::-webkit-scrollbar-track { background: #161b19; }
