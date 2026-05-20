@@ -136,6 +136,19 @@ window.runnerJs = {
             document.body.style.cursor = '';
             document.body.style.userSelect = '';
         });
+
+        document.addEventListener('fullscreenchange', function () {
+            if (!document.fullscreenElement) {
+                editorWrap.style.flex = '';
+                editorWrap.style.height = '';
+                output.style.flex = '';
+                output.style.height = '';
+                output.style.maxHeight = '';
+                outputBody.style.flex = '';
+                outputBody.style.minHeight = '';
+                outputBody.style.maxHeight = '';
+            }
+        });
     },
 
     initCodeMirror: function (ta) {
