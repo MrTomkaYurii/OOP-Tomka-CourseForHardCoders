@@ -263,8 +263,8 @@ Patient patient = new Patient("Олена Ковальчук", 34);
 
 (string name, int age) = patient;
 
-Console.WriteLine(name); // Олена Ковальчук
-Console.WriteLine(age);  // 34
+Console.WriteLine(name);         // Олена Ковальчук
+Console.WriteLine(age.ToString()); // 34
 
 class Patient
 {
@@ -304,7 +304,7 @@ Patient patient = new Patient("Олена Ковальчук", 34);
 
 (_, int age) = patient;
 
-Console.WriteLine(age); // 34
+Console.WriteLine(age.ToString()); // 34
 
 class Patient
 {
