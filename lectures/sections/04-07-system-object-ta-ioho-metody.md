@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 4
 chapterTitle: "Розділ 4. Об'єктно-орієнтоване програмування"
 section: 7
@@ -9,188 +9,213 @@ source: "../_combined/24-system-object-ta-ioho-metody.md"
 
 ## 4.7. Клас System.Object та його методи
 
-Всі класи в .NET, навіть ті, які ми самі створюємо, а також базові типи, такі як `System.Int32`, є похідними від класу `Object`. Навіть якщо ми не вказуємо клас `Object` як базовий, за умовчанням неявно клас `Object` все одно стоїть на вершині ієрархії спадкування. Тому всі типи та класи можуть реалізувати ті методи, які визначені у класі `System.Object`. Розглянемо ці методи.
+Усі класи в .NET — як вбудовані (`int`, `string`, `DateTime`), так і ті, що ми створюємо самостійно — є похідними від класу `System.Object`. Навіть якщо ми не вказуємо `Object` як базовий, компілятор додає це успадкування неявно. Це означає, що кожен об'єкт у C# гарантовано має чотири методи: `ToString()`, `GetHashCode()`, `Equals()` та `GetType()`.
 
-## ToString
+![Методи System.Object доступні у кожному класі](_assets/04-07/object-methods.png)
 
-Метод `ToString` служить для отримання строкового представлення даного об'єкта. Для базових типів просто виводитиметься їх рядкове значення:
+## Метод ToString
 
-```csharp
-int i = 5;
-Console.WriteLine(i.ToString()); // виведе число 5
+Метод `ToString()` повертає рядкове представлення об'єкта. Для числових типів це їхнє значення у вигляді рядка. Для власних класів стандартна реалізація повертає повну назву типу з простором імен:
 
-double d = 3.5;
-Console.WriteLine(d.ToString()); // виведе число 3,5
+```csharp run
+using System;
+
+int age = 45;
+double temperature = 36.6;
+
+Console.WriteLine(age.ToString());         // 45
+Console.WriteLine(temperature.ToString()); // 36,6
+
+Patient patient = new Patient("Іван Петренко", 45, "Гіпертонія");
+Console.WriteLine(patient.ToString()); // назва типу: Patient
+
+class Patient
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diagnosis)
+    { Name = name; Age = age; Diagnosis = diagnosis; }
+}
 ```
 
-Для класів цей метод виводить повну назву класу із зазначенням простору імен, у якому визначено цей клас. І ми можемо перевизначити цей метод. Подивимося на прикладі:
+Ми можемо перевизначити `ToString()`, щоб повертати змістовний рядок замість назви типу:
 
-```csharp
-Person person = new Person { Name = "Tom" };
-Console.WriteLine(person.ToString()); // виведе назву класу Person
+```csharp run
+using System;
 
-Clock clock = new Clock { Hours = 15, Minutes = 34, Seconds = 53 };
-Console.WriteLine(clock.ToString()); // виведе 15:34:53
+Patient patient = new Patient("Іван Петренко", 45, "Гіпертонія");
+Doctor  doctor  = new Doctor("Олена Коваль", 38, "Кардіологія");
 
-class Clock
+Console.WriteLine(patient.ToString());
+Console.WriteLine(doctor.ToString());
+
+// Console.WriteLine автоматично викликає ToString()
+Console.WriteLine(patient);
+Console.WriteLine(doctor);
+
+class Patient
 {
-    public int Hours { get; set; }
-    public int Minutes { get; set; }
-    public int Seconds { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diagnosis)
+    { Name = name; Age = age; Diagnosis = diagnosis; }
 
     public override string ToString()
     {
-        return $"{Hours}:{Minutes}:{Seconds}";
+        return $"Пацієнт: {Name}, {Age} р. | {Diagnosis}";
     }
 }
 
-class Person
+class Doctor
 {
-    public string Name { get; set; } = "";
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec)
+    { Name = name; Age = age; Specialization = spec; }
+
+    public override string ToString()
+    {
+        return $"Лікар: {Name}, {Age} р. | {Specialization}";
+    }
 }
 ```
 
-Для перевизначення методу `ToString()` в класі `Clock`, який представляє годинник, використовується ключове слово `override` (як і за звичайного перевизначення віртуальних або абстрактних методів). У разі метод `ToString()` виводить у рядку значення властивостей `Hours`, `Minutes`, `Seconds`.
+Зверніть увагу: `Console.WriteLine(patient)` автоматично викликає `ToString()` без явного звернення. Це справедливо для рядкової інтерполяції та конкатенації рядків — `$"Пацієнт: {patient}"` теж неявно викликає `ToString()`.
 
-Клас `Person` не перевизначає метод `ToString`, тому для цього класу спрацьовує стандартна реалізація цього методу, яка виводить просто назву класу.
+Якщо клас частково заповнений (наприклад, відсутнє ім'я), можна повернути результат базової реалізації через `base.ToString()`:
 
-До речі, у цьому випадку ми могли задіяти обидві реалізації:
+```csharp run
+using System;
 
-```csharp
-Person tom = new Person { Name = "Tom" };
-Console.WriteLine(tom.ToString()); // Tom
+Patient named   = new Patient("Іван Петренко", 45);
+Patient unnamed = new Patient("", 0);
 
-Person undefined = new Person();
-Console.WriteLine(undefined.ToString()); // Person
+Console.WriteLine(named.ToString());    // Іван Петренко, 45 р.
+Console.WriteLine(unnamed.ToString());  // Patient (базова реалізація)
 
-class Person
+class Patient
 {
     public string Name { get; set; } = "";
+    public int Age { get; set; }
+    public Patient(string name, int age) { Name = name; Age = age; }
 
     public override string? ToString()
     {
         if (string.IsNullOrEmpty(Name))
-        return base.ToString();
-
-        return Name;
+            return base.ToString(); // повертає "Patient"
+        return $"{Name}, {Age} р.";
     }
 }
-```
-
-Тобто якщо ім'я - властивість `Name` не має значення, воно є порожнім рядком, то повертається базова реалізація - назва класу. Варто зазначити, що базова реалізація повертає не просто рядок, а об'єкт `string?` - тобто це може бути рядок `string` або значення `null`, яке вказує на відсутність значення. І насправді як тип, що повертається для методу, ми можемо використовувати як `string`, так і `string?`.
-
-Якщо ім'я об'єкта `Person` встановлено, то повертається значення властивості `Name`. Для перевірки рядка на наявність значення застосовується метод `String.IsNullOrEmpty()`.
-
-Варто зазначити, що різні технології на платформі .NET активно використовують метод `ToString` для різних цілей. Зокрема, той самий метод `Console.WriteLine()` за умовчанням виводить саме рядкове уявлення об'єкта. Тому, якщо нам треба вивести рядкове подання об'єкта на консоль, то при передачі об'єкта методу `Console.WriteLine` необов'язково використовувати метод `ToString()` - він викликається неявно:
-
-```csharp
-Person person = new Person { Name = "Tom" };
-Console.WriteLine(person); // Tom
-
-Clock clock = new Clock { Hours = 15, Minutes = 34, Seconds = 53 };
-Console.WriteLine(clock); // виведе 15:34:53
 ```
 
 ## Метод GetHashCode
 
-Метод `GetHashCode` дозволяє повернути деяке числове значення, яке буде відповідати даному об'єкту або його хеш-коду. За цим числом, наприклад, можна порівнювати об'єкти. Можна визначати різні алгоритми генерації подібного числа або взяти реалізацію базового типу:
+Метод `GetHashCode()` повертає ціле число — **хеш-код** об'єкта. Хеш-коди використовуються колекціями на основі хеш-таблиць (`Dictionary<K,V>`, `HashSet<T>`) для швидкого пошуку та зберігання об'єктів.
 
-```csharp
-class Person
+```csharp run
+using System;
+
+Patient p1 = new Patient("Іван Петренко", 45);
+Patient p2 = new Patient("Іван Петренко", 45);
+Patient p3 = new Patient("Марія Сидоренко", 32);
+
+Console.WriteLine(p1.GetHashCode().ToString());
+Console.WriteLine(p2.GetHashCode().ToString()); // однаковий з p1
+Console.WriteLine(p3.GetHashCode().ToString()); // інший
+
+class Patient
 {
-    public string Name { get; set; } = "";
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Patient(string name, int age) { Name = name; Age = age; }
 
     public override int GetHashCode()
     {
-        return Name.GetHashCode();
+        // Комбінуємо хеш-коди всіх полів, що беруть участь у порівнянні
+        return HashCode.Combine(Name, Age);
     }
 }
 ```
 
-В даному випадку метод `GetHashCode` повертає хеш-код значення властивості `Name`. Тобто два об'єкти `Person`, які мають те саме ім'я, повертатимуть один і той же хеш-код. Проте насправді алгоритм може бути різним.
+`HashCode.Combine(...)` — зручний вбудований спосіб об'єднати хеш-коди кількох полів. Два об'єкти, які рівні за `Equals`, **зобов'язані** повертати однаковий хеш-код — це фундаментальний контракт, який забезпечує коректну роботу колекцій.
 
-## Отримання типу об'єкта та метод GetType
+## Контракт рівності: Equals і GetHashCode завжди разом
 
-Метод `GetType` дозволяє отримати тип об'єкта:
+Методи `Equals` і `GetHashCode` утворюють **контракт рівності**: якщо два об'єкти рівні (`Equals` повертає `true`), вони повинні мати однаковий хеш-код. Порушення цього правила призводить до некоректної поведінки словників і множин — об'єкти, які логічно рівні, не знаходитимуться у колекції.
 
-```csharp
-Person person = new Person { Name = "Tom" };
-Console.WriteLine(person.GetType());    // Person
-```
+Тому: **якщо перевизначаєте `Equals` — завжди перевизначайте `GetHashCode`**, і навпаки.
 
-Цей метод повертає об'єкт `Type`, тобто тип об'єкта.
+```csharp run
+using System;
 
-За допомогою ключового слова `typeof` ми отримуємо тип класу і порівнюємо його з типом об'єкта. І якщо цей об'єкт є типом `Person`, то виконуємо певні дії.
+Patient p1 = new Patient("Іван Петренко", "P-001");
+Patient p2 = new Patient("Марія Сидоренко", "P-002");
+Patient p3 = new Patient("Іван Петренко", "P-001");
 
-```csharp
-object person = new Person { Name = "Tom" };
+Console.WriteLine(p1.Equals(p2).ToString()); // False
+Console.WriteLine(p1.Equals(p3).ToString()); // True — однаковий recordId
+Console.WriteLine((p1.GetHashCode() == p3.GetHashCode()).ToString()); // True
 
-if (person.GetType() == typeof(Person))
-Console.WriteLine("Це реально клас Person");
-```
-
-Причому оскільки клас `Object` є базовим типом всім класів, ми можемо змінній типу `object` присвоїти об'єкт будь-якого типу. Однак для цієї змінної метод `GetType` все одно поверне той тип, на який посилається змінна. Тобто в цьому випадку об'єкт типу `Person`.
-
-Варто зазначити, що перевірку типу можна скоротити за допомогою оператора `is`:
-
-```csharp
-object person = new Person { Name = "Tom" };
-
-if (person is Person)
-Console.WriteLine("Це реально клас Person");
-```
-
-На відміну від методів `ToString`, `Equals`, `GetHashCode`, метод `GetType()` не перевизначається.
-
-## Метод Equals
-
-Метод `Equals` дозволяє порівняти два об'єкти на рівність. Як параметр він приймає об'єкт для порівняння у вигляді типу `object` і повертає `true`, якщо обидва об'єкти рівні:
-
-```csharp
-public override bool Equals(object? obj) { ...... }
-```
-
-Наприклад, реалізуємо цей метод у класі `Person`:
-
-```csharp
-class Person
+class Patient
 {
-    public string Name { get; set; } = "";
+    public string Name { get; set; }
+    public string RecordId { get; set; }
+
+    public Patient(string name, string recordId)
+    { Name = name; RecordId = recordId; }
 
     public override bool Equals(object? obj)
     {
-        // якщо параметр методу представляє тип Person
-        // то повертаємо true, якщо імена збігаються
-        if (obj is Person person) return Name == person.Name;
-
+        if (obj is Patient other)
+            return RecordId == other.RecordId; // рівність за унікальним ID картки
         return false;
     }
 
-    // разом із методом Equals слід реалізувати метод GetHashCode
-    public override int GetHashCode() => Name.GetHashCode();
+    public override int GetHashCode() => RecordId.GetHashCode();
+
+    public override string ToString() => $"{Name} [{RecordId}]";
 }
 ```
 
-Метод `Equals` приймає як параметр об'єкт будь-якого типу, який потім приводиться до поточного класу - класу `Person`.
+У клінічному контексті логічно вважати двох пацієнтів однаковими, якщо збігається їхній унікальний ідентифікатор картки (`RecordId`), — навіть якщо ім'я записане по-різному.
 
-Якщо переданий об'єкт є типом `Person`, то повертаємо результат порівняння імен двох об'єктів `Person`. Якщо об'єкт представляє інший тип, то повертається `false`.
+## Метод GetType
 
-В даному випадку для прикладу застосовується досить простий алгоритм порівняння, проте при необхідності реалізацію методу можна зробити складнішою, наприклад, порівнювати за декількома властивостями за їх наявності.
+Метод `GetType()` повертає об'єкт типу `Type`, який описує реальний тип об'єкта під час виконання. На відміну від інших методів `Object`, `GetType()` **не можна перевизначити** — це гарантує надійність системи типів:
 
-Слід зазначити, що з методом `Equals` слід реалізувати метод `GetHashCode`.
+```csharp run
+using System;
 
-Застосування методу:
+Person person  = new Patient("Іван Петренко", 45, "Гіпертонія");
+Patient patient = new Patient("Марія Сидоренко", 32, "Бронхіт");
 
-```csharp
-var person1 = new Person { Name = "Tom" };
-var person2 = new Person { Name = "Bob" };
-var person3 = new Person { Name = "Tom" };
+Console.WriteLine(person.GetType().Name);   // Patient (реальний тип!)
+Console.WriteLine(patient.GetType().Name);  // Patient
 
-bool person1EqualsPerson2 = person1.Equals(person2);   // false
-bool person1EqualsPerson3 = person1.Equals(person3);   // true
+// Порівняння типів через typeof
+if (person.GetType() == typeof(Patient))
+    Console.WriteLine("Це Patient");
 
-Console.WriteLine(person1EqualsPerson2);   // false
-Console.WriteLine(person1EqualsPerson3);   // true
+// Коротший спосіб — оператор is
+if (person is Patient p)
+    Console.WriteLine($"Діагноз: {p.Diagnosis}");
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+}
+
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diagnosis) : base(name, age)
+    { Diagnosis = diagnosis; }
+}
 ```
 
-І якщо слід порівнювати два складні об'єкти, як у цьому випадку, то краще використовувати метод `Equals`, а не стандартну операцію `==`.
+`GetType()` завжди повертає реальний тип об'єкта, навіть якщо змінна оголошена як базовий тип. Це відрізняє його від оператора `is`, який також перевіряє сумісність з ієрархією (тобто `patient is Person` поверне `true`), тоді як `GetType() == typeof(Person)` поверне `false` для об'єкта `Patient`.

@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 4
 chapterTitle: "Розділ 4. Об'єктно-орієнтоване програмування"
 section: 3
@@ -9,201 +9,317 @@ source: "../_combined/20-virtualni-metody-ta-vlastyvosti.md"
 
 ## 4.3. Віртуальні методи та властивості
 
-При наслідуванні нерідко виникає необхідність змінити в класі-спадкоємці функціонал методу, який успадкував від базового класу. У цьому випадку клас-спадкоємець може перевизначати методи та властивості базового класу.
+При успадкуванні нерідко виникає необхідність змінити в похідному класі поведінку методу, успадкованого від базового. Стандартний метод неможливо перевизначити у нащадку — для цього базовий клас має явно **дозволити** перевизначення за допомогою ключового слова `virtual`. Такі методи та властивості називаються **віртуальними**.
 
-Ті методи та властивості, які ми хочемо зробити доступними для перевизначення, у базовому класі позначаються модифікатором `virtual`. Такі методи та властивості називають віртуальними.
+У похідному класі метод, що замінює реалізацію базового, позначається ключовим словом `override`. Сигнатура перевизначеного методу — ім'я та параметри — повинна точно збігатися з сигнатурою базового віртуального методу.
 
-А щоб перевизначити метод у класі-спадкоємці, цей метод визначається з модифікатором `override`. Перевизначений метод у класі-спадкоємці повинен мати той самий набір параметрів, що й віртуальний метод у базовому класі.
+## Оголошення virtual та override
 
-Наприклад, розглянемо такі класи:
+Розглянемо клінічну ієрархію: базовий клас `Person` з віртуальним методом `Print()`, та похідні класи `Patient` і `Doctor`, кожен з яких перевизначає цей метод по-своєму:
 
-```csharp
+```csharp run
+using System;
+
+Person p  = new Person("Сергій Бойко", 52);
+Patient pt = new Patient("Іван Петренко", 45, "Гіпертонія");
+Doctor  dr = new Doctor("Олена Коваль", 38, "Кардіологія");
+
+p.Print();   // Person.Print()
+pt.Print();  // Patient.Print() — перевизначений
+dr.Print();  // Doctor.Print()  — перевизначений
+
 class Person
 {
     public string Name { get; set; }
+    public int Age { get; set; }
 
-    public Person(string name)
-    {
-        Name = name;
-    }
+    public Person(string name, int age) { Name = name; Age = age; }
 
     public virtual void Print()
     {
-        Console.WriteLine(Name);
+        Console.WriteLine($"Особа: {Name}, {Age} р.");
     }
 }
 
-class Employee : Person
+class Patient : Person
 {
-    public string Company { get; set; }
+    public string Diagnosis { get; set; }
 
-    public Employee(string name, string company) : base(name)
+    public Patient(string name, int age, string diagnosis) : base(name, age)
     {
-        Company = company;
-    }
-}
-```
-
-Тут клас `Person` представляє людину. Клас `Employee` успадковується від `Person` і представляє співробітника підприємства. Цей клас крім успадкованої властивості `Name` має ще одну властивість - `Company`.
-
-Щоб зробити метод `Print` доступним для перевизначення, цей метод визначено модифікатором `virtual`. Тому ми можемо перевизначити цей метод, але можемо не перевизначати. Допустимо, нас влаштовує реалізація методу з базового класу. У цьому випадку об'єкти `Employee` будуть використовувати реалізацію методу `Print` із класу `Person`:
-
-```csharp
-Person bob = new Person("Bob");
-bob.Print(); // виклик методу Print із класу Person
-
-Employee tom = new Employee("Tom", "Microsoft");
-tom.Print(); // виклик методу Print із класу Person
-```
-
-Консольний вивід:
-
-![Консольний вивід без перевизначення методу Print](_assets/_docx/image87.png)
-
-Але можемо також перевизначити віртуальний метод. Для цього в класі-спадкоємці визначається метод з модифікатором `override`, який має те саме ім'я та набір параметрів:
-
-```csharp
-class Employee : Person
-{
-    public string Company { get; set; }
-
-    public Employee(string name, string company)
-    : base(name)
-    {
-        Company = company;
+        Diagnosis = diagnosis;
     }
 
     public override void Print()
     {
-        Console.WriteLine($"{Name} працює в {Company}");
+        Console.WriteLine($"Пацієнт: {Name}, {Age} р. | Діагноз: {Diagnosis}");
+    }
+}
+
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+
+    public Doctor(string name, int age, string spec) : base(name, age)
+    {
+        Specialization = spec;
+    }
+
+    public override void Print()
+    {
+        Console.WriteLine($"Лікар: {Name}, {Age} р. | {Specialization}");
     }
 }
 ```
 
-Візьмемо ті самі об'єкти:
+Якщо похідний клас не перевизначає віртуальний метод — використовується реалізація базового класу. Тобто `virtual` лише **дозволяє** перевизначення, але не зобов'язує до нього.
 
-```csharp
-Person bob = new Person("Bob");
-bob.Print(); // виклик методу Print із класу Person
+При перевизначенні слід враховувати кілька обмежень:
 
-Employee tom = new Employee("Tom", "Microsoft");
-tom.Print(); // виклик методу Print із класу Employee
+- Модифікатор доступу перевизначеного методу повинен **збігатися** з модифікатором базового (`public virtual` → `public override`).
+- Неможливо оголосити `virtual` або перевизначити `static`-метод.
+- Неможливо перевизначити метод без `virtual` у базовому класі (для цього є приховування, яке розглядається в розділі 4.4).
+
+## Поліморфізм: виклик за реальним типом об'єкта
+
+Справжня сила віртуальних методів розкривається через **поліморфізм** — здатність коду однаково звертатись до об'єктів різних типів через змінну базового класу, але при цьому кожен об'єкт виконує свою власну реалізацію методу.
+
+Коли через змінну типу `Person` викликається метод `Print()`, середовище виконання визначає **реальний тип об'єкта** під час виконання програми і викликає відповідну реалізацію — `Patient.Print()` для пацієнта, `Doctor.Print()` для лікаря:
+
+```csharp run
+using System;
+
+Person[] staff = {
+    new Person("Адміністратор", 30),
+    new Patient("Іван Петренко", 45, "Гіпертонія"),
+    new Doctor("Олена Коваль", 38, "Кардіологія"),
+    new Patient("Марія Сидоренко", 32, "Бронхіт"),
+};
+
+foreach (Person p in staff)
+{
+    p.Print(); // кожен об'єкт виконує свою реалізацію
+}
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+    public virtual void Print() =>
+        Console.WriteLine($"Особа: {Name}");
+}
+
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age) { Diagnosis = diag; }
+    public override void Print() =>
+        Console.WriteLine($"Пацієнт: {Name} | {Diagnosis}");
+}
+
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age) { Specialization = spec; }
+    public override void Print() =>
+        Console.WriteLine($"Лікар: {Name} | {Specialization}");
+}
 ```
 
-Консольний вивід:
+Масив оголошено як `Person[]`, але кожен елемент зберігає об'єкт свого реального типу. Під час виклику `p.Print()` C# не дивиться на тип змінної — він шукає реалізацію методу у фактичному типі об'єкта. Цей механізм називається **пізнім зв'язуванням** (late binding або dynamic dispatch).
 
-![Консольний вивід після перевизначення методу Print](_assets/_docx/image88.png)
+![Virtual dispatch — виклик методу за реальним типом об'єкта](_assets/04-03/virtual-dispatch.png)
 
-Віртуальні методи базового класу визначають інтерфейс усієї ієрархії, тобто у будь-якому похідному класі, який не є прямим спадкоємцем від базового класу, можна перевизначити віртуальні методи. Наприклад, ми можемо визначити клас `Manager`, який буде похідним від `Employee`, та в ньому також перевизначити метод `Print`.
+Поліморфізм є фундаментальним принципом ООП: він дозволяє писати код, який працює з абстракцією (`Person`), не знаючи конкретних типів — і при цьому кожен об'єкт поводиться відповідно до своєї природи.
 
-При перевизначенні віртуальних методів слід враховувати низку обмежень:
+## Звернення до базового методу через base
 
-- Віртуальний і перевизначений методи повинні мати той самий модифікатор доступу. Тобто якщо віртуальний метод визначено за допомогою модифікатора `public`, то й перевизначений метод повинен мати модифікатор `public`.
-- Не можна перевизначити чи оголосити віртуальним статичний метод.
+Перевизначений метод у похідному класі може викликати реалізацію базового класу через ключове слово `base`. Це дозволяє **розширити** поведінку, а не повністю замінити її:
 
-## Ключове слово base
+```csharp run
+using System;
 
-Крім конструкторів, ми можемо звернутись за допомогою ключового слова `base` до інших членів базового класу. У нашому випадку виклик `base.Print();` буде зверненням до методу `Print()` у класі `Person`:
+Doctor doctor = new Doctor("Олена Коваль", 38, "Кардіологія");
+doctor.Print();
 
-```csharp
-class Employee : Person
+class Person
 {
-    public string Company { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
 
-    public Employee(string name, string company)
-    : base(name)
+    public virtual void Print()
     {
-        Company = company;
+        Console.WriteLine($"{Name}, {Age} р.");
     }
+}
+
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+
+    public Doctor(string name, int age, string spec) : base(name, age)
+    {
+        Specialization = spec;
+    }
+
+    public override void Print()
+    {
+        base.Print();                                    // виводить: Олена Коваль, 38 р.
+        Console.WriteLine($"  Спеціалізація: {Specialization}"); // додає рядок
+    }
+}
+```
+
+Виклик `base.Print()` запускає саме реалізацію класу `Person`, навіть якщо викликається через об'єкт `Doctor`. Це типовий патерн для поступового збагачення поведінки в ланцюжку успадкування.
+
+## Ланцюжок перевизначень
+
+Перевизначення може тривати через кілька рівнів ієрархії. Кожен похідний клас може перевизначити метод далі — або знову використати `base`:
+
+```csharp run
+using System;
+
+Person p   = new Inpatient("Іван Петренко", 45, "Гіпертонія", "Палата 12");
+p.Print();
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+    public virtual void Print() => Console.WriteLine($"Особа: {Name}");
+}
+
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age) { Diagnosis = diag; }
 
     public override void Print()
     {
         base.Print();
-        Console.WriteLine($"працює в {Company}");
+        Console.WriteLine($"  Діагноз: {Diagnosis}");
+    }
+}
+
+class Inpatient : Patient  // стаціонарний пацієнт
+{
+    public string Room { get; set; }
+    public Inpatient(string name, int age, string diag, string room)
+        : base(name, age, diag) { Room = room; }
+
+    public override void Print()
+    {
+        base.Print();                          // викликає Patient.Print() → Person.Print()
+        Console.WriteLine($"  Палата: {Room}");
     }
 }
 ```
+
+![Ланцюжок перевизначень virtual → override](_assets/04-03/override-chain.png)
+
+При виклику `p.Print()` через змінну типу `Person`, де реальний тип `Inpatient`, спочатку виконується `Inpatient.Print()`, яка через `base.Print()` викликає `Patient.Print()`, яка у свою чергу через `base.Print()` викликає `Person.Print()`.
 
 ## Перевизначення властивостей
 
-Так само як і методи, можна перевизначати властивості:
+Так само як і методи, властивості можна оголошувати `virtual` і перевизначати в нащадках за допомогою `override`. Це корисно, коли похідний клас має накладати додаткові обмеження або змінювати логіку доступу:
 
-```csharp
+```csharp run
+using System;
+
+Person person = new Person("Сергій Бойко");
+person.Age = 5;
+Console.WriteLine($"Person.Age = {person.Age.ToString()}");   // 5
+
+Doctor doctor = new Doctor("Олена Коваль", "Кардіологія");
+doctor.Age = 16;
+Console.WriteLine($"Doctor.Age = {doctor.Age.ToString()}");   // 18 (мін. для лікаря)
+doctor.Age = 35;
+Console.WriteLine($"Doctor.Age = {doctor.Age.ToString()}");   // 35
+
 class Person
 {
-    int age = 1;
+    private int _age = 1;
 
     public virtual int Age
     {
-        get => age;
-        set { if (value > 0 && value < 110) age = value; }
+        get => _age;
+        set { if (value > 0 && value < 120) _age = value; }
     }
 
     public string Name { get; set; }
-
-    public Person(string name)
-    {
-        Name = name;
-    }
-
-    public virtual void Print() => Console.WriteLine(Name);
+    public Person(string name) { Name = name; }
 }
 
-class Employee : Person
+class Doctor : Person
 {
+    public string Specialization { get; set; }
+
+    public Doctor(string name, string spec) : base(name)
+    {
+        Specialization = spec;
+        base.Age = 25; // вік за замовчуванням для лікаря
+    }
+
     public override int Age
     {
         get => base.Age;
-        set { if (value > 17 && value < 110) base.Age = value; }
-    }
-
-    public string Company { get; set; }
-
-    public Employee(string name, string company)
-    : base(name)
-    {
-        Company = company;
-        base.Age = 18; // вік для працівників за умовчанням
+        set
+        {
+            // Лікар повинен мати не менше 25 років (мінімум для спеціаліста)
+            if (value >= 25 && value < 120) base.Age = value;
+        }
     }
 }
 ```
 
-В даному випадку в класі `Person` визначено віртуальну властивість `Age`, яка встановлює значення, якщо вона більша за 0 і менше 110. У класі `Employee` ця властивість перевизначена - вік працівника повинен бути не меншим за 18.
+У класі `Person` властивість `Age` перевіряє лише загальний діапазон (1..119). У класі `Doctor` перевизначена властивість додає вимогу мінімального віку 25 років. При встановленні значення менше допустимого воно просто ігнорується.
 
-```csharp
-Person bob = new Person("Bob");
-Console.WriteLine(bob.Age); // 1
+## Заборона подальшого перевизначення: sealed
 
-Employee tom = new Employee("Tom", "Microsoft");
-Console.WriteLine(tom.Age); // 18
-tom.Age = 22;
-Console.WriteLine(tom.Age); // 22
-tom.Age = 12;
-Console.WriteLine(tom.Age); // 22
-```
+Якщо перевизначений метод у похідному класі не повинен перевизначатися у його нащадках, його оголошують з модифікатором `sealed`. Цей модифікатор завжди використовується разом з `override`:
 
-## Заборона перевизначення методів
+```csharp run
+using System;
 
-Також можна заборонити перевизначення методів та властивостей. В цьому випадку їх треба оголошувати з модифікатором `sealed`:
+ChiefDoctor chief = new ChiefDoctor("Андрій Мельник", "Хірургія", "Клінічна лікарня №1");
+chief.Print();
 
-```csharp
-class Employee : Person
+// Якби існував клас SeniorChiefDoctor : ChiefDoctor,
+// він не зміг би перевизначити Print() — компілятор видасть помилку.
+
+class Person
 {
-    public string Company { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name) { Name = name; }
+    public virtual void Print() => Console.WriteLine($"Особа: {Name}");
+}
 
-    public Employee(string name, string company)
-    : base(name)
-    {
-        Company = company;
-    }
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+    public Doctor(string name, string spec) : base(name) { Specialization = spec; }
 
-    public override sealed void Print()
+    public override void Print() =>
+        Console.WriteLine($"Лікар: {Name} | {Specialization}");
+}
+
+class ChiefDoctor : Doctor
+{
+    public string Hospital { get; set; }
+
+    public ChiefDoctor(string name, string spec, string hospital)
+        : base(name, spec) { Hospital = hospital; }
+
+    public override sealed void Print()  // sealed: подальше перевизначення заборонено
     {
-        Console.WriteLine($"{Name} працює в {Company}");
+        base.Print();
+        Console.WriteLine($"  Головний лікар: {Hospital}");
     }
 }
 ```
 
-При створенні методів з модифікатором `sealed` треба враховувати, що `sealed` застосовується в парі з `override`, тобто тільки в методах, що перевизначаються.
-
-І в цьому випадку ми не зможемо перевизначити метод `Print` у класі, успадкованому від `Employee`.
+`sealed override` означає: «я перевизначаю метод базового класу, але забороняю будь-якому нащадку перевизначати його далі». Це корисно, коли реалізація є критичною і не повинна бути змінена у підкласах — наприклад, метод, що реалізує специфічну логіку ліцензування або безпеки.

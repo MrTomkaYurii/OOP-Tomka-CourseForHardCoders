@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 4
 chapterTitle: "Розділ 4. Об'єктно-орієнтоване програмування"
 section: 4
@@ -9,145 +9,212 @@ source: "../_combined/21-prykhovuvannia-metodiv-ta-vlastyvostei.md"
 
 ## 4.4. Приховування методів та властивостей
 
-У минулій темі було розглянуто визначення та перевизначення віртуальних методів. Іншим способом змінити функціональність методу, успадкованого від базового класу, є приховування (shadowing/hiding).
+У попередньому розділі ми розглянули перевизначення — механізм заміни реалізації віртуального методу в похідному класі. Проте іноді виникає ситуація, коли метод у базовому класі не є `virtual`, а отже не може бути перевизначений. Або ж нас влаштовує поточна реалізація для базового типу, але в похідному класі потрібна інша поведінка. У таких випадках застосовується **приховування** (hiding / shadowing).
 
-Фактично приховування методу/властивості представляє визначення в класі-спадкоємці методу або властивості, які відповідають за ім'ям та набором параметрів методу або властивості базового класу. Для приховування членів класу застосовується ключове слово `new`. Наприклад:
+Приховування полягає у визначенні в похідному класі члена з тим самим іменем і набором параметрів, що й у базовому класі. Для явного позначення приховування використовується ключове слово `new`. Якщо `new` не вказати — компілятор видасть попередження, але код скомпілюється.
 
-```csharp
+## Приховування методів
+
+Розглянемо базовий клас `Person` із звичайним (не `virtual`) методом `Print()`. Клас `Doctor` хоче вивести у `Print()` додаткову інформацію про спеціалізацію, але перевизначити невіртуальний метод неможливо — тому використовується `new`:
+
+```csharp run
+using System;
+
+Person person = new Person("Сергій Бойко", 52);
+person.Print();   // Person.Print()
+
+Doctor doctor = new Doctor("Олена Коваль", 38, "Кардіологія");
+doctor.Print();   // Doctor.Print() — прихований метод
+
 class Person
 {
     public string Name { get; set; }
+    public int Age { get; set; }
 
-    public Person(string name)
+    public Person(string name, int age) { Name = name; Age = age; }
+
+    public void Print()   // НЕ virtual
     {
-        Name = name;
+        Console.WriteLine($"Особа: {Name}, {Age} р.");
     }
+}
+
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+
+    public Doctor(string name, int age, string spec) : base(name, age)
+    {
+        Specialization = spec;
+    }
+
+    public new void Print()   // приховуємо метод базового класу
+    {
+        Console.WriteLine($"Лікар: {Name}, {Age} р. | {Specialization}");
+    }
+}
+```
+
+Ключове слово `new` сигналізує компілятору та читачу коду: «це навмисне приховування, а не помилка». Без `new` код працює так само, але компілятор виведе попередження CS0108.
+
+## Виклик базового методу через base
+
+Якщо у прихованому методі потрібно скористатися реалізацією базового класу, можна звернутися до неї через `base`:
+
+```csharp run
+using System;
+
+Doctor doctor = new Doctor("Олена Коваль", 38, "Кардіологія");
+doctor.Print();
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
 
     public void Print()
     {
-        Console.WriteLine($"Name: {Name}");
+        Console.WriteLine($"Особа: {Name}, {Age} р.");
     }
 }
 
-class Employee : Person
+class Doctor : Person
 {
-    public string Company { get; set; }
-
-    public Employee(string name, string company)
-    : base(name)
-    {
-        Company = company;
-    }
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age) { Specialization = spec; }
 
     public new void Print()
     {
-        Console.WriteLine($"Name: {Name}   Company: {Company}");
+        base.Print();                                        // Особа: Олена Коваль, 38 р.
+        Console.WriteLine($"  Спеціалізація: {Specialization}");
     }
 }
 ```
 
-Тут визначено клас `Person`, який представляє людину, та клас `Employee`, який представляє працівника підприємства. `Employee` успадковує від `Person` всі властивості та методи. Але в класі `Employee`, крім успадкованих властивостей, є також і власна властивість `Company`, яка зберігає назву компанії. І ми хотіли б у методі `Print` виводити інформацію про компанію разом із ім'ям на консоль. Для цього визначається метод `Print` з ключовим словом `new`, який приховує реалізацію методу з базового класу.
+## Ключова відмінність від override
 
-У яких ситуаціях можна використовувати приховування? Наприклад, у прикладі вище метод `Print` у базовому класі не є віртуальним, ми не можемо його перевизначити, але, припустимо, нас не влаштовує його реалізація для похідного класу, тому ми можемо скористатися приховуванням, щоб визначити потрібний нам функціонал.
+Приховування і перевизначення виглядають схоже, але поводяться принципово по-різному. Якщо об'єкт `Doctor` зберігається у змінній типу `Person`, то:
+- при **перевизначенні** (`override`) — виконається `Doctor.Print()`
+- при **приховуванні** (`new`) — виконається `Person.Print()`
 
-Використовуємо ці класи у програмі у методі `Main`:
+```csharp run
+using System;
 
-```csharp
-Person bob = new Person("Bob");
-bob.Print();    // Name: Bob
-
-Employee tom = new Employee("Tom", "Microsoft");
-tom.Print();    // Name: Tom  Company: Microsoft
-```
-
-Консольний вивід програми:
-
-![Консольний вивід прихованого методу Print](_assets/_docx/image89.png)
-
-При цьому якщо ми хочемо звернутися саме до реалізації властивості або методу в базовому класі, то ми можемо знову використовувати ключове слово `base` і через нього звертатися до функціональності базового класу.
-
-```csharp
-class Employee : Person
-{
-    public string Company { get; set; }
-
-    public Employee(string name, string company)
-    : base(name)
-    {
-        Company = company;
-    }
-
-    public new void Print()
-    {
-        base.Print(); // Викликаємо метод Print з базового класу Person
-        Console.WriteLine($"Company: {Company}");
-    }
-}
-```
-
-## Приховування властивостей
-
-Подібним образом ми можемо організувати приховування властивостей:
-
-```csharp
-Person bob = new Person("Bob");
-Console.WriteLine(bob.Name); // Bob
-
-Employee tom = new Employee("Tom", "Microsoft");
-Console.WriteLine(tom.Name); // Mr./Ms. Tom
+// Змінна типу Person, об'єкт Doctor
+Person p = new Doctor("Олена Коваль", 38, "Кардіологія");
+p.Print(); // яка реалізація?
 
 class Person
 {
     public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
 
-    public Person(string name)
+    public void Print()   // не virtual — hiding
     {
-        Name = name;
+        Console.WriteLine($"Person.Print: {Name}");
     }
 }
 
-class Employee : Person
+class Doctor : Person
 {
-    // приховуємо властивість Name базового класу
-    public new string Name
-    {
-        get => $"Mr./Ms. {base.Name}";
-        set => base.Name = value;
-    }
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age) { Specialization = spec; }
 
-    public string Company { get; set; }
-
-    public Employee(string name, string company)
-    : base(name)
+    public new void Print()
     {
-        Company = company;
+        Console.WriteLine($"Doctor.Print: {Name} | {Specialization}");
     }
 }
 ```
 
-У разі в класі `Employee` перевизначено властивість `Name`. У блоці `get` беремо значення властивості з базового класу `Person` і приєднуємо до нього `"Mr./Ms."`. У блоці `set` передаємо отримане значення на реалізацію властивості `Name` базового класу `Person`.
+Результат: **`Person.Print: Олена Коваль`** — виконується метод класу `Person`, хоча реальний об'єкт є `Doctor`. Саме тому для поліморфної поведінки потрібен `override`, а не `new`.
 
-## Приховування змінних та констант
+![new (приховування) vs override (перевизначення) — поведінка через змінну базового типу](_assets/04-04/hiding-vs-override.png)
 
-На відміну від перевизначення C# дозволяє застосовувати приховування до змінних (як статичних, так і нестатичних) і константів, також використовуючи ключове слово `new`:
+## Приховування властивостей
 
-```csharp
-Console.WriteLine(Person.minAge); // 1
-Console.WriteLine(Person.typeName); // Person
+Так само як і методи, можна приховувати властивості. Це корисно, коли потрібно змінити логіку доступу у похідному класі без оголошення `virtual` у базовому:
 
-Console.WriteLine(Employee.minAge); // 18
-Console.WriteLine(Employee.typeName); // Employee
+```csharp run
+using System;
+
+Person person = new Person("Іван Петренко");
+Console.WriteLine(person.Name); // Іван Петренко
+
+Patient patient = new Patient("Марія Сидоренко", "MR-001");
+Console.WriteLine(patient.Name); // [MR-001] Марія Сидоренко
 
 class Person
 {
-    public readonly static int minAge = 1;
-    public const string typeName = "Person";
+    public string Name { get; set; }
+    public Person(string name) { Name = name; }
 }
 
-class Employee : Person
+class Patient : Person
 {
-    // приховуємо поля та константи базового класу
-    public new readonly static int minAge = 18;
-    public new const string typeName = "Employee";
+    public string RecordId { get; set; }
+
+    public Patient(string name, string recordId) : base(name)
+    {
+        RecordId = recordId;
+    }
+
+    // приховуємо властивість Name — додаємо номер картки пацієнта
+    public new string Name
+    {
+        get => $"[{RecordId}] {base.Name}";
+        set => base.Name = value;
+    }
 }
 ```
+
+У блоці `get` звертаємось до `base.Name`, щоб отримати оригінальне ім'я і доповнити його. У блоці `set` передаємо значення безпосередньо властивості базового класу.
+
+## Приховування полів і констант
+
+На відміну від `override`, `new` можна застосовувати не тільки до методів і властивостей, але й до **полів** та **констант**. Це дозволяє перевизначати статичні метадані класу в ієрархії:
+
+```csharp run
+using System;
+
+Console.WriteLine(Person.MinAge.ToString());   // 0
+Console.WriteLine(Person.TypeLabel);           // Особа
+
+Console.WriteLine(Patient.MinAge.ToString());  // 0
+Console.WriteLine(Patient.TypeLabel);          // Пацієнт
+
+Console.WriteLine(Doctor.MinAge.ToString());   // 25
+Console.WriteLine(Doctor.TypeLabel);           // Лікар
+
+class Person
+{
+    public static readonly int MinAge = 0;
+    public const string TypeLabel = "Особа";
+}
+
+class Patient : Person
+{
+    public new const string TypeLabel = "Пацієнт";
+    // MinAge не приховується — успадковується зі значенням 0
+}
+
+class Doctor : Person
+{
+    public new static readonly int MinAge = 25;
+    public new const string TypeLabel = "Лікар";
+}
+```
+
+Кожен клас має свою версію констант і полів, незалежну від базового класу. Звернення через тип (`Doctor.MinAge`) повертає значення саме того класу, через який звертаємось.
+
+## Коли використовувати new замість override
+
+Приховування є вузькоспеціалізованим інструментом. Типові сценарії:
+
+- **Метод базового класу не є `virtual`** — якщо немає доступу до вихідного коду або змінювати базовий клас небажано.
+- **Навмисна ізоляція поведінки** — потрібна різна реалізація залежно від типу змінної (не об'єкта), що є рідкісною але законною архітектурною потребою.
+- **Статичні поля та константи** — єдиний спосіб «замінити» статичний член у похідному класі.
+
+В усіх інших випадках, де потрібна поліморфна поведінка, слід надавати перевагу `virtual` + `override`. Приховування через `new` без чіткого розуміння наслідків є поширеним джерелом помилок.

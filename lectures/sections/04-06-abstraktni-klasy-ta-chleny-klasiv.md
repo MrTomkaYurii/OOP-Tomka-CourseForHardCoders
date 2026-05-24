@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 4
 chapterTitle: "Розділ 4. Об'єктно-орієнтоване програмування"
 section: 6
@@ -9,281 +9,229 @@ source: "../_combined/23-abstraktni-klasy-ta-chleny-klasiv.md"
 
 ## 4.6. Абстрактні класи та члени класів
 
-## Абстрактні класи
+## Навіщо потрібні абстрактні класи
 
-Крім звичайних класів у C# є абстрактні класи. Навіщо вони потрібні? Класи зазвичай представляють план певного роду об'єктів чи сутностей. Наприклад, ми можемо визначити клас `Car` для представлення машин або клас `Person` для представлення людей, вклавши в ці класи відповідні властивості, поля, методи, які описуватимуть ці об'єкти. Проте деякі сутності, які хочемо висловити з допомогою мови програмування, можуть не мати конкретного втілення. Наприклад, насправді немає геометричної постаті як такої. Є коло, прямокутник, квадрат, але фігури немає. Однак і коло, і прямокутник мають щось спільне і є фігурами. І для опису подібних сутностей, які не мають конкретного втілення, призначені абстрактні класи.
+Класи зазвичай представляють конкретні сутності, з яких можна створювати об'єкти: `Patient`, `Doctor`, `Appointment`. Але іноді корисно мати клас, який описує загальний шаблон або контракт для цілої групи класів, і при цьому самостійно не має сенсу як окремий об'єкт.
 
-Абстрактний клас схожий на звичайний клас. Він може мати змінні, методи, конструктори, властивості. Єдине, що при визначенні абстрактних класів використовується ключове слово `abstract`. Наприклад, визначимо абстрактний клас, який представляє певний транспортний засіб:
+Наприклад, «медичний персонал» — це абстракція. У клініці є конкретні лікарі, медсестри, хірурги, але «медичного персоналу взагалі» як конкретної людини не існує. Проте всі вони мають спільне: ім'я, роль, спосіб виконання своїх обов'язків. Для опису таких сутностей у C# призначені **абстрактні класи**.
 
-```csharp
-abstract class Transport
+Абстрактний клас оголошується з ключовим словом `abstract`. Його головна особливість: **неможливо створити екземпляр абстрактного класу безпосередньо**. Він існує лише як база для похідних класів.
+
+## Абстрактний клас з конкретними методами
+
+Абстрактний клас може мати звичайні поля, властивості, конструктори та методи — і похідні класи успадкують їх без необхідності перевизначення:
+
+```csharp run
+using System;
+
+MedicalStaff doctor = new Doctor("Олена Коваль", 38, "Кардіологія");
+MedicalStaff nurse  = new Nurse("Тетяна Мороз", 29, "Терапія");
+
+doctor.PrintCard();
+nurse.PrintCard();
+
+// new MedicalStaff("...", 0); // Помилка — абстрактний клас!
+
+abstract class MedicalStaff
 {
-    public void Move()
-    {
-        Console.WriteLine("Транспортний засіб рухається");
-    }
-}
-```
+    public string Name { get; set; }
+    public int Age { get; set; }
 
-Транспортний засіб є деякою абстракцією, яка не має конкретного втілення. Тобто легкові та вантажні машини, літаки, морські судна, хтось на космічному кораблі любить покататися, але як такого транспортного засобу немає. Тим не менше, всі транспортні засоби мають щось спільне - вони можуть переміщатися. І для цього у класі визначено метод `Move`, який емулює переміщення.
-
-Але головна відмінність абстрактних класів від звичайних полягає в тому, що ми не можемо використовувати конструктор абстрактного класу для створення екземпляра класу. Наприклад, так:
-
-```csharp
-Transport tesla = new Transport();
-```
-
-Проте абстрактні класи корисні для опису деякого загального функціоналу, який можуть успадковувати та використовувати похідні класи:
-
-```csharp
-Transport car = new Car();
-Transport ship = new Ship();
-Transport aircraft = new Aircraft();
-
-car.Move();
-ship.Move();
-aircraft.Move();
-
-abstract class Transport
-{
-    public void Move()
-    {
-        Console.WriteLine("Транспортний засіб рухається");
-    }
-}
-
-// клас корабля
-class Ship : Transport { }
-
-// клас літака
-class Aircraft : Transport { }
-
-// клас машини
-class Car : Transport { }
-```
-
-У разі від класу `Transport` успадковуються три класи, які представляють різні типи транспортних засобів. Проте вони мають спільну межу - вони можуть переміщатися за допомогою методу `Move()`.
-
-Вище писалося, що ми не можемо використовувати конструктор абстрактного класу для створення екземпляра цього класу. Проте такий клас також може визначати конструктори:
-
-```csharp
-Transport car = new Car("машина");
-Transport ship = new Ship("корабель");
-Transport aircraft = new Aircraft("літак");
-
-car.Move(); // машина рухається
-ship.Move(); // корабель рухається
-aircraft.Move(); // літак рухається
-
-abstract class Transport
-{
-    public string Name { get; }
-
-    // конструктор абстрактного класу Transport
-    public Transport(string name)
+    public MedicalStaff(string name, int age)
     {
         Name = name;
+        Age  = age;
     }
 
-    public void Move() => Console.WriteLine($"{Name} рухається");
+    // Звичайний метод — успадковується всіма похідними
+    public void PrintCard()
+    {
+        Console.WriteLine($"Співробітник: {Name}, {Age} р.");
+    }
 }
 
-// клас корабля
-class Ship : Transport
+class Doctor : MedicalStaff
 {
-    // Викликаємо конструктор базового класу
-    public Ship(string name) : base(name) { }
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age)
+    { Specialization = spec; }
 }
 
-// клас літака
-class Aircraft : Transport
+class Nurse : MedicalStaff
 {
-    public Aircraft(string name) : base(name) { }
-}
-
-// клас машини
-class Car : Transport
-{
-    public Car(string name) : base(name) { }
+    public string Ward { get; set; }
+    public Nurse(string name, int age, string ward) : base(name, age)
+    { Ward = ward; }
 }
 ```
 
-В даному випадку в абстрактному класі `Transport` визначено конструктор - за допомогою параметра він встановлює значення властивості `Name`, яке зберігає назву транспортного засобу. І в цьому випадку похідні класи мають у своїх конструкторах викликати цей конструктор.
-
-## Абстрактні члени класів
-
-Крім звичайних властивостей і методів, абстрактний клас може мати абстрактні члени класів, які визначаються за допомогою ключового слова `abstract` і не мають ніякого функціоналу. Зокрема, абстрактними можуть бути:
-
-- Методи
-- Властивості
-- Індексатори
-- Події
-
-Абстрактні члени класів не повинні мати модифікатор `private`. При цьому похідний клас повинен перевизначити і реалізувати всі абстрактні методи і властивості, які є у базовому абстрактному класі. При перевизначенні у похідному класі такий метод або властивість також оголошуються з модифікатором `override` (як і за звичайного перевизначення віртуальних методів та властивостей). Також слід врахувати, що якщо клас має хоча б один абстрактний метод (або абстрактні властивості, індексатор, подія), цей клас має бути визначений як абстрактний.
-
-Абстрактні члени також, як і віртуальні, є частиною поліморфного інтерфейсу. Але якщо у випадку з віртуальними методами говоримо, що клас-спадкоємець успадковує реалізацію, то у випадку з абстрактними методами успадковується інтерфейс, представлений цими абстрактними методами.
+Хоча `MedicalStaff` абстрактний, він може мати конструктор — але він викликається лише через `base(...)` у похідних класах. Звернення `new MedicalStaff(...)` безпосередньо заборонено компілятором.
 
 ## Абстрактні методи
 
-Наприклад, вище у прикладі з транспортними засобами метод `Move` визначає пересування транспортного засобу. Однак різні типи транспорту переміщаються по-різному - їздять по землі, летять повітрям, пливуть на воді і т.д. У цьому випадку ми можемо зробити метод `Move` абстрактним, а його реалізацію перекласти на похідні класи:
+Абстрактний клас може визначати **абстрактні методи** — методи без реалізації, позначені ключовим словом `abstract`. Вони задають **контракт**: кожен неабстрактний похідний клас зобов'язаний реалізувати такий метод через `override`. Абстрактний метод не може мати тіла — лише сигнатуру:
 
-```csharp
-abstract class Transport
+```csharp run
+using System;
+
+MedicalStaff[] staff = {
+    new Doctor("Олена Коваль", 38, "Кардіологія"),
+    new Nurse("Тетяна Мороз", 29, "Терапія"),
+};
+
+foreach (MedicalStaff m in staff)
 {
-    public abstract void Move();
+    m.PrintCard();
+    m.Examine();   // кожен виконує по-своєму
+    Console.WriteLine();
 }
 
-// клас корабля
-class Ship : Transport
+abstract class MedicalStaff
 {
-    // ми повинні реалізувати всі абстрактні методи та властивості базового класу
-    public override void Move()
+    public string Name { get; set; }
+    public int Age { get; set; }
+
+    public MedicalStaff(string name, int age) { Name = name; Age = age; }
+
+    public void PrintCard() =>
+        Console.WriteLine($"Співробітник: {Name}, {Age} р.");
+
+    // Абстрактний метод — реалізація обов'язкова у похідних
+    public abstract void Examine();
+}
+
+class Doctor : MedicalStaff
+{
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age)
+    { Specialization = spec; }
+
+    public override void Examine()
     {
-        Console.WriteLine("Корабель пливе");
+        Console.WriteLine($"Лікар {Name} проводить огляд за спеціалізацією: {Specialization}");
     }
 }
 
-// клас літака
-class Aircraft : Transport
+class Nurse : MedicalStaff
 {
-    public override void Move()
-    {
-        Console.WriteLine("Літак летить");
-    }
-}
+    public string Ward { get; set; }
+    public Nurse(string name, int age, string ward) : base(name, age)
+    { Ward = ward; }
 
-// клас машини
-class Car : Transport
-{
-    public override void Move()
+    public override void Examine()
     {
-        Console.WriteLine("Машина їде");
+        Console.WriteLine($"Медсестра {Name} вимірює показники у палаті: {Ward}");
     }
 }
 ```
 
-Застосування класів:
+![Ієрархія абстрактного класу MedicalStaff](_assets/04-06/abstract-hierarchy.png)
 
-```csharp
-Transport car = new Car();
-Transport ship = new Ship();
-Transport aircraft = new Aircraft();
-
-car.Move(); // машина їде
-ship.Move(); // корабель пливе
-aircraft.Move(); // літак летить
-```
+Абстрактні методи є частиною поліморфного інтерфейсу: виклик `m.Examine()` через змінну `MedicalStaff` завжди виконає реалізацію реального типу — так само, як і `virtual` + `override`. Різниця в тому, що `abstract` **не має реалізації за замовчуванням** і похідний клас **не може** відмовитись від реалізації (якщо сам не є абстрактним).
 
 ## Абстрактні властивості
 
-Слід зазначити використання абстрактних властивостей. Їхнє визначення схоже на визначення автовластивостей. Наприклад:
+Крім методів, абстрактними можуть бути й **властивості**. Їх оголошення схоже на автовластивість, але без реального тіла — лише порожні блоки `get` та `set`:
 
-```csharp
-abstract class Transport
+```csharp run
+using System;
+
+MedicalStaff[] staff = {
+    new Doctor("Олена Коваль", 38, "Кардіологія"),
+    new Nurse("Тетяна Мороз", 29, "Терапія"),
+};
+
+foreach (MedicalStaff m in staff)
+    Console.WriteLine($"{m.Name} — {m.Role}, ставка: {m.HourlyRate.ToString()} грн/год");
+
+abstract class MedicalStaff
 {
-    // абстрактна властивість для зберігання швидкості
-    public abstract int Speed { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+
+    public MedicalStaff(string name, int age) { Name = name; Age = age; }
+
+    public abstract string Role { get; }           // абстрактна властивість
+    public abstract decimal HourlyRate { get; }    // абстрактна властивість
 }
 
-// клас корабля
-class Ship : Transport
+class Doctor : MedicalStaff
 {
-    int speed;
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age)
+    { Specialization = spec; }
 
-    public override int Speed
+    public override string Role => "Лікар";
+    public override decimal HourlyRate => 250m;
+}
+
+class Nurse : MedicalStaff
+{
+    public string Ward { get; set; }
+    public Nurse(string name, int age, string ward) : base(name, age)
+    { Ward = ward; }
+
+    public override string Role => "Медсестра";
+    public override decimal HourlyRate => 120m;
+}
+```
+
+При перевизначенні абстрактної властивості у похідному класі її можна реалізувати як повноцінну властивість з полем або як автовластивість — залежно від потреб. У прикладі вище використані вирази-тіла (`=>`), що повертають константу.
+
+## Відмова від реалізації в проміжному класі
+
+Якщо похідний клас не бажає або не може реалізувати всі абстрактні члени базового — він сам повинен бути оголошений як `abstract`. У такому разі обов'язок реалізації переходить до його нащадків:
+
+```csharp run
+using System;
+
+MedicalStaff surgeon = new CardiacSurgeon("Андрій Мельник", 45);
+surgeon.PrintCard();
+surgeon.Examine();
+
+abstract class MedicalStaff
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public MedicalStaff(string name, int age) { Name = name; Age = age; }
+    public void PrintCard() => Console.WriteLine($"{Name}, {Age} р.");
+    public abstract void Examine();
+    public abstract string Role { get; }
+}
+
+// Хірург — ще абстрактний: не реалізує Examine() і Role
+abstract class Surgeon : MedicalStaff
+{
+    public string SurgeryType { get; set; }
+    public Surgeon(string name, int age, string surgeryType) : base(name, age)
+    { SurgeryType = surgeryType; }
+    // Examine() та Role — досі не реалізовані
+}
+
+// Конкретний клас — зобов'язаний реалізувати все
+class CardiacSurgeon : Surgeon
+{
+    public CardiacSurgeon(string name, int age)
+        : base(name, age, "Кардіохірургія") { }
+
+    public override string Role => "Кардіохірург";
+
+    public override void Examine()
     {
-        get => speed;
-        set => speed = value;
+        Console.WriteLine($"{Name} проводить передопераційний огляд ({SurgeryType})");
     }
 }
-
-class Aircraft : Transport
-{
-    public override int Speed { get; set; }
-}
 ```
 
-У класі `Transport` визначено абстрактну властивість `Speed`, яка повинна зберігати швидкість транспортного засобу. Вона схожа на автовластивість, але це не автовластивість. Так як дана властивість не повинна мати реалізацію, вона має тільки порожні блоки `get` і `set`. У похідних класах ми можемо перевизначити цю властивість, зробивши її повноцінною властивістю (як у класі `Ship`), або зробивши її автоматичною (як у класі `Aircraft`).
+Клас `Surgeon` є проміжним абстрактним класом: він додає власну властивість `SurgeryType`, але не реалізує `Examine()` та `Role`. Клас `CardiacSurgeon` вже конкретний — і зобов'язаний реалізувати всі успадковані абстрактні члени.
 
-## Відмова від реалізації абстрактних членів
+## abstract vs virtual: коли що обирати
 
-Похідний клас повинен реалізувати всі абстрактні члени базового класу. Однак ми можемо відмовитися від реалізації, але в цьому випадку похідний клас також має бути визначений як абстрактний:
+| | `abstract` | `virtual` |
+|---|---|---|
+| Реалізація у базовому | Відсутня | Є (за замовчуванням) |
+| Похідний зобов'язаний | Так (або бути abstract) | Ні (може не перевизначати) |
+| Клас має бути abstract | Так | Ні |
+| Поліморфізм | Так | Так |
 
-```csharp
-Transport tesla = new Auto();
-tesla.Move(); // легкова машина їде
-
-abstract class Transport
-{
-    public abstract void Move();
-}
-
-// клас машини
-abstract class Car : Transport { }
-
-class Auto : Car
-{
-    public override void Move()
-    {
-        Console.WriteLine("легкова машина їде");
-    }
-}
-```
-
-В даному випадку клас `Car` не реалізує абстрактний метод `Move` базового класу `Transport` і тому також визначений як абстрактний. Однак будь-які неабстрактні класи, похідні від `Car`, все одно повинні реалізувати всі успадковані абстрактні методи та властивості.
-
-## Приклад абстрактного класу
-
-Хрестоматійним прикладом є система геометричних фігур. Насправді немає геометричної постаті як такої. Є коло, прямокутник, квадрат, але фігури немає. Однак і коло, і прямокутник мають щось спільне і є фігурами:
-
-```csharp
-// абстрактний клас фігури
-abstract class Shape
-{
-    // абстрактний метод отримання периметра
-    public abstract double GetPerimeter();
-
-    // абстрактний метод отримання площі
-    public abstract double GetArea();
-}
-
-// Похідний клас прямокутника
-class Rectangle : Shape
-{
-    public float Width { get; set; }
-    public float Height { get; set; }
-
-    // Перевизначення отримання периметра
-    public override double GetPerimeter() => Width * 2 + Height * 2;
-
-    // Перевизначення отримання площі
-    public override double GetArea() => Width * Height;
-}
-
-// Похідний клас кола
-class Circle : Shape
-{
-    public double Radius { get; set; }
-
-    // Перевизначення отримання периметра
-    public override double GetPerimeter() => Radius * 2 * 3.14;
-
-    // Перевизначення отримання площі
-    public override double GetArea() => Radius * Radius * 3.14;
-}
-```
-
-Застосування класів:
-
-```csharp
-var rectangle = new Rectangle { Width = 20, Height = 20 };
-var circle = new Circle { Radius = 200 };
-
-PrintShape(rectangle); // Perimeter: 80   Area: 400
-PrintShape(circle); // Perimeter: 1256  Area: 125600
-
-void PrintShape(Shape shape)
-{
-    Console.WriteLine($"Perimeter: {shape.GetPerimeter()}  Area: {shape.GetArea()}");
-}
-```
+Правило вибору: якщо у базовому класі немає і не може бути розумної реалізації за замовчуванням — використовуйте `abstract`. Якщо базова реалізація має сенс, але похідні можуть її уточнити — використовуйте `virtual`.

@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 4
 chapterTitle: "Розділ 4. Об'єктно-орієнтоване програмування"
 section: 8
@@ -9,252 +9,202 @@ source: "../_combined/25-uzahalnennia.md"
 
 ## 4.8. Узагальнення
 
-Крім звичайних типів, фреймворк .NET також підтримує узагальнені типи (generics), а також створення узагальнених методів. Щоб розібратися особливо цього явища, спочатку подивимося на проблему, що могла виникнути до появи узагальнених типів. Подивимося на прикладі. Допустимо, ми визначаємо клас для зберігання даних користувача:
+Крім звичайних типів, фреймворк .NET підтримує **узагальнені типи** (generics) — класи, структури, інтерфейси та методи, які параметризуються типом. Generics є одним із найважливіших механізмів C# і широко використовуються у стандартній бібліотеці: `List<T>`, `Dictionary<TKey, TValue>`, `Queue<T>` та багато інших.
 
-```csharp
-class Person
+## Проблема без узагальнень
+
+Щоб зрозуміти навіщо потрібні generics, розглянемо задачу. У клінічній системі медична картка пацієнта може мати ідентифікатор різного типу: в одній системі це `int`, в іншій — `string` типу `"P-001"`, у третій — `Guid`. Як написати один клас, що підтримує всі варіанти?
+
+Перше рішення — використати `object`, оскільки це базовий тип для всіх:
+
+```csharp run
+using System;
+
+MedicalRecord r1 = new MedicalRecord(1001, "Гіпертонія");
+MedicalRecord r2 = new MedicalRecord("P-001", "Бронхіт");
+
+int id1 = (int)r1.Id;         // розпакування — додаткові витрати
+string id2 = (string)r2.Id;
+
+Console.WriteLine($"Картка #{id1.ToString()}: {r1.Description}");
+Console.WriteLine($"Картка {id2}: {r2.Description}");
+
+// Небезпечно: компілятор не зловить помилку — лише runtime!
+try
 {
-    public int Id { get; }
-    public string Name { get; }
-
-    public Person(int id, string name)
-    {
-        Id = id;
-        Name = name;
-    }
+    string wrongId = (string)r1.Id; // InvalidCastException
 }
-```
+catch (InvalidCastException)
+{
+    Console.WriteLine("Помилка: невірне приведення типу");
+}
 
-Клас `Person` визначає дві властивості: `Id` - унікальний ідентифікатор користувача та `Name` - ім'я користувача.
-
-Тут ідентифікатор користувача заданий як числове значення, тобто це значення 1, 2, 3, 4 і так далі.
-
-Однак нерідко для ідентифікатора використовуються і рядкові значення. І у числових, і у рядкових значень є свої плюси та мінуси. І на момент написання класу ми можемо точно не знати, що краще вибрати для зберігання ідентифікатора - рядки чи числа. Або, можливо, цей клас буде використовуватися іншими розробниками, які можуть мати свою думку з цієї проблеми, наприклад, вони можуть створити спеціальний клас для подання ідентифікатора.
-
-І, на перший погляд, щоб вийти з подібної ситуації, ми можемо визначити властивість `Id` як властивість типу `object`. Так як тип `object` є універсальним типом, від якого успадковуються всі типи, відповідно до властивостей подібного типу ми можемо зберегти і рядки, і числа:
-
-```csharp
-class Person
+class MedicalRecord
 {
     public object Id { get; }
-    public string Name { get; }
+    public string Description { get; }
 
-    public Person(object id, string name)
+    public MedicalRecord(object id, string description)
     {
         Id = id;
-        Name = name;
+        Description = description;
     }
 }
 ```
 
-Потім цей клас можна було використовувати для створення користувачів у програмі:
+Два суттєві недоліки цього підходу:
 
-```csharp
-Person tom = new Person(546, "Tom");
-Person bob = new Person("abc123", "Bob");
+1. **Boxing/unboxing** — при передачі `int` у `object` відбувається упаковка (boxing): значення зі стека копіюється у купу, де для нього виділяється об'єкт-обгортка. Зворотна операція (розпакування) — теж копіювання. У гарячих ділянках коду це помітно знижує продуктивність.
 
-int tomId = (int)tom.Id;
-string bobId = (string)bob.Id;
+2. **Відсутність типобезпеки** — компілятор не знає реального типу `Id`, тому не може попередити про неправильне приведення. Помилка виникне лише під час виконання як `InvalidCastException`.
 
-Console.WriteLine(tomId);   // 546
-Console.WriteLine(bobId);   // abc123
-```
+## Узагальнений клас
 
-Все ніби чудово працює, але таке рішення є не дуже оптимальним. Справа в тому, що в даному випадку ми стикаємося з такими явищами, як упаковка (boxing) і розпакування (unboxing).
+Generics вирішують обидві проблеми. Замість `object` використовується **параметр типу** `T` — своєрідний «слот», який заповнюється конкретним типом при використанні класу:
 
-Так, при передачі в конструктор значення типу `int` відбувається упаковка цього значення в тип `Object`:
+```csharp run
+using System;
 
-```csharp
-Person tom = new Person(546, "Tom"); // Упаковка значення int в тип Object
-```
+MedicalRecord<int>    r1 = new MedicalRecord<int>(1001, "Гіпертонія");
+MedicalRecord<string> r2 = new MedicalRecord<string>("P-001", "Бронхіт");
 
-Щоб назад отримати дані до змінної типу `int`, необхідно виконати розпакування:
+int    id1 = r1.Id; // без розпакування
+string id2 = r2.Id; // без приведення типів
 
-```csharp
-int tomId = (int)tom.Id; // Розпакування у тип int
-```
+Console.WriteLine($"Картка #{id1.ToString()}: {r1.Description}");
+Console.WriteLine($"Картка {id2}: {r2.Description}");
 
-Упаковка (boxing) передбачає перетворення об'єкта значущого типу (наприклад, типу `int`) до типу `object`. При упаковці загальномовне середовище CLR обгортає значення в об'єкт типу `System.Object` і зберігає його у керованій купі (хіпі). Розпакування (unboxing), навпаки, передбачає перетворення об'єкта типу `object` до значущого типу. Упаковка та розпакування ведуть до зниження продуктивності, тому що системі треба здійснити необхідні перетворення.
+// MedicalRecord<int> r3 = new MedicalRecord<int>("abc", "..."); // помилка компіляції!
 
-Крім того, існує інша проблема - проблема безпеки типів. Так, ми отримаємо помилку під час виконання програми, якщо напишемо так:
-
-```csharp
-Person tom = new Person(546, "Tom");
-string tomId = (string)tom.Id; // ! Помилка - виняток InvalidCastException
-Console.WriteLine(tomId); // 546
-```
-
-Ми можемо не знати, який саме об'єкт є `Id`, і при спробі отримати число в даному випадку ми зіткнемося з винятком `InvalidCastException`. Причому з винятком ми зіткнемося під час виконання програми.
-
-Для вирішення цих проблем у мову C# було додано підтримку узагальнених типів (також часто називають універсальними типами). Узагальнені типи дозволяють вказати конкретний тип, який використовуватиметься. Тому визначимо клас `Person` як узагальнений:
-
-```csharp
-class Person<T>
-{
-    public T Id { get; set; }
-    public string Name { get; set; }
-
-    public Person(T id, string name)
-    {
-        Id = id;
-        Name = name;
-    }
-}
-```
-
-Кутові дужки в описі `class Person<T>` вказують, що клас є узагальненим, а тип `T`, укладений у кутові дужки, буде використовуватися цим класом. Необов'язково використовувати саме букву `T`, це може бути будь-яка інша буква або набір символів. Причому зараз на етапі написання коду нам невідомо, що це буде за тип, це може бути будь-який тип. Тому параметр `T` у кутових дужках ще називається універсальним параметром, тому що замість нього можна підставити будь-який тип.
-
-Наприклад, замість параметра `T` можна використовувати об'єкт `int`, тобто число, яке представляє номер користувача. Це також може бути об'єкт `string`, або будь-який інший клас або структура:
-
-```csharp
-Person<int> tom = new Person<int>(546, "Tom"); // Упаковка не потрібна
-Person<string> bob = new Person<string>("abc123", "Bob");
-
-int tomId = tom.Id; // Розпакування не потрібне
-string bobId = bob.Id; // Перетворення типів не потрібно
-
-Console.WriteLine(tomId); // 546
-Console.WriteLine(bobId); // abc123
-```
-
-Оскільки клас `Person` є узагальненим, то при визначенні змінної після назви типу в кутових дужках необхідно вказати той тип, який використовуватиметься замість універсального параметра `T`.
-
-```csharp
-Person<int> tom = new Person<int>(546, "Tom"); // Упаковка не потрібна
-Person<string> bob = new Person<string>("abc123", "Bob");
-```
-
-Тому у першого об'єкта `tom` властивість `Id` матиме тип `int`, а об'єкта `bob` - тип `string`. І у випадку з типом `int` упаковки не відбуватиметься.
-
-При спробі передати для параметра `Id` значення іншого типу ми отримаємо помилку компіляції:
-
-```csharp
-Person<int> tom = new Person<int>("546", "Tom"); // помилка компіляції
-```
-
-А при отриманні значення з `Id` нам більше не буде потрібна операція приведення типів і розпакування теж не застосовуватиметься:
-
-```csharp
-int tomId = tom.Id; // Розпакування не потрібне
-```
-
-Тим самим ми уникнемо проблем із типобезпекою. Таким чином, використовуючи узагальнений варіант класу, ми знижуємо час на виконання та кількість потенційних помилок.
-
-При цьому універсальний параметр може представляти узагальнений тип:
-
-```csharp
-// клас компанії
-class Company<P>
-{
-    public P CEO { get; set; }  // Президент компанії
-
-    public Company(P ceo)
-    {
-        CEO = ceo;
-    }
-}
-
-class Person<T>
+class MedicalRecord<T>
 {
     public T Id { get; }
-    public string Name { get; }
+    public string Description { get; }
 
-    public Person(T id, string name)
+    public MedicalRecord(T id, string description)
     {
         Id = id;
-        Name = name;
+        Description = description;
     }
+
+    public override string ToString() => $"[{Id}] {Description}";
 }
 ```
 
-Тут клас компанії визначає властивість `CEO`, що зберігає президента компанії. І ми можемо передати для цієї властивості значення типу `Person`, типізованого якимось типом:
+![Узагальнений клас: один шаблон — різні типи](_assets/04-08/generics-overview.png)
 
-```csharp
-Person<int> tom = new Person<int>(546, "Tom");
-Company<Person<int>> microsoft = new Company<Person<int>>(tom);
+Кутові дужки `<T>` в оголошенні `class MedicalRecord<T>` вказують, що клас є узагальненим. Буква `T` — умовна назва параметра типу; замість неї може бути будь-який ідентифікатор. При створенні об'єкта конкретний тип вказується у кутових дужках: `new MedicalRecord<int>(...)`. Компілятор замінює `T` на `int` і перевіряє всі операції з `Id` відповідно до цього типу — помилки типів виловлюються на етапі компіляції, а не виконання.
 
-Console.WriteLine(microsoft.CEO.Id);  // 546
-Console.WriteLine(microsoft.CEO.Name);  // Tom
+## Конвенції іменування параметрів типу
+
+У C# прийнято такі угоди щодо назв параметрів типу:
+
+- `T` — загальний параметр типу (скорочення від *Type*)
+- `TKey`, `TValue` — для пар ключ/значення (як у `Dictionary<TKey, TValue>`)
+- `TResult` — для типу результату (як у `Func<T, TResult>`)
+- `TEntity`, `TModel` — описові назви для конкретного контексту
+
+## Кілька параметрів типу
+
+Клас може мати кілька параметрів типу одночасно. Наприклад, клас призначення `Assignment` пов'язує пацієнта та лікаря, причому обидва можуть мати свої типи ідентифікаторів:
+
+```csharp run
+using System;
+
+Assignment<int, string> a1 = new Assignment<int, string>(
+    1001, "P-001", "Первинний огляд");
+
+Console.WriteLine(a1.ToString());
+
+class Assignment<TPatientId, TDoctorId>
+{
+    public TPatientId PatientId { get; }
+    public TDoctorId  DoctorId  { get; }
+    public string     Purpose   { get; }
+
+    public Assignment(TPatientId patientId, TDoctorId doctorId, string purpose)
+    {
+        PatientId = patientId;
+        DoctorId  = doctorId;
+        Purpose   = purpose;
+    }
+
+    public override string ToString() =>
+        $"Призначення: пацієнт #{PatientId} → лікар {DoctorId} | {Purpose}";
+}
 ```
+
+Кожен параметр типу замінюється незалежно: `TPatientId` → `int`, `TDoctorId` → `string`.
 
 ## Статичні поля узагальнених класів
 
-При типізації узагальненого класу певним типом створюватиметься свій набір статичних членів. Наприклад, у класі `Person` визначено таке статичне поле:
+Важливий нюанс: при типізації узагальненого класу різними типами для кожної комбінації типів створюється **окремий набір статичних членів**. Тобто `MedicalRecord<int>` і `MedicalRecord<string>` — це фактично два різних класи з власними статичними полями:
 
-```csharp
-class Person<T>
+```csharp run
+using System;
+
+MedicalRecord<int>.Prefix    = "INT";
+MedicalRecord<string>.Prefix = "STR";
+
+Console.WriteLine(MedicalRecord<int>.Prefix);    // INT
+Console.WriteLine(MedicalRecord<string>.Prefix); // STR — незалежне поле
+
+class MedicalRecord<T>
 {
-    public static T? code;
-    public T Id { get; set; }
-    public string Name { get; set; }
-
-    public Person(T id, string name)
-    {
-        Id = id;
-        Name = name;
-    }
+    public static string Prefix = "DEFAULT";
+    public T Id { get; }
+    public MedicalRecord(T id) { Id = id; }
 }
 ```
 
-Тепер типізуємо клас двома типами `int` та `string`:
+## Узагальнений клас як тип поля
 
-```csharp
-Person<int> tom = new Person<int>(546, "Tom");
-Person<int>.code = 1234;
+Параметр типу може сам бути узагальненим класом. Наприклад, клас `Clinic` зберігає головного лікаря як `MedicalRecord<T>`:
 
-Person<string> bob = new Person<string>("abc", "Bob");
-Person<string>.code = "meta";
+```csharp run
+using System;
 
-Console.WriteLine(Person<int>.code);       // 1234
-Console.WriteLine(Person<string>.code);   // meta
-```
+MedicalRecord<int> chiefRecord = new MedicalRecord<int>(42, "Головний лікар");
+Clinic<MedicalRecord<int>> clinic = new Clinic<MedicalRecord<int>>("Клініка №1", chiefRecord);
 
-У результаті для `Person<string>` і для `Person<int>` буде створено свою змінну `code`.
+Console.WriteLine(clinic.ToString());
 
-## Використання кількох універсальних параметрів
-
-Узагальнення можуть використовувати кілька універсальних параметрів одночасно, які можуть представляти однакові чи різні типи:
-
-```csharp
-class Person<T, K>
+class MedicalRecord<T>
 {
     public T Id { get; }
-    public K Password { get; set; }
-    public string Name { get; }
+    public string Description { get; }
+    public MedicalRecord(T id, string desc) { Id = id; Description = desc; }
+    public override string ToString() => $"[{Id}] {Description}";
+}
 
-    public Person(T id, K password, string name)
-    {
-        Id = id;
-        Name = name;
-        Password = password;
-    }
+class Clinic<TChief>
+{
+    public string Name  { get; }
+    public TChief Chief { get; }
+    public Clinic(string name, TChief chief) { Name = name; Chief = chief; }
+    public override string ToString() => $"{Name}, керівник: {Chief}";
 }
 ```
-
-Тут клас `Person` використовує два універсальні параметри: один параметр для ідентифікатора, інший параметр для властивості-паролю. Застосуємо цей клас:
-
-```csharp
-Person<int, string> tom = new Person<int, string>(546, "qwerty", "Tom");
-Console.WriteLine(tom.Id);  // 546
-Console.WriteLine(tom.Password); // qwerty
-```
-
-Тут об'єкт `Person` типується типами `int` і `string`. Тобто як універсальний параметр `T` використовується тип `int`, а для параметра `K` - тип `string`.
 
 ## Узагальнені методи
 
-Крім узагальнених класів можна також створювати узагальнені методи, які також використовуватимуть універсальні параметри. Наприклад:
+Generics застосовуються не лише до класів, але й до окремих методів. Узагальнений метод оголошує власний параметр типу і може бути визначений у будь-якому класі — в тому числі у звичайному (не generic):
 
-```csharp
-int x = 7;
-int y = 25;
-Swap<int>(ref x, ref y); // або так Swap(ref x, ref y);
-Console.WriteLine($"x={x} y={y}"); // x = 25 y = 7
+```csharp run
+using System;
 
-string s1 = "hello";
-string s2 = "bye";
-Swap<string>(ref s1, ref s2); // або так Swap(ref s1, ref s2);
-Console.WriteLine($"s1={s1} s2={s2}"); // s1=bye s2=hello
+int a = 10, b = 20;
+Swap<int>(ref a, ref b);
+Console.WriteLine($"a={a.ToString()} b={b.ToString()}"); // a=20 b=10
+
+string s1 = "Кардіологія", s2 = "Неврологія";
+Swap(ref s1, ref s2); // тип виводиться автоматично
+Console.WriteLine($"s1={s1} s2={s2}");
+
+MedicalRecord<int> r1 = new MedicalRecord<int>(1, "Гіпертонія");
+MedicalRecord<int> r2 = new MedicalRecord<int>(2, "Бронхіт");
+Swap(ref r1, ref r2);
+Console.WriteLine($"r1={r1} r2={r2}");
 
 void Swap<T>(ref T x, ref T y)
 {
@@ -262,8 +212,40 @@ void Swap<T>(ref T x, ref T y)
     x = y;
     y = temp;
 }
+
+class MedicalRecord<T>
+{
+    public T Id { get; }
+    public string Description { get; }
+    public MedicalRecord(T id, string desc) { Id = id; Description = desc; }
+    public override string ToString() => $"[{Id}] {Description}";
+}
 ```
 
-Тут визначено узагальнений метод `Swap`, який приймає параметри за посиланням та змінює їх значення. У цьому разі важливо, який тип представляють ці параметри.
+Зверніть увагу на виклик `Swap(ref s1, ref s2)` без явного вказання типу — компілятор сам визначає `T = string` з типів переданих аргументів. Це називається **виведення типу** (type inference) і робить код лаконічнішим.
 
-При виклику методу `Swap` типізуємо його певним типом і передаємо відповідні цьому типу значення.
+## Generics у стандартній бібліотеці
+
+Generics є основою колекцій .NET. Завдяки ним колекції зберігають елементи без boxing і з повною типобезпекою:
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+List<string> diagnoses = new List<string>();
+diagnoses.Add("Гіпертонія");
+diagnoses.Add("Бронхіт");
+diagnoses.Add("Діабет");
+
+foreach (string d in diagnoses)
+    Console.WriteLine(d);
+
+Dictionary<int, string> patients = new Dictionary<int, string>();
+patients[1001] = "Іван Петренко";
+patients[1002] = "Марія Сидоренко";
+
+Console.WriteLine(patients[1001]);
+Console.WriteLine(patients[1002]);
+```
+
+`List<string>` зберігає рядки безпосередньо, без упаковки в `object` — на відміну від старого `ArrayList`. `Dictionary<int, string>` типізує і ключ, і значення, тому жодних явних приведень не потрібно. Детально колекції розглядаються у наступних розділах курсу.

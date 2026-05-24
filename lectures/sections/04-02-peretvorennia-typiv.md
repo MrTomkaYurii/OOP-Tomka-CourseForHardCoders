@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 4
 chapterTitle: "Розділ 4. Об'єктно-орієнтоване програмування"
 section: 2
@@ -9,221 +9,306 @@ source: "../_combined/19-peretvorennia-typiv.md"
 
 ## 4.2. Перетворення типів
 
-У попередньому розділі ми говорили про перетворення об'єктів найпростіших типів. Зараз торкнемося теми перетворення об'єктів класів. Допустимо, у нас є наступна ієрархія класів:
+У попередньому розділі ми говорили про успадкування та відношення is-a між класами. З цим відношенням безпосередньо пов'язана можливість **перетворення типів** у ієрархії класів: об'єкт похідного класу в будь-який момент може бути представлений як об'єкт базового класу, і навпаки — за певних умов. Розуміння правил таких перетворень є обов'язковим для написання гнучкого коду, що працює з ієрархіями об'єктів.
+
+Розглянемо клінічну ієрархію класів:
 
 ```csharp
 class Person
 {
     public string Name { get; set; }
+    public int Age { get; set; }
 
-    public Person(string name)
+    public Person(string name, int age)
     {
         Name = name;
+        Age  = age;
     }
 
     public void Print()
     {
-        Console.WriteLine($"Person {Name}");
+        Console.WriteLine($"Особа: {Name}, {Age} р.");
     }
 }
 
-class Employee : Person
+class Patient : Person
 {
-    public string Company { get; set; }
+    public string Diagnosis { get; set; }
 
-    public Employee(string name, string company) : base(name)
+    public Patient(string name, int age, string diagnosis) : base(name, age)
     {
-        Company = company;
+        Diagnosis = diagnosis;
     }
 }
 
-class Client : Person
+class Doctor : Person
 {
-    public string Bank { get; set; }
+    public string Specialization { get; set; }
 
-    public Client(string name, string bank) : base(name)
+    public Doctor(string name, int age, string specialization) : base(name, age)
     {
-        Bank = bank;
+        Specialization = specialization;
     }
 }
 ```
 
-У цій ієрархії класів ми можемо простежити наступний ланцюг успадкування: `Object` (всі класи неявно успадковуються від типу `Object`) -> `Person` -> `Employee | Client`.
+Ланцюг успадкування: `Object` (неявно) → `Person` → `Patient | Doctor`. Базові типи знаходяться вгорі ієрархії, похідні — внизу.
 
-![Ієрархія класів Object, Person, Employee і Client](_assets/_docx/image85.png)
-
-Причому у цій ієрархії класів базові типи перебувають угорі, а похідні типи - внизу.
+![Ієрархія типів у клінічній системі](_assets/04-02/type-hierarchy.png)
 
 ## Висхідні перетворення. Upcasting
 
-Об'єкти похідного типу (що знаходиться внизу ієрархії) у той же час є і базовим типом. Наприклад, об'єкт `Employee` в той же час є об'єктом класу `Person`. Що у принципі природно, оскільки кожен співробітник (`Employee`) є людиною (`Person`). І ми можемо написати, наприклад, так:
+Об'єкт похідного типу одночасно є об'єктом базового типу. Пацієнт (`Patient`) — це людина (`Person`), тому посилання на `Patient` можна зберегти у змінній типу `Person`. Таке перетворення від похідного до базового типу називається **висхідним** (upcasting) і відбувається **неявно** — без жодного додаткового синтаксису:
 
-```csharp
-Employee employee = new Employee("Tom", "Microsoft");
-Person person = employee;   // перетворення від Employee до Person
-Console.WriteLine(person.Name);
-```
+```csharp run
+using System;
 
-У разі змінної `person`, яка представляє тип `Person`, присвоюється посилання об'єкт `Employee`. Але щоб зберегти посилання на об'єкт одного класу змінну іншого класу, необхідно виконати перетворення типів - у разі від типу `Employee` до типу `Person`. І оскільки `Employee` успадковується від класу `Person`, то автоматично виконується неявне висхідне перетворення - перетворення до типу, що знаходиться вгорі ієрархії класів, тобто до базового класу.
+Patient patient = new Patient("Іван Петренко", 45, "Гіпертонія");
+Person  person  = patient;   // upcasting: Patient → Person (неявно)
 
-У результаті змінні `employee` і `person` будуть вказувати на той самий об'єкт у пам'яті, але змінної `person` буде доступна тільки та частина, яка представляє функціонал типу `Person`.
+person.Print();              // Особа: Іван Петренко, 45 р.
+Console.WriteLine(person.Name); // Іван Петренко
 
-![Висхідне перетворення від Employee до Person](_assets/_docx/image86.png)
-
-Подібним чином робляться й інші висхідні перетворення:
-
-```csharp
-Person bob = new Client("Bob", "ContosoBank");
-```
-
-Тут змінна `bob`, яка представляє тип `Person`, зберігає посилання на об'єкт `Client`, тому також виконується неявне висхідне перетворення від похідного класу `Client` до базового типу `Person`.
-
-Висхідне неявне перетворення відбуватиметься і в наступному випадку:
-
-```csharp
-object person1 = new Employee("Tom", "Microsoft");  // від Employee до object
-object person2 = new Client("Bob", "ContosoBank");  // від Client до object
-object person3 = new Person("Sam");                 // від Person до object
-```
-
-Оскільки тип `object` - базовий для всіх інших типів, то перетворення щодо нього буде здійснюватися автоматично.
-
-## Спадні перетворення. Downcasting
-
-Але крім висхідних перетворень від похідного до базового типу є низхідні перетворення чи downcasting - від базового типу до похідного. Наприклад, у наступному коді змінна `person` зберігає посилання на об'єкт `Employee`:
-
-```csharp
-Employee employee = new Employee("Tom", "Microsoft");
-Person person = employee;   // перетворення від Employee до Person
-```
-
-І може виникнути питання, чи можна звернутися до функціонала типу `Employee` через змінну типу `Person`. Але автоматично такі перетворення не відбуваються, адже не кожна людина (об'єкт `Person`) є співробітником підприємства (об'єктом `Employee`). І для низхідного перетворення необхідно застосувати явне перетворення, вказавши в дужках тип, до якого потрібно виконати перетворення:
-
-```csharp
-Employee employee1 = new Employee("Tom", "Microsoft");
-Person person = employee1;   // перетворення від Employee до Person
-
-// Employee employee2 = person;    // так не можна, потрібне явне перетворення
-Employee employee2 = (Employee)person;  // перетворення від Person до Employee
-```
-
-Розглянемо деякі приклади перетворень:
-
-```csharp
-// Об'єкт Employee також представляє тип object
-object obj = new Employee("Bill", "Microsoft");
-
-// щоб звернутися до можливостей типу Employee, наводимо об'єкт до типу Employee
-Employee employee = (Employee)obj;
-
-// об'єкт Client також представляє тип Person
-Person person = new Client("Sam", "ContosoBank");
-
-// Перетворення від типу Person до Client
-Client client = (Client)person;
-```
-
-У першому випадку змінної `obj` присвоєно посилання на об'єкт `Employee`, тому ми можемо перетворити об'єкт `obj` до будь-якого типу, який знаходиться в ієрархії класів між типом `object` і `Employee`.
-
-Якщо нам треба звернутися до якихось окремих властивостей чи методів об'єкта, то нам необов'язково надавати перетворений об'єкт змінній:
-
-```csharp
-// Об'єкт Employee також представляє тип object
-object obj = new Employee("Bill", "Microsoft");
-
-// Перетворення до типу Person для виклику методу Print
-((Person)obj).Print();
-
-// або так
-// ((Employee)obj).Print();
-
-// Перетворення до типу Employee, щоб отримати властивість Company
-string company = ((Employee)obj).Company;
-```
-
-У той же час необхідно бути обережними при подібних перетвореннях. Наприклад, що буде в наступному випадку:
-
-```csharp
-// Об'єкт Employee також представляє тип object
-object obj = new Employee("Bill", "Microsoft");
-
-// Перетворення до типу Client, щоб отримати властивість Bank
-string bank = ((Client)obj).Bank;
-```
-
-В даному випадку ми отримаємо помилку, оскільки змінна `obj` зберігає посилання на об'єкт `Employee`. Цей об'єкт також є об'єктом типів `object` і `Person`, тому ми можемо перетворити його до цих типів. Але до типу `Client` ми перетворити не можемо.
-
-Інший приклад:
-
-```csharp
-Employee employee1 = new Person("Tom"); //! Помилка
-
-Person person = new Person("Bob");
-Employee employee2 = (Employee)person; //! Помилка
-```
-
-У цьому випадку ми намагаємося перетворити об'єкт типу `Person` на тип `Employee`, а об'єкт `Person` не є об'єктом `Employee`. Причому в останньому випадку Visual Studio не підкаже, що в даному рядку помилка, і цей рядок навіть нормально скомпілюється, проте в процесі виконання програми ми отримаємо помилку. У цьому числі й полягає підступність перетворень, тому у подібних ситуаціях треба виявляти обережність.
-
-Існує низка способів, щоб уникнути подібних помилок перетворення.
-
-## Способи перетворень
-
-По-перше, можна використовувати ключове слово `as`. За допомогою нього програма намагається перетворити вираз до певного типу, причому не викидає виняток. У разі невдалого перетворення вираз міститиме значення `null`:
-
-```csharp
-Person person = new Person("Tom");
-Employee? employee = person as Employee;
-
-if (employee == null)
+class Person
 {
-    Console.WriteLine("Перетворення пройшло невдало");
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+    public void Print() => Console.WriteLine($"Особа: {Name}, {Age} р.");
+}
+
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age)
+    { Diagnosis = diag; }
+}
+```
+
+Змінні `patient` і `person` вказують на **один і той самий об'єкт** у пам'яті. Але через змінну `person` доступна лише та частина функціоналу, яку визначає тип `Person` — властивість `Diagnosis` буде недоступна.
+
+Висхідне перетворення відбувається і під час присвоєння до типу `object`, оскільки він є базовим для всіх:
+
+```csharp run
+using System;
+
+object obj1 = new Patient("Іван Петренко", 45, "Гіпертонія"); // Patient → object
+object obj2 = new Doctor("Олена Коваль", 38, "Кардіологія");  // Doctor → object
+object obj3 = new Person("Сергій Бойко", 52);                 // Person → object
+
+Console.WriteLine(obj1.GetType().Name); // Patient
+Console.WriteLine(obj2.GetType().Name); // Doctor
+Console.WriteLine(obj3.GetType().Name); // Person
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+}
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age) { Diagnosis = diag; }
+}
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age) { Specialization = spec; }
+}
+```
+
+Зверніть увагу: метод `GetType()` завжди повертає **реальний тип об'єкта**, незалежно від типу змінної, що його зберігає.
+
+![Upcasting та Downcasting у ієрархії класів](_assets/04-02/upcasting-downcasting.png)
+
+## Низхідні перетворення. Downcasting
+
+Якщо upcasting — це завжди безпечно і неявно, то зворотна операція — **низхідне перетворення** (downcasting) від базового до похідного типу — вимагає **явного вказання типу** і несе в собі ризик. Не кожна людина є пацієнтом, тому компілятор не може самостійно вирішити, чи допустиме таке перетворення:
+
+```csharp run
+using System;
+
+Patient patient1 = new Patient("Іван Петренко", 45, "Гіпертонія");
+Person  person   = patient1;              // upcasting (неявне)
+
+Patient patient2 = (Patient)person;       // downcasting (явне)
+Console.WriteLine(patient2.Diagnosis);    // Гіпертонія
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+}
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age) { Diagnosis = diag; }
+}
+```
+
+Якщо ж реальний тип об'єкта не відповідає типу, до якого відбувається приведення, виникає виняток `InvalidCastException` під час виконання програми:
+
+```csharp run
+using System;
+
+try
+{
+    Person person = new Person("Сергій Бойко", 52); // звичайна Person, не Patient
+    Patient patient = (Patient)person;               // InvalidCastException!
+    Console.WriteLine(patient.Diagnosis);
+}
+catch (InvalidCastException ex)
+{
+    Console.WriteLine($"Помилка перетворення: {ex.Message}");
+}
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+}
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age) { Diagnosis = diag; }
+}
+```
+
+Підступність у тому, що компілятор не завжди може виявити некоректне перетворення — код скомпілюється, але впаде під час виконання. Тому для downcasting завжди потрібна додаткова перевірка.
+
+## Оператор as
+
+Оператор `as` намагається виконати перетворення і у разі невдачі повертає `null` замість викидання винятку. Це безпечна альтернатива явному приведенню:
+
+```csharp run
+using System;
+
+Person person1 = new Patient("Іван Петренко", 45, "Гіпертонія");
+Person person2 = new Doctor("Олена Коваль", 38, "Кардіологія");
+
+Patient? p = person1 as Patient;
+Doctor?  d = person1 as Doctor;
+
+if (p != null)
+    Console.WriteLine($"Пацієнт: {p.Diagnosis}");  // Гіпертонія
+else
+    Console.WriteLine("Не є пацієнтом");
+
+if (d != null)
+    Console.WriteLine($"Лікар: {d.Specialization}");
+else
+    Console.WriteLine("Не є лікарем");              // Не є лікарем
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+}
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age) { Diagnosis = diag; }
+}
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age) { Specialization = spec; }
+}
+```
+
+Тип результату після `as` завжди nullable (`Patient?`, `Doctor?`) — тобто може містити або об'єкт, або `null`. Перевірка на `null` перед використанням є обов'язковою.
+
+## Оператор is
+
+Оператор `is` перевіряє, чи є об'єкт представником певного типу, і повертає `true` або `false`. Починаючи з C# 7, він підтримує **перевірку з одночасним перетворенням** (pattern matching): якщо перевірка успішна, об'єкт автоматично приводиться до потрібного типу і зберігається у нову змінну:
+
+```csharp run
+using System;
+
+Person person = new Patient("Марія Сидоренко", 32, "Бронхіт");
+
+if (person is Patient patient)
+{
+    // patient вже є типом Patient — не потрібне явне приведення
+    Console.WriteLine($"Пацієнт: {patient.Name}, діагноз: {patient.Diagnosis}");
 }
 else
 {
-    Console.WriteLine(employee.Company);
+    Console.WriteLine("Не є пацієнтом");
 }
-```
 
-Варто зазначити, що змінна `employee` визначається не просто як змінна `Employee`, а саме `Employee?` - після назви типу ставиться знак питання. Що вказує, що змінна може зберігати як значення `null`, так і значення `Employee`.
-
-Другий спосіб полягає в перевірці допустимості перетворення за допомогою ключового слова `is`:
-
-```text
-значення is тип
-```
-
-Якщо значення ліворуч від оператора представляє тип, вказаний праворуч від оператора, то оператор `is` повертає `true`, інакше повертається `false`.
-
-Причому оператор `is` дозволяє автоматично перетворити значення типу, якщо це значення представляє даний тип. Наприклад:
-
-```csharp
-Person person = new Person("Tom");
-
-if (person is Employee employee)
-{
-    Console.WriteLine(employee.Company);
-}
+// Без захоплення змінної — просто перевірка
+if (person is Doctor)
+    Console.WriteLine("Це лікар");
 else
+    Console.WriteLine("Це не лікар"); // виведе це
+
+class Person
 {
-    Console.WriteLine("Перетворення не допустимо");
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+}
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age) { Diagnosis = diag; }
+}
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age) { Specialization = spec; }
 }
 ```
 
-Вираз `if (person is Employee employee)` перевіряє, чи є змінна `person` об'єктом типу `Employee`. І якщо `person` є об'єктом `Employee`, то автоматично перетворює значення змінної `person` на тип `Employee` і перетворене значення зберігає змінну `employee`. Далі у блоці `if` ми можемо використовувати об'єкт `employee` як значення типу `Employee`.
+Вираз `person is Patient patient` робить одразу дві речі: перевіряє тип і, якщо він відповідає, зберігає вже приведений об'єкт у змінну `patient`. Це лаконічніше і безпечніше, ніж окрема перевірка + явне приведення.
 
-Однак, якщо `person` не є об'єктом `Employee`, як у цьому випадку, то така перевірка поверне значення `false` і перетворення не спрацює.
+## Pattern matching з switch
 
-Оператор `is` також можна застосовувати без перетворення, просто перевіряючи на відповідність типу:
+Починаючи з C# 8, оператор `switch` підтримує pattern matching по типах. Це зручно, коли потрібно обробити кілька різних типів з однієї ієрархії:
 
-```csharp
-Person person = new Person("Tom");
+```csharp run
+using System;
 
-if (person is Employee)
+Person[] staff = {
+    new Patient("Іван Петренко", 45, "Гіпертонія"),
+    new Doctor("Олена Коваль", 38, "Кардіологія"),
+    new Person("Адміністратор", 30),
+};
+
+foreach (Person p in staff)
 {
-    Console.WriteLine("Представляє тип Employee");
+    string info = p switch
+    {
+        Patient pat => $"[Пацієнт] {pat.Name} — {pat.Diagnosis}",
+        Doctor  doc => $"[Лікар]   {doc.Name} — {doc.Specialization}",
+        Person  per => $"[Особа]   {per.Name}",
+    };
+    Console.WriteLine(info);
 }
-else
+
+class Person
 {
-    Console.WriteLine("НЕ є об'єктом типу Employee");
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public Person(string name, int age) { Name = name; Age = age; }
+}
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+    public Patient(string name, int age, string diag) : base(name, age) { Diagnosis = diag; }
+}
+class Doctor : Person
+{
+    public string Specialization { get; set; }
+    public Doctor(string name, int age, string spec) : base(name, age) { Specialization = spec; }
 }
 ```
+
+Важливий нюанс: гілки `switch` перевіряються **зверху донизу**, тому більш специфічні типи (`Patient`, `Doctor`) мають стояти **перед** більш загальним (`Person`). Якщо поставити `Person per` першим, він захопить усі об'єкти і до гілок `Patient` та `Doctor` справа не дійде.
+
+Switch з pattern matching є найчистішим і найбезпечнішим способом роботи з поліморфними колекціями, оскільки компілятор перевіряє повноту гілок і видає попередження, якщо якийсь тип не оброблено.

@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 4
 chapterTitle: "Розділ 4. Об'єктно-орієнтоване програмування"
 section: 10
@@ -9,124 +9,224 @@ source: "../_combined/27-nasliduvannia-uzahalnenykh-typiv.md"
 
 ## 4.10. Наслідування узагальнених типів
 
-Один узагальнений клас може бути успадкований від іншого узагальненого. При цьому можна використовувати різні варіанти спадкування.
+Узагальнені класи можуть успадковуватися один від одного — так само як і звичайні. При цьому є чотири принципово різних варіанти того, як похідний клас взаємодіє з параметром типу базового. Вибір між ними визначається тим, наскільки гнучким або конкретним має бути похідний клас.
 
-Допустимо, у нас є наступний базовий клас `Person`:
+Як базовий клас для всіх прикладів використаємо `MedicalRecord<T>`:
 
 ```csharp
-class Person<T>
+abstract class MedicalRecord<T>
 {
     public T Id { get; }
+    public string Description { get; set; }
 
-    public Person(T id)
+    public MedicalRecord(T id, string description)
     {
-        Id = id;
+        Id          = id;
+        Description = description;
     }
+
+    public override string ToString() => $"[{Id}] {Description}";
 }
 ```
 
-Перший варіант полягає у створенні класу-спадкоємця, який типізований тим же типом, що і базовий:
+![4 варіанти успадкування узагальнених класів](_assets/04-10/generic-inheritance-variants.png)
 
-```csharp
-class UniversalPerson<T> : Person<T>
-{
-    public UniversalPerson(T id) : base(id) { }
-}
-```
+## Варіант 1: передача параметра далі — Child\<T\> : Base\<T\>
 
-Застосування класу:
+Похідний клас залишається узагальненим і передає свій параметр `T` у базовий клас. Це найбільш гнучкий варіант — конкретний тип визначається лише при створенні екземпляра:
 
-```csharp
-Person<string> person1 = new Person<string>("34");
-Person<int> person3 = new UniversalPerson<int>(45);
-UniversalPerson<int> person2 = new UniversalPerson<int>(33);
-Console.WriteLine(person1.Id);
-Console.WriteLine(person2.Id);
-Console.WriteLine(person3.Id);
-```
+```csharp run
+using System;
 
-Другий варіант є створення звичайного неузагальненого класу-спадкоємця. У цьому випадку при успадкуванні у базового класу треба явно визначити тип, що використовується:
+FlexibleRecord<int>    r1 = new FlexibleRecord<int>(1001, "Гіпертонія", "Стаціонар");
+FlexibleRecord<string> r2 = new FlexibleRecord<string>("P-002", "Бронхіт", "Амбулаторія");
 
-```csharp
-class StringPerson : Person<string>
-{
-    public StringPerson(string id) : base(id) { }
-}
-```
+Console.WriteLine(r1.ToString());
+Console.WriteLine(r2.ToString());
 
-Тепер у похідному класі як тип використовуватиметься тип `string`. Застосування класу:
-
-```csharp
-StringPerson person4 = new StringPerson("438767");
-Person<string> person5 = new StringPerson("43875");
-
-// Так не можна написати
-// Person<int> person6 = new StringPerson("45545");
-
-Console.WriteLine(person4.Id);
-Console.WriteLine(person5.Id);
-```
-
-Третій варіант представляє типізацію похідного класу параметром зовсім іншого типу, відмінного від універсального параметра в базовому класі. У цьому випадку для базового класу також треба вказати тип, що використовується:
-
-```csharp
-class IntPerson<T> : Person<int>
-{
-    public T Code { get; set; }
-
-    public IntPerson(int id, T code) : base(id)
-    {
-        Code = code;
-    }
-}
-```
-
-Тут тип `IntPerson` типізовано ще одним типом, який може не збігатися з типом, який використовується базовим класом. Застосування класу:
-
-```csharp
-IntPerson<string> person7 = new IntPerson<string>(5, "r4556");
-Person<int> person8 = new IntPerson<long>(7, 4587);
-Console.WriteLine(person7.Id);
-Console.WriteLine(person8.Id);
-```
-
-І також у класах-спадкоємцях можна поєднувати використання універсального параметра з базового класу із застосуванням своїх параметрів:
-
-```csharp
-class MixedPerson<T, K> : Person<T>
-where K : struct
-{
-    public K Code { get; set; }
-
-    public MixedPerson(T id, K code) : base(id)
-    {
-        Code = code;
-    }
-}
-```
-
-Тут на додаток до успадкованого від базового класу параметра `T` додається новий параметр `K`. Також якщо необхідно встановити обмеження, ми їх можемо вказати після назви базового класу. Застосування класу:
-
-```csharp
-MixedPerson<string, int> person9 = new MixedPerson<string, int>("456", 356);
-Person<string> person10 = new MixedPerson<string, int>("9867", 35678);
-Console.WriteLine(person9.Id);
-Console.WriteLine(person10.Id);
-```
-
-При цьому варто враховувати, що якщо на рівні базового класу для універсального параметра встановлено обмеження, то подібне обмеження має бути визначене і у похідних класах, які також використовують цей параметр:
-
-```csharp
-class Person<T> where T : class
+abstract class MedicalRecord<T>
 {
     public T Id { get; }
-    public Person(T id) => Id = id;
+    public string Description { get; }
+    public MedicalRecord(T id, string desc) { Id = id; Description = desc; }
+    public override string ToString() => $"[{Id}] {Description}";
 }
 
-class UniversalPerson<T> : Person<T> where T : class
+class FlexibleRecord<T> : MedicalRecord<T>   // T передається далі
 {
-    public UniversalPerson(T id) : base(id) { }
+    public string Ward { get; }
+
+    public FlexibleRecord(T id, string desc, string ward) : base(id, desc)
+    {
+        Ward = ward;
+    }
+
+    public override string ToString() => $"{base.ToString()} | {Ward}";
 }
 ```
 
-Тобто якщо в базовому класі як обмеження зазначено `class`, тобто будь-який клас, то у похідному класі також треба вказати як обмеження `class`, або ж якийсь конкретний клас.
+`FlexibleRecord<int>` і `FlexibleRecord<string>` — це два різних класи, кожен зі своїм типом `Id`. Похідний клас просто «пробрасує» параметр у базовий.
+
+## Варіант 2: фіксація типу — Child : Base\<string\>
+
+Похідний клас є звичайним (неузагальненим) і фіксує конкретний тип для базового. Це доречно, коли для конкретної предметної ситуації тип ідентифікатора відомий заздалегідь:
+
+```csharp run
+using System;
+
+InpatientRecord r1 = new InpatientRecord("IP-001", "Планова операція", 12);
+InpatientRecord r2 = new InpatientRecord("IP-002", "Спостереження", 7);
+
+Console.WriteLine(r1.ToString());
+Console.WriteLine(r2.ToString());
+
+// r1 — це також MedicalRecord<string>:
+MedicalRecord<string> rec = r1;
+Console.WriteLine(rec.Id);
+
+abstract class MedicalRecord<T>
+{
+    public T Id { get; }
+    public string Description { get; }
+    public MedicalRecord(T id, string desc) { Id = id; Description = desc; }
+    public override string ToString() => $"[{Id}] {Description}";
+}
+
+class InpatientRecord : MedicalRecord<string>   // T зафіксований як string
+{
+    public int RoomNumber { get; }
+
+    public InpatientRecord(string id, string desc, int room) : base(id, desc)
+    {
+        RoomNumber = room;
+    }
+
+    public override string ToString() => $"{base.ToString()} | Палата {RoomNumber.ToString()}";
+}
+```
+
+`InpatientRecord` — звичайний клас без власних параметрів типу. Він завжди має `Id` типу `string`, і його можна зберігати у змінній `MedicalRecord<string>`.
+
+## Варіант 3: власний параметр при фіксованому базовому — Child\<T\> : Base\<int\>
+
+Похідний клас є узагальненим з власним параметром `T`, але у базового клас тип зафіксований. Це дозволяє додавати нові generic-поля незалежно від базового:
+
+```csharp run
+using System;
+
+TaggedRecord<string> r1 = new TaggedRecord<string>(1001, "Гіпертонія", "кардіологія");
+TaggedRecord<string[]> r2 = new TaggedRecord<string[]>(1002, "Діабет",
+    new[] { "ендокринологія", "дієтологія" });
+
+Console.WriteLine(r1.ToString());
+Console.WriteLine($"[{r2.Id}] {r2.Description} | Теги: {string.Join(", ", r2.Tag)}");
+
+abstract class MedicalRecord<T>
+{
+    public T Id { get; }
+    public string Description { get; }
+    public MedicalRecord(T id, string desc) { Id = id; Description = desc; }
+    public override string ToString() => $"[{Id}] {Description}";
+}
+
+class TaggedRecord<T> : MedicalRecord<int>  // int фіксовано у базовому, T — своє
+{
+    public T Tag { get; }
+
+    public TaggedRecord(int id, string desc, T tag) : base(id, desc)
+    {
+        Tag = tag;
+    }
+
+    public override string ToString() => $"{base.ToString()} | Тег: {Tag}";
+}
+```
+
+`TaggedRecord<T>` успадковує `MedicalRecord<int>` — тому `Id` завжди `int`. Але сам клас залишається параметричним за `T`, що використовується для поля `Tag`.
+
+## Варіант 4: розширення базового параметра — Child\<T, TExtra\> : Base\<T\>
+
+Похідний клас передає базовому параметр `T` і одночасно додає власний новий параметр. Це найбільш потужний варіант для побудови складних ієрархій:
+
+```csharp run
+using System;
+
+AnnotatedRecord<int, string> r1 =
+    new AnnotatedRecord<int, string>(1001, "Гіпертонія", "Лікар: Коваль О.В.");
+
+AnnotatedRecord<string, int> r2 =
+    new AnnotatedRecord<string, int>("P-002", "Бронхіт", 3);
+
+Console.WriteLine(r1.ToString());
+Console.WriteLine(r2.ToString());
+
+abstract class MedicalRecord<T>
+{
+    public T Id { get; }
+    public string Description { get; }
+    public MedicalRecord(T id, string desc) { Id = id; Description = desc; }
+    public override string ToString() => $"[{Id}] {Description}";
+}
+
+class AnnotatedRecord<T, TNote> : MedicalRecord<T>  // T передається, TNote — нове
+{
+    public TNote Note { get; }
+
+    public AnnotatedRecord(T id, string desc, TNote note) : base(id, desc)
+    {
+        Note = note;
+    }
+
+    public override string ToString() => $"{base.ToString()} | Примітка: {Note}";
+}
+```
+
+`AnnotatedRecord<T, TNote>` повністю гнучкий: `T` визначає тип Id (як у базовому), а `TNote` — тип додаткової анотації. Обидва параметри незалежні.
+
+## Успадкування обмежень
+
+Якщо базовий клас встановлює обмеження на параметр типу, похідний клас зобов'язаний підтримати або посилити це обмеження для того самого параметра:
+
+```csharp run
+using System;
+
+FlexibleRecord<Patient> r = new FlexibleRecord<Patient>(
+    new Patient("Іван Петренко"), "Огляд", "Терапія");
+Console.WriteLine(r.ToString());
+
+// FlexibleRecord<int> wrong = new(...);  // помилка: int — не клас
+
+abstract class MedicalRecord<T> where T : class   // обмеження на рівні базового
+{
+    public T Id { get; }
+    public string Description { get; }
+    public MedicalRecord(T id, string desc) { Id = id; Description = desc; }
+    public override string ToString() => $"[{Id}] {Description}";
+}
+
+class FlexibleRecord<T> : MedicalRecord<T> where T : class  // обмеження повторюється
+{
+    public string Ward { get; }
+    public FlexibleRecord(T id, string desc, string ward) : base(id, desc)
+    { Ward = ward; }
+    public override string ToString() => $"{base.ToString()} | {Ward}";
+}
+
+class Patient
+{
+    public string Name { get; }
+    public Patient(string name) { Name = name; }
+    public override string ToString() => $"Пацієнт: {Name}";
+}
+```
+
+Правило просте: якщо базовий клас має `where T : class`, то і похідний повинен вказати `where T : class` або конкретніше обмеження (наприклад, `where T : Patient`). Це гарантує, що компілятор зможе перевіряти обмеження на всіх рівнях ієрархії.
+
+## Підсумок: коли що використовувати
+
+| Варіант | Синтаксис | Коли застосовувати |
+|---------|-----------|-------------------|
+| Передача T | `Child<T> : Base<T>` | Похідний залишається гнучким |
+| Фіксація типу | `Child : Base<string>` | Тип відомий — клас стає конкретним |
+| Свій T, фіксований базовий | `Child<T> : Base<int>` | Додаємо гнучкість у нових полях |
+| Розширення параметрів | `Child<T, K> : Base<T>` | Максимальна гнучкість |

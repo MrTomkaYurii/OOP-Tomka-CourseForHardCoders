@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 4
 chapterTitle: "Розділ 4. Об'єктно-орієнтоване програмування"
 section: 1
@@ -9,14 +9,185 @@ source: "../_combined/18-uspadkuvannia.md"
 
 ## 4.1. Успадкування
 
-Успадкування (inheritance) є одним із ключових моментів ООП. Завдяки успадкуванню один клас може успадкувати функціональність іншого класу.
+Успадкування (inheritance) — один із трьох фундаментальних принципів об'єктно-орієнтованого програмування поряд із інкапсуляцією та поліморфізмом. Воно дозволяє одному класу перейняти функціональність іншого: поля, властивості та методи базового класу стають доступними в похідному без повторного написання коду. Це не просто зручність — це архітектурний інструмент для моделювання реальних відносин між сутностями.
 
-Нехай у нас є наступний клас `Person`, який описує окрему людину:
+Уявімо клінічну систему, де є різні типи людей: пацієнти, лікарі, адміністратори. Всі вони мають спільні атрибути (ім'я, вік) і спільні дії (ідентифікація, виведення інформації). Замість того, щоб дублювати цей код у кожному класі окремо, ми виносимо спільне в базовий клас `Person` і успадковуємо від нього.
+
+## Базовий та похідний клас
+
+Клас, від якого успадковують, називається **базовим класом** (base class, superclass, батьківський клас). Клас, який успадковує, — **похідним класом** (derived class, subclass, дочірній клас). Для позначення успадкування після назви похідного класу через двокрапку вказується базовий клас:
+
+```csharp
+class ПохіднийКлас : БазовийКлас
+{
+    // нові члени похідного класу
+}
+```
+
+Нехай у нас є базовий клас `Person`:
 
 ```csharp
 class Person
 {
-    private string _name = "";
+    public string Name { get; set; }
+    public int Age { get; set; }
+
+    public void Print()
+    {
+        Console.WriteLine($"{Name}, {Age} років");
+    }
+}
+```
+
+Тоді `Patient` і `Doctor` — похідні класи від `Person`:
+
+```csharp run
+using System;
+
+Person p = new Person { Name = "Невідомий", Age = 0 };
+p.Print();
+
+Patient patient = new Patient { Name = "Іван Петренко", Age = 45, Diagnosis = "Гіпертонія" };
+patient.Print();      // успадкований метод Print()
+patient.PrintInfo();  // власний метод класу Patient
+
+Doctor doctor = new Doctor { Name = "Олена Коваль", Age = 38, Specialization = "Кардіологія" };
+doctor.Print();
+doctor.PrintInfo();
+
+class Person
+{
+    public string Name { get; set; } = "";
+    public int Age { get; set; }
+
+    public void Print()
+    {
+        Console.WriteLine($"{Name}, {Age} років");
+    }
+}
+
+class Patient : Person
+{
+    public string Diagnosis { get; set; } = "";
+
+    public void PrintInfo()
+    {
+        Console.WriteLine($"Пацієнт: {Name}, {Age} р. | Діагноз: {Diagnosis}");
+    }
+}
+
+class Doctor : Person
+{
+    public string Specialization { get; set; } = "";
+
+    public void PrintInfo()
+    {
+        Console.WriteLine($"Лікар: {Name}, {Age} р. | Спеціалізація: {Specialization}");
+    }
+}
+```
+
+Клас `Patient` успадкував від `Person` властивості `Name`, `Age` та метод `Print()` — і не потрібно було їх писати заново. Додатково `Patient` визначає власну властивість `Diagnosis` та метод `PrintInfo()`. Те саме для `Doctor`.
+
+![Ієрархія успадкування: Person → Patient, Doctor](_assets/04-01/inheritance-hierarchy.png)
+
+## Відношення is-a та has-a
+
+Успадкування моделює відношення **is-a** («є»): об'єкт похідного класу є об'єктом базового класу. `Patient` is-a `Person` — пацієнт є людиною. Це означає, що там, де очікується `Person`, можна передати `Patient`:
+
+```csharp run
+using System;
+
+Person p1 = new Patient { Name = "Іван Петренко", Age = 45, Diagnosis = "Гіпертонія" };
+Person p2 = new Doctor  { Name = "Олена Коваль",  Age = 38, Specialization = "Кардіологія" };
+
+p1.Print(); // метод Person.Print()
+p2.Print(); // метод Person.Print()
+
+class Person
+{
+    public string Name { get; set; } = "";
+    public int Age { get; set; }
+    public void Print() => Console.WriteLine($"{Name}, {Age} років");
+}
+
+class Patient : Person
+{
+    public string Diagnosis { get; set; } = "";
+}
+
+class Doctor : Person
+{
+    public string Specialization { get; set; } = "";
+}
+```
+
+Змінна типу `Person` може зберігати будь-який об'єкт з ієрархії — це основа поліморфізму, який детально розглядається в наступних розділах.
+
+Відношення is-a слід відрізняти від **has-a** («має»): якщо одна сутність містить іншу як компонент, використовується **композиція**, а не успадкування. Наприклад, клас `Appointment` (прийом) має `Patient` і `Doctor` — це has-a, тому `Appointment` не має від них успадковувати. Чіткий вибір між is-a і has-a є ознакою правильно спроектованої об'єктної моделі.
+
+## Клас Object як базовий для всіх
+
+За замовчуванням усі класи в C# неявно успадковують від базового класу `System.Object` (або просто `object`). Це означає, що навіть клас `Person`, для якого не вказано явного базового класу, насправді успадковує від `Object`. А `Patient` і `Doctor` перебувають у ланцюжку: `Patient → Person → Object`.
+
+Саме тому будь-який об'єкт у C# завжди має такі методи:
+- `ToString()` — рядкове представлення об'єкта
+- `Equals(object obj)` — перевірка рівності
+- `GetHashCode()` — хеш-код для колекцій
+- `GetType()` — тип об'єкта під час виконання
+
+```csharp run
+using System;
+
+Patient patient = new Patient { Name = "Іван Петренко", Age = 45 };
+
+Console.WriteLine(patient.GetType().Name); // Patient
+Console.WriteLine(patient.ToString());     // Patient (за замовчуванням — назва типу)
+
+class Person
+{
+    public string Name { get; set; } = "";
+    public int Age { get; set; }
+}
+
+class Patient : Person
+{
+    public string Diagnosis { get; set; } = "";
+}
+```
+
+## Обмеження успадкування
+
+C# накладає кілька важливих обмежень:
+
+- **Одиночне успадкування** — клас може мати лише один безпосередній базовий клас. Множинне успадкування класів не підтримується (на відміну від інтерфейсів, які розглядаються в наступних розділах).
+- **Рівні доступу** — якщо базовий клас має модифікатор `internal`, похідний клас може бути лише `internal` або `private`, але не `public`. Якщо класи в різних збірках, похідний клас може успадковувати лише від `public`-класу.
+- **Статичний клас** — від статичного класу неможливо успадковувати.
+- **Запечатаний клас** — клас з модифікатором `sealed` не допускає спадкоємців.
+
+```csharp
+sealed class AdministratorAccount
+{
+    // Від цього класу не можна успадковувати
+}
+```
+
+Модифікатор `sealed` корисний там, де необхідно запобігти зміні поведінки класу через похідні класи — наприклад, для критичних класів безпеки або коли клас спроектований настільки специфічно, що розширення може порушити його коректність. У стандартній бібліотеці .NET клас `String` є `sealed` саме з міркувань безпеки та продуктивності.
+
+## Доступ до членів базового класу
+
+Похідний клас успадковує члени базового, але рівні доступу залишаються в силі. Розглянемо ситуацію, коли `Person` має приватне поле:
+
+```csharp run
+using System;
+
+Doctor doctor = new Doctor { Age = 38, Specialization = "Кардіологія" };
+doctor.SetName("Олена Коваль");
+doctor.PrintInfo();
+
+class Person
+{
+    private string _name = ""; // приватне поле — недоступне ззовні
 
     public string Name
     {
@@ -24,268 +195,286 @@ class Person
         set { _name = value; }
     }
 
-    public void Print()
+    public int Age { get; set; }
+
+    public void Print() => Console.WriteLine($"{Name}, {Age} років");
+}
+
+class Doctor : Person
+{
+    public string Specialization { get; set; } = "";
+
+    public void SetName(string name)
     {
-        Console.WriteLine(Name);
+        // _name = name; // Помилка! _name — private, доступний лише в Person
+        Name = name;    // Правильно: через public-властивість
+    }
+
+    public void PrintInfo() => Console.WriteLine($"Лікар: {Name}, {Age} р. | {Specialization}");
+}
+```
+
+Похідний клас може звертатися лише до членів базового класу з такими модифікаторами:
+- `public` — доступний усюди
+- `protected` — доступний у базовому та всіх похідних класах
+- `internal` — доступний у межах однієї збірки
+- `protected internal` — union: збірка або похідний клас
+- `private protected` — intersection: та сама збірка і похідний клас
+
+Члени з `private` залишаються виключно в тому класі, де оголошені.
+
+## Модифікатор protected
+
+Модифікатор `protected` створений спеціально для ієрархій успадкування. Він дозволяє базовому класу відкрити доступ до своїх членів для всіх похідних класів, але закрити їх від зовнішнього світу. Це золота середина між `public` (надто відкрито) і `private` (повністю закрито):
+
+```csharp run
+using System;
+
+Patient patient = new Patient("Іван Петренко", 45, "Гіпертонія");
+patient.PrintInfo();
+
+// patient.medicalRecordId — помилка: protected
+// patient._internalCode  — помилка: private
+
+class Person
+{
+    private string _internalCode;          // тільки Person
+    protected string medicalRecordId;      // Person та похідні
+
+    public string Name { get; set; }
+    public int Age { get; set; }
+
+    public Person(string name, int age)
+    {
+        Name = name;
+        Age  = age;
+        _internalCode   = $"INT-{age}";
+        medicalRecordId = $"MR-{name[0]}{age}";
+    }
+}
+
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+
+    public Patient(string name, int age, string diagnosis) : base(name, age)
+    {
+        Diagnosis = diagnosis;
+    }
+
+    public void PrintInfo()
+    {
+        // medicalRecordId доступний — він protected
+        Console.WriteLine($"[{medicalRecordId}] Пацієнт: {Name}, {Age} р. | {Diagnosis}");
+        // _internalCode — НЕ доступний
     }
 }
 ```
 
-Але раптом нам знадобився клас, який описує співробітника підприємства - клас `Employee`. Оскільки цей клас реалізовуватиме той самий функціонал, як і клас `Person`, оскільки співробітник - це і людина, було б раціонально зробити клас `Employee` похідним (чи спадкоємцем, чи підкласом) від класу `Person`, який, своєю чергою, називається базовим класом або батьком (або суперкласом):
-
-```csharp
-class Employee : Person
-{
-
-}
-```
-
-Після двокрапки ми вказуємо базовий клас для даного класу. Для класу `Employee` базовим є `Person`, і тому клас `Employee` успадковує ті самі властивості, методи, поля, які є у класі `Person`. Єдине, що не передається під час наслідування, це конструктори базового класу з параметрами.
-
-Таким чином, успадкування реалізує відношення is-a (є), об'єкт класу `Employee` також є об'єктом класу `Person`:
-
-```csharp
-Person person = new Person { Name = "Tom" };
-person.Print();   // Tom
-
-person = new Employee { Name = "Sam" };
-person.Print();   // Sam
-```
-
-І оскільки об'єкт `Employee` є і об'єктом `Person`, ми можемо визначити змінну: `Person p = new Employee()`.
-
-За умовчанням усі класи успадковуються від базового класу `Object`, навіть якщо ми явно не встановлюємо спадкування. Тому вище визначені класи `Person` і `Employee` крім своїх методів, також матимуть і методи класу `Object`: `ToString()`, `Equals()`, `GetHashCode()` і `GetType()`.
-
-Усі класи за умовчанням можуть успадковуватись. Однак тут є низка обмежень:
-
-- Не підтримується множинне спадкування, клас може успадковуватися тільки від одного класу.
-- При створенні похідного класу треба враховувати тип доступу до базового класу - тип доступу до похідного класу має бути таким самим, як і у базового класу, або більш суворим. Тобто, якщо базовий клас має тип доступу `internal`, то похідний клас може мати тип доступу `internal` чи `private`, але не `public`.
-- Проте слід враховувати, що якщо базовий і похідний клас перебувають у різних складаннях (проектах), то в цьому випадку похідний клас може успадковувати лише від класу, що має модифікатор `public`.
-- Якщо клас оголошений з модифікатором `sealed`, то від цього класу не можна успадковувати і створювати похідні класи. Наприклад, наступний клас не допускає створення спадкоємців:
-
-```csharp
-sealed class Admin
-{
-}
-```
-
-- Не можна успадкувати клас від статичного класу.
-
-## Доступ до членів базового класу із класу-спадкоємця
-
-Повернемося до наших класів `Person` та `Employee`. Хоча `Employee` успадковує весь функціонал від класу `Person`, подивимося, що буде в наступному випадку:
-
-```csharp
-class Employee : Person
-{
-    public void PrintName()
-    {
-        Console.WriteLine(_name);
-    }
-}
-```
-
-Цей код не спрацює і видасть помилку, тому що змінна `_name` оголошена з модифікатором `private` і тому доступ до неї має тільки клас `Person`. Але в класі `Person` визначено загальнодоступну властивість `Name`, яку ми можемо використовувати, тому наступний код у нас працюватиме нормально:
-
-```csharp
-class Employee : Person
-{
-    public void PrintName()
-    {
-        Console.WriteLine(Name);
-    }
-}
-```
-
-Таким чином, похідний клас може мати доступ тільки до тих членів базового класу, які визначені з модифікаторами `private protected` (якщо базовий і похідний клас знаходяться в одній збірці), `public`, `internal` (якщо базовий та похідний клас знаходяться в одній збірці), `protected` і `protected internal`.
+Поле `medicalRecordId` оголошене як `protected`: клас `Patient` може його читати і використовувати, але зовнішній код (`patient.medicalRecordId`) отримає помилку компіляції. Поле `_internalCode` залишається `private` — недоступне навіть для `Patient`.
 
 ## Ключове слово base
 
-Тепер додамо до наших класів конструктори:
+Ключове слово `base` дозволяє явно звернутися до членів **безпосереднього** базового класу: викликати конструктор або метод. Це особливо важливо, коли похідний клас перевизначає метод базового і водночас хоче використати оригінальну реалізацію.
 
-```csharp
+```csharp run
+using System;
+
+Doctor doctor = new Doctor("Олена Коваль", 38, "Кардіологія", "UA-12345");
+doctor.Print();     // базовий метод
+doctor.PrintInfo(); // розширений метод
+
 class Person
 {
     public string Name { get; set; }
+    public int Age { get; set; }
 
-    public Person(string name)
+    public Person(string name, int age)
     {
         Name = name;
+        Age  = age;
     }
 
     public void Print()
     {
-        Console.WriteLine(Name);
+        Console.WriteLine($"{Name}, {Age} років");
     }
 }
 
-class Employee : Person
+class Doctor : Person
 {
-    public string Company { get; set; }
+    public string Specialization { get; set; }
+    public string LicenseNumber  { get; set; }
 
-    public Employee(string name, string company)
-    : base(name)
+    public Doctor(string name, int age, string specialization, string licenseNumber)
+        : base(name, age)       // викликаємо конструктор Person
     {
-        Company = company;
+        Specialization = specialization;
+        LicenseNumber  = licenseNumber;
+    }
+
+    public void PrintInfo()
+    {
+        base.Print();           // викликаємо метод Person.Print()
+        Console.WriteLine($"  Спеціалізація: {Specialization} | Ліцензія: {LicenseNumber}");
     }
 }
 ```
 
-Клас `Person` має конструктор, який встановлює властивість `Name`. Оскільки клас `Employee` успадковує і встановлює ту саму властивість `Name`, то логічно було б не писати по сто разів код установки, а викликати відповідний код класу `Person`. До того ж властивостей, які треба встановити в конструкторі базового класу, параметрів може бути набагато більше.
-
-За допомогою ключового слова `base` ми можемо звернутися до базового класу. У нашому випадку у конструкторі класу `Employee` нам треба встановити ім'я та компанію. Але ім'я ми передаємо на встановлення в конструктор базового класу, тобто конструктор класу `Person`, за допомогою виразу `base(name)`.
-
-```csharp
-Person person = new Person("Bob");
-person.Print();     // Bob
-
-Employee employee = new Employee("Tom", "Microsoft");
-employee.Print();   // Tom
-```
+У конструкторі `Doctor` вираз `: base(name, age)` передає ім'я та вік конструктору `Person` — немає потреби дублювати код ініціалізації. У методі `PrintInfo()` виклик `base.Print()` виконує базову реалізацію, після чого виводить додаткову інформацію.
 
 ## Конструктори у похідних класах
 
-Конструктори не передаються похідному класу під час успадкування. І якщо в базовому класі не визначено конструктора за замовчуванням без параметрів, а лише конструктори з параметрами (як у випадку з базовим класом `Person`), то у похідному класі ми обов'язково повинні викликати один з цих конструкторів через ключове слово `base`. Наприклад, з класу `Employee` приберемо визначення конструктора:
+Конструктори **не передаються** похідному класу при успадкуванні — це принципова відмінність від методів і властивостей. Кожен клас повинен мати власні конструктори.
 
-```csharp
-class Employee : Person
-{
-    public string Company { get; set; } = "";
-}
-```
+Якщо в базовому класі є лише конструктори з параметрами (і немає конструктора без параметрів), то кожен конструктор похідного класу зобов'язаний явно викликати один із конструкторів базового через `base(...)`:
 
-У разі ми отримаємо помилку, оскільки клас `Employee` успадковує клас `Person`, але не викликає конструктор базового класу. Навіть якби ми додали якийсь конструктор, який би встановлював ті самі властивості, то ми все одно б отримали помилку:
+```csharp run
+using System;
 
-```csharp
-class Employee : Person
-{
-    public string Company { get; set; } = "";
+// Коректне визначення
+Patient patient = new Patient("Марія Сидоренко", 32, "Бронхіт");
+patient.PrintInfo();
 
-    public Employee(string name, string company)    // ! Помилка
-    {
-        Name = name;
-        Company = company;
-    }
-}
-```
-
-Тобто в класі `Employee` через ключове слово `base` треба явно викликати конструктор класу `Person`:
-
-```csharp
-class Employee : Person
-{
-    public string Company { get; set; } = "";
-
-    public Employee(string name, string company)
-    : base(name)
-    {
-        Company = company;
-    }
-}
-```
-
-Або як альтернативу ми могли б визначити в базовому класі конструктор без параметрів:
-
-```csharp
 class Person
 {
     public string Name { get; set; }
+    public int Age { get; set; }
 
-    // конструктор без параметрів
-    public Person()
-    {
-        Name = "Tom";
-        Console.WriteLine("Виклик конструктора без параметрів");
-    }
-
-    public Person(string name)
+    // Є лише параметризований конструктор — без параметрів недоступний
+    public Person(string name, int age)
     {
         Name = name;
+        Age  = age;
     }
+}
 
-    public void Print()
+class Patient : Person
+{
+    public string Diagnosis { get; set; }
+
+    // Обов'язково викликаємо base(name, age)
+    public Patient(string name, int age, string diagnosis)
+        : base(name, age)
     {
-        Console.WriteLine(Name);
+        Diagnosis = diagnosis;
     }
+
+    public void PrintInfo() =>
+        Console.WriteLine($"Пацієнт: {Name}, {Age} р. | Діагноз: {Diagnosis}");
 }
 ```
 
-Тоді в будь-якому конструкторі похідного класу, де немає звернення до конструктора базового класу, все одно неявно викликався б цей конструктор за умовчанням. Наприклад, наступний конструктор
+Якщо `Patient` не викличе `base(name, age)`, компілятор видасть помилку — він не знає, як ініціалізувати успадковані властивості `Name` і `Age`.
+
+Якщо ж базовий клас **має** конструктор без параметрів, похідний клас може не викликати `base()` явно — компілятор підставить його неявно. У такому разі наступні два конструктори еквівалентні:
 
 ```csharp
-public Employee(string company)
+// Явний виклик
+public Patient(string diagnosis) : base()
 {
-    Company = company;
+    Diagnosis = diagnosis;
 }
-```
 
-фактично був би еквівалентний наступному конструктору:
-
-```csharp
-public Employee(string company)
-: base()
+// Неявний виклик (компілятор додасть base() автоматично)
+public Patient(string diagnosis)
 {
-    Company = company;
+    Diagnosis = diagnosis;
 }
 ```
 
 ## Порядок виклику конструкторів
 
-При виклику конструктора класу спочатку відпрацьовують конструктори базових класів і потім конструктори похідних. Наприклад, візьмемо такі класи:
+При створенні об'єкта похідного класу конструктори викликаються в строго визначеному порядку: **від найбазовішого до найпохіднішого**. Тіла конструкторів виконуються у зворотному порядку відносно делегування — спочатку відпрацьовують більш загальні класи, потім — специфічні.
 
-```csharp
+Розглянемо приклад з ланцюжком:
+
+```csharp run
+using System;
+
+Doctor doctor = new Doctor("Олена Коваль", 38, "Кардіологія");
+
 class Person
 {
-    string name;
-    int age;
+    public string Name { get; set; }
+    public int Age { get; set; }
 
     public Person(string name)
     {
-        this.name = name;
-        Console.WriteLine("Person(string name)");
+        Name = name;
+        Console.WriteLine($"Person(name): {name}");
     }
 
     public Person(string name, int age) : this(name)
     {
-        this.age = age;
-        Console.WriteLine("Person(string name, int age)");
+        Age = age;
+        Console.WriteLine($"Person(name, age): {name}, {age}");
     }
 }
 
-class Employee : Person
+class Doctor : Person
 {
-    string company;
+    public string Specialization { get; set; }
 
-    public Employee(string name, int age, string company) : base(name, age)
+    public Doctor(string name, int age, string specialization)
+        : base(name, age)
     {
-        this.company = company;
-        Console.WriteLine("Employee(string name, int age, string company)");
+        Specialization = specialization;
+        Console.WriteLine($"Doctor(name, age, spec): {specialization}");
     }
 }
 ```
 
-Під час створення об'єкта `Employee`:
+Виконання розгортається так:
+1. `new Doctor(...)` → викликається `Doctor(name, age, spec)`, але спочатку делегує `base(name, age)`
+2. `Person(name, age)` → не виконується одразу, делегує `this(name)`
+3. `Person(name)` → делегує неявно `Object()`
+4. **Виконується** `Object()` — найбазовіший конструктор
+5. **Виконується** тіло `Person(name)` → виводить `Person(name): Олена Коваль`
+6. **Виконується** тіло `Person(name, age)` → виводить `Person(name, age): Олена Коваль, 38`
+7. **Виконується** тіло `Doctor(...)` → виводить `Doctor(name, age, spec): Кардіологія`
 
-```csharp
-Employee tom = new Employee("Tom", 22, "Microsoft");
+![Порядок виклику конструкторів у ланцюжку успадкування](_assets/04-01/constructor-order.png)
+
+Цей порядок гарантує, що до моменту виконання конструктора похідного класу базовий клас вже повністю ініціалізований. Якби `Doctor` намагався звернутися до `Name` у своєму конструкторі — властивість вже була б встановлена конструктором `Person`.
+
+## Запечатаний клас: sealed
+
+Модифікатор `sealed` повністю забороняє успадкування від класу. Це явна архітектурна декларація: «цей клас спроектований як кінцевий, розширення через успадкування не передбачено».
+
+```csharp run
+using System;
+
+// Звичайне використання — працює
+CertifiedSurgeon surgeon = new CertifiedSurgeon("Андрій Мельник", "Кардіохірургія");
+surgeon.PrintInfo();
+
+// class SpecialSurgeon : CertifiedSurgeon { }  // Помилка компіляції!
+
+class Doctor
+{
+    public string Name { get; set; }
+
+    public Doctor(string name) { Name = name; }
+
+    public virtual void PrintInfo() =>
+        Console.WriteLine($"Лікар: {Name}");
+}
+
+sealed class CertifiedSurgeon : Doctor
+{
+    public string Specialization { get; set; }
+
+    public CertifiedSurgeon(string name, string specialization) : base(name)
+    {
+        Specialization = specialization;
+    }
+
+    public override void PrintInfo() =>
+        Console.WriteLine($"Сертифікований хірург: {Name} | {Specialization}");
+}
 ```
 
-Ми отримаємо наступний консольний вивід:
+`sealed` клас може сам успадковувати від інших класів (як `CertifiedSurgeon` від `Doctor`), але не дозволяє мати власних нащадків. У стандартній бібліотеці .NET таким чином оголошені `String`, `StringBuilder` та багато інших класів — їх не можна розширити через успадкування.
 
-![Консольний вивід порядку виклику конструкторів](_assets/_docx/image84.png)
-
-У результаті ми отримуємо наступний ланцюг виконань.
-
-Спочатку викликається конструктор `Employee(string name, int age, string company)`. Він делегує виконання конструктору `Person(string name, int age)`.
-
-Викликається конструктор `Person(string name, int age)`, який сам поки що не виконується і передає виконання конструктору `Person(string name)`.
-
-Викликається конструктор `Person(string name)`, який передає виконання конструктору класу `System.Object`, оскільки це базовий за промовчанням клас для `Person`.
-
-Виконується конструктор `System.Object.Object()`, потім виконання повертається конструктору `Person(string name)`.
-
-Виконується тіло конструктора `Person(string name)`, потім виконання повертається конструктору `Person(string name, int age)`.
-
-Виконується тіло конструктора `Person(string name, int age)`, потім виконання повертається конструктору `Employee(string name, int age, string company)`.
-
-Виконується тіло конструктора `Employee(string name, int age, string company)`. У результаті створюється об'єкт `Employee`.
+Окрім захисту архітектури, `sealed` дає компілятору можливість генерувати ефективніший код: якщо клас запечатаний, виклики його методів можна не диспетчеризувати через таблицю віртуальних методів.
