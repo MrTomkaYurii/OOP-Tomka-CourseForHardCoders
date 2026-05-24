@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 5
 chapterTitle: "Розділ 5. Обробка винятків"
 section: 5
@@ -9,137 +9,225 @@ source: "../_combined/32-stvorennia-klasiv-vyniatkiv.md"
 
 ## 5.5. Створення класів винятків
 
-Якщо нас не влаштовують вбудовані типи винятків, ми можемо створити свої типи. Базовим класом для всіх винятків є клас Exception, відповідно для створення своїх типів ми можемо успадкувати цей клас.
+Вбудованих типів винятків (.NET надає їх понад 200) часто достатньо для технічних помилок. Але для **доменних помилок** — тих, що описують порушення бізнес-правил конкретної системи, — краще створювати власні класи винятків. Це дозволяє:
 
-Допустимо, у нас у програмі буде обмеження за віком:
+- точно вказувати `catch` на потрібну категорію помилок
+- передавати у виняток додаткову доменну інформацію (ID пацієнта, некоректне значення)
+- будувати ієрархії винятків під свою предметну область
 
-```csharp
+## Мінімальний власний клас винятку
+
+Будь-який клас, що успадковується від `Exception`, є повноцінним типом винятку. Мінімальна реалізація — конструктор із рядком повідомлення:
+
+```csharp run
+using System;
+
 try
 {
-    Person person = new Person { Name = "Tom", Age = 17 };
+    RegisterPatient("Tom", 17);
 }
-catch (Exception ex)
+catch (PatientException ex)
 {
-    Console.WriteLine($"Помилка: {ex.Message}");
+    Console.WriteLine($"Помилка пацієнта: {ex.Message}");
 }
 
-class Person
+void RegisterPatient(string name, int age)
 {
-    private int age;
-    public string Name { get; set; } = "";
-    public int Age
-    {
-        get => age;
-        set
-        {
-            if (value < 18)
-            throw new Exception("Особам до 18 реєстрація заборонена");
-            else
-            age = value;
-        }
-    }
+    if (age < 0 || age > 150)
+        throw new PatientException($"Вік {age.ToString()} є неприпустимим для пацієнта.");
+    Console.WriteLine($"Зареєстровано: {name}, {age.ToString()} р.");
+}
+
+class PatientException : Exception
+{
+    public PatientException(string message) : base(message) { }
 }
 ```
 
-У класі Person під час встановлення віку відбувається перевірка, і якщо вік менше 18, то викидається виняток. Клас Exception приймає в конструкторі як параметр рядок, який потім передається до його властивості Message.
+Конструктор передає рядок у базовий `Exception` через `base(message)`. Тепер у `catch` можна точно вказати `PatientException` — і він не перехопить `FormatException` чи `NullReferenceException`.
 
-Але іноді зручніше використовувати свої класи винятків. Наприклад, у якійсь ситуації ми хочемо обробити певним чином лише ті винятки, які належать до класу Person. Для цього ми можемо зробити спеціальний клас PersonException:
+## Власні властивості у класі винятку
 
-```csharp
-class PersonException : Exception
-{
-    public PersonException(string message)
-    : base(message) { }
-}
-```
+Справжня сила власних винятків — можливість зберігати доменні дані прямо в об'єкті помилки. Наприклад, некоректне значення, ID пацієнта, назву поля:
 
-Насправді клас крім порожнього конструктора нічого не має, і то в конструкторі ми просто звертаємося до конструктора базового класу Exception, передаючи в нього рядок message. Але тепер ми можемо змінити клас Person, щоб він викидав виняток саме цього типу і відповідно до основної програми обробляти цей виняток:
+```csharp run
+using System;
 
-```csharp
 try
 {
-    Person person = new Person { Name = "Tom", Age = 17 };
+    RegisterPatient("Марія Сидоренко", -5);
 }
-catch (PersonException ex)
+catch (PatientAgeException ex)
 {
     Console.WriteLine($"Помилка: {ex.Message}");
+    Console.WriteLine($"Некоректний вік: {ex.InvalidAge.ToString()} р.");
 }
 
-class Person
+void RegisterPatient(string name, int age)
 {
-    private int age;
-    public string Name { get; set; } = "";
-    public int Age
+    if (age < 0 || age > 150)
+        throw new PatientAgeException(
+            $"Вік {age.ToString()} виходить за допустимий діапазон (0–150).", age);
+    Console.WriteLine($"Зареєстровано: {name}, {age.ToString()} р.");
+}
+
+class PatientAgeException : Exception
+{
+    public int InvalidAge { get; }
+
+    public PatientAgeException(string message, int invalidAge) : base(message)
     {
-        get => age;
-        set
-        {
-            if (value < 18)
-            throw new PersonException("Особам до 18 реєстрація заборонена");
-            else
-            age = value;
-        }
+        InvalidAge = invalidAge;
     }
 }
 ```
 
-Однак необов'язково успадкувати свій клас винятків саме від типу Exception, можна взяти якийсь інший похідний тип. Наприклад, в даному випадку ми можемо взяти тип ArgumentException, який представляє виняток, що генерується в результаті передачі аргументу методу некоректного значення:
+Властивість `InvalidAge` дозволяє обробнику отримати конкретне значення, що спричинило помилку — без парсингу рядка `Message`. Це зручно для логування та відображення деталей у UI.
 
-```csharp
-class PersonException : ArgumentException
-{
-    public PersonException(string message)
-    : base(message)
-    { }
-}
-```
+## Вибір базового класу
 
-Кожен тип винятків може визначати якісь свої властивості. Наприклад, в даному випадку ми можемо визначити в класі властивість для зберігання значення, що встановлюється:
+Власний виняток не обов'язково успадковувати від кореневого `Exception`. Якщо є більш підходящий вбудований тип — краще успадкувати від нього. Тоді `catch (ArgumentException)` також перехопить ваш клас:
 
-```csharp
-class PersonException : ArgumentException
-{
-    public int Value { get; }
+```csharp run
+using System;
 
-    public PersonException(string message, int val)
-    : base(message)
-    {
-        Value = val;
-    }
-}
-```
-
-У конструкторі класу ми встановлюємо цю властивість і при обробці винятку ми його можемо отримати:
-
-```csharp
+// catch (ArgumentException) перехопить PatientValidationException теж
 try
 {
-    Person person = new Person { Name = "Tom", Age = 17 };
+    SetDiagnosis("П-001", "");
 }
-catch (PersonException ex)
+catch (PatientValidationException ex)
 {
-    Console.WriteLine($"Помилка: {ex.Message}");
-    Console.WriteLine($"Некоректне значення: {ex.Value}");
+    Console.WriteLine($"Валідація: {ex.Message} (поле: {ex.FieldName})");
+}
+catch (ArgumentException ex)
+{
+    Console.WriteLine($"Аргумент: {ex.Message}");
 }
 
-class Person
+void SetDiagnosis(string patientId, string diagnosis)
 {
-    private int age;
-    public string Name { get; set; } = "";
-    public int Age
+    if (string.IsNullOrWhiteSpace(diagnosis))
+        throw new PatientValidationException(
+            "Діагноз не може бути порожнім.", nameof(diagnosis));
+}
+
+// Успадковуємо від ArgumentException — семантично коректно:
+// це помилка некоректного аргументу в доменному контексті
+class PatientValidationException : ArgumentException
+{
+    public string FieldName { get; }
+
+    public PatientValidationException(string message, string fieldName)
+        : base(message)
     {
-        get => age;
-        set
-        {
-            if (value < 18)
-            throw new PersonException("Особам до 18 реєстрація заборонена", value);
-            else
-            age = value;
-        }
+        FieldName = fieldName;
     }
 }
 ```
 
-І в даному випадку ми отримаємо наступний консольний вивід:
+## Ієрархія власних винятків
 
-![Консольний вивід власного класу винятку](_assets/_docx/image94.png)
+Для складніших систем будують цілі ієрархії. Базовий доменний виняток об'єднує всі помилки предметної області, а конкретні типи уточнюють причину:
+
+![Ієрархія власних класів винятків клінічної системи](_assets/05-05/custom-exception-hierarchy.png)
+
+```csharp run
+using System;
+
+ProcessRecord("П-001", "Іван Петренко", 45, "J18.9");
+ProcessRecord("П-002", "", 30, "J18.9");
+ProcessRecord("П-003", "Олег Бойко", -3, "J18.9");
+ProcessRecord("П-004", "Марія Коваль", 28, "");
+
+void ProcessRecord(string id, string name, int age, string diagnosisCode)
+{
+    try
+    {
+        ValidateRecord(id, name, age, diagnosisCode);
+        Console.WriteLine($"[{id}] {name}, {age.ToString()} р., діагноз: {diagnosisCode} — збережено.");
+    }
+    catch (PatientAgeException ex)
+    {
+        Console.WriteLine($"[{id}] Вік: {ex.Message} (значення: {ex.InvalidAge.ToString()})");
+    }
+    catch (DiagnosisException ex)
+    {
+        Console.WriteLine($"[{id}] Діагноз: {ex.Message} (код: {ex.DiagnosisCode})");
+    }
+    catch (MedicalException ex)
+    {
+        // перехоплює будь-який MedicalException, що не потрапив вище
+        Console.WriteLine($"[{id}] Медична помилка: {ex.Message}");
+    }
+}
+
+void ValidateRecord(string id, string name, int age, string diagnosisCode)
+{
+    if (string.IsNullOrWhiteSpace(name))
+        throw new MedicalException("Ім'я пацієнта не може бути порожнім.", id);
+
+    if (age < 0 || age > 150)
+        throw new PatientAgeException(
+            $"Неприпустимий вік для пацієнта.", id, age);
+
+    if (string.IsNullOrWhiteSpace(diagnosisCode))
+        throw new DiagnosisException(
+            "Код діагнозу не може бути порожнім.", id, diagnosisCode ?? "");
+}
+
+// Базовий доменний виняток
+class MedicalException : Exception
+{
+    public string PatientId { get; }
+
+    public MedicalException(string message, string patientId) : base(message)
+    {
+        PatientId = patientId;
+    }
+}
+
+// Конкретний: помилка віку
+class PatientAgeException : MedicalException
+{
+    public int InvalidAge { get; }
+
+    public PatientAgeException(string message, string patientId, int invalidAge)
+        : base(message, patientId)
+    {
+        InvalidAge = invalidAge;
+    }
+}
+
+// Конкретний: помилка діагнозу
+class DiagnosisException : MedicalException
+{
+    public string DiagnosisCode { get; }
+
+    public DiagnosisException(string message, string patientId, string diagnosisCode)
+        : base(message, patientId)
+    {
+        DiagnosisCode = diagnosisCode;
+    }
+}
+```
+
+Ієрархія дає гнучкість: можна перехопити конкретний тип або всі помилки предметної області через базовий `MedicalException`.
+
+## Де оголошувати власні класи винятків
+
+Кілька практичних правил:
+
+- Ім'я завжди завершується словом `Exception`: `PatientAgeException`, `DiagnosisException`
+- Клас розташовують поруч із тим, де він використовується (або в окремому файлі для великих проєктів)
+- Якщо виняток вказує на некоректний аргумент — успадковуйте від `ArgumentException`
+- Якщо виняток описує стан об'єкта, що не дозволяє операцію — від `InvalidOperationException`
+- Якщо помилка специфічна для вашої предметної області — від `Exception` або власного базового
+
+## Підсумок
+
+- Власний клас винятку — це звичайний клас, що успадковує `Exception` (або його похідний)
+- Мінімальна реалізація: конструктор з `string message`, що передає його в `base(message)`
+- Додаткові властивості зберігають доменний контекст: ID, некоректне значення, назву поля
+- Ієрархії дозволяють перехоплювати як конкретні типи, так і всю категорію помилок
+- Ім'я класу завжди закінчується на `Exception`

@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 5
 chapterTitle: "Розділ 5. Обробка винятків"
 section: 2
@@ -9,124 +9,206 @@ source: "../_combined/29-blok-catch-ta-filtry-vyniatkiv.md"
 
 ## 5.2. Блок catch та фільтри винятків
 
-### Визначення блоку catch
+Блок `catch` є серцем механізму обробки винятків. Він визначає, які саме винятки перехоплюються і яку інформацію про помилку надає розробнику. У C# є три форми блоку `catch`, а також можливість задати додатковий фільтр через `when`.
 
-За обробку винятку відповідає блок catch, який може мати такі форми:
+![Форми блоку catch та фільтр when](_assets/05-02/catch-forms.png)
+
+## Форма 1: catch без параметрів
+
+Найпростіший варіант — `catch` без вказання типу. Такий блок перехоплює **будь-який** виняток, незалежно від його типу:
 
 ```csharp
 catch
 {
-    // Інструкції, що виконуються
+    // виконується при будь-якому винятку
 }
 ```
 
-Обробляє будь-який виняток, який виник у блоці try. Вище вже було продемонстровано приклад такого блоку.
+Це зручно на початку або коли тип помилки не важливий. Недолік: немає доступу до інформації про виняток — невідомо, що саме сталося.
 
-```csharp
-catch (тип_винятку)
+```csharp run
+using System;
+
+string[] inputs = { "36.6", "abc", "37.2" };
+
+foreach (string raw in inputs)
 {
-    // Інструкції, що виконуються
+    try
+    {
+        double temp = double.Parse(raw);
+        Console.WriteLine($"Температура: {temp.ToString()} °C");
+    }
+    catch
+    {
+        Console.WriteLine($"Помилка читання: «{raw}» — значення пропущено.");
+    }
 }
 ```
 
-Обробляє лише ті винятки, які відповідають типу, вказаному у дужках після оператора catch.
+## Форма 2: catch з типом винятку
 
-Наприклад, обробимо лише винятки типу DivideByZeroException:
+Якщо вказати тип у дужках, блок `catch` перехопить **лише** цей тип (або його похідні). Винятки інших типів через цей блок не пройдуть:
 
 ```csharp
-try
+catch (FormatException)
 {
-    int x = 5;
-    int y = x / 0;
-    Console.WriteLine($"Результат: {y}");
-}
-catch (DivideByZeroException)
-{
-    Console.WriteLine("Виник виняток DivideByZeroException");
+    // обробляє лише FormatException
 }
 ```
 
-Однак якщо у блоці try виникнуть винятки якихось інших типів, відмінних від DivideByZeroException, вони не будуть оброблені.
+```csharp run
+using System;
 
-```csharp
-catch (тип_винятку ім'я_змінної)
-{
-    // Інструкції, що виконуються
-}
-```
-
-Обробляє лише ті винятки, які відповідають типу, вказаному у дужках після оператора catch. А вся інформація про виняток міститься у змінній даного типу. Наприклад:
-
-```csharp
-try
-{
-    int x = 5;
-    int y = x / 0;
-    Console.WriteLine($"Результат: {y}");
-}
-catch (DivideByZeroException ex)
-{
-    Console.WriteLine($"Виник виняток {ex.Message}");
-}
-```
-
-Фактично цей випадок аналогічний попередньому за винятком, що тут використовується змінна. В даному випадку в змінну `ex`, яка представляє тип DivideByZeroException, міститься інформація про виняток, що виник. І за допомогою властивості `Message` ми можемо отримати повідомлення про помилку.
-
-Якщо нам не потрібна інформація про виняток, змінну можна не використовувати як у попередньому випадку.
-
-### Фільтри винятків
-
-Фільтри винятків дозволяють обробляти винятки залежно від умов. Для їх застосування після виразу catch йде вираз when, після якого в дужках вказується умова:
-
-```csharp
-catch when (умова)
-{
-
-}
-```
-
-У цьому випадку обробка винятку в блоці catch проводиться тільки в тому випадку, якщо умова у виразі when є істинною. Наприклад:
-
-```csharp
-int x = 1;
-int y = 0;
+string input = "не_число";
 
 try
 {
-    int result1 = x / y;
-    int result2 = y / x;
+    int age = int.Parse(input);
+    Console.WriteLine($"Вік: {age.ToString()} р.");
 }
-catch (DivideByZeroException) when (y == 0)
+catch (FormatException)
 {
-    Console.WriteLine("y не повинен дорівнювати 0");
+    Console.WriteLine("Вік введено у некоректному форматі.");
 }
-catch (DivideByZeroException ex)
+catch (OverflowException)
 {
-    Console.WriteLine(ex.Message);
+    Console.WriteLine("Число виходить за допустимий діапазон.");
 }
 ```
 
-У разі буде викинуто виняток, оскільки `y = 0`. Тут два блоки catch, і обидва вони обробляють винятки типу DivideByZeroException, тобто по суті всі винятки, що генеруються при діленні на нуль. Але оскільки для першого блоку вказана умова `y == 0`, то саме цей блок оброблятиме цей виняток - умова, вказана після оператора when, повертає `true`.
+Тут два блоки `catch` — кожен обробляє свій тип. Якщо рядок некоректний — спрацьовує `FormatException`. Якщо число занадто велике — `OverflowException`. Якщо виникне інший тип помилки — жоден блок не перехопить його.
 
-Протилежна ситуація:
+**Важливо:** блоки `catch` перевіряються **зверху вниз** у порядку оголошення. Спрацьовує перший відповідний.
+
+## Форма 3: catch з типом і змінною
+
+Найінформативніша форма: дає доступ до об'єкта винятку через іменовану змінну. Змінна містить усю доступну інформацію про помилку — передусім властивість `Message`:
 
 ```csharp
-int x = 0;
-int y = 1;
-
-try
+catch (FormatException ex)
 {
-    int result1 = x / y;
-    int result2 = y / x;
-}
-catch (DivideByZeroException) when (y == 0)
-{
-    Console.WriteLine("y не повинен дорівнювати 0");
-}
-catch (DivideByZeroException ex)
-{
-    Console.WriteLine(ex.Message);
+    Console.WriteLine(ex.Message); // деталі помилки
 }
 ```
 
-У разі буде викинуто виняток, оскільки `x = 0`. Умова першого блоку catch - `y == 0` тепер повертає `false`. Тому CLR далі шукатиме відповідні блоки catch далі і для обробки винятку вибере другий блок catch. У результаті якщо ми приберемо другий блок catch, то виняток взагалі не оброблятиметься.
+```csharp run
+using System;
+
+RegisterPatient("Іван Петренко", "45");
+RegisterPatient("Марія Сидоренко", "??");
+RegisterPatient("Олег Бойко", "999999999999");
+
+void RegisterPatient(string name, string ageInput)
+{
+    try
+    {
+        int age = int.Parse(ageInput);
+        Console.WriteLine($"Зареєстровано: {name}, {age.ToString()} р.");
+    }
+    catch (FormatException ex)
+    {
+        Console.WriteLine($"[{name}] Некоректний формат віку: {ex.Message}");
+    }
+    catch (OverflowException ex)
+    {
+        Console.WriteLine($"[{name}] Вік поза допустимим діапазоном: {ex.Message}");
+    }
+}
+```
+
+Властивість `ex.Message` містить зрозумілий опис помилки від CLR. Це особливо корисно для логування: у виробничих системах повідомлення про помилку зазвичай записується у журнал, а не виводиться користувачу напряму.
+
+## Фільтри винятків: when
+
+Оператор `when` дозволяє додати **умову** до блоку `catch`. Блок спрацює лише якщо умова повертає `true`:
+
+```csharp
+catch (ExceptionType ex) when (умова)
+{
+    // виконується лише якщо умова == true
+}
+```
+
+Якщо умова `false` — CLR продовжує шукати наступний відповідний `catch`, навіть якщо тип збігається.
+
+Практичний приклад: в медичній системі ввід пульсу обробляється по-різному залежно від того, чи рядок порожній, чи містить некоректні символи:
+
+```csharp run
+using System;
+
+ProcessPulse("");        // порожній рядок
+ProcessPulse("abc");     // некоректні символи
+ProcessPulse("72");      // коректне значення
+
+void ProcessPulse(string input)
+{
+    try
+    {
+        if (string.IsNullOrEmpty(input))
+            throw new FormatException("рядок порожній");
+
+        int pulse = int.Parse(input);
+        Console.WriteLine($"Пульс: {pulse.ToString()} уд/хв");
+    }
+    catch (FormatException ex) when (string.IsNullOrEmpty(input))
+    {
+        Console.WriteLine($"Пульс не введено (порожній рядок): {ex.Message}");
+    }
+    catch (FormatException ex)
+    {
+        Console.WriteLine($"Некоректне значення пульсу «{input}»: {ex.Message}");
+    }
+}
+```
+
+Обидва `catch` обробляють `FormatException`, але:
+- перший — лише якщо `input` порожній (`when (string.IsNullOrEmpty(input))`)
+- другий — у всіх інших випадках `FormatException`
+
+Це дозволяє розрізнити різні смислові сценарії для одного типу винятку — без вкладених `if` у тілі `catch`.
+
+## Порядок блоків catch
+
+Кілька блоків `catch` перевіряються у порядку оголошення. Є одне важливе правило: **загальніший тип має йти після конкретнішого**. Наприклад, `Exception` (базовий тип для всіх) повинен бути останнім, інакше він перехопить усе раніше:
+
+```csharp run
+using System;
+
+string[] records = { "120", "abc", "0", "37" };
+
+foreach (string r in records)
+{
+    try
+    {
+        int val = int.Parse(r);
+        if (val == 0) throw new DivideByZeroException();
+        Console.WriteLine($"Значення: {val.ToString()}");
+    }
+    catch (FormatException ex)
+    {
+        Console.WriteLine($"Формат: {ex.Message}");
+    }
+    catch (DivideByZeroException)
+    {
+        Console.WriteLine("Значення не може бути нулем.");
+    }
+    catch (Exception ex)
+    {
+        // загальний — завжди останнім
+        Console.WriteLine($"Невідома помилка: {ex.Message}");
+    }
+}
+```
+
+Якщо поставити `catch (Exception ex)` першим — він перехопить усе, і специфічні блоки ніколи не виконаються. Компілятор попередить про недосяжний код.
+
+## Підсумок
+
+| Форма | Синтаксис | Що перехоплює |
+|-------|-----------|---------------|
+| Без параметрів | `catch { }` | Будь-який виняток |
+| З типом | `catch (FormatException) { }` | Лише вказаний тип |
+| З типом і змінною | `catch (FormatException ex) { }` | Лише вказаний тип + доступ до `ex.Message` |
+| З фільтром | `catch (FormatException ex) when (умова) { }` | Тип збігається **і** умова `true` |
+
+Блоки перевіряються зверху вниз. Загальніший тип (`Exception`) завжди ставте останнім.

@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 5
 chapterTitle: "Розділ 5. Обробка винятків"
 section: 3
@@ -9,123 +9,197 @@ source: "../_combined/30-typy-vyniatkiv-klas-exception.md"
 
 ## 5.3. Типи винятків. Клас Exception
 
-Базовим для всіх типів винятків є тип Exception. Цей тип визначає ряд властивостей, за допомогою яких можна отримати інформацію про виняток.
+Кожен виняток у C# — це об'єкт. Усі класи винятків успадковуються від базового класу `System.Exception`. Це означає, що кожен виняток гарантовано містить набір стандартних властивостей з інформацією про помилку, а `catch (Exception ex)` здатен перехопити будь-який виняток у системі.
 
-- `InnerException`: зберігає інформацію про виняток, що спричинило поточний виняток
-- `Message`: зберігає повідомлення про виняток, текст помилки
-- `Source`: зберігає ім'я об'єкта або складання, яке викликало виняток
-- `StackTrace`: повертає рядкове представлення стека викликів, які призвели до винятку
-- `TargetSite`: повертає метод, у якому було викликано виняток
+## Клас Exception та його властивості
 
-Наприклад, обробимо винятки типу Exception:
+`System.Exception` визначає кілька ключових властивостей:
 
-```csharp
+| Властивість | Тип | Що містить |
+|-------------|-----|-----------|
+| `Message` | `string` | Текстовий опис помилки |
+| `StackTrace` | `string` | Стек викликів на момент винятку |
+| `InnerException` | `Exception?` | Виняток, що спричинив поточний (якщо є) |
+| `TargetSite` | `MethodBase?` | Метод, у якому виник виняток |
+| `Source` | `string?` | Назва збірки або об'єкта-джерела |
+
+```csharp run
+using System;
+
 try
 {
-    int x = 5;
-    int y = x / 0;
-    Console.WriteLine($"Результат: {y}");
+    string input = "не_число";
+    int age = int.Parse(input);
+    Console.WriteLine($"Вік: {age.ToString()} р.");
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Виняток: {ex.Message}");
-    Console.WriteLine($"Метод: {ex.TargetSite}");
-    Console.WriteLine($"Трасування стека: {ex.StackTrace}");
+    Console.WriteLine($"Тип:      {ex.GetType().Name}");
+    Console.WriteLine($"Повідомлення: {ex.Message}");
+    Console.WriteLine($"Метод:    {ex.TargetSite}");
 }
 ```
 
-![Виведення властивостей винятку Exception](_assets/_docx/image93.png)
+Властивість `ex.GetType().Name` показує реальний тип винятку — тут це буде `FormatException`, хоча перехоплюємо через базовий `Exception`. Це корисно для логування: ми отримуємо і конкретний тип, і загальні властивості.
 
-Однак так як тип Exception є базовим типом для всіх винятків, вираз `catch (Exception ex)` буде обробляти всі винятки, які можуть виникнути.
+## Ієрархія типів винятків
 
-Але також є більш спеціалізовані типи винятків, які призначені для обробки певних видів винятків. Їх досить багато, я наведу лише деякі:
+![Ієрархія класу Exception та поширені похідні типи](_assets/05-03/exception-hierarchy.png)
 
-- `DivideByZeroException`: представляє виняток, що генерується при діленні на нуль
-- `ArgumentOutOfRangeException`: генерується, якщо значення аргументу знаходиться поза діапазоном допустимих значень
-- `ArgumentException`: генерується, якщо методу для параметра передається некоректне значення
-- `IndexOutOfRangeException`: генерується, якщо індекс елемента масиву або колекції знаходиться поза діапазоном допустимих значень
-- `InvalidCastException`: генерується при спробі зробити неприпустимі перетворення типів
-- `NullReferenceException`: генерується при спробі звернення до об'єкта, який дорівнює null (тобто, по суті, невизначений)
+У .NET існує багато спеціалізованих класів винятків. Кожен відповідає за конкретну категорію помилок. Найпоширеніші:
 
-І за потреби ми можемо розмежувати обробку різних типів винятків, увімкнувши додаткові блоки catch:
+| Тип | Коли виникає |
+|-----|-------------|
+| `FormatException` | Некоректний формат рядка при `Parse` |
+| `OverflowException` | Переповнення числового типу |
+| `DivideByZeroException` | Ділення цілого числа на нуль |
+| `IndexOutOfRangeException` | Вихід за межі масиву або рядка |
+| `NullReferenceException` | Звернення до `null`-посилання |
+| `InvalidCastException` | Неприпустиме явне перетворення типів |
+| `ArgumentException` | Некоректний аргумент методу |
+| `ArgumentOutOfRangeException` | Аргумент поза допустимим діапазоном |
 
-```csharp
-static void Main(string[] args)
+Усі вони є похідними від `Exception`, тому `catch (Exception ex)` перехопить кожен із них.
+
+## Кілька блоків catch для різних типів
+
+Якщо у блоці `try` можуть виникнути різні типи помилок, варто обробляти їх окремо — це дозволяє давати більш точні повідомлення та вживати відповідних заходів:
+
+```csharp run
+using System;
+
+ProcessRecord("P-001", "45");    // коректно
+ProcessRecord("P-002", "abc");   // FormatException
+ProcessRecord("P-003", "");      // FormatException (порожній рядок)
+
+void ProcessRecord(string id, string ageInput)
 {
     try
     {
-        int[] numbers = new int[4];
-        numbers[7] = 9; // IndexOutOfRangeException
+        int age = int.Parse(ageInput);
 
-        int x = 5;
-        int y = x / 0; // DivideByZeroException
-        Console.WriteLine($"Результат: {y}");
-    }
-    catch (DivideByZeroException)
-    {
-        Console.WriteLine("Виник виняток DivideByZeroException");
-    }
-    catch (IndexOutOfRangeException ex)
-    {
-        Console.WriteLine(ex.Message);
-    }
+        string[] allowedIds = { "P-001", "P-003" };
+        int idx = Array.IndexOf(allowedIds, id);
 
-    Console.Read();
+        if (allowedIds[idx] != id)   // IndexOutOfRangeException якщо idx == -1
+            throw new ArgumentException($"ID {id} не знайдено");
+
+        Console.WriteLine($"[{id}] Вік: {age.ToString()} р. — запис збережено.");
+    }
+    catch (FormatException ex)
+    {
+        Console.WriteLine($"[{id}] Некоректний вік: {ex.Message}");
+    }
+    catch (IndexOutOfRangeException)
+    {
+        Console.WriteLine($"[{id}] Запис не знайдено у системі.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[{id}] Непередбачена помилка: {ex.Message}");
+    }
 }
 ```
 
-У цьому випадку блоки catch обробляють винятки типів IndexOutOfRangeException та DivideByZeroException. Коли у блоці try виникне виняток, то CLR шукатиме потрібний блок catch для обробки винятку. Так, у цьому випадку на рядку
+CLR перевіряє блоки `catch` зверху вниз і виконує **перший**, тип якого відповідає типу винятку. Після цього решта блоків ігнорується.
 
-```csharp
-numbers[7] = 9;
-```
+## Один виняток зупиняє виконання try
 
-відбувається звернення до 7 елементу масиву. Однак оскільки в масиві лише 4 елементи, ми отримаємо виняток типу IndexOutOfRangeException. CLR знайде блок catch, який обробляє цей виняток, і передасть йому керування.
+Важливо розуміти: як тільки в `try` виникає виняток, всі рядки після нього **не виконуються**. CLR негайно передає керування відповідному `catch`:
 
-Слід зазначити, що в даному випадку в блоці try є ситуація для генерації другого винятку - поділ на нуль. Однак оскільки після генерації IndexOutOfRangeException керування переходить у відповідний блок catch, то поділ на нуль `int y = x / 0` в принципі не виконуватиметься, тому виняток типу DivideByZeroException ніколи не буде згенеровано.
+```csharp run
+using System;
 
-Однак розглянемо іншу ситуацію:
+string[] names   = { "Іван Петренко", "Марія Сидоренко" };
+string[] ageStrs = { "45", "abc" };
 
-```csharp
 try
 {
-    object obj = "you";
-    int num = (int)obj; // System.InvalidCastException
-    Console.WriteLine($"Результат: {num}");
+    for (int i = 0; i < names.Length; i++)
+    {
+        int age = int.Parse(ageStrs[i]);         // FormatException на i==1
+        Console.WriteLine($"{names[i]}: {age.ToString()} р.");
+        // рядок нижче не виконається після винятку
+    }
+    Console.WriteLine("Всі записи оброблено.");  // пропускається
+}
+catch (FormatException ex)
+{
+    Console.WriteLine($"Помилка: {ex.Message}");
+}
+
+Console.WriteLine("Програма завершила роботу.");
+```
+
+Рядок `"Всі записи оброблено."` ніколи не виведеться, якщо виняток виник до кінця циклу. Рядок після всього блоку `try...catch` — `"Програма завершила роботу."` — виведеться завжди, оскільки виняток було перехоплено.
+
+## Необроблений виняток аварійно завершує програму
+
+Якщо тип винятку не відповідає жодному `catch` — виняток не перехоплюється. CLR пробуджує обробники вище по стеку, і якщо ніхто не перехопив — програма завершується аварійно:
+
+```csharp run
+using System;
+
+try
+{
+    object obj = "P-001";
+    int id = (int)obj;           // InvalidCastException
+    Console.WriteLine(id.ToString());
+}
+catch (FormatException)
+{
+    Console.WriteLine("FormatException — не перехоплено InvalidCastException");
 }
 catch (DivideByZeroException)
 {
-    Console.WriteLine("Виник виняток DivideByZeroException");
-}
-catch (IndexOutOfRangeException)
-{
-    Console.WriteLine("Виник виняток IndexOutOfRangeException");
-}
-```
-
-В даному випадку в блоці try генерується виняток типу InvalidCastException, проте відповідного блоку catch для обробки цього винятку немає. Тому програма аварійно завершить виконання.
-
-Ми також можемо визначити для InvalidCastException свій блок catch, проте суть у тому, що теоретично в коді можуть бути згенеровані різні типи винятків. А визначати для всіх типів винятків блоки catch, якщо обробка винятків однотипна, немає сенсу. І в цьому випадку ми можемо визначити блок catch для базового типу Exception:
-
-```csharp
-try
-{
-    object obj = "you";
-    int num = (int)obj; // System.InvalidCastException
-    Console.WriteLine($"Результат: {num}");
-}
-catch (DivideByZeroException)
-{
-    Console.WriteLine("Виник виняток DivideByZeroException");
-}
-catch (IndexOutOfRangeException)
-{
-    Console.WriteLine("Виник виняток IndexOutOfRangeException");
+    Console.WriteLine("DivideByZeroException — також не підходить");
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Виняток: {ex.Message}");
+    // Exception — базовий тип, перехопить усе що не піймали вище
+    Console.WriteLine($"Перехоплено базовим Exception: {ex.GetType().Name}");
+    Console.WriteLine(ex.Message);
 }
 ```
 
-І в даному випадку блок `catch (Exception ex) {}` буде обробляти всі винятки крім DivideByZeroException та IndexOutOfRangeException. При цьому блоки catch для більш загальних, базових винятків слід поміщати в кінці - після блоків catch для більш конкретних, спеціалізованих типів. Так як CLR вибирає для обробки виняток перший блок catch, який відповідає типу згенерованого винятку. Тому в даному випадку спочатку обробляється виняток DivideByZeroException та IndexOutOfRangeException, і тільки потім Exception (оскільки DivideByZeroException і IndexOutOfRangeException успадковуються від класу Exception).
+Блок `catch (Exception ex)` тут виступає «страхувальним мережем» — він обробляє будь-який виняток, якого не перехопили конкретніші блоки.
+
+## Правила порядку блоків catch
+
+1. **Конкретніший тип — раніше**: `FormatException` перед `Exception`
+2. **Загальний `Exception` — завжди останнім**: інакше він перехопить усе, і специфічні блоки стануть недосяжним кодом — компілятор видасть помилку
+3. **Похідний клас — перед базовим**: якщо `ArgumentOutOfRangeException` (похідний від `ArgumentException`) стоїть після `ArgumentException` — він ніколи не спрацює
+
+```csharp run
+using System;
+
+string input = "9999999999999";
+
+try
+{
+    int age = int.Parse(input);
+    Console.WriteLine($"Вік: {age.ToString()} р.");
+}
+catch (OverflowException ex)
+{
+    // конкретніший — перший
+    Console.WriteLine($"Переповнення: {ex.Message}");
+}
+catch (FormatException ex)
+{
+    Console.WriteLine($"Формат: {ex.Message}");
+}
+catch (Exception ex)
+{
+    // загальний — останній
+    Console.WriteLine($"Інша помилка: {ex.Message}");
+}
+```
+
+## Підсумок
+
+- `System.Exception` — базовий клас для всіх винятків, містить `Message`, `StackTrace`, `InnerException`, `TargetSite`
+- Кожен виняток — це об'єкт конкретного класу в ієрархії `Exception`
+- Блоки `catch` перевіряються зверху вниз; спрацьовує перший відповідний
+- Загальний `catch (Exception ex)` — страхувальний мережа, завжди останній
+- Виняток зупиняє виконання `try` одразу; код після місця помилки не виконується
