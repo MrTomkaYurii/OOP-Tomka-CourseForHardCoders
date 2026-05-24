@@ -326,3 +326,119 @@ class Patient
 ```
 
 Оскільки перше значення — ім'я пацієнта, яке нас не цікавить, замість змінної стоїть `_`. Компілятор розуміє цей знак як «це значення мені не потрібне» і не виділяє для нього змінну.
+
+## Статичний конструктор
+
+Окрім звичайних конструкторів, C# підтримує **статичний конструктор** — він виконується один раз автоматично перед першим зверненням до класу. Він не має модифікатора доступу, не приймає параметрів і не може бути викликаний явно. Його призначення — ініціалізація статичних полів або виконання одноразових налаштувань при «пробудженні» класу.
+
+```csharp run
+using System;
+
+Console.WriteLine("Програма запускається...");
+
+Patient p1 = new Patient("Іван Петренко");
+Patient p2 = new Patient("Марія Сидоренко");
+Patient p3 = new Patient("Олена Ковальчук");
+
+Console.WriteLine($"Зареєстровано пацієнтів: {Patient.Count.ToString()}");
+
+class Patient
+{
+    public static int Count;
+    public string Name;
+
+    static Patient()                   // статичний конструктор — виконується один раз
+    {
+        Count = 0;
+        Console.WriteLine("Клінічну систему ініціалізовано.");
+    }
+
+    public Patient(string name)
+    {
+        Name = name;
+        Count++;
+    }
+}
+```
+
+Зверніть увагу: статичний конструктор виконується **до** першого `new Patient(...)`, але **після** рядка `"Програма запускається..."` — рівно в момент першого звернення до класу. Порядок гарантований середовищем виконання .NET.
+
+## Приватний конструктор
+
+Конструктор може мати модифікатор `private` — тоді створити об'єкт класу ззовні буде неможливо. Це архітектурне рішення, яке використовується в патерні **Singleton** — коли система повинна мати рівно один екземпляр певного класу. У клінічній системі реєстр клініки логічно існує в єдиному примірнику:
+
+```csharp run
+using System;
+
+ClinicRegistry r1 = ClinicRegistry.GetInstance();
+ClinicRegistry r2 = ClinicRegistry.GetInstance();
+
+r1.AddPatient("Іван Петренко");
+Console.WriteLine($"Пацієнтів: {r2.PatientCount.ToString()}");
+Console.WriteLine($"Один об'єкт: {object.ReferenceEquals(r1, r2).ToString()}");
+
+class ClinicRegistry
+{
+    private static ClinicRegistry _instance;
+    public int PatientCount;
+
+    private ClinicRegistry() { PatientCount = 0; }  // ззовні не викликати
+
+    public static ClinicRegistry GetInstance()
+    {
+        if (_instance == null)
+            _instance = new ClinicRegistry();
+        return _instance;
+    }
+
+    public void AddPatient(string name) { PatientCount++; }
+}
+```
+
+Оскільки конструктор `private`, єдиний спосіб отримати об'єкт — через `GetInstance()`. Обидві змінні `r1` і `r2` вказують на один об'єкт — `ReferenceEquals` повертає `true`.
+
+## Первинні конструктори (C# 12)
+
+Починаючи з C# 12, параметри конструктора можна оголошувати прямо в заголовку класу — це називається **первинним конструктором** (primary constructor). Він скорочує шаблонний код і робить оголошення класу компактнішим:
+
+```csharp run
+using System;
+
+Patient p1 = new Patient("Іван Петренко", 45);
+Patient p2 = new Patient("Марія Сидоренко", 32);
+
+p1.Print();
+p2.Print();
+
+class Patient(string name, int age)   // первинний конструктор
+{
+    public void Print()
+    {
+        Console.WriteLine($"Пацієнт: {name}, {age.ToString()} років");
+    }
+}
+```
+
+Параметри первинного конструктора (`name`, `age`) доступні у всьому тілі класу. Якщо потрібні додаткові конструктори — вони делегують виклик первинному через `this(...)`:
+
+```csharp run
+using System;
+
+Patient p1 = new Patient("Іван Петренко", 45);
+Patient p2 = new Patient("Невідомий");
+
+p1.Print();
+p2.Print();
+
+class Patient(string name, int age)
+{
+    public Patient(string name) : this(name, 0) { }
+
+    public void Print()
+    {
+        Console.WriteLine($"Пацієнт: {name}, {age.ToString()} років");
+    }
+}
+```
+
+Первинні конструктори особливо зручні для простих класів-моделей, де потрібно лише зберегти кілька значень і надати до них доступ.

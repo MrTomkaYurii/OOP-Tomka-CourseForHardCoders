@@ -259,3 +259,56 @@ struct BloodPressure
 Якби `BloodPressure` було класом, обидві змінні вказували б на один і той самий об'єкт у пам'яті — зміна `bp2.systolic` змінила б і `bp1.systolic`. Зі структурою цього не відбувається.
 
 ![Struct — тип значення: копіювання створює незалежний об'єкт](_assets/03-04/struct-copy-semantics.png)
+
+## Незмінна структура: readonly struct
+
+Якщо структура представляє дані, які не повинні змінюватись після створення — наприклад, зафіксований результат вимірювання — її варто оголосити як `readonly struct`. Компілятор заборонить будь-які присвоювання полям поза конструктором, що унеможливлює випадкову мутацію.
+
+```csharp run
+using System;
+
+BloodPressure bp = new BloodPressure(120, 80);
+bp.Print();
+
+// bp.systolic = 130; // помилка компіляції — readonly struct незмінна
+
+readonly struct BloodPressure
+{
+    public readonly int systolic;
+    public readonly int diastolic;
+
+    public BloodPressure(int systolic, int diastolic)
+    {
+        this.systolic  = systolic;
+        this.diastolic = diastolic;
+    }
+
+    public void Print() => Console.WriteLine($"Тиск: {systolic}/{diastolic} мм рт. ст.");
+}
+```
+
+`readonly struct` має перевагу з точки зору продуктивності: компілятор знає, що об'єкт незмінний, і може передавати його ефективніше — без зайвих копій при передачі між методами.
+
+## Record struct (C# 10)
+
+C# 10 додав синтаксис `record struct` — структура з автоматично згенерованими `Equals`, `GetHashCode`, `ToString` і підтримкою оператора `with`. Оголошується схоже на первинний конструктор:
+
+```csharp run
+using System;
+
+BloodPressure bp1 = new BloodPressure(120, 80);
+BloodPressure bp2 = bp1 with { systolic = 145 };
+BloodPressure bp3 = new BloodPressure(120, 80);
+
+bp1.Print();
+bp2.Print();
+
+Console.WriteLine($"bp1 == bp3: {(bp1 == bp3).ToString()}"); // True — порівняння за значенням
+
+record struct BloodPressure(int systolic, int diastolic)
+{
+    public void Print() => Console.WriteLine($"Тиск: {systolic}/{diastolic} мм рт. ст.");
+}
+```
+
+На відміну від звичайної структури, `record struct` автоматично реалізує **порівняння за значенням**: `bp1 == bp3` повертає `true`, бо всі поля збігаються. `ToString()` автоматично повертає `BloodPressure { systolic = 120, diastolic = 80 }` — зручно для відлагодження. `record struct` — оптимальний вибір для невеликих незмінних моделей даних, де потрібне структурне порівняння без написання шаблонного коду вручну.
