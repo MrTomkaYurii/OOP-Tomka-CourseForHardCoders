@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 7
 chapterTitle: "Розділ 7. Інтерфейси"
 section: 3
@@ -9,297 +9,382 @@ source: "../_combined/41-yavna-realizatsiia-interfeisiv.md"
 
 ## 7.3. Явна реалізація інтерфейсів
 
-Окрім неявного застосування інтерфейсів, яке було розглянуто у минулій статті, існує також явна реалізація інтерфейсу. При явній реалізації вказується назва методу або властивості разом із назвою інтерфейсу, при цьому ми не можемо використовувати модифікатор public, тобто методи закриті:
+Окрім звичайної (неявної) реалізації інтерфейсу, де метод просто оголошується у класі з модифікатором `public`, існує **явна реалізація** — коли перед ім'ям методу або властивості вказується назва конкретного інтерфейсу. При явній реалізації модифікатор доступу не вказується взагалі — метод автоматично є закритим для прямого доступу через змінну класу і доступний виключно через змінну типу інтерфейсу.
 
-```csharp
-interface IAction
+Явна реалізація вирішує дві головні проблеми: по-перше, вона дозволяє розмежувати методи з однаковими підписами, якщо клас реалізує кілька інтерфейсів, що мають однойменні члени. По-друге, вона потрібна, коли члени інтерфейсу мають модифікатор доступу, відмінний від `public` — такі члени неможливо реалізувати неявно.
+
+Синтаксис явної реалізації виглядає так: замість `public void RunDiagnostics()` пишемо `void IDiagnosable.RunDiagnostics()` — без `public`, з префіксом інтерфейсу:
+
+```csharp run
+using System;
+
+class Patient : IDiagnosable
 {
-    void Move();
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+
+    // явна реалізація — без public, з префіксом інтерфейсу
+    void IDiagnosable.RunDiagnostics()
+        => Console.WriteLine($"[IDiagnosable] Діагностика пацієнта {Name}");
 }
-class BaseAction : IAction
-{
-    void IAction.Move() => Console.WriteLine("Move in Base Class");
-}
-```
 
-Слід враховувати, що з явної реалізації інтерфейсу його методи та властивості є частиною інтерфейсу класу. Тому безпосередньо через об'єкт класу ми до них не зможемо звернутися:
+// доступ ТІЛЬКИ через змінну інтерфейсу
+IDiagnosable p = new Patient("Марія Коваль");
+p.RunDiagnostics();
 
-```csharp
-BaseAction baseAction1 = new BaseAction();
-// baseAction1.Move(); // ! Помилка - в BaseAction немає методу Move
-// необхідне приведення до типу IAction
-// небезпечне приведення
-((IAction)baseAction1).Move();
-// безпечне приведення
-if (baseAction1 is IAction action) action.Move();
-// чи так
-IAction baseAction2 = new BaseAction();
-baseAction2.Move();
-```
-
-У якій ситуації може справді знадобитися явна реалізація інтерфейсу? Наприклад, коли клас застосовує кілька інтерфейсів, але вони мають один і той же метод з одним і тим же результатом, що повертається, і одним і тим же набором параметрів:
-
-```csharp
-class Person : ISchool, IUniversity
+interface IDiagnosable
 {
-    public void Study() => Console.WriteLine("Навчання в школі або університеті");
-}
-interface ISchool
-{
-    void Study();
-}
-interface IUniversity
-{
-    void Study();
+    void RunDiagnostics();
 }
 ```
 
-Клас Person визначає один метод Study(), створюючи одну загальну реалізацію обох застосованих інтерфейсів. І незалежно від того, чи будемо ми розглядати об'єкт Person як об'єкт типу ISchool або IUniversity, результат методу буде той самий.
+## Доступ до явно реалізованих членів
 
-Щоб розмежувати реалізовані інтерфейси, треба явно застосувати інтерфейс:
+Принципова особливість явної реалізації — явно реалізований член є частиною інтерфейсу класу, а не самого класу. Тому звернутися до нього безпосередньо через об'єкт класу неможливо: компілятор не знайде такого методу. Метод доступний лише через змінну типу відповідного інтерфейсу.
 
-```csharp
-class Person : ISchool, IUniversity
+Це обмеження відіграє роль захисту інкапсуляції: зовнішній код може викликати `RunDiagnostics` лише у тому контексті, де він знає що об'єкт є `IDiagnosable`, — тобто свідомо, через контракт. Це запобігає випадковому виклику методу через «неправильний» контекст.
+
+Для доступу до явно реалізованого члена через об'єкт класу потрібне явне приведення — безпечне через `is` або небезпечне через `(IInterface)`:
+
+```csharp run
+using System;
+
+Patient p = new Patient("Іван Петренко");
+
+// p.RunDiagnostics(); // ! Помилка — клас Patient не має публічного методу RunDiagnostics
+
+// варіант 1: небезпечне приведення (кине виняток якщо тип не збігається)
+((IDiagnosable)p).RunDiagnostics();
+
+// варіант 2: безпечне приведення через is (рекомендовано)
+if (p is IDiagnosable diag) diag.RunDiagnostics();
+
+// варіант 3: змінна типу інтерфейсу одразу
+IDiagnosable d = new Patient("Олена Сидоренко");
+d.RunDiagnostics();
+
+class Patient : IDiagnosable
 {
-    void ISchool.Study() => Console.WriteLine("Навчання в школі");
-    void IUniversity.Study() => Console.WriteLine("Навчання в універі");
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+    void IDiagnosable.RunDiagnostics()
+        => Console.WriteLine($"Діагностика: {Name}");
+}
+
+interface IDiagnosable
+{
+    void RunDiagnostics();
 }
 ```
 
-Використання:
+![Явна vs неявна реалізація: диспетчеризація через тип змінної](_assets/07-03/explicit-vs-implicit.png)
 
-```csharp
-Person person = new Person();
-((ISchool)person).Study();
-((IUniversity)person).Study();
+## Конфлікт імен при множинній реалізації
+
+Найбільш поширена ситуація, коли без явної реалізації не обійтись, — клас реалізує кілька інтерфейсів, які мають методи з однаковою сигнатурою, але різним змістом. У клінічній системі такий конфлікт виникає природно: наприклад, `IDiagnosable` і `ITreatment` обидва можуть мати метод `RunProcedure()` — але перший запускає діагностичну процедуру, а другий — лікувальну.
+
+Якщо клас визначає один метод `RunProcedure()` без явної реалізації, він стає спільним для обох інтерфейсів — і виклик через `IDiagnosable`, і виклик через `ITreatment` дасть той самий результат. Це може бути прийнятним, але частіше потрібна різна поведінка для різних ролей:
+
+```csharp run
+using System;
+
+// без явної реалізації — один спільний метод
+class Patient : IDiagnosable, ITreatment
+{
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+
+    public void RunProcedure()
+        => Console.WriteLine($"{Name}: загальна процедура (однакова для обох інтерфейсів)");
+}
+
+Patient p = new Patient("Василь Мороз");
+((IDiagnosable)p).RunProcedure();  // загальна процедура
+((ITreatment)p).RunProcedure();    // загальна процедура — той самий метод
+
+interface IDiagnosable { void RunProcedure(); }
+interface ITreatment   { void RunProcedure(); }
 ```
 
-Інша ситуація, коли у базовому класі вже реалізований інтерфейс, але необхідно у похідному класі по-своєму реалізувати інтерфейс:
+Щоб розмежувати реалізацію — застосовуємо явну реалізацію для кожного інтерфейсу окремо. Тоді кожен інтерфейс отримує власну незалежну логіку:
 
-```csharp
-interface IAction
+```csharp run
+using System;
+
+class Patient : IDiagnosable, ITreatment
 {
-    void Move();
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+
+    void IDiagnosable.RunProcedure()
+        => Console.WriteLine($"{Name}: діагностична процедура — МРТ, аналізи");
+
+    void ITreatment.RunProcedure()
+        => Console.WriteLine($"{Name}: лікувальна процедура — ін'єкція, крапельниця");
 }
-class BaseAction : IAction
-{
-    public void Move() => Console.WriteLine("Move in BaseAction");
-}
-class HeroAction : BaseAction, IAction
-{
-    void IAction.Move() => Console.WriteLine("Move in HeroAction");
-}
+
+Patient p = new Patient("Тетяна Руденко");
+((IDiagnosable)p).RunProcedure();
+((ITreatment)p).RunProcedure();
+
+interface IDiagnosable { void RunProcedure(); }
+interface ITreatment   { void RunProcedure(); }
 ```
 
-Незважаючи на те, що базовий клас BaseAction вже реалізував інтерфейс IAction, похідний клас по-своєму реалізує його. Застосування класів:
+## Модифікатори доступу та явна реалізація
 
-```csharp
-HeroAction action1 = new HeroAction();
-action1.Move(); // Move in BaseAction
-((IAction)action1).Move(); // Move in HeroAction
-IAction action2 = new HeroAction();
-action2.Move(); // Move in HeroAction
-```
+Члени інтерфейсу можуть мати різні модифікатори доступу — починаючи з C# 8.0. Якщо член інтерфейсу оголошений не як `public`, а, наприклад, як `protected internal`, — реалізувати його неявно (через звичайний публічний метод класу) неможливо. Саме тоді єдиним способом є явна реалізація.
 
-### Модифікатори доступу
+Це пов'язано з логікою мови: неявна реалізація означає, що метод одночасно є членом і класу, і інтерфейсу. Але якщо інтерфейс вимагає `protected internal`, а клас хотів би зробити метод `public` — виникає суперечність. Явна реалізація розриває цей зв'язок: метод належить виключно інтерфейсу і доступний лише через нього.
 
-Члени інтерфейсу можуть мати різні модифікатори доступу. Якщо модифікатор доступу не public, а якийсь інший, то для реалізації методу, властивості або події інтерфейсу в класах і структурах необхідно використовувати явну реалізацію інтерфейсу.
+Особливо це стосується подій і властивостей з нестандартними модифікаторами — їх явна реалізація вимагає повного запису аксесорів:
 
-```csharp
-IMovable tom = new Person("Tom");
-// підписуємось на подію
-tom.MoveEvent += () => Console.WriteLine($"{tom.Name} is moving");
-tom.Move();
-interface IMovable
+```csharp run
+using System;
+
+IMonitorable mon = new Patient("Надія Литвин");
+mon.StatusChanged += () => Console.WriteLine($"[ALERT] Статус пацієнта змінився");
+mon.UpdateStatus("Критичний стан");
+
+interface IMonitorable
 {
-    protected internal void Move();
-    protected internal string Name { get;}
-    delegate void MoveHandler();
-    protected internal event MoveHandler MoveEvent;
+    protected internal void UpdateStatus(string status);
+    protected internal string CurrentStatus { get; }
+    delegate void StatusHandler();
+    protected internal event StatusHandler StatusChanged;
 }
-class Person : IMovable
+
+class Patient : IMonitorable
 {
-    string name;
-    // явна реалізація події - додатково створюється змінна
-    IMovable.MoveHandler? moveEvent;
-    event IMovable.MoveHandler IMovable.MoveEvent
+    string _status = "Норма";
+    IMonitorable.StatusHandler? _statusChanged;
+
+    // явна реалізація події з аксесорами
+    event IMonitorable.StatusHandler IMonitorable.StatusChanged
     {
-        add => moveEvent += value;
-        remove => moveEvent -= value;
+        add    => _statusChanged += value;
+        remove => _statusChanged -= value;
     }
-// явна реалізація властивості - як автовластивості
-string IMovable.Name { get => name; }
-public Person(string name) => this.name = name;
-// явна реалізація методу
-void IMovable.Move()
-{
-    Console.WriteLine($"{name} is walking");
-    moveEvent?.Invoke();
-}
+
+    // явна реалізація властивості
+    string IMonitorable.CurrentStatus => _status;
+
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+
+    // явна реалізація методу
+    void IMonitorable.UpdateStatus(string status)
+    {
+        _status = status;
+        Console.WriteLine($"{Name}: статус оновлено → {_status}");
+        _statusChanged?.Invoke();
+    }
 }
 ```
 
-В даному випадку знову ж таки треба враховувати, що безпосередньо ми можемо звернутися до подібних методів, властивостей та подій через змінну інтерфейсу, але не змінну класу.
+Важливо: до явно реалізованих методів, властивостей і подій можна звертатися виключно через змінну інтерфейсу, але не через змінну класу. Це означає, що `Patient p = new Patient(...)` не дасть доступу до `UpdateStatus`, `CurrentStatus` чи `StatusChanged` — лише `IMonitorable m = new Patient(...)` відкриє ці члени.
 
-### Реалізація інтерфейсів у базових та похідних класах
+## Реалізація інтерфейсів у базових та похідних класах
 
-Якщо клас застосовує інтерфейс, цей клас повинен реалізувати всі методи і властивості інтерфейсу, які не мають реалізації за умовчанням. Однак також можна і не реалізувати методи, зробивши їх абстрактними, переклавши право їх реалізації на похідні класи:
+Якщо клас реалізує інтерфейс, він зобов'язаний реалізувати всі методи і властивості, що не мають реалізації за замовчуванням. Однак є виняток: клас може оголосити такі методи **абстрактними**, делегуючи відповідальність за реалізацію своїм похідним класам. У цьому випадку сам клас має бути абстрактним:
+
+```csharp run
+using System;
+
+interface IDiagnosable
+{
+    void RunDiagnostics();
+}
+
+// абстрактний клас реалізує інтерфейс, але відкладає реалізацію
+abstract class MedicalRecord : IDiagnosable
+{
+    public string PatientName { get; }
+    protected MedicalRecord(string name) => PatientName = name;
+
+    public abstract void RunDiagnostics(); // нехай похідні класи вирішують
+}
+
+class ClinicalRecord : MedicalRecord
+{
+    public ClinicalRecord(string name) : base(name) { }
+    public override void RunDiagnostics()
+        => Console.WriteLine($"{PatientName}: клінічний огляд — анамнез, симптоми");
+}
+
+class LabRecord : MedicalRecord
+{
+    public LabRecord(string name) : base(name) { }
+    public override void RunDiagnostics()
+        => Console.WriteLine($"{PatientName}: лабораторна діагностика — кров, сеча, біопсія");
+}
+
+IDiagnosable r1 = new ClinicalRecord("Олег Бойко");
+IDiagnosable r2 = new LabRecord("Марина Шевченко");
+r1.RunDiagnostics();
+r2.RunDiagnostics();
+```
+
+Інша важлива ситуація: похідний клас може «успадкувати» реалізацію інтерфейсу від базового класу, навіть якщо сам базовий клас не оголошував реалізацію інтерфейсу явно. Якщо у базовому класі є публічний метод з відповідною сигнатурою, і похідний клас оголошує реалізацію інтерфейсу — компілятор автоматично прив'яже існуючий метод:
+
+```csharp run
+using System;
+
+interface IDiagnosable
+{
+    void RunDiagnostics();
+}
+
+class BaseRecord
+{
+    // публічний метод — компілятор підхопить його як реалізацію IDiagnosable
+    public void RunDiagnostics()
+        => Console.WriteLine("BaseRecord: стандартна діагностика");
+}
+
+// HeroRecord успадковує метод і реалізує IDiagnosable через нього
+class SpecialRecord : BaseRecord, IDiagnosable { }
+
+IDiagnosable sr = new SpecialRecord();
+sr.RunDiagnostics(); // викликається метод з BaseRecord
+
+```
+
+Якщо клас одночасно успадковує клас і реалізує інтерфейс, ім'я базового класу завжди вказується першим, а інтерфейси — після нього:
 
 ```csharp
-interface IMovable
-{
-    void Move();
-}
-abstract class Person : IMovable
-{
-    public abstract void Move();
-}
-class Driver : Person
-{
-    public override void Move() => Console.WriteLine("Шофер веде машину");
-}
+class SpecialRecord : BaseRecord, IDiagnosable, ITreatment { }
 ```
 
-При реалізації інтерфейсу враховуються також методи та властивості, успадковані від базового класу. Наприклад:
+## Зміна реалізації інтерфейсів у похідних класах
 
-```csharp
-IAction action = new HeroAction();
-action.Move(); // Move in BaseAction
-interface IAction
+Може скластися ситуація, що базовий клас вже реалізував інтерфейс, але в похідному класі потрібно змінити цю реалізацію. Для цього існують чотири підходи, які відрізняються за механікою диспетчеризації (тобто якій саме реалізації відповідає виклик через різні типи змінних).
+
+### Варіант 1 — перевизначення через `override`
+
+Найправильніший і найпередбачуваніший варіант. Базовий клас оголошує метод як `virtual` (або `abstract`), а похідний — перевизначає через `override`. При цьому поліморфізм працює повністю: незалежно від того, чи тримаємо ми об'єкт у змінній базового класу, чи інтерфейсу, — завжди викликається реалізація з фактичного типу об'єкта:
+
+```csharp run
+using System;
+
+interface IDiagnosable { void RunDiagnostics(); }
+
+class BaseRecord : IDiagnosable
 {
-    void Move();
+    public virtual void RunDiagnostics()
+        => Console.WriteLine("BaseRecord: стандартна діагностика");
 }
-class BaseAction
+
+class SpecialRecord : BaseRecord
 {
-    public void Move() => Console.WriteLine("Move in BaseAction");
+    public override void RunDiagnostics()
+        => Console.WriteLine("SpecialRecord: розширена діагностика");
 }
-class HeroAction : BaseAction, IAction { }
+
+BaseRecord  r1 = new SpecialRecord();
+IDiagnosable r2 = new SpecialRecord();
+SpecialRecord r3 = new SpecialRecord();
+
+r1.RunDiagnostics(); // SpecialRecord — поліморфізм
+r2.RunDiagnostics(); // SpecialRecord — поліморфізм
+r3.RunDiagnostics(); // SpecialRecord
 ```
 
-Тут клас HeroAction реалізує інтерфейс IAction, проте реалізації методу Move з інтерфейсу застосовується метод Move, успадкований від базового класу BaseAction. Таким чином, клас HeroAction може реалізувати метод Move, оскільки цей метод вже визначено у базовому класі BaseAction.
+### Варіант 2 — приховування через `new`
 
-Слід зазначити, що якщо клас одночасно успадковує інший клас і реалізує інтерфейс, як у прикладі вище клас HeroAction, то назва базового класу має бути вказана до реалізованих інтерфейсів:
+Похідний клас визначає метод із `new`, не перевизначаючи базовий. Такий метод «приховує» базовий, але лише для тих змінних, тип яких є похідним класом. Через змінну базового класу або інтерфейсу буде видно реалізацію з **базового** класу — адже саме там інтерфейс і був реалізований:
 
-```csharp
-class HeroAction : BaseAction, IAction
+```csharp run
+using System;
+
+interface IDiagnosable { void RunDiagnostics(); }
+
+class BaseRecord : IDiagnosable
+{
+    public void RunDiagnostics()
+        => Console.WriteLine("BaseRecord: стандартна діагностика");
+}
+
+class SpecialRecord : BaseRecord
+{
+    public new void RunDiagnostics()
+        => Console.WriteLine("SpecialRecord: спеціальна діагностика");
+}
+
+BaseRecord   r1 = new SpecialRecord();
+IDiagnosable r2 = new SpecialRecord();
+SpecialRecord r3 = new SpecialRecord();
+
+r1.RunDiagnostics(); // BaseRecord — раннє зв'язування
+r2.RunDiagnostics(); // BaseRecord — інтерфейс реалізований у BaseRecord
+r3.RunDiagnostics(); // SpecialRecord — прямий тип
 ```
 
-### Зміна реалізації інтерфейсів у похідних класах
+### Варіант 3 — повторна реалізація інтерфейсу разом із `new`
 
-Може скластися ситуація, що базовий клас реалізував інтерфейс, але у класі-спадкоємці необхідно змінити реалізацію цього інтерфейсу. Що робити в цьому випадку? І тут ми можемо використовувати або перевизначення, або приховування методу чи властивості інтерфейсу.
+Якщо похідний клас явно вказує інтерфейс у своєму оголошенні (`: BaseRecord, IDiagnosable`), це означає **повторну реалізацію** інтерфейсу. Тепер компілятор прив'яже інтерфейс до нового методу `new` у похідному класі, а не до базового. Через змінну інтерфейсу буде видно реалізацію з **похідного** класу, але через змінну базового — як і раніше базова:
 
-Перший варіант - перевизначення віртуальних/абстрактних методів:
+```csharp run
+using System;
 
-```csharp
-interface IAction
+interface IDiagnosable { void RunDiagnostics(); }
+
+class BaseRecord : IDiagnosable
 {
-    void Move();
+    public void RunDiagnostics()
+        => Console.WriteLine("BaseRecord: стандартна діагностика");
 }
-class BaseAction : IAction
+
+// повторна реалізація — IDiagnosable вказаний явно у SpecialRecord
+class SpecialRecord : BaseRecord, IDiagnosable
 {
-    public virtual void Move() => Console.WriteLine("Move in BaseAction");
+    public new void RunDiagnostics()
+        => Console.WriteLine("SpecialRecord: спеціальна діагностика");
 }
-class HeroAction : BaseAction
-{
-    public override void Move() => Console.WriteLine("Move in HeroAction");
-}
+
+BaseRecord   r1 = new SpecialRecord();
+IDiagnosable r2 = new SpecialRecord();
+SpecialRecord r3 = new SpecialRecord();
+
+r1.RunDiagnostics(); // BaseRecord — раннє зв'язування за типом змінної
+r2.RunDiagnostics(); // SpecialRecord — інтерфейс тепер прив'язаний до SpecialRecord
+r3.RunDiagnostics(); // SpecialRecord
 ```
 
-У базовому класі BaseAction реалізований метод інтерфейсу визначено як віртуальний (можна було б зробити його абстрактним), а в похідному класі він перевизначений.
+### Варіант 4 — явна реалізація інтерфейсу в похідному класі
 
-При виклику методу через змінну інтерфейсу, якщо вона посилається на об'єкт похідного класу, використовуватиметься реалізація з похідного класу:
+Найбільш гнучкий варіант: похідний клас одночасно має `new`-метод (для доступу через власний тип) і явну реалізацію інтерфейсу (для доступу через змінну інтерфейсу). Це дає три різних результати залежно від типу змінної:
 
-```csharp
-BaseAction action1 = new HeroAction();
-action1.Move(); // Move in HeroAction
-IAction action2 = new HeroAction();
-action2.Move(); // Move in HeroAction
+```csharp run
+using System;
+
+interface IDiagnosable { void RunDiagnostics(); }
+
+class BaseRecord : IDiagnosable
+{
+    public void RunDiagnostics()
+        => Console.WriteLine("BaseRecord: стандартна діагностика");
+}
+
+class SpecialRecord : BaseRecord, IDiagnosable
+{
+    public new void RunDiagnostics()
+        => Console.WriteLine("SpecialRecord: спеціальна діагностика");
+
+    // явна реалізація — виключно для змінної типу IDiagnosable
+    void IDiagnosable.RunDiagnostics()
+        => Console.WriteLine("SpecialRecord (явна IDiagnosable): протокол діагностики");
+}
+
+BaseRecord   r1 = new SpecialRecord();
+IDiagnosable r2 = new SpecialRecord();
+SpecialRecord r3 = new SpecialRecord();
+
+r1.RunDiagnostics(); // BaseRecord — раннє зв'язування
+r2.RunDiagnostics(); // явна IDiagnosable — найвищий пріоритет
+r3.RunDiagnostics(); // SpecialRecord — новий public метод
 ```
 
-Другий варіант - приховування методу у похідному класі:
+![4 варіанти зміни реалізації інтерфейсу у похідному класі](_assets/07-03/override-variants.png)
 
-```csharp
-interface IAction
-{
-    void Move();
-}
-class BaseAction : IAction
-{
-    public void Move() => Console.WriteLine("Move in BaseAction");
-}
-class HeroAction : BaseAction
-{
-    public new void Move() => Console.WriteLine("Move in HeroAction");
-}
-```
-
-Також використовуємо ці класи:
-
-```csharp
-BaseAction action1 = new HeroAction();
-action1.Move(); // Move in BaseAction
-IAction action2 = new HeroAction();
-action2.Move(); // Move in BaseAction
-```
-
-Оскільки інтерфейс реалізований саме у класі BaseAction, через змінну action2 можна звернутися лише до реалізації методу Move з базового класу BaseAction.
-
-Третій варіант - повторна реалізація інтерфейсу в класі-спадкоємці:
-
-```csharp
-interface IAction
-{
-    void Move();
-}
-class BaseAction : IAction
-{
-    public void Move() => Console.WriteLine("Move in BaseAction");
-}
-class HeroAction : BaseAction, IAction
-{
-    public new void Move() => Console.WriteLine("Move in HeroAction");
-}
-```
-
-У цьому випадку реалізації цього методу з базового класу ігноруватиметься:
-
-```csharp
-BaseAction action1 = new HeroAction();
-action1.Move(); // Move in BaseAction
-IAction action2 = new HeroAction();
-action2.Move(); // Move in HeroAction
-HeroAction action3 = new HeroAction();
-action3.Move(); // Move in HeroAction
-```
-
-Також варто зазначити, що у випадку зі змінною action1, як і раніше, діє раніше зв'язування, в силу якого через цю змінну можна викликати реалізацію методу Move тільки з базового класу, який ця змінна представляє.
-
-Четвертий варіант: явна реалізація інтерфейсу:
-
-```csharp
-interface IAction
-{
-    void Move();
-}
-class BaseAction : IAction
-{
-    public void Move() => Console.WriteLine("Move in BaseAction");
-}
-class HeroAction : BaseAction, IAction
-{
-    public new void Move() => Console.WriteLine("Move in HeroAction");
-    // явна реалізація інтерфейсу
-    void IAction.Move() => Console.WriteLine("Move in IAction");
-}
-```
-
-У цьому випадку для змінної IAction буде використовуватися явна реалізація інтерфейсу IAction, а для змінної HeroAction, як і раніше, буде використовуватися неявна реалізація:
-
-```csharp
-BaseAction action1 = new HeroAction();
-action1.Move(); // Move in BaseAction
-IAction action2 = new HeroAction();
-action2.Move(); // Move in IAction
-HeroAction action3 = new HeroAction();
-action3.Move(); // Move in HeroAction
-```
+Вибір між варіантами залежить від задачі: якщо потрібен повноцінний поліморфізм — `override`. Якщо потрібно лише «перекрити» метод для прямого використання — `new`. Якщо потрібно перезв'язати інтерфейс із новою реалізацією — повторна реалізація (`new` + інтерфейс у заголовку). Якщо потрібна абсолютно незалежна логіка для інтерфейсного контексту — явна реалізація.

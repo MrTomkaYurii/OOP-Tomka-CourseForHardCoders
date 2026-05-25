@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 7
 chapterTitle: "Розділ 7. Інтерфейси"
 section: 2
@@ -9,157 +9,317 @@ source: "../_combined/40-zastosuvannia-interfeisiv.md"
 
 ## 7.2. Застосування інтерфейсів
 
-Інтерфейс представляє певний опис типу, набір компонентів, який повинен мати тип даних. І, власне, ми не можемо створювати об'єкти інтерфейсу безпосередньо за допомогою конструктора, як, наприклад, у класах:
+Інтерфейс являє собою певний опис типу — набір компонентів, який повинен мати тип даних, що реалізує цей інтерфейс. Принципова відмінність від класу: ми не можемо створювати об'єкти інтерфейсу безпосередньо через конструктор. Інтерфейс — це не клас, у нього немає конструктора і немає тіла для розміщення стану:
 
 ```csharp
-IMovable m = new IMovable(); // ! Помилка, так робити не можна!
-interface IMovable
+IDiagnosable d = new IDiagnosable(); // ! Помилка — інтерфейс не можна інстанціювати
+
+interface IDiagnosable
 {
-    void Move();
+    void RunDiagnostics();
 }
 ```
 
-У кінцевому підсумку інтерфейс призначений для реалізації у класах і структурах. Наприклад, реалізуємо вище визначений інтерфейс IMovable:
+Натомість інтерфейс призначений для реалізації у класах і структурах. Змінна типу інтерфейсу може зберігати посилання на будь-який об'єкт, клас якого реалізує цей інтерфейс. Саме це і є ключовою перевагою: код, що працює з `IDiagnosable`, не знає — і не повинен знати — чи це `Patient`, `LabSample`, чи `MedicalDevice`. Він знає лише, що об'єкт гарантовано має метод `RunDiagnostics()`.
+
+## Реалізація інтерфейсу у класі та структурі
+
+Для застосування інтерфейсу після імені класу або структури через двокрапку вказується ім'я інтерфейсу — так само, як при успадкуванні. Клас зобов'язаний реалізувати **всі** методи та властивості інтерфейсу, якщо вони не мають реалізації за замовчуванням. Невиконання цієї умови — помилка компіляції.
+
+Якщо методи та властивості інтерфейсу оголошені без модифікатора доступу, вони вважаються `public`. При реалізації в класі або структурі до них можна застосовувати виключно модифікатор `public` — зменшити рівень доступу неможливо, адже інтерфейс є публічним контрактом.
+
+Інтерфейс може реалізовувати не лише клас, а й структура. Для структури це особливо важливо: вона не може успадковувати клас, але може реалізовувати будь-яку кількість інтерфейсів:
+
+```csharp run
+using System;
+
+// реалізація інтерфейсу в класі
+class Patient : IDiagnosable
+{
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+
+    public void RunDiagnostics()
+        => Console.WriteLine($"Діагностика пацієнта {Name} розпочата");
+}
+
+// реалізація інтерфейсу в структурі
+struct LabSample : IDiagnosable
+{
+    public string SampleId { get; }
+    public LabSample(string id) => SampleId = id;
+
+    public void RunDiagnostics()
+        => Console.WriteLine($"Аналіз зразка {SampleId} виконано");
+}
+
+Patient p      = new Patient("Марія Коваль");
+LabSample s    = new LabSample("LAB-2024-099");
+p.RunDiagnostics();
+s.RunDiagnostics();
+
+interface IDiagnosable
+{
+    void RunDiagnostics();
+}
+```
+
+## Інтерфейс як параметр методу — поліморфізм
+
+Найпрактичніше застосування інтерфейсів — передача як параметра методу. Метод, що приймає `IDiagnosable`, може працювати з будь-яким об'єктом, що реалізує цей інтерфейс: класом, структурою, або будь-яким майбутнім типом, який ще не написаний. На момент написання такого методу достатньо знати лише контракт — що у переданого об'єкта є метод `RunDiagnostics()`.
+
+Це і є поліморфізм через інтерфейс: один метод обробляє різні типи однаково, через спільний контракт:
+
+```csharp run
+using System;
+
+Patient   p = new Patient("Іван Петренко");
+LabSample s = new LabSample("LAB-2024-007");
+
+ProcessDiagnostics(p);
+ProcessDiagnostics(s);
+
+void ProcessDiagnostics(IDiagnosable target)
+{
+    Console.WriteLine("--- Початок діагностики ---");
+    target.RunDiagnostics();
+    Console.WriteLine("--- Завершено ---");
+}
+
+interface IDiagnosable
+{
+    void RunDiagnostics();
+}
+
+class Patient : IDiagnosable
+{
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+    public void RunDiagnostics()
+        => Console.WriteLine($"Пацієнт {Name}: клінічний огляд");
+}
+
+struct LabSample : IDiagnosable
+{
+    public string SampleId { get; }
+    public LabSample(string id) => SampleId = id;
+    public void RunDiagnostics()
+        => Console.WriteLine($"Зразок {SampleId}: хімічний аналіз");
+}
+```
+
+Метод `ProcessDiagnostics` не має жодної залежності від `Patient` чи `LabSample`. Інтерфейс — це контракт, що певний тип обов'язково реалізує деякий функціонал. Якщо завтра з'явиться новий тип `MedicalDevice : IDiagnosable`, метод `ProcessDiagnostics` одразу зможе з ним працювати без жодних змін.
+
+## Реалізація за замовчуванням
+
+Починаючи з C# 8.0, інтерфейси підтримують реалізацію методів і властивостей за замовчуванням. Це вирішує важливу практичну проблему: якщо опублікований інтерфейс використовують десятки класів у різних бібліотеках, додавання нового абстрактного методу зламає всі ці класи — вони перестануть компілюватись. Замість цього новий метод можна додати з реалізацією за замовчуванням: усі наявні реалізатори продовжать працювати, а ті, кому потрібна специфічна поведінка, перевизначать метод самостійно.
+
+```csharp run
+using System;
+
+IDiagnosable p1 = new Patient("Олег Бойко");
+IDiagnosable p2 = new LabSample("LAB-2024-042");
+
+p1.RunDiagnostics();
+p1.LogResult();   // використовує default-реалізацію
+
+p2.RunDiagnostics();
+p2.LogResult();   // LabSample перевизначив LogResult
+
+interface IDiagnosable
+{
+    void RunDiagnostics();
+    // реалізація за замовчуванням — додана пізніше, не ламає наявні класи
+    void LogResult()
+        => Console.WriteLine("[LOG] Результат діагностики збережено в системі");
+}
+
+class Patient : IDiagnosable
+{
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+    public void RunDiagnostics()
+        => Console.WriteLine($"Пацієнт {Name}: огляд завершено");
+    // LogResult не перевизначаємо — береться з інтерфейсу
+}
+
+class LabSample : IDiagnosable
+{
+    public string SampleId { get; }
+    public LabSample(string id) => SampleId = id;
+    public void RunDiagnostics()
+        => Console.WriteLine($"Зразок {SampleId}: аналіз завершено");
+    // власна реалізація LogResult
+    public void LogResult()
+        => Console.WriteLine($"[LAB-LOG] Зразок {SampleId} — результат відправлено до лабораторії");
+}
+```
+
+Варто зазначити важливий нюанс: якщо змінна оголошена типом конкретного класу (а не інтерфейсу), виклик default-методу через неї неможливий, якщо клас його не перевизначив. Default-реалізація доступна лише через змінну типу інтерфейсу:
+
+```csharp run
+using System;
+
+IDiagnosable asInterface = new Patient("Тетяна Руденко");
+asInterface.LogResult(); // OK — default реалізація через інтерфейс
+
+Patient asConcrete = new Patient("Тетяна Руденко");
+// asConcrete.LogResult(); // ! Помилка — клас Patient не визначив LogResult
+
+interface IDiagnosable
+{
+    void LogResult() => Console.WriteLine("[LOG] Збережено");
+}
+
+class Patient : IDiagnosable
+{
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+}
+```
+
+## Множинна реалізація інтерфейсів
+
+В C# клас може успадковувати лише один базовий клас, але реалізовувати будь-яку кількість інтерфейсів. Це дозволяє описати різні ролі одного об'єкта незалежно одна від одної. Реальний клінічний об'єкт — наприклад, пацієнт — одночасно підлягає діагностиці, виставленню рахунків і отриманню сповіщень. Кожна ця роль виражається своїм інтерфейсом, і клас `Patient` реалізує їх усі:
 
 ```csharp
-// застосування інтерфейсу в класі
-class Person : IMovable
+class Patient : IDiagnosable, IBillable, INotifiable
 {
-    public void Move()
+    // ...
+}
+```
+
+Усі реалізовані інтерфейси перераховуються через кому. Якщо клас одночасно успадковує базовий клас і реалізує інтерфейси, базовий клас вказується першим:
+
+```csharp
+class Patient : BaseRecord, IDiagnosable, IBillable, INotifiable
+{
+    // ...
+}
+```
+
+Розглянемо повний клінічний приклад із трьома інтерфейсами:
+
+```csharp run
+using System;
+
+Patient p = new Patient("Надія Литвин", "D-2024-077");
+
+// через різні інтерфейси — різні ролі одного об'єкта
+IDiagnosable  diag  = p;
+IBillable     bill  = p;
+INotifiable   note  = p;
+
+diag.RunDiagnostics();
+Console.WriteLine($"Рахунок: {bill.CalcBill().ToString()} грн.");
+note.Notify("Результати готові — зверніться до лікаря");
+
+interface IDiagnosable
+{
+    void RunDiagnostics();
+}
+interface IBillable
+{
+    decimal CalcBill();
+}
+interface INotifiable
+{
+    void Notify(string message);
+}
+
+class Patient : IDiagnosable, IBillable, INotifiable
+{
+    public string Name       { get; }
+    public string DiagCode   { get; }
+
+    public Patient(string name, string diagCode)
     {
-        Console.WriteLine("людина йде");
+        Name     = name;
+        DiagCode = diagCode;
     }
-}
-// застосування інтерфейсу в структурі
-struct Car : IMovable
-{
-    public void Move()
-    {
-        Console.WriteLine("Машина їде");
-    }
-}
-```
 
-При застосуванні інтерфейсу, як і при наслідуванні після імені класу або структури вказується двокрапка і потім йдуть назви інтерфейсів. При цьому клас повинен реалізувати всі методи та властивості застосовуваних інтерфейсів, якщо ці методи та властивості не мають реалізації за умовчанням.
+    public void RunDiagnostics()
+        => Console.WriteLine($"Пацієнт {Name}: діагностика за кодом {DiagCode}");
 
-Якщо методи та властивості інтерфейсу не мають модифікатора доступу, то за умовчанням вони є публічними, при реалізації цих методів та властивостей у класі та структурі до них можна застосовувати лише модифікатор public.
+    public decimal CalcBill()
+        => 850.00m;
 
-Застосування інтерфейсу у програмі:
-
-```csharp
-Person person = new Person();
-Car car = new Car();
-DoAction(person);
-DoAction(car);
-void DoAction(IMovable movable) => movable.Move();
-interface IMovable
-{
-    void Move();
-}
-class Person : IMovable
-{
-    public void Move() => Console.WriteLine("Людина йде");
-}
-struct Car : IMovable
-{
-    public void Move() => Console.WriteLine("машина їде");
+    public void Notify(string message)
+        => Console.WriteLine($"[SMS → {Name}]: {message}");
 }
 ```
 
-У цій програмі визначено метод DoAction(), який як параметр приймає об'єкт інтерфейсу IMovable. На момент написання коду ми можемо не знати, що це буде об'єкт - якийсь клас чи структура. Єдине, у чому ми можемо бути впевнені, що цей об'єкт обов'язково реалізує метод Move, і ми можемо викликати цей метод.
+![Клас реалізує кілька інтерфейсів](_assets/07-02/multiple-interfaces.png)
 
-Іншими словами, інтерфейс - це контракт, що певний тип обов'язково реалізує деякий функціонал.
+## Інтерфейси у перетвореннях типів
 
-Консольний вивід цієї програми:
+Все сказане щодо перетворення типів між класами стосується і інтерфейсів. Оскільки клас `Patient` реалізує інтерфейс `IDiagnosable`, змінна типу `IDiagnosable` може зберігати посилання на об'єкт типу `Patient`. Таке перетворення від конкретного класу до інтерфейсу є **розширювальним** (widening) і відбувається автоматично — воно завжди безпечне, бо будь-який `Patient` гарантовано є `IDiagnosable`:
 
-Людина йде
+```csharp run
+using System;
 
-Машина їде
+Patient p = new Patient("Василь Мороз", "D-001");
 
-### Реалізація стандартних інтерфейсів
+// автоматичне розширювальне перетворення — завжди OK
+IDiagnosable diag = p;
+diag.RunDiagnostics();
 
-Починаючи з версії C# 8.0, інтерфейси підтримують реалізацію методів і властивостей за замовчуванням. Навіщо це потрібно? Припустимо, ми маємо купу класів, які реалізують деякий інтерфейс. Якщо ми додамо у цей інтерфейс новий метод, ми будемо змушені реалізувати цей метод у всіх класах, які використовують цей інтерфейс. Інакше подібні класи просто не компілюватимуться. Тепер замість реалізації методу у всіх класах нам достатньо визначити його реалізацію за умовчанням в інтерфейсі. Якщо клас не реалізує метод, застосовуватиметься реалізація за умовчанням.
+// через інтерфейс доступні тільки члени інтерфейсу
+// diag.Name — ! Помилка: IDiagnosable не має властивості Name
 
-```csharp
-IMovable tom = new Person();
-Car tesla = new Car();
-tom.Move(); // Walking
-tesla.Move(); // Driving
-interface IMovable
+interface IDiagnosable
 {
-    void Move() => Console.WriteLine("Walking");
+    void RunDiagnostics();
 }
-class Person : IMovable { }
-class Car : IMovable
+
+class Patient : IDiagnosable
 {
-    public void Move() => Console.WriteLine("Driving");
-}
-```
-
-У цьому разі інтерфейс IMovable визначає реалізацію за умовчанням для методу Move. Клас Person не реалізує цей метод, тому він застосовує стандартну реалізацію на відміну від класу Car, який визначає свою реалізацію для методу Move.
-
-Варто відзначити, що хоча для об'єкта класу Person ми можемо викликати метод Move - адже клас Person застосовує інтерфейс IMovable, проте ми не можемо написати так:
-
-```csharp
-Person tom = new Person();
-tom.Move(); // Помилка - метод Move не визначений у класі Person
-```
-
-### Множинна реалізація інтерфейсів
-
-Інтерфейси мають ще одну важливу функцію: в C# не підтримується множинне успадкування, тобто ми можемо успадкувати клас тільки від одного класу, на відміну, скажімо, від мови С++, де успадкування можна використовувати. Інтерфейси дозволяють частково обійти це обмеження, оскільки C# класи і структури можуть реалізувати відразу кілька інтерфейсів. Всі реалізовані інтерфейси вказуються через кому:
-
-```csharp
-class myClass: myInterface1, myInterface2, myInterface3, ...
-{
+    public string Name    { get; }
+    public string DiagCode { get; }
+    public Patient(string name, string code) { Name = name; DiagCode = code; }
+    public void RunDiagnostics()
+        => Console.WriteLine($"Пацієнт {Name} [{DiagCode}]: діагностику розпочато");
 }
 ```
 
-Розглянемо приклад:
+Зворотне перетворення — від інтерфейсу до конкретного класу — є **звужувальним** (narrowing). Воно не відбувається автоматично, тому що не кожен `IDiagnosable` є `Patient`: інтерфейс можуть реалізовувати й інші класи. Для звужувального перетворення потрібне явне приведення або перевірка через `is`/`as`:
 
-```csharp
-Message hello = new Message("Hello World");
-hello.Print(); // Hello World
-interface IMessage
+```csharp run
+using System;
+
+IDiagnosable diag = new Patient("Олена Сидоренко", "D-055");
+
+// is — перевірка типу + безпечне приведення
+if (diag is Patient pat)
 {
-    string Text { get; set; }
+    Console.WriteLine($"Ім'я: {pat.Name}");
+    Console.WriteLine($"Код: {pat.DiagCode}");
 }
-interface IPrintable
+
+// as — повертає null якщо тип не відповідає (не кидає виняток)
+Patient? asPat = diag as Patient;
+if (asPat != null)
+    Console.WriteLine($"Через as: {asPat.Name}");
+
+// явне приведення — кине InvalidCastException якщо тип не відповідає
+Patient explicit = (Patient)diag;
+Console.WriteLine($"Явне: {explicit.Name}");
+
+interface IDiagnosable
 {
-    void Print();
+    void RunDiagnostics();
 }
-class Message : IMessage, IPrintable
+
+class Patient : IDiagnosable
 {
-    public string Text { get; set; }
-    public Message(string text) => Text = text;
-    public void Print() => Console.WriteLine(Text);
+    public string Name    { get; }
+    public string DiagCode { get; }
+    public Patient(string name, string code) { Name = name; DiagCode = code; }
+    public void RunDiagnostics()
+        => Console.WriteLine($"Діагностика: {Name}");
 }
 ```
 
-У цьому випадку визначено два інтерфейси. Інтерфейс IMessage визначає властивість Text, що представляє текст повідомлення. Інтерфейс IPrintable визначає метод Print.
+На практиці перевага — за `is` із pattern matching: він одночасно перевіряє тип і виконує приведення в одному виразі, не кидаючи винятків. Оператор `as` зручний, коли потрібно лише перевірити і не виконувати тіло `if` одразу. Явне приведення через `(T)` застосовується лише тоді, коли тип відомий з абсолютною впевненістю.
 
-Клас Message реалізує обидва інтерфейси і потім застосовується у програмі.
-
-### Інтерфейси у перетвореннях типів
-
-Все сказане щодо перетворення типів притаманне і інтерфейсам. Оскільки клас Message реалізує інтерфейс IMessage, змінна типу IMessage може зберігати посилання на об'єкт типу Message:
-
-```csharp
-// Всі об'єкти Message є об'єктами IMessage
-IMessage hello = new Message("Hello EBAY.COM");
-Console.WriteLine(hello.Text); // Hello METANIT.COM
-// Не всі об'єкти IMessage є об'єктами Message, необхідно чітке приведення
-// Message someMessage = hello; // ! Помилка
-// Інтерфейс IMessage не має властивостей Print, необхідно чітке приведення
-// hello.Print(); // ! Помилка
-// якщо hello представляє клас Message, виконуємо перетворення
-if (hello is Message someMessage) someMessage.Print();
-```
-
-Перетворення від класу до його інтерфейсу, як і від похідного типу до базового, виконується автоматично. Оскільки будь-який об'єкт Message реалізує інтерфейс IMessage.
-
-Зворотне перетворення - від інтерфейсу до класу, який його реалізує, буде аналогічне перетворенню від базового класу до похідного. Так як не кожен об'єкт IMessage є об'єктом Message (адже інтерфейс IMessage можуть реалізувати інші класи), то для такого перетворення необхідна операція приведення типів. І якщо ми хочемо звернутися до методів класу Message, які не визначені в інтерфейсі IMessage, але є частиною класу Message, то нам треба явно виконати перетворення типів:
-
-```csharp
-if (hello is Message someMessage) someMessage.Print();
-```
+![Перетворення типів через інтерфейс](_assets/07-02/interface-type-cast.png)
