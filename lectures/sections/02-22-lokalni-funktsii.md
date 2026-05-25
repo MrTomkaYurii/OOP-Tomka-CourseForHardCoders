@@ -9,129 +9,131 @@ source: "../_migration/source-chunks/11-rekursiia-ta-lokalni-funktsii.md"
 
 ## 2.22. Локальні функції
 
-Локальні функції є функціями, визначеними всередині інших методів. Локальна функція, як правило, містить дії, що застосовуються лише у межах її методу.
+Локальна функція — це функція, оголошена безпосередньо всередині іншого методу. Вона існує і видима виключно в межах того методу, де оголошена, і не може бути викликана ззовні. Локальні функції вирішують конкретну проблему: дозволяють виокремити фрагмент логіки у власний іменований блок, не виносячи його у простір імен класу як окремий метод. Це корисно тоді, коли певна допоміжна операція потрібна лише в одному місці і немає сенсу робити її частиною публічного або навіть приватного API класу.
 
-Наприклад, визначимо метод, який порівнює суму чисел двох масивів:
+## Навіщо потрібні локальні функції
 
-```csharp
-void Compare(int[] numbers1, int[] numbers2)
+Розглянемо метод, який аналізує результати аналізів пацієнта і перевіряє кілька показників. Без локальної функції повторювана логіка перевірки дублюється:
+
+```csharp run
+using System;
+
+void AnalyzeBloodTest(double hemoglobin, double glucose, double cholesterol)
 {
-    int numbers1Sum = 0;
-    int numbers2Sum = 0;
+    // перевірка гемоглобіну
+    string hgbStatus = hemoglobin < 120 ? "Низький" : hemoglobin > 170 ? "Високий" : "Норма";
+    Console.WriteLine($"Гемоглобін {hemoglobin.ToString("F1")}: {hgbStatus}");
 
-    foreach (int number in numbers1)
-    numbers1Sum += number;
+    // та сама логіка для глюкози і холестерину — дублювання
+    string glcStatus = glucose < 3.9 ? "Низький" : glucose > 6.1 ? "Високий" : "Норма";
+    Console.WriteLine($"Глюкоза {glucose.ToString("F1")}: {glcStatus}");
 
-    foreach (int number in numbers2)
-    numbers2Sum += number;
-
-    if (numbers1Sum > numbers2Sum)
-    Console.WriteLine("сума чисел з масиву numbers1 більше");
-    else if (numbers1Sum < numbers2Sum)
-    Console.WriteLine("сума чисел з масиву numbers2 більше");
-    else
-    Console.WriteLine("суми чисел обох масивів рівні");
+    string chlStatus = cholesterol < 3.0 ? "Низький" : cholesterol > 5.2 ? "Високий" : "Норма";
+    Console.WriteLine($"Холестерин {cholesterol.ToString("F1")}: {chlStatus}");
 }
 
-int[] numbers1 = { 1, 2, 3 };
-int[] numbers2 = { 3, 4, 5, 6, 7 };
-
-Compare(numbers1, numbers2);
+AnalyzeBloodTest(115.0, 5.4, 6.1);
 ```
 
-Тут метод `Compare` приймає два масиви і послідовно обчислює суму їх елементів, щоб дізнатися, у якому масиві сума чисел більше. Незважаючи на те, що все працює, тут є один недолік: тут повторюються дії, які обчислюють суму масиву:
+Логіка `"Низький" / "Норма" / "Високий"` повторюється тричі. Локальна функція усуває це дублювання, залишаючи код лише всередині методу:
 
-```csharp
-int numbers1Sum = 0;
+```csharp run
+using System;
 
-foreach (int number in numbers1)
-numbers1Sum += number;
-```
-
-До того ж що, якщо ми захочемо порівнювати суму лише позитивних чи парних чисел чи інакше змінити логіку порівняння? У цьому краще винести дії, що повторюються, в окремий метод. Однак, якщо ці дії ніде більше в програмі не будуть викликатися і будуть використовуватися тільки в одному методі, то доцільно визначити ці дії у вигляді локальної функції. Для цього змінимо метод `Compare` таким чином:
-
-```csharp
-void Compare(int[] numbers1, int[] numbers2)
+void AnalyzeBloodTest(double hemoglobin, double glucose, double cholesterol)
 {
-    int numbers1Sum = Sum(numbers1);
-    int numbers2Sum = Sum(numbers2);
+    Console.WriteLine($"Гемоглобін {hemoglobin.ToString("F1")}: {Classify(hemoglobin, 120, 170)}");
+    Console.WriteLine($"Глюкоза {glucose.ToString("F1")}: {Classify(glucose, 3.9, 6.1)}");
+    Console.WriteLine($"Холестерин {cholesterol.ToString("F1")}: {Classify(cholesterol, 3.0, 5.2)}");
 
-    if (numbers1Sum > numbers2Sum)
-    Console.WriteLine("сума чисел з масиву numbers1 більше");
-    else if (numbers1Sum < numbers2Sum)
-    Console.WriteLine("сума чисел з масиву numbers2 більше");
-    else
-    Console.WriteLine("суми чисел обох масивів рівні");
-
-    int Sum(int[] numbers)
+    string Classify(double value, double low, double high)
     {
-        int result = 0;
-        foreach (int number in numbers)
-        result += number;
-        return result;
+        if (value < low)  return "Низький";
+        if (value > high) return "Високий";
+        return "Норма";
     }
 }
 
-int[] numbers1 = { 1, 2, 3 };
-int[] numbers2 = { 3, 4, 5, 6, 7 };
-
-Compare(numbers1, numbers2);
+AnalyzeBloodTest(115.0, 5.4, 6.1);
+AnalyzeBloodTest(135.0, 4.5, 4.8);
 ```
 
-Тут підрахунок суми винесений у локальну функцію `Sum`, яка приймає масив і повертає його суму. І далі в рамках методу `Compare` ми зможемо використовувати її для обчислення суми масиву. При цьому неважливо, чи визначена локальна функція до або після використання. Але поза її методом локальна функція не може використовуватись.
+Локальна функція `Classify` визначена після того, як використовується — у C# порядок оголошення всередині методу не має значення. Вона видима у всьому тілі методу `AnalyzeBloodTest`, але абсолютно невидима ззовні.
+
+![Область видимості локальної функції](_assets/02-22/local-function-scope.png)
+
+## Доступ до змінних зовнішнього методу
+
+Звичайна (нестатична) локальна функція має доступ до змінних і параметрів методу, всередині якого вона визначена. Ці змінні можна читати і змінювати без явної передачі як параметри:
+
+```csharp run
+using System;
+
+void GeneratePatientReport(string patientName, int wardNumber)
+{
+    string header = $"=== Пацієнт: {patientName} (Палата {wardNumber.ToString()}) ===";
+
+    PrintSection("Анамнез", "Хронічний бронхіт, 5 років");
+    PrintSection("Скарги", "Кашель, задишка при навантаженні");
+    PrintSection("Призначення", "Інгалятор, фізіотерапія");
+
+    void PrintSection(string title, string content)
+    {
+        // header — змінна зовнішнього методу, доступна без параметра
+        Console.WriteLine(header);
+        Console.WriteLine($"  [{title}]: {content}");
+    }
+}
+
+GeneratePatientReport("Іван Петренко", 7);
+```
+
+Функція `PrintSection` читає змінну `header` зовнішнього методу напряму. Це зручно, але вимагає уваги: локальна функція може ненавмисно змінити змінні зовнішнього контексту, що ускладнює розуміння коду.
 
 ## Статичні локальні функції
 
-Локальні функції можуть бути статичними. Такі функції визначаються за допомогою ключового слова `static`. Їх особливістю є те, що вони не можуть звертатися до змінних оточення, тобто методу, у якому статична функція визначена.
+Щоб гарантовано заборонити локальній функції звертатися до змінних зовнішнього методу, її можна оголосити зі словом `static`. Статична локальна функція ізольована: вона бачить лише те, що отримує через свої параметри. Будь-яка спроба звернутися до змінної зовнішнього методу всередині статичної локальної функції — це помилка компіляції.
 
-Спочатку визначимо локальну функцію, яка має оточення:
+```csharp run
+using System;
 
-```csharp
-int Sum(int[] numbers)
+void ProcessLabResults(double[] values, double minNorm, double maxNorm)
 {
-    int limit = 0;
-    int result = 0;
-    foreach (int number in numbers)
-    {
-        if (IsPassed(number)) result += number;
-    }
-    return result;
+    int belowCount = 0;
+    int aboveCount = 0;
 
-    bool IsPassed(int number)
+    foreach (var v in values)
     {
-        return number > limit;
+        string status = Classify(v, minNorm, maxNorm);
+        Console.WriteLine($"  {v.ToString("F1")} → {status}");
+        if (status == "Нижче норми") belowCount++;
+        if (status == "Вище норми")  aboveCount++;
+    }
+
+    Console.WriteLine($"Нижче норми: {belowCount.ToString()}, Вище норми: {aboveCount.ToString()}");
+
+    static string Classify(double value, double low, double high)
+    {
+        // minNorm, maxNorm — НЕ доступні тут (статична функція)
+        if (value < low)  return "Нижче норми";
+        if (value > high) return "Вище норми";
+        return "Норма";
     }
 }
 
-int[] numbers1 = { -3, -2, -1, 0, 1, 2, 3 };
-int[] numbers2 = { 3, -4, 5, -6, 7 };
-
-Console.WriteLine(Sum(numbers1));
-Console.WriteLine(Sum(numbers2));
+double[] glucoseReadings = { 3.5, 5.1, 7.2, 4.8, 6.8, 3.1 };
+ProcessLabResults(glucoseReadings, 3.9, 6.1);
 ```
 
-Тут функція `Sum` обчислює суму чисел масиву, які відповідають умові локальної функції `IsPassed()`. Ця локальна функція перевіряє, чи більше передане число, ніж значення змінної `limit`, визначеної методом `Sum`. Тобто локальна функція `IsPassed` може звертатися до даних, визначених у навколишній функції `Sum`.
+![Звичайна vs static локальна функція](_assets/02-22/static-vs-nonstatic-local.png)
 
-Тепер зробимо функцію `IsPassed` статичною:
+Перевага `static` локальної функції — явна гарантія ізольованості. Читаючи сигнатуру `static string Classify(...)`, розробник одразу розуміє: ця функція не має прихованих побічних ефектів через захоплені змінні, її поведінка визначається лише аргументами. Це робить код передбачуваним і простішим для тестування.
 
-```csharp
-int Sum(int[] numbers)
-{
-    int result = 0;
-    int limit = 0;
-    foreach (int number in numbers)
-    {
-        if (IsPassed(number, limit)) result += number;
-    }
-    return result;
+## Локальні функції проти приватних методів
 
-    static bool IsPassed(int number, int lim)
-    {
-        // return number > limit;
-        // Помилка: метод IsPassed не має доступу до змінної limit
-        return number > lim;
-    }
-}
-```
+Локальна функція і приватний метод класу вирішують схожу задачу — ізоляція допоміжної логіки — але мають різну область застосування:
 
-Модифікатор `static` вказується перед типом локальної функції. Тепер функція `IsPassed` не може звертатися до змінної `limit`, і в цьому випадку нам треба або передати це значення у вигляді параметра, або визначити змінну `limit` безпосередньо в локальній функції.
+- **Приватний метод** доступний усьому класу. Використовуйте його, якщо допоміжна логіка може знадобитися кільком методам класу.
+- **Локальна функція** доступна лише одному методу. Використовуйте її, якщо логіка потрібна виключно в одному місці і виносити її в клас означало б штучно розширювати API.
+
+Локальні функції також корисні для покращення читабельності складних методів: замість того щоб читати 80 рядків коду підряд, читач бачить короткий метод з виразними викликами іменованих локальних функцій і занурюється в деталі лише за потреби.
