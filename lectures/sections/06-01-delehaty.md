@@ -9,53 +9,51 @@ source: "../_combined/34-delehaty.md"
 
 ## 6.1. Делегати
 
-Делегати — один із фундаментальних механізмів C#, який дозволяє зберігати посилання на методи і передавати методи як значення. Якщо змінна типу `int` зберігає число, а змінна типу `string` — рядок, то змінна-делегат зберігає посилання на метод. Через цю змінну метод можна викликати, передати в інший метод як аргумент або зберегти для виклику пізніше.
-
-Делегати є основою для подій, лямбда-виразів, функцій вищого порядку та патерну зворотного виклику (callback). Розуміння делегатів — це розуміння того, як у C# методи стають об'єктами першого класу.
+Делегати — один із фундаментальних механізмів C#, який дозволяє зберігати посилання на методи і передавати методи як значення. Якщо змінна типу `int` зберігає число, а змінна типу `string` — рядок, то змінна-делегат зберігає посилання на метод. Через цю змінну метод можна викликати, передати в інший метод як аргумент або зберегти для виклику пізніше. Делегати є основою для подій, лямбда-виразів, функцій вищого порядку та патерну зворотного виклику (callback). Розуміння делегатів — це розуміння того, як у C# методи стають об'єктами першого класу.
 
 ## Визначення делегата
 
-Для оголошення делегата використовується ключове слово `delegate`, після якого вказується тип значення, що повертається, ім'я делегата та список параметрів. По суті, це оголошення типу, що описує сигнатуру методів, на які делегат може вказувати:
+Для оголошення делегата використовується ключове слово `delegate`, після якого вказується тип значення, що повертається, ім'я делегата та список параметрів. По суті, це оголошення нового типу, який описує сигнатуру методів, на які делегат може вказувати:
 
 ```csharp
 delegate void Notify(string message);
 ```
 
-Делегат `Notify` відповідає будь-якому методу, який приймає один параметр `string` і нічого не повертає (`void`). Жоден інший набір параметрів або тип, що повертається, не підійде.
+Делегат `Notify` відповідає будь-якому методу, який приймає один параметр `string` і нічого не повертає (`void`). Жоден інший набір параметрів або тип, що повертається, не підійде — компілятор перевіряє це статично.
 
-## Використання делегата: чотири кроки
-
-Робота з делегатом завжди складається з одних і тих самих кроків:
+Розглянемо застосування цього делегата:
 
 ```csharp run
 using System;
 
-delegate void Notify(string message); // 1. Оголошуємо тип делегата
+Notify handler;                  // 2. Створюємо змінну делегата
+handler = AlertDoctor;           // 3. Присвоюємо адресу методу
+handler("Критичний пульс!");     // 4. Викликаємо метод через делегат
 
-void AlertDoctor(string msg) =>
-    Console.WriteLine($"[ЛІКАР] {msg}");
-
-Notify handler;          // 2. Оголошуємо змінну делегата
-handler = AlertDoctor;   // 3. Присвоюємо посилання на метод
-handler("Критичний пульс пацієнта Петренка!"); // 4. Викликаємо
+void AlertDoctor(string msg) => Console.WriteLine($"[ЛІКАР] {msg}");
+delegate void Notify(string message); // 1. Оголошуємо делегат
 ```
+
+Насамперед необхідно визначити сам делегат — оголосити новий тип. Потім оголошується змінна цього типу. Далі делегату передається адреса певного методу — у нашому випадку методу `AlertDoctor`. Зверніть увагу: цей метод має той самий тип, що повертається, і той самий набір параметрів, що і делегат. Нарешті, через змінну делегата викликається метод. Виклик делегата виглядає так само, як звичайний виклик методу.
 
 ![Делегат як посилання на метод](_assets/06-01/delegate-concept.png)
 
-Змінну делегата можна перепризначити на інший метод тієї ж сигнатури — і виклик делегата почне виконувати вже інший код. Саме ця здатність змінювати поведінку під час виконання є ключовою перевагою делегатів.
-
-## Делегати, що вказують на методи інших класів
-
-Делегат може вказувати на методи будь-яких класів — статичні та екземплярні:
+При цьому делегати не обмежені методами того класу, де визначена змінна делегата. Це можуть бути також методи інших класів і структур:
 
 ```csharp run
 using System;
 
+Notify n1 = ClinicLogger.Print;
+Notify n2 = new DoctorNotifier().Alert;
+
+n1("Аналізи готові");   // виклик статичного методу
+n2("Пацієнт Петренко потребує огляду"); // виклик екземплярного методу
+
 delegate void Notify(string message);
 
-class ConsoleLogger
+class ClinicLogger
 {
-    public static void Log(string msg) =>
+    public static void Print(string msg) =>
         Console.WriteLine($"[LOG] {msg}");
 }
 
@@ -64,427 +62,635 @@ class DoctorNotifier
     public void Alert(string msg) =>
         Console.WriteLine($"[DR] {msg}");
 }
-
-Notify n1 = ConsoleLogger.Log;
-Notify n2 = new DoctorNotifier().Alert;
-
-n1("Аналізи готові");
-n2("Пацієнт потребує огляду");
 ```
-
-Статичний метод призначається через ім'я класу, екземплярний — через екземпляр об'єкта. З точки зору делегата різниці немає: обидва виклики виглядають однаково.
 
 ## Місце визначення делегата
 
-У програмах верхнього рівня (top-level statements, файл `Program.cs`), які є стандартом починаючи з C# 10, делегат визначається після всього виконуваного коду — так само як класи та інші типи. Він може також бути визначений всередині класу або поза ним у традиційному стилі.
+Якщо ми визначаємо делегат у програмах верхнього рівня (top-level program), яку за замовчуванням представляє файл `Program.cs`, починаючи з версії C# 10, то, як і інші типи, делегат визначається в кінці коду (як у прикладах вище). Але делегат можна визначати і всередині класу:
 
-## Параметри та повернення значення
+```csharp
+class Program
+{
+    delegate void Notify(string message); // делегат всередині класу
 
-Делегат повністю успадковує сигнатуру методу: параметри, їх типи і тип значення, що повертається. Делегат можна перепризначати між методами, що мають однакову сигнатуру:
+    static void Main()
+    {
+        Notify handler;
+        handler = AlertDoctor;
+        handler("Критичний пульс!");
+
+        void AlertDoctor(string msg) => Console.WriteLine($"[ЛІКАР] {msg}");
+    }
+}
+```
+
+Або поза класом:
+
+```csharp
+delegate void Notify(string message); // делегат поза класом
+
+class Program
+{
+    static void Main()
+    {
+        Notify handler;
+        handler = AlertDoctor;
+        handler("Критичний пульс!");
+
+        void AlertDoctor(string msg) => Console.WriteLine($"[ЛІКАР] {msg}");
+    }
+}
+```
+
+## Параметри та результат делегата
+
+Делегат повністю успадковує сигнатуру методу: параметри, їх типи і тип значення, що повертається. Розглянемо визначення та застосування делегата, який приймає параметри і повертає результат. Делегат можна перепризначати між методами, що мають однакову сигнатуру:
 
 ```csharp run
 using System;
 
-delegate double Calculate(double a, double b);
+Calculate calc = Add; // делегат вказує на метод Add
+double r1 = calc(10.5, 4.5); // фактично Add(10.5, 4.5)
+Console.WriteLine($"Сума: {r1.ToString("F1")}");
+
+calc = Subtract; // тепер делегат вказує на Subtract
+double r2 = calc(10.5, 4.5);
+Console.WriteLine($"Різниця: {r2.ToString("F1")}");
+
+calc = Multiply;
+double r3 = calc(10.5, 4.5);
+Console.WriteLine($"Добуток: {r3.ToString("F1")}");
 
 double Add(double x, double y)      => x + y;
 double Subtract(double x, double y) => x - y;
 double Multiply(double x, double y) => x * y;
 
-Calculate calc = Add;
-Console.WriteLine($"Сума:   {calc(10.5, 4.5).ToString("F1")}");
-
-calc = Subtract;
-Console.WriteLine($"Різниця: {calc(10.5, 4.5).ToString("F1")}");
-
-calc = Multiply;
-Console.WriteLine($"Добуток: {calc(10.5, 4.5).ToString("F1")}");
+delegate double Calculate(double a, double b);
 ```
 
-Альтернативний синтаксис ініціалізації через конструктор делегата дає той самий результат:
+Делегат `Calculate` повертає `double` і приймає два параметри `double`. Тому йому відповідає будь-який метод з таким самим підписом — `Add`, `Subtract`, `Multiply`. Оскільки делегат приймає два параметри, при виклику необхідно передати їх значення.
+
+Існує також альтернативний синтаксис ініціалізації через конструктор делегата — обидва варіанти рівноцінні:
 
 ```csharp
 Calculate calc1 = Add;
-Calculate calc2 = new Calculate(Add); // рівноцінно
+Calculate calc2 = new Calculate(Add); // рівноцінно першому
 ```
 
 ## Відповідність методів делегату
 
-Метод відповідає делегату, якщо він має **той самий тип, що повертається**, і **той самий набір параметрів**, включно з модифікаторами `ref`, `in`, `out`. Наприклад, для делегата:
+Як зазначено вище, методи відповідають делегату, якщо вони мають **той самий тип, що повертається**, і **той самий набір параметрів**. При цьому до уваги також беруться модифікатори `ref`, `in` та `out`. Наприклад, нехай у нас є делегат:
 
 ```csharp
-delegate void AlertHandler(string message);
+delegate void AlertHandler(string message, int code);
 ```
 
-Відповідає:
+Цьому делегату відповідає такий метод:
+
 ```csharp
-void SendToNurse(string msg) { }          // OK
+void LogAlert(string msg, int level) { } // OK — той самий підпис
 ```
 
-Не відповідає:
+А такі методи не відповідають:
+
 ```csharp
-string GetMessage(string msg)  { return msg; }  // інший тип повернення
-void Log(string msg, int code) { }              // інший набір параметрів
-void Handle(ref string msg)    { }              // модифікатор ref
+string GetAlert(string msg, int code) { return msg; } // інший тип повернення
+void Handle(int code, string msg)     { }              // інший порядок параметрів
+void Handle(ref string msg, int code) { }              // модифікатор ref
+void Handle(out string msg, int code) { msg = ""; }    // модифікатор out
 ```
 
-## Додавання методів у делегат (multicast)
+Метод з іншим типом повернення не підходить. Метод з іншим порядком параметрів — теж, навіть якщо типи самих параметрів збігаються. Наявність модифікаторів `ref` або `out` також робить метод несумісним із делегатом без цих модифікаторів.
 
-Делегат у C# може вказувати не на один, а на **кілька методів** одночасно. Внутрішньо він підтримує список виклику (invocation list). Додавання методу виконується оператором `+=`:
+## Додавання методів у делегат
+
+У прикладах вище змінна делегата вказувала на один метод. Насправді делегат може вказувати на **безліч методів**, які мають ту ж сигнатуру і тип, що повертається. Усі методи у делегаті потрапляють у спеціальний список — **список виклику** (invocation list). При виклику делегата всі методи цього списку послідовно викликаються. Для додавання методів до делегата застосовується операція `+=`:
 
 ```csharp run
 using System;
 
+AlertHandler alert = LogToConsole;
+alert += NotifyDoctor; // тепер alert вказує на два методи
+alert("Критичні показники пацієнта Бойка!"); // викликаються обидва
+
+void LogToConsole(string msg) => Console.WriteLine($"[КОНСОЛЬ] {msg}");
+void NotifyDoctor(string msg) => Console.WriteLine($"[ЛІКАР] Увага: {msg}");
 delegate void AlertHandler(string message);
+```
 
-void LogToConsole(string msg) =>
-    Console.WriteLine($"[КОНСОЛЬ] {msg}");
+У цьому випадку до списку виклику делегата `alert` додаються два методи. При виклику `alert` викликаються відразу обидва.
 
-void LogToFile(string msg) =>
-    Console.WriteLine($"[ФАЙЛ] Записано: {msg}");
+Однак варто зазначити, що в реальності відбувається створення нового об'єкта делегата, який отримує методи старої копії і новий метод, і цей новий об'єкт присвоюється змінній `alert`.
 
-void NotifyDoctor(string msg) =>
-    Console.WriteLine($"[ЛІКАР] Увага: {msg}");
+При додаванні делегатів слід враховувати, що один і той самий метод можна додати кілька разів. У цьому випадку у списку виклику делегата буде кілька посилань на той самий метод, і при виклику делегата цей метод буде викликатися стільки разів, скільки він був доданий:
+
+```csharp run
+using System;
 
 AlertHandler alert = LogToConsole;
-alert += LogToFile;
 alert += NotifyDoctor;
+alert += LogToConsole; // LogToConsole додано вдруге
+alert += LogToConsole; // і втретє
+alert("Тиск 180/110 — критично!");
 
-alert("Критичні показники пацієнта Бойка!");
+void LogToConsole(string msg) => Console.WriteLine($"[LOG] {msg}");
+void NotifyDoctor(string msg) => Console.WriteLine($"[DR]  {msg}");
+delegate void AlertHandler(string message);
 ```
 
 ![Список виклику multicast-делегата](_assets/06-01/invocation-list.png)
 
-При виклику делегата всі методи зі списку викликаються **послідовно у порядку додавання**. Якщо один і той самий метод додати кілька разів — він викликатиметься стільки разів, скільки був доданий.
-
-## Видалення методів із делегата
-
-Методи видаляються зі списку виклику оператором `-=`. Якщо після видалення список стає порожнім — делегат набуває значення `null`:
+Подібним чином ми можемо видаляти методи з делегата за допомогою операції `-=`:
 
 ```csharp run
 using System;
-
-delegate void AlertHandler(string message);
-
-void LogToConsole(string msg) => Console.WriteLine($"[LOG] {msg}");
-void NotifyDoctor(string msg) => Console.WriteLine($"[DR]  {msg}");
 
 AlertHandler? alert = LogToConsole;
 alert += NotifyDoctor;
+alert("Температура 39.5°C"); // викликаються обидва методи
 
-Console.WriteLine("=== Обидва обробники ===");
-alert("Температура 39.5°C");
+alert -= NotifyDoctor; // видаляємо NotifyDoctor
+if (alert != null) alert("Температура 38.0°C"); // викликається лише LogToConsole
 
-alert -= NotifyDoctor;
-
-Console.WriteLine("=== Тільки логування ===");
-alert?.Invoke("Температура 38.0°C");
+void LogToConsole(string msg) => Console.WriteLine($"[LOG] {msg}");
+void NotifyDoctor(string msg) => Console.WriteLine($"[DR]  {msg}");
+delegate void AlertHandler(string message);
 ```
 
-Змінна оголошена як `AlertHandler?` (nullable), бо після видалення всіх методів вона може стати `null`. Перед викликом обов'язково перевіряємо — через `?.Invoke()` або явну перевірку на `null`.
+При видаленні методів з делегата фактично також створюється новий делегат, який у списку виклику містить на один метод менше.
+
+Варто відзначити: при видаленні може скластися ситуація, що в делегаті не залишиться жодного методу — тоді змінна матиме значення `null`. Тому в даному випадку змінна оголошена як `AlertHandler?` (nullable), тобто тип, який може представляти як делегат, так і значення `null`. Крім того, перед другим викликом ми перевіряємо змінну на `null`.
+
+При видаленні слід враховувати: якщо делегат містить кілька посилань на один і той самий метод, то операція `-=` починає пошук із кінця списку виклику і видаляє лише перше знайдене входження. Якщо такого методу у списку немає — операція `-=` не має жодного ефекту.
 
 ## Об'єднання делегатів
 
-Два делегати можна об'єднати оператором `+` — отримаємо новий делегат, чий список виклику містить методи обох:
+Делегати можна поєднувати в інші делегати за допомогою оператора `+`. Отримаємо новий делегат, чий список виклику містить усі методи обох:
 
 ```csharp run
 using System;
-
-delegate void AlertHandler(string message);
-
-void LogToConsole(string msg) => Console.WriteLine($"[LOG]  {msg}");
-void NotifyDoctor(string msg) => Console.WriteLine($"[DR]   {msg}");
-void SendSMS(string msg)      => Console.WriteLine($"[SMS]  {msg}");
 
 AlertHandler group1 = LogToConsole;
 group1 += NotifyDoctor;
 
 AlertHandler group2 = SendSMS;
 
-AlertHandler all = group1 + group2;
-all("Пацієнт Сидоренко: пульс 145 уд/хв");
+AlertHandler all = group1 + group2; // об'єднуємо делегати
+all("Пацієнт Сидоренко: пульс 145 уд/хв"); // викликаються всі методи з group1 і group2
+
+void LogToConsole(string msg) => Console.WriteLine($"[LOG]  {msg}");
+void NotifyDoctor(string msg) => Console.WriteLine($"[DR]   {msg}");
+void SendSMS(string msg)      => Console.WriteLine($"[SMS]  {msg}");
+delegate void AlertHandler(string message);
 ```
 
-## Виклик делегата: прямий та через Invoke
+Об'єднання делегатів означає, що до списку виклику делегата `all` потраплять усі методи із делегатів `group1` та `group2`. При виклику `all` всі ці методи викликаються одночасно.
 
-Делегат можна викликати двома еквівалентними способами:
+## Виклик делегата
+
+У прикладах вище делегат викликався як звичайний метод. Якщо делегат приймає параметри — при виклику передаються необхідні значення:
 
 ```csharp run
 using System;
 
-delegate int Score(int base_, int bonus);
+AlertHandler alert = LogToConsole;
+alert("Критичний показник!");
 
-int CalcScore(int b, int bonus) => b + bonus;
+Calculate calc = Add;
+int n = calc(120, 80);
+Console.WriteLine($"Результат: {n.ToString()}");
 
-Score score = CalcScore;
-
-// Прямий виклик
-int r1 = score(80, 15);
-Console.WriteLine($"Результат 1: {r1.ToString()}");
-
-// Через Invoke
-int r2 = score.Invoke(80, 20);
-Console.WriteLine($"Результат 2: {r2.ToString()}");
-```
-
-Метод `Invoke` особливо корисний у поєднанні з оператором умовного null `?.`, що дозволяє безпечно викликати делегат, який може бути `null`:
-
-```csharp run
-using System;
+void LogToConsole(string msg) => Console.WriteLine($"[LOG] {msg}");
+int Add(int x, int y) => x + y;
 
 delegate void AlertHandler(string message);
-
-AlertHandler? alert = null;
-
-// Без перевірки — впаде з NullReferenceException
-// alert("Помилка!");
-
-// Безпечний виклик через ?. — нічого не станеться якщо null
-alert?.Invoke("Безпечний виклик");
-
-Console.WriteLine("Програма продовжує виконання");
+delegate int Calculate(int x, int y);
 ```
 
-## Повернення значення з multicast-делегата
-
-Якщо делегат містить кілька методів і повертає значення — повертається результат **останнього методу** зі списку виклику. Результати проміжних методів відкидаються:
+Інший спосіб виклику делегата — метод `Invoke()`:
 
 ```csharp run
 using System;
 
-delegate int ScoreCalc(int base_, int coeff);
+AlertHandler alert = LogToConsole;
+alert.Invoke("Критичний показник!"); // еквівалентно alert(...)
 
-int Method1(int b, int c) { Console.WriteLine($"Method1: {(b*c).ToString()}"); return b * c; }
-int Method2(int b, int c) { Console.WriteLine($"Method2: {(b+c).ToString()}"); return b + c; }
-int Method3(int b, int c) { Console.WriteLine($"Method3: {(b-c).ToString()}"); return b - c; }
+Calculate calc = Add;
+int n = calc.Invoke(120, 80);
+Console.WriteLine($"Результат: {n.ToString()}");
 
-ScoreCalc calc = Method1;
-calc += Method2;
-calc += Method3;
+void LogToConsole(string msg) => Console.WriteLine($"[LOG] {msg}");
+int Add(int x, int y) => x + y;
 
-int result = calc(10, 3);
-Console.WriteLine($"Повернуто (останній): {result.ToString()}");
+delegate void AlertHandler(string message);
+delegate int Calculate(int x, int y);
 ```
 
-З цієї причини multicast-делегати з типом повернення, відмінним від `void`, застосовуються рідко — зазвичай саме для `void`-методів, де кожен метод виконує свою дію незалежно.
+Якщо делегат приймає параметри — методу `Invoke` передаються їх значення.
+
+Слід враховувати: якщо делегат порожній, тобто у його списку виклику немає жодного методу (делегат дорівнює `null`), то при виклику такого делегата виникне виняток:
+
+```csharp
+AlertHandler? alert;
+// alert("Помилка!"); // NullReferenceException — делегат дорівнює null
+
+Calculate? calc = Add;
+calc -= Add; // делегат calc порожній
+// int n = calc(10, 5); // NullReferenceException
+
+delegate void AlertHandler(string message);
+delegate int Calculate(int x, int y);
+int Add(int x, int y) => x + y;
+```
+
+Тому при виклику делегата краще завжди перевіряти, чи він не дорівнює `null`. Або використовувати метод `Invoke` з оператором умовного null `?.`, який безпечно не виконає виклик якщо делегат `null`:
+
+```csharp run
+using System;
+
+AlertHandler? alert = null;
+alert?.Invoke("Безпечний виклик — нічого не станеться");
+
+Calculate? calc = Add;
+calc -= Add; // список виклику порожній
+int? result = calc?.Invoke(10, 5); // result буде null, винятку немає
+Console.WriteLine($"result = {result?.ToString() ?? "null"}");
+
+int Add(int x, int y) => x + y;
+delegate void AlertHandler(string message);
+delegate int Calculate(int x, int y);
+```
+
+Якщо делегат повертає деяке значення і у його списку виклику кілька методів — повертається значення **останнього методу** зі списку. Наприклад:
+
+```csharp run
+using System;
+
+Calculate calc = Method1;
+calc += Method2;
+calc += Method3;
+Console.WriteLine($"Повернуто: {calc(10, 3).ToString()}"); // Add(10,3) = 13
+
+int Method1(int x, int y) { Console.WriteLine($"Method1: {(x*y).ToString()}"); return x * y; }
+int Method2(int x, int y) { Console.WriteLine($"Method2: {(x-y).ToString()}"); return x - y; }
+int Method3(int x, int y) { Console.WriteLine($"Method3: {(x+y).ToString()}"); return x + y; }
+
+delegate int Calculate(int x, int y);
+```
 
 ## Узагальнені делегати
 
-Делегати, як і класи, можуть мати параметри типів. Це дозволяє описати делегат, що відповідає методам із різними типами параметрів і повернення:
+Делегати, як і інші типи, можуть бути узагальненими. Це дозволяє описати делегат, що відповідає методам із різними конкретними типами параметрів і повернення:
 
 ```csharp run
 using System;
-
-delegate TResult Transform<TInput, TResult>(TInput value);
-
-double KgToLb(double kg) => kg * 2.20462;
-int CelsiusToFahrenheit(int celsius) => celsius * 9 / 5 + 32;
-string FormatPulse(int pulse) => $"{pulse.ToString()} уд/хв";
 
 Transform<double, double> weightConv  = KgToLb;
 Transform<int, int>       tempConv    = CelsiusToFahrenheit;
 Transform<int, string>    pulseFormat = FormatPulse;
 
-Console.WriteLine($"70 кг = {weightConv(70.0).ToString("F1")} фунтів");
-Console.WriteLine($"37°C = {tempConv(37).ToString()}°F");
-Console.WriteLine($"Пульс: {pulseFormat(72)}");
+double result1 = weightConv(70.0);
+Console.WriteLine($"70 кг = {result1.ToString("F1")} фунтів");
+
+int result2 = tempConv(37);
+Console.WriteLine($"37°C = {result2.ToString()}°F");
+
+Console.WriteLine(pulseFormat(72));
+
+double KgToLb(double kg) => kg * 2.20462;
+int CelsiusToFahrenheit(int celsius) => celsius * 9 / 5 + 32;
+string FormatPulse(int pulse) => $"{pulse.ToString()} уд/хв";
+
+delegate T Transform<K, T>(K value);
 ```
 
-Узагальнені делегати — основа стандартних делегатів `Func<>` та `Action<>`, які вбудовані в .NET і розглядатимуться далі.
+Тут делегат `Transform` типізується двома параметрами типів. Параметр `K` представляє тип вхідного параметра, а параметр `T` — тип значення, що повертається. Таким чином, цьому делегату відповідає метод, який приймає параметр будь-якого типу та повертає значення будь-якого типу. Делегату `Transform<double, double>` відповідає метод, що приймає і повертає `double`, а делегату `Transform<int, string>` — метод, що приймає `int` і повертає `string`.
 
 ## Делегати як параметри методів
 
-Найпотужніша можливість делегатів — передача методів як аргументів іншим методам. Це дозволяє будувати гнучкі алгоритми, поведінка яких визначається ззовні:
+Делегати можуть бути параметрами методів. Завдяки цьому один метод може отримувати інші методи як дії — параметри. Це і є функції вищого порядку:
 
 ```csharp run
 using System;
 
-delegate bool Filter(double value);
-delegate string Format(double value);
+CalculateVitals(120, 80, AddPressure);
+CalculateVitals(120, 80, SubtractPressure);
+CalculateVitals(120, 80, MultiplyPressure);
 
-void PrintReadings(double[] readings, Filter filter, Format format)
+void CalculateVitals(int systolic, int diastolic, Operation op)
 {
-    foreach (var r in readings)
-    {
-        if (filter(r))
-            Console.WriteLine($"  {format(r)}");
-    }
+    Console.WriteLine($"Результат: {op(systolic, diastolic).ToString()}");
 }
 
-double[] pulseData = { 72, 145, 68, 130, 55, 88, 165 };
+int AddPressure(int x, int y)      => x + y;
+int SubtractPressure(int x, int y) => x - y;
+int MultiplyPressure(int x, int y) => x * y;
 
-Console.WriteLine("Критичні показники пульсу:");
-PrintReadings(
-    pulseData,
-    v => v > 120 || v < 60,
-    v => $"Пульс {v.ToString("F0")} уд/хв [!]"
-);
-
-Console.WriteLine("Норма:");
-PrintReadings(
-    pulseData,
-    v => v >= 60 && v <= 120,
-    v => $"Пульс {v.ToString("F0")} уд/хв"
-);
+delegate int Operation(int x, int y);
 ```
 
-Метод `PrintReadings` не знає заздалегідь ні логіки фільтрації, ні способу форматування — їх визначає викликаючий код. Це і є функції вищого порядку.
+Тут метод `CalculateVitals` як параметри приймає два числа і деяку дію у вигляді делегата `Operation`. Всередині методу викликаємо делегат, передаючи йому числа з перших двох параметрів. При виклику методу `CalculateVitals` ми можемо передати як третій параметр будь-який метод, що відповідає делегату `Operation`.
 
 ## Повернення делегатів із методів
 
-Метод може повертати делегат — тобто повертати певну поведінку як об'єкт:
+Також делегати можна повертати з методів. Тобто ми можемо повертати з методу якусь дію у вигляді іншого методу:
 
 ```csharp run
 using System;
 
-delegate string DiagnoseFunc(double value);
+Operation op1 = SelectOperation(OperationType.Add);
+Console.WriteLine($"Результат: {op1(120, 80).ToString()}");
 
-enum MeasurementType { Pulse, Temperature, BloodPressureSys }
+Operation op2 = SelectOperation(OperationType.Subtract);
+Console.WriteLine($"Результат: {op2(120, 80).ToString()}");
 
-DiagnoseFunc GetDiagnoser(MeasurementType type) => type switch
+Operation op3 = SelectOperation(OperationType.Multiply);
+Console.WriteLine($"Результат: {op3(120, 80).ToString()}");
+
+Operation SelectOperation(OperationType opType)
 {
-    MeasurementType.Pulse =>
-        v => v < 60 ? "Брадикардія" : v > 100 ? "Тахікардія" : "Норма",
-    MeasurementType.Temperature =>
-        v => v < 36.0 ? "Гіпотермія" : v > 37.5 ? "Гіпертермія" : "Норма",
-    MeasurementType.BloodPressureSys =>
-        v => v < 90 ? "Гіпотонія" : v > 140 ? "Гіпертонія" : "Норма",
-    _ => v => "Невідомий показник"
-};
+    switch (opType)
+    {
+        case OperationType.Add:      return Add;
+        case OperationType.Subtract: return Subtract;
+        default:                     return Multiply;
+    }
+}
 
-var diagnosePulse = GetDiagnoser(MeasurementType.Pulse);
-var diagnoseTemp  = GetDiagnoser(MeasurementType.Temperature);
+int Add(int x, int y)      => x + y;
+int Subtract(int x, int y) => x - y;
+int Multiply(int x, int y) => x * y;
 
-Console.WriteLine($"Пульс 145: {diagnosePulse(145)}");
-Console.WriteLine($"Пульс 72: {diagnosePulse(72)}");
-Console.WriteLine($"Темп 38.2: {diagnoseTemp(38.2)}");
+enum OperationType { Add, Subtract, Multiply }
+delegate int Operation(int x, int y);
 ```
 
-## Практичний приклад: патерн зворотного виклику
+В даному випадку метод `SelectOperation` як параметр приймає значення перерахування `OperationType`. Залежно від значення параметра повертається певний метод. Оскільки тип методу, що повертається — делегат `Operation`, то метод повинен повернути метод, який відповідає цьому делегату. Тобто, якщо параметр дорівнює `OperationType.Add`, повертається метод `Add`.
 
-Найважливіше застосування делегатів — **callback-патерн**: клас визначає делегат для сповіщення про події, а зовнішній код реєструє власні обробники. Клас не знає що саме відбудеться — він просто викликає делегат.
+При виклику `SelectOperation` ми отримуємо необхідну дію у змінну `op1`. І при виклику змінної `op1` фактично буде викликатися отриманий з `SelectOperation` метод.
 
-Розглянемо монітор вітальних показників пацієнта. Клас повинен реагувати на критичні значення, але не повинен знати як саме — через консоль, лог, SMS або GUI:
+## Застосування делегатів
+
+Наведені вище приклади, можливо, не показують справжньої сили делегатів, оскільки потрібні нам методи ми могли б викликати і без будь-яких делегатів. Однак найбільш сильна сторона делегатів полягає в тому, що вони дозволяють **делегувати виконання певного коду ззовні**. На момент написання класу ми можемо не знати, що саме буде виконуватися — ми просто викликаємо делегат. А який метод безпосередньо виконуватиметься, вирішуватиметься потім, при використанні класу.
 
 ![Патерн зворотного виклику через делегат](_assets/06-01/callback-pattern.png)
 
+Розглянемо детальний приклад. Нехай у нас є клас, який описує пацієнта в системі:
+
+```csharp
+public class Patient
+{
+    int _balance; // умовний баланс страхових коштів
+    public Patient(int balance) => _balance = balance;
+    public void AddFunds(int amount) => _balance += amount;
+    public void Spend(int amount)
+    {
+        if (_balance >= amount) _balance -= amount;
+    }
+}
+```
+
+Припустимо, нам треба повідомляти про кожне списання страхових коштів пацієнта. Якщо клас використовується лише в консольній програмі того самого проекту, де він створений, можна написати просто:
+
+```csharp
+public void Spend(int amount)
+{
+    if (_balance >= amount)
+    {
+        _balance -= amount;
+        Console.WriteLine($"Списано {amount} грн. зі страхового рахунку.");
+    }
+}
+```
+
+Але якщо наш клас планується використовувати в інших проектах — у графічному додатку Windows Forms або WPF, у мобільному додатку, у веб-API — рядок повідомлення `Console.WriteLine(...)` не матиме жодного сенсу. Більш того, якщо клас `Patient` використовуватиметься іншими розробниками у вигляді окремої бібліотеки, ці розробники захочуть повідомляти про списання коштів якимось іншим чином — про який ми навіть не здогадуємося на момент написання класу.
+
+Тому жорстко вшитий `Console.WriteLine` — не найкраще рішення. Делегати дозволяють делегувати визначення дії із класу у зовнішній код, який використовуватиме цей клас. Змінимо клас, застосувавши делегати:
+
 ```csharp run
 using System;
 
-public delegate void AlertHandler(string message);
+// Оголошуємо делегат — тип для обробника подій
+public delegate void PatientHandler(string message);
 
-public class VitalSignsMonitor
+public class Patient
 {
-    private string _patientName;
-    private AlertHandler? _onAlert;
+    int _balance;
+    // Змінна делегата — зберігає посилання на обробник
+    PatientHandler? _onSpend;
 
-    public VitalSignsMonitor(string patientName)
+    public Patient(int balance) => _balance = balance;
+
+    // Метод для реєстрації обробника
+    public void RegisterHandler(PatientHandler handler)
     {
-        _patientName = patientName;
+        _onSpend = handler;
     }
 
-    public void RegisterAlert(AlertHandler handler)  => _onAlert += handler;
-    public void UnregisterAlert(AlertHandler handler) => _onAlert -= handler;
+    public void AddFunds(int amount) => _balance += amount;
 
-    public void CheckPulse(int pulse)
+    public void Spend(int amount)
     {
-        if (pulse > 120)
-            _onAlert?.Invoke($"{_patientName}: тахікардія, пульс {pulse.ToString()} уд/хв");
-        else if (pulse < 50)
-            _onAlert?.Invoke($"{_patientName}: брадикардія, пульс {pulse.ToString()} уд/хв");
-    }
-
-    public void CheckTemperature(double temp)
-    {
-        if (temp > 38.5)
-            _onAlert?.Invoke($"{_patientName}: гіпертермія, температура {temp.ToString("F1")}°C");
+        if (_balance >= amount)
+        {
+            _balance -= amount;
+            // Викликаємо делегат — що саме відбудеться, вирішить зовнішній код
+            _onSpend?.Invoke($"Списано {amount.ToString()} грн. Залишок: {_balance.ToString()} грн.");
+        }
+        else
+        {
+            _onSpend?.Invoke($"Недостатньо коштів. Баланс: {_balance.ToString()} грн.");
+        }
     }
 }
 
-void LogToConsole(string msg) =>
-    Console.WriteLine($"[LOG]  {msg}");
+// Створюємо пацієнта зі страховим рахунком
+Patient patient = new Patient(500);
+// Передаємо обробник — консольний вивід
+patient.RegisterHandler(PrintMessage);
+// Двічі намагаємось списати кошти
+patient.Spend(200);
+patient.Spend(400);
 
-void AlertNurse(string msg) =>
-    Console.WriteLine($"[МЕДСЕСТРА] Терміново! {msg}");
-
-var monitor = new VitalSignsMonitor("Іван Петренко");
-
-monitor.RegisterAlert(LogToConsole);
-monitor.RegisterAlert(AlertNurse);
-
-monitor.CheckPulse(145);
-monitor.CheckTemperature(39.1);
-
-Console.WriteLine("--- Прибрали сповіщення медсестри ---");
-monitor.UnregisterAlert(AlertNurse);
-
-monitor.CheckPulse(42);
+void PrintMessage(string message) => Console.WriteLine(message);
 ```
 
-Клас `VitalSignsMonitor` абсолютно не залежить від того, що відбувається при спрацюванні сповіщення. Він просто викликає делегат і передає повідомлення. Конкретні дії — вивід у консоль, запис у лог, відправка SMS, показ у GUI — реєструються ззовні. Якщо завтра з'явиться нова вимога «надсилати push-сповіщення» — достатньо зареєструвати ще один обробник, не змінюючи клас монітора.
+Для делегування дії тут визначено делегат `PatientHandler`. Цей делегат відповідає будь-яким методам, які мають тип `void` та приймають параметр типу `string`:
+
+```csharp
+public delegate void PatientHandler(string message);
+```
+
+У класі `Patient` визначається змінна `_onSpend`, що представляє цей делегат. Далі визначається спеціальний метод `RegisterHandler`, через який передається реальна дія — конкретний метод ззовні:
+
+```csharp
+public void RegisterHandler(PatientHandler handler)
+{
+    _onSpend = handler;
+}
+```
+
+Виклик делегата відбувається у методі `Spend`. Залежно від того, чи відбулося списання, передаються різні повідомлення. Класу `Patient` не важливо, що саме відбудеться — він лише надсилає повідомлення через делегат.
+
+Таким чином, ми створили механізм зворотного виклику для класу `Patient`. Тут ми виводимо повідомлення на консоль. Але зовнішній код міг би записати повідомлення у файл, надіслати на email, показати у графічному вікні — будь-який спосіб обробки, незалежно від класу `Patient`.
+
+## Додавання та видалення методів у делегаті
+
+Хоча у прикладі наш делегат приймав адресу одного методу, насправді він може вказувати відразу на кілька. Крім того, за потреби ми можемо видалити посилання на певні методи, щоб вони не викликалися при виклику делегата. Змінимо клас `Patient`: метод `RegisterHandler` тепер використовуватиме `+=`, а новий метод `UnregisterHandler` — `-=`:
+
+```csharp run
+using System;
+
+public delegate void PatientHandler(string message);
+
+public class Patient
+{
+    int _balance;
+    PatientHandler? _onSpend;
+
+    public Patient(int balance) => _balance = balance;
+
+    // Реєструємо обробник — додаємо до списку
+    public void RegisterHandler(PatientHandler handler)
+    {
+        _onSpend += handler;
+    }
+
+    // Скасування реєстрації обробника — видаляємо зі списку
+    public void UnregisterHandler(PatientHandler handler)
+    {
+        _onSpend -= handler;
+    }
+
+    public void AddFunds(int amount) => _balance += amount;
+
+    public void Spend(int amount)
+    {
+        if (_balance >= amount)
+        {
+            _balance -= amount;
+            _onSpend?.Invoke($"Списано {amount.ToString()} грн. Залишок: {_balance.ToString()} грн.");
+        }
+        else
+        {
+            _onSpend?.Invoke($"Недостатньо коштів. Баланс: {_balance.ToString()} грн.");
+        }
+    }
+}
+
+Patient patient = new Patient(500);
+
+// Реєструємо два обробники
+patient.RegisterHandler(PrintSimpleMessage);
+patient.RegisterHandler(PrintHighlightedMessage);
+
+patient.Spend(200);
+patient.Spend(400);
+
+// Видаляємо другий обробник
+patient.UnregisterHandler(PrintHighlightedMessage);
+// Тепер спрацьовує лише перший
+patient.Spend(100);
+
+void PrintSimpleMessage(string message) => Console.WriteLine(message);
+void PrintHighlightedMessage(string message)
+{
+    Console.WriteLine($"*** {message} ***");
+}
+```
+
+У методі `RegisterHandler` делегати `_onSpend` і `handler` об'єднуються в один, який присвоюється змінній `_onSpend`. У методі `UnregisterHandler` зі змінної `_onSpend` видаляється делегат `handler`.
 
 ## Анонімні методи
 
-Замість оголошення окремого іменованого методу, делегату можна присвоїти **анонімний метод** — метод без імені, визначений прямо у місці присвоєння за допомогою ключового слова `delegate`:
+З делегатами тісно пов'язані анонімні методи. Анонімні методи використовуються для створення екземплярів делегатів без оголошення окремого іменованого методу.
 
-```csharp run
-using System;
+Визначення анонімних методів починається з ключового слова `delegate`, після якого у дужках йде список параметрів та тіло методу у фігурних дужках:
 
-delegate void AlertHandler(string message);
-
-AlertHandler handler = delegate(string msg)
+```text
+delegate(параметри)
 {
-    Console.WriteLine($"[АНОНІМНИЙ] {msg}");
-};
-
-handler("Пацієнт Коваль: критичний стан");
+    // інструкції
+}
 ```
 
-Анонімний метод не може існувати сам по собі — він одразу прив'язується до змінної делегата або передається як аргумент. Анонімні методи часто використовують для одноразових обробників, коли немає сенсу оголошувати окремий метод:
+Наприклад:
 
 ```csharp run
 using System;
 
-delegate void AlertHandler(string message);
-
-void RegisterAndTest(string patientName, AlertHandler handler)
+PatientHandler handler = delegate(string msg)
 {
-    Console.WriteLine($"Моніторинг: {patientName}");
-    handler($"Перевірка {patientName}: пульс в нормі");
+    Console.WriteLine($"[ОБРОБНИК] {msg}");
+};
+
+handler("Пацієнт Коваль: списано 150 грн.");
+
+delegate void PatientHandler(string message);
+```
+
+Анонімний метод не може існувати сам по собі — він використовується для ініціалізації екземпляра делегата. У даному випадку змінна `handler` є анонімним методом, і через цю змінну делегата можна викликати цей анонімний метод.
+
+Інший приклад анонімних методів — передача як аргумент для параметра, який представляє делегат:
+
+```csharp run
+using System;
+
+ShowAlert("Пульс 145 уд/хв — критично!", delegate(string mes)
+{
+    Console.WriteLine($"[СПОВІЩЕННЯ] {mes}");
+});
+
+void ShowAlert(string message, PatientHandler handler)
+{
+    handler(message);
 }
 
-RegisterAndTest("Марія Сидоренко", delegate(string msg)
-{
-    Console.WriteLine($"  >> {msg}");
-});
+delegate void PatientHandler(string message);
 ```
 
-Якщо делегат не використовує параметри (навіть якщо вони є у сигнатурі), дужки з параметрами можна опустити:
+Якщо анонімному методу не потрібні параметри — дужки з параметрами опускаються. При цьому навіть якщо делегат приймає кілька параметрів, в анонімному методі можна їх не вказувати:
 
 ```csharp run
 using System;
 
-delegate void AlertHandler(string message);
-
-AlertHandler handler = delegate
+PatientHandler handler = delegate
 {
-    Console.WriteLine("Отримано сповіщення (параметри проігноровано)");
+    Console.WriteLine("Отримано сповіщення");
 };
 
-handler("будь-яке повідомлення");
+handler("будь-яке повідомлення"); // параметр ігнорується
+
+delegate void PatientHandler(string message);
 ```
 
-Анонімні методи, як і локальні функції, мають доступ до змінних зовнішнього контексту (замикання):
+Тобто якщо анонімний метод містить параметри — вони обов'язково повинні відповідати параметрам делегата. Або анонімний метод взагалі може не містити жодних параметрів, тоді він відповідає будь-якому делегату з тим самим типом значення, що повертається. При цьому параметри анонімного методу не можуть бути опущені, якщо один або декілька параметрів визначено модифікатором `out`.
+
+Так само, як і звичайні методи, анонімні можуть повертати результат:
 
 ```csharp run
 using System;
 
-delegate void AlertHandler(string message);
+Calculate calc = delegate(int x, int y)
+{
+    return x + y;
+};
 
-string wardName = "Кардіологія";
-int alertCount  = 0;
+int result = calc(120, 80);
+Console.WriteLine($"Результат: {result.ToString()}");
 
-AlertHandler handler = delegate(string msg)
+delegate int Calculate(int x, int y);
+```
+
+При цьому анонімний метод має доступ до всіх змінних, визначених у зовнішньому коді (замикання):
+
+```csharp run
+using System;
+
+string wardName  = "Кардіологія";
+int    alertCount = 0;
+
+PatientHandler handler = delegate(string msg)
 {
     alertCount++;
     Console.WriteLine($"[{wardName}] #{alertCount.ToString()}: {msg}");
@@ -494,6 +700,8 @@ handler("Пульс 145");
 handler("Тиск 180/100");
 handler("Температура 39.2");
 Console.WriteLine($"Всього сповіщень: {alertCount.ToString()}");
+
+delegate void PatientHandler(string message);
 ```
 
-Анонімний метод захоплює змінні `wardName` і `alertCount` із зовнішнього контексту. Зміна `alertCount` всередині анонімного методу відображається у зовнішньому коді — це замикання (closure). Анонімні методи є попередниками лямбда-виразів, які розглядатимуться у наступних розділах і є більш компактним сучасним способом запису того самого.
+Анонімний метод захоплює змінні `wardName` і `alertCount` із зовнішнього контексту — це замикання (closure). Зміна `alertCount` всередині анонімного методу відображається і в зовнішньому коді. Анонімні методи зазвичай використовують тоді, коли потрібно визначити одноразову дію, яка не має багато інструкцій та ніде більше не використовується. Зокрема, їх часто застосовують для обробки подій, які будуть розглянуті далі. Анонімні методи є попередниками лямбда-виразів — більш компактного сучасного способу запису того самого, який розглядатиметься у наступних розділах.
