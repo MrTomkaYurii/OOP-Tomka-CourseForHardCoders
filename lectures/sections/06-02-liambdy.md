@@ -1,214 +1,230 @@
-﻿---
+---
 chapter: 6
 chapterTitle: "Розділ 6. Делегати, події та лямбди"
 section: 2
 number: "6.2"
 title: "Лямбди"
-source: "../_combined/35-liambdy.md"
+source: "../_migration/source-chunks/35-liambdy.md"
 ---
 
 ## 6.2. Лямбди
 
-Лямбда-вираження представляють спрощений запис анонімних методів. Лямбда-вираження дозволяють створити ємні лаконічні методи, які можуть повертати деяке значення і які можна передати як параметри в інші методи.
+Лямбда-вираз — це компактний синтаксис для визначення анонімних методів. Там, де раніше потрібно було писати ключове слово `delegate`, список параметрів у дужках і тіло у фігурних дужках, лямбда дозволяє записати все в один рядок. З погляду типів даних лямбда-вираз представляє делегат — тобто посилання на метод із певною сигнатурою. Лямбди особливо корисні, коли метод короткий, застосовується в одному місці і немає сенсу виносити його у самостійну функцію.
 
-Ламбда-вирази мають наступний синтаксис: ліворуч від лямбда-оператора => визначається список параметрів, а праворуч блок виразів, який використовує ці параметри:
+Лямбда-оператор `=>` розбиває вираз на дві частини: ліворуч — список параметрів, праворуч — тіло:
 
-```csharp
-(список_параметрів) => вираз
+```text
+(список_параметрів) => тіло
 ```
 
-З погляду типу даних лямбда-вираз представляє делегат. Наприклад, визначимо найпростіше лямбда-вираз:
+Якщо тіло є одним виразом — фігурні дужки не потрібні. Якщо тіло містить кілька інструкцій — воно оформляється як звичайний блок у фігурних дужках.
 
-```csharp
-Message hello = () => Console.WriteLine("Hello");
-hello(); // Hello
-hello(); // Hello
-hello(); // Hello
-delegate void Message();
+## Базовий синтаксис
+
+Розглянемо найпростішу лямбду без параметрів, яка виводить повідомлення:
+
+```csharp run
+using System;
+
+PatientHandler greet = () => Console.WriteLine("Пацієнт зареєстрований у системі");
+greet();
+greet();
+
+delegate void PatientHandler();
 ```
 
-В даному випадку змінна hello представляє делегат Message - тобто деяка дія, яка нічого не повертає і не приймає жодних параметрів. Як значення цієї змінної надається лямбда-вираз. Цей лямбда-вираз має відповідати делегату Message – воно теж не приймає жодних параметрів, тому ліворуч від лямбда-оператора йдуть порожні дужки. А праворуч від лямбда-оператора йде вираз, що виконується - Console.WriteLine("Hello")
+Змінна `greet` представляє делегат `PatientHandler` — метод без параметрів і без повернення. Як значення надається лямбда-вираз: ліворуч від `=>` порожні дужки (немає параметрів), праворуч — єдиний вираз.
 
-Потім у програмі можна викликати цю змінну як метод.
+Якщо лямбда виконує кілька дій — вони поміщаються у фігурні дужки:
 
-Якщо лямбда-вираз містить кілька дій, то вони поміщаються у фігурні дужки:
+```csharp run
+using System;
 
-```csharp
-Message hello = () =>
+PatientHandler register = () =>
 {
-    Console.Write("Hello ");
-    Console.WriteLine("World");
+    Console.WriteLine("Пацієнт зареєстрований у системі");
+    Console.WriteLine("Очікуйте виклику лікаря");
 };
-hello(); // Hello World
+register();
+
+delegate void PatientHandler();
 ```
 
-Вище ми визначили змінну hello, яка представляє делегат Message. Але починаючи з версії C# 10 ми можемо застосовувати неявну типізацію (визначення змінної за допомогою оператора var) щодо лямбда-виразу:
+![Синтаксис лямбда-виразу](_assets/06-02/lambda-syntax.png)
 
-```csharp
-var hello = () => Console.WriteLine("Hello");
-hello(); // Hello
-hello(); // Hello
-hello(); // Hello
+Починаючи з C# 10 можна застосовувати неявну типізацію через `var`. Компілятор сам виводить тип делегата з контексту:
+
+```csharp run
+using System;
+
+var greet = () => Console.WriteLine("Пацієнт зареєстрований");
+greet();
 ```
 
-Але який тип у разі представляє змінна hello? При неявній типізації компілятор сам намагається зіставити лямбда-вираз з урахуванням його визначення з яким-небудь делегатом. Наприклад, вище визначений лямбда-вираз hello за замовчуванням компілятор буде розглядати як змінну вбудованого делегата Action, який не приймає жодних параметрів і нічого не повертає.
+При неявній типізації компілятор зіставляє лямбда-вираз із вбудованим делегатом. У цьому прикладі `greet` буде типу `Action` — стандартного делегата без параметрів і без повернення.
 
-### Параметри лямбди
+## Параметри лямбди
 
-При визначенні списку параметрів ми можемо не вказувати їм тип даних:
+При визначенні списку параметрів типи даних зазвичай можна не вказувати — компілятор виводить їх з типу делегата:
 
-```csharp
-Operation sum = (x, y) => Console.WriteLine($"{x} + {y} = {x + y}");
-sum(1, 2); // 1 + 2 = 3
-sum(22, 14); // 22 + 14 = 36
-delegate void Operation(int x, int y);
+```csharp run
+using System;
+
+AlertHandler alert = (name, msg) => Console.WriteLine($"[{name}]: {msg}");
+alert("Кардіологія", "Пацієнт Петренко: пульс 145");
+alert("ICU", "Критичний стан — негайна допомога");
+
+delegate void AlertHandler(string department, string message);
 ```
 
-У даному випадку компілятор бачить, що лямбда-вираз sum є типом Operation, а значить обидва параметри лямбди представляють тип int. Тому жодних проблем не виникне.
+Компілятор бачить, що `alert` є типом `AlertHandler`, де обидва параметри — `string`, тому `name` і `msg` автоматично отримують тип `string`.
 
-Однак якщо ми застосовуємо неявну типізацію, то компілятор може мати труднощі, щоб вивести тип делегата для лямбда-вираження, наприклад, у наступному випадку
+Якщо ж застосовується неявна типізація через `var`, компілятор не може вивести типи параметрів — тоді їх потрібно вказати явно:
 
-```csharp
-var sum = (x, y) => Console.WriteLine($"{x} + {y} = {x + y}"); // ! Помилка
+```csharp run
+using System;
+
+var alert = (string department, string message) =>
+    Console.WriteLine($"[{department}]: {message}");
+alert("Неврологія", "Пацієнт Сидоренко: скарги на головний біль");
 ```
 
-У цьому випадку можна вказати тип параметрів
+Якщо лямбда має рівно один параметр і його тип можна вивести — дужки навколо параметра можна опустити:
 
-```csharp
-var sum = (int x, int y) => Console.WriteLine($"{x} + {y} = {x + y}");
-sum(1, 2); // 1 + 2 = 3
-sum(22, 14); // 22 + 14 = 36
+```csharp run
+using System;
+
+NotifyHandler notify = patientName => Console.WriteLine($"Виклик: {patientName}");
+notify("Марія Коваль");
+notify("Олег Бойко");
+
+delegate void NotifyHandler(string patientName);
 ```
 
-Якщо лямбда має один параметр, для якого не потрібно вказувати тип даних, дужки можна опустити:
+## Повернення результату
 
-```csharp
-PrintHandler print = message => Console.WriteLine(message);
-print("Hello"); // Hello
-print("Welcome"); // Welcome
-delegate void PrintHandler(string message);
+Лямбда-вираз може повертати результат. Якщо тіло є єдиним виразом — значення повертається автоматично, без `return`:
+
+```csharp run
+using System;
+
+CalculateHandler bmi = (weight, height) => weight / (height * height);
+double result = bmi(70.0, 1.75);
+Console.WriteLine($"ІМТ: {result.ToString("F1")}");
+
+ScoreHandler classify = score => score >= 60 ? "задовільно" : "критично";
+Console.WriteLine($"Оцінка стану: {classify(72)}");
+Console.WriteLine($"Оцінка стану: {classify(45)}");
+
+delegate double CalculateHandler(double weight, double height);
+delegate string ScoreHandler(int score);
 ```
 
-### Повернення результату
+Якщо лямбда містить кілька виразів — потрібен явний `return`, як у звичайному методі:
 
-Лямбда-вираз може повертати результат. Результат, що повертається, можна вказати після лямбда-оператора:
+```csharp run
+using System;
 
-```csharp
-var sum = (int x, int y) => x + y;
-int sumResult = sum(4, 5); // 9
-Console.WriteLine(sumResult); // 9
-Operation multiply = (x, y) => x * y;
-int multiplyResult = multiply(4, 5); // 20
-Console.WriteLine(multiplyResult); // 20
-delegate int Operation(int x, int y);
-```
-
-Якщо лямбда-вираз містить кілька виразів, тоді потрібно використовувати оператор return, як у звичайних методах:
-
-```csharp
-var subtract = (int x, int y) =>
+BloodPressureHandler classify = (systolic, diastolic) =>
 {
-    if (x > y) return x - y;
-    else return y - x;
+    if (systolic > 140 || diastolic > 90) return "Гіпертонія";
+    if (systolic < 90 || diastolic < 60) return "Гіпотонія";
+    return "Норма";
 };
-int result1 = subtract(10, 6); // 4
-Console.WriteLine(result1); // 4
-int result2 = subtract(-10, 6); // 16
-Console.WriteLine(result2); // 16
+
+Console.WriteLine($"150/95: {classify(150, 95)}");
+Console.WriteLine($"85/55: {classify(85, 55)}");
+Console.WriteLine($"120/80: {classify(120, 80)}");
+
+delegate string BloodPressureHandler(int systolic, int diastolic);
 ```
 
-### Додавання та видалення дій у лямбда-виразі
+## Додавання та видалення дій у лямбда-виразі
 
-Оскільки лямбда-вираз представляє делегат, той як і в делегат, змінну, яка представляє лямбда-вираз можна додавати методи та інші лямбди:
+Оскільки лямбда-вираз представляє делегат, до змінної-лямбди можна додавати інші методи та лямбди через `+=`, а також видаляти через `-=`:
 
-```csharp
-var hello = () => Console.WriteLine("METANIT.COM");
-var message = () => Console.Write("Hello ");
-message += () => Console.WriteLine("World"); // додаємо анонімне лямбда-вираз
-message += hello; // добавляем лямбда-выражение из переменной hello
-message += Print; // додаємо метод
-message();
-Console.WriteLine("--------------"); // для поділу висновку
-message -= Print; // видаляємо метод
-message -= hello; // видаляємо лямбда-вираз зі змінної hello
-message?.Invoke(); // на випадок, якщо у message більше немає дій
-void Print() => Console.WriteLine("Welcome to C#");
+```csharp run
+using System;
+
+var logAlert = () => Console.WriteLine("[LOG] Сигнал тривоги");
+var notifyDoc = () => Console.WriteLine("[DR] Виклик лікаря");
+var sendSMS = () => Console.WriteLine("[SMS] Повідомлення відправлено");
+
+AlertChain alert = logAlert;
+alert += notifyDoc;
+alert += sendSMS;
+alert();
+
+Console.WriteLine("--- видаляємо SMS ---");
+alert -= sendSMS;
+alert?.Invoke();
+
+delegate void AlertChain();
 ```
 
-### Лямбда-вираз як аргумент методу
+При виклику `alert()` послідовно виконуються всі методи зі списку виклику. Після видалення `sendSMS` залишаються лише два перших.
 
-Як і делегати, лямбда-вирази можна передавати параметрам методу, які представляють делегат:
+## Лямбда-вираз як аргумент методу
 
-```csharp
-int[] integers = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-// знайдемо суму чисел більше 5
-int result1 = Sum(integers, x => x > 5);
-Console.WriteLine(result1); // 30
-// знайдемо суму парних чисел
-int result2 = Sum(integers, x => x % 2 == 0);
-Console.WriteLine(result2); //20
-int Sum(int[] numbers, IsEqual func)
+Найпрактичніше застосування лямбд — передача їх як аргументи методам. Це дозволяє параметризувати поведінку: метод визначає загальну структуру, а конкретна дія передається ззовні:
+
+```csharp run
+using System;
+
+double[] glucoseReadings = { 3.5, 7.2, 5.1, 8.8, 4.9, 6.3, 2.9 };
+
+double highCount = CountMatching(glucoseReadings, x => x > 6.1);
+double lowCount  = CountMatching(glucoseReadings, x => x < 3.9);
+
+Console.WriteLine($"Вище норми (>6.1): {highCount.ToString("F0")} результатів");
+Console.WriteLine($"Нижче норми (<3.9): {lowCount.ToString("F0")} результатів");
+
+double CountMatching(double[] values, IsMatch condition)
 {
-    int result = 0;
-    foreach (int i in numbers)
-    {
-        if (func(i))
-            result += i;
-    }
-    return result;
+    int count = 0;
+    foreach (var v in values)
+        if (condition(v)) count++;
+    return count;
 }
-delegate bool IsEqual(int x);
+
+delegate bool IsMatch(double value);
 ```
 
-Метод Sum приймає як параметр масив чисел і делегат IsEqual і повертає суму чисел масиву як об'єкта int. У циклі проходимо по всіх числах та складаємо їх. Причому складаємо лише ті числа, для яких делегат IsEqual func повертає true. Тобто делегат IsEqual тут фактично задає умову, якій мають відповідати значення масиву. Але на момент написання методу Sum нам невідомо, що це за умова.
+Метод `CountMatching` не знає, яка конкретно умова застосовується — він лише викликає делегат `condition` для кожного елемента. Умова передається зовні через лямбду: `x => x > 6.1` або `x => x < 3.9`. Такий підхід дозволяє повторно використовувати метод для будь-яких критеріїв фільтрації без зміни самого методу.
 
-При виклику методу Sum йому передається масив та лямбда-вираз:
+## Лямбда-вираз як результат методу
 
-```csharp
-int result1 = Sum(integers, x => x > 5);
-```
+Метод може повертати лямбда-вираз. Тип, що повертається, — делегат, якому відповідає лямбда:
 
-Тобто параметр x тут представлятиме число, яке передається в делегат:
+```csharp run
+using System;
 
-```csharp
-if (func(i))
-```
+BloodAnalysis analyze = SelectAnalysis(AnalysisType.Glucose);
+Console.WriteLine($"Глюкоза 7.5: {analyze(7.5)}");
 
-А вираз x > 5 є умовою, якій має відповідати число. Якщо число відповідає цій умові, то лямбда-вираз повертає true, а передане число складається з іншими числами.
+analyze = SelectAnalysis(AnalysisType.Hemoglobin);
+Console.WriteLine($"Гемоглобін 105: {analyze(105.0)}");
 
-Подібним чином працює другий виклик методу Sum, тільки тут уже йде перевірка числа на парність, тобто якщо залишок від поділу на 2 дорівнює нулю:
+analyze = SelectAnalysis(AnalysisType.Cholesterol);
+Console.WriteLine($"Холестерин 6.2: {analyze(6.2)}");
 
-```csharp
-int result2 = Sum(integers, x => x % 2 == 0);
-```
-
-### Лямбда-вираз як результат методу
-
-Метод також може повертати лямбда-вираз. У цьому випадку типом методу, що повертається, виступає делегат, якому відповідає лямбда-вираз, що повертається. Наприклад:
-
-```csharp
-Operation operation = SelectOperation(OperationType.Add);
-Console.WriteLine(operation(10, 4)); // 14
-operation = SelectOperation(OperationType.Subtract);
-Console.WriteLine(operation(10, 4)); // 6
-operation = SelectOperation(OperationType.Multiply);
-Console.WriteLine(operation(10, 4)); // 40
-Operation SelectOperation(OperationType opType)
+BloodAnalysis SelectAnalysis(AnalysisType type)
 {
-    switch (opType)
+    switch (type)
     {
-        case OperationType.Add: return (x, y) => x + y;
-        case OperationType.Subtract: return (x, y) => x - y;
-        default: return (x, y) => x * y;
+        case AnalysisType.Glucose:
+            return value => value < 3.9 ? "Низький" : value > 6.1 ? "Високий" : "Норма";
+        case AnalysisType.Hemoglobin:
+            return value => value < 120 ? "Низький" : value > 170 ? "Високий" : "Норма";
+        default:
+            return value => value < 3.0 ? "Низький" : value > 5.2 ? "Високий" : "Норма";
     }
 }
 
-enum OperationType
-{
-    Add,
-    Subtract,
-    Multiply
-}
+enum AnalysisType { Glucose, Hemoglobin, Cholesterol }
+delegate string BloodAnalysis(double value);
 ```
 
-В даному випадку метод SelectOperation() як параметр приймає перерахування типу OperationType. Цей перелік зберігає три константи, кожна з яких відповідає певній арифметичній операції. І в самому методі в залежності від значення параметра повертаємо певний лямбда-вираз.
+Метод `SelectAnalysis` отримує тип аналізу і повертає відповідну лямбду з потрібними порогами норми. Зовнішній код отримує готову функцію-класифікатор і може викликати її для будь-якого значення. Такий патерн часто називають «фабрикою функцій» — метод конструює і повертає поведінку, а не лише дані.
+
+![Лямбда vs анонімний метод vs іменований метод](_assets/06-02/lambda-vs-methods.png)
