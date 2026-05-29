@@ -34,7 +34,9 @@ window.runnerJs = {
     autoResizeAndReport: function () {},
 
     initResetBtn: function (btn) {
-        var params = new URLSearchParams(window.location.search);
+        // Code is in URL hash (#code=...) — check hash first, fall back to query for compat
+        var hash = window.location.hash.replace(/^#/, '');
+        var params = hash ? new URLSearchParams(hash) : new URLSearchParams(window.location.search);
         var encoded = params.get('code');
         if (!encoded) { btn.style.display = 'none'; return; }
 

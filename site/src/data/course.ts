@@ -438,7 +438,7 @@ async function renderMarkdown(markdown: string, options: { assetPrefix?: string 
 
     if (isRunnable) {
       const encoded = Buffer.from(text, "utf-8").toString("base64");
-      const src = siteAssetPath(`/runner/?code=${encodeURIComponent(encoded)}`);
+      const src = siteAssetPath(`/runner/#code=${encodeURIComponent(encoded)}`);
       // Розраховуємо висоту iframe під кількість рядків коду
       const lines = text.split("\n").length;
       const TOOLBAR   = 37;  // 36px + 1px border-bottom

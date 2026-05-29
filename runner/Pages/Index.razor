@@ -78,8 +78,10 @@
     protected override Task OnInitializedAsync()
     {
         var uri = new Uri(Nav.Uri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        var encoded = query["code"];
+        // Code is passed via URL hash (#code=...) so the server never sees it → no HTTP 414
+        var fragment = uri.Fragment.TrimStart('#');
+        var fragParams = System.Web.HttpUtility.ParseQueryString(fragment);
+        var encoded = fragParams["code"];
         if (!string.IsNullOrWhiteSpace(encoded))
         {
             try
