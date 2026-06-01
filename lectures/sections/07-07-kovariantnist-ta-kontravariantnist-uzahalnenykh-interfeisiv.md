@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 7
 chapterTitle: "Розділ 7. Інтерфейси"
 section: 7
@@ -9,160 +9,248 @@ source: "../_combined/45-kovariantnist-ta-kontravariantnist-uzahalnenykh-interfe
 
 ## 7.7. Коваріантність та контраваріантність узагальнених інтерфейсів
 
-Поняття коваріантності та контраваріантності пов'язані з можливістю використовувати в додатку замість деякого типу інший тип, який знаходиться нижче або вище в ієрархії спадкування.
+Уявіть ієрархію: `Cardiologist` успадковує `Doctor`. Це означає, що `Cardiologist` **є** `Doctor`: де очікується `Doctor`, можна підставити `Cardiologist`. Але чи діє та ж логіка для узагальнених інтерфейсів? Чи можна підставити `IClinicFactory<Cardiologist>` туди, де очікується `IClinicFactory<Doctor>`?
 
-Є три можливі варіанти поведінки:
+Відповідь залежить від того, чи є інтерфейс **коваріантним**, **контраваріантним** або **інваріантним**. Ці три поняття описують, як напрям допустимого присвоєння між параметризованими типами співвідноситься з напрямом ієрархії між типами-аргументами.
 
-Коваріантність: дозволяє використовувати більш конкретний тип, ніж заданий спочатку
+![Коваріантність та контраваріантність](_assets/07-07/variance-directions.png)
 
-Контраваріантність: дозволяє використовувати більш універсальний тип, ніж заданий спочатку
+**Три форми варіантності:**
+- **Коваріантність** — присвоєння йде **в той самий бік**, що й ієрархія класів. Якщо `Cardiologist : Doctor`, то `IFactory<Cardiologist>` можна присвоїти `IFactory<Doctor>`.
+- **Контраваріантність** — присвоєння йде **в зворотний бік**. `IHandler<Doctor>` можна присвоїти `IHandler<Cardiologist>`.
+- **Інваріантність** — присвоєння неможливе в жодному напрямі (поведінка за замовчуванням).
 
-Інваріантність: дозволяє використовувати тільки заданий тип
+### Інваріантність — поведінка за замовчуванням
 
-C# дозволяє створювати коваріантні та контраваріантні узагальнені інтерфейси. Ця функціональність підвищує гнучкість під час використання узагальнених інтерфейсів у програмі. За умовчанням усі узагальнені інтерфейси є інваріантними.
-
-Для розгляду коваріантних та контраваріантних інтерфейсів візьмемо такі класи:
+Без спеціальних ключових слів усі узагальнені інтерфейси є **інваріантними**: `IRepository<Doctor>` і `IRepository<Cardiologist>` — абсолютно несумісні типи, навіть якщо `Cardiologist : Doctor`. Жодне присвоєння в жодному напрямі не дозволяється.
 
 ```csharp
-class Message
+interface IRepository<T>
 {
-    public string Text { get; set; }
-    public Message(string text) => Text = text;
+    T GetById(int id);
+    void Save(T item);
 }
-class EmailMessage : Message
+
+// IRepository<Cardiologist> НЕ можна присвоїти IRepository<Doctor> — помилка
+// IRepository<Doctor> НЕ можна присвоїти IRepository<Cardiologist> — помилка
+```
+
+Це може здаватися надто суворим, але є підставовою безпекою: якби `IRepository<Cardiologist>` можна було підставити як `IRepository<Doctor>`, то через змінну типу `IRepository<Doctor>` хтось міг би викликати `Save(new Therapist())` — а `Therapist` не є `Cardiologist`. Тому без явного дозволу компілятор забороняє такі присвоєння.
+
+### Коваріантні інтерфейси (out)
+
+Коваріантний інтерфейс оголошується за допомогою ключового слова **`out`** перед параметром типу:
+
+```csharp
+interface IClinicFactory<out T>
 {
-    public EmailMessage(string text): base(text) { }
+    T Create();
 }
 ```
-Тут визначено клас повідомлення Message, який отримує через конструктор текст і зберігає його як Text. А клас EmailMessage представляє умовне email-повідомлення та просто викликає конструктор базового класу, передаючи йому текст повідомлення.
 
-### Коваріантні інтерфейси
+Ключове слово `out` означає: «параметр T використовується лише як тип **значення, що повертається**». Тобто об'єкт типу T **виходить** з інтерфейсу (звідси `out`). У такому разі компілятор може гарантувати безпеку: якщо `Cardiologist : Doctor`, то всі кардіологи, яких повертає `IClinicFactory<Cardiologist>`, є і лікарями, тому `IClinicFactory<Cardiologist>` безпечно замінює `IClinicFactory<Doctor>`.
 
-Узагальнені інтерфейси можуть бути коваріантними, якщо до універсального параметра застосовується ключове слово out. Такий параметр повинен представляти тип об'єкта, який повертається методом. Наприклад:
+```csharp run
+using System;
 
-```csharp
-interface IMessenger<out T>
+class Doctor
 {
-    T WriteMessage(string text);
-}
-class EmailMessenger : IMessenger<EmailMessage>
-{
-    public EmailMessage WriteMessage(string text)
+    public string Name { get; }
+    public string Specialty { get; }
+
+    public Doctor(string name, string specialty)
     {
-        return new EmailMessage($"Email: {text}");
+        Name = name;
+        Specialty = specialty;
+    }
+
+    public virtual void Introduce() =>
+        Console.WriteLine($"Лікар {Name}, спеціальність: {Specialty}");
+}
+
+class Cardiologist : Doctor
+{
+    public Cardiologist(string name) : base(name, "Кардіологія") { }
+
+    public override void Introduce() =>
+        Console.WriteLine($"Кардіолог {Name}");
+}
+
+interface IClinicFactory<out T>
+{
+    T Create(string name);
+}
+
+class CardiologistFactory : IClinicFactory<Cardiologist>
+{
+    public Cardiologist Create(string name) => new Cardiologist(name);
+}
+
+class Program
+{
+    static void Main()
+    {
+        // Пряме використання
+        IClinicFactory<Cardiologist> cardFactory = new CardiologistFactory();
+        Cardiologist card = cardFactory.Create("Іваненко");
+        card.Introduce();
+
+        // Коваріантність: IClinicFactory<Cardiologist> → IClinicFactory<Doctor>
+        IClinicFactory<Doctor> docFactory = cardFactory;
+        Doctor doc = docFactory.Create("Петренко");
+        doc.Introduce();
+
+        Console.WriteLine();
+
+        // Через проміжну змінну
+        IClinicFactory<Cardiologist> src = new CardiologistFactory();
+        IClinicFactory<Doctor> dst = src;   // [OK] коваріантність дозволяє
+        Doctor created = dst.Create("Ковальчук");
+        created.Introduce();
     }
 }
 ```
-Тут узагальнений інтерфейс IMessenger представляє інтерфейс месенджера та визначає метод WriteMessage() створення повідомлення. При цьому на момент визначення інтерфейсу ми не знаємо, об'єкт якого типу повертатиметься у цьому методі. Ключове слово out у визначенні інтерфейсу показує, що цей інтерфейс буде коваріантним.
 
-Клас EmailMessenger, який представляє умовну програму для відправки email-повідомлень, реалізує цей інтерфейс та повертає з методу WriteMessage() об'єкт EmailMessage.
+**Обмеження коваріантного інтерфейсу**: параметр `T` з `out` можна використовувати **лише як тип, що повертається** — як тип вхідного аргументу методу він заборонений. Це гарантує, що через коваріантний інтерфейс не можна «записати» об'єкт неправильного типу.
 
-Застосуємо ці типи в програмі:
+### Контраваріантні інтерфейси (in)
 
-```csharp
-IMessenger<Message> outlook = new EmailMessenger();
-Message message = outlook.WriteMessage("Hello World");
-Console.WriteLine(message.Text); // Email: Hello World
-IMessenger<EmailMessage> emailClient = new EmailMessenger();
-IMessenger<Message> messenger = emailClient;
-Message emailMessage = messenger.WriteMessage("Hi!");
-Console.WriteLine(emailMessage.Text); // Email: Hi!
-```
-Тобто ми можемо надати більш загальному типу IMessenger<Message> об'єкт більш конкретного типу EmailMessenger або IMessenger<EmailMessage>.
-
-У той же час, якби ми не використовували ключове слово out:
+Контраваріантний інтерфейс оголошується за допомогою ключового слова **`in`**:
 
 ```csharp
-interface IMessenger<T>
-```
-то ми зіткнулися б з помилкою у рядку
-
-```csharp
-IMessenger<Message> outlook = new EmailMessenger(); // ! помилка
-IMessenger<EmailMessage> emailClient = new EmailMessenger();
-IMessenger<Message> messenger = emailClient; // ! помилка
-```
-Оскільки в цьому випадку неможливо було б привести об'єкт IMessenger<EmailMessage> до типу IMessenger<Message>.
-
-При створенні коваріантного інтерфейсу треба враховувати, що універсальний параметр може використовуватися тільки як тип значення, що повертається методами інтерфейсу. Але не може використовуватися як тип аргументів методу або обмеження методів інтерфейсу.
-
-### Контраваріантні інтерфейси
-
-Для створення контраваріантного інтерфейсу слід використовувати ключове слово in. Наприклад, візьмемо ті самі класи Message та EmailMessage та визначимо такі типи:
-
-```csharp
-interface IMessenger<in T>
+interface IDoctorHandler<in T>
 {
-    void SendMessage(T message);
+    void Handle(T doctor);
 }
-class SimpleMessenger : IMessenger<Message>
+```
+
+Ключове слово `in` означає: «параметр T використовується лише як тип **вхідного аргументу**». Тобто об'єкт типу T **входить** у інтерфейс. Якщо `IDoctorHandler<Doctor>` вміє обробляти будь-якого лікаря, то він точно вміє обробляти і кардіолога (бо кардіолог є лікарем). Тому `IDoctorHandler<Doctor>` можна присвоїти `IDoctorHandler<Cardiologist>` — **зворотний** напрям відносно ієрархії.
+
+```csharp run
+using System;
+
+class Doctor
 {
-    public void SendMessage(Message message)
+    public string Name { get; }
+    public Doctor(string name) { Name = name; }
+}
+
+class Cardiologist : Doctor
+{
+    public Cardiologist(string name) : base(name) { }
+}
+
+interface IDoctorHandler<in T>
+{
+    void Handle(T doctor);
+}
+
+class GeneralDoctorHandler : IDoctorHandler<Doctor>
+{
+    public void Handle(Doctor doctor) =>
+        Console.WriteLine($"Обробляємо лікаря: {doctor.Name}");
+}
+
+class Program
+{
+    static void Main()
     {
-        Console.WriteLine($"Відправляється повідомлення: {message.Text}");
+        // Пряме використання
+        IDoctorHandler<Doctor> generalHandler = new GeneralDoctorHandler();
+        generalHandler.Handle(new Doctor("Ковальчук"));
+
+        // Контраваріантність: IDoctorHandler<Doctor> → IDoctorHandler<Cardiologist>
+        IDoctorHandler<Cardiologist> cardHandler = generalHandler;
+        cardHandler.Handle(new Cardiologist("Іваненко"));
+
+        Console.WriteLine();
+
+        // Через проміжну змінну — теж працює
+        IDoctorHandler<Doctor> src = new GeneralDoctorHandler();
+        IDoctorHandler<Cardiologist> dst = src;  // [OK] контраваріантність
+        dst.Handle(new Cardiologist("Петренко"));
     }
 }
 ```
-Тут знову ж таки інтерфейс IMessenger представляє інтерфейс месенджера і визначає метод SendMessage() для відправки умовного повідомлення. Ключове слово in у визначенні інтерфейсу показує, що цей інтерфейс є контраваріантним.
 
-Клас SimpleMessenger представляє умовну програму надсилання повідомлень та реалізує цей інтерфейс. Причому як тип використовуваного цей клас використовує тип Message. Тобто SimpleMessenger фактично представляє тип IMessenger<Message>.
-
-Застосуємо ці типи у програмі:
-
-```csharp
-IMessenger<EmailMessage> outlook = new SimpleMessenger();
-outlook.SendMessage(new EmailMessage("Hi!"));
-IMessenger<Message> telegram = new SimpleMessenger();
-IMessenger<EmailMessage> emailClient = telegram;
-emailClient.SendMessage(new EmailMessage("Hello"));
-```
-Оскільки інтерфейс IMessenger використовує універсальний параметр із ключовим словом in, він є контраваріантним, у коді ми можемо змінній типу IMessenger<EmailMessage> передати об'єкт IMessenger<Message> чи SimpleMessenger.
-
-Якби ключове слово in не використовувалося б, ми не змогли б це зробити. Тобто об'єкт інтерфейсу з універсальним типом наводиться до об'єкта інтерфейсу з більш конкретним типом.
-
-При створенні контраваріантного інтерфейсу треба враховувати, що універсальний параметр контраваріантного типу може застосовуватися тільки до аргументів методу, але не може застосовуватися до результату методу, що повертається.
+**Обмеження контраваріантного інтерфейсу**: параметр `T` з `in` можна використовувати **лише як тип вхідного аргументу** — як тип значення, що повертається, він заборонений. Це гарантує, що через контраваріантний інтерфейс не можна «прочитати» об'єкт неправильного типу.
 
 ### Поєднання коваріантності та контраваріантності
 
-Також ми можемо поєднати коваріантність та контраваріантність в одному інтерфейсі. Наприклад:
+Один і той самий інтерфейс може мати кілька параметрів типу, одні з яких є `out`, а інші — `in`. Наприклад, інтерфейс клінічного месенджера, що **приймає** повідомлення одного типу і **повертає** відповідь іншого:
 
-```csharp
-interface IMessenger<in T, out K>
+```csharp run
+using System;
+
+class Doctor
 {
-    void SendMessage(T message);
-    K WriteMessage(string text);
+    public string Name { get; }
+    public Doctor(string name) { Name = name; }
 }
-class SimpleMessenger : IMessenger<Message, EmailMessage>
+
+class Cardiologist : Doctor
 {
-    public void SendMessage(Message message)
+    public Cardiologist(string name) : base(name) { }
+}
+
+class Report
+{
+    public string Text { get; }
+    public Report(string text) { Text = text; }
+}
+
+class DetailedReport : Report
+{
+    public DetailedReport(string text) : base(text) { }
+}
+
+// in T — приймає повідомлення типу T
+// out K — повертає відповідь типу K
+interface IClinicMessenger<in T, out K>
+{
+    void Send(T request);
+    K Receive();
+}
+
+class ClinicMessengerImpl : IClinicMessenger<Doctor, DetailedReport>
+{
+    private string _lastSender = "";
+
+    public void Send(Doctor request)
     {
-        Console.WriteLine($"Відправляється повідомлення: {message.Text}");
+        _lastSender = request.Name;
+        Console.WriteLine($"Повідомлення від {request.Name} отримано.");
     }
-    public EmailMessage WriteMessage(string text)
+
+    public DetailedReport Receive() =>
+        new DetailedReport($"Детальний звіт для {_lastSender}");
+}
+
+class Program
+{
+    static void Main()
     {
-        return new EmailMessage($"Email: {text}");
+        ClinicMessengerImpl impl = new ClinicMessengerImpl();
+
+        // Завдяки in T: IClinicMessenger<Doctor,...> → IClinicMessenger<Cardiologist,...>
+        // Завдяки out K: IClinicMessenger<...,DetailedReport> → IClinicMessenger<...,Report>
+        IClinicMessenger<Cardiologist, Report> messenger = impl;
+
+        messenger.Send(new Cardiologist("Іваненко"));
+        Report report = messenger.Receive();
+        Console.WriteLine(report.Text);
     }
 }
 ```
-Фактично тут об'єднано два попередні приклади. Завдяки коваріантності/контраваріантності об'єкт класу SimpleMessenger може представляти типи
 
-```csharp
-IMessenger<EmailMessage, Message>,
-IMessenger<Message, EmailMessage>,
-IMessenger<Message, Message>,
-IMessenger<EmailMessage, EmailMessage>.
-```
-Застосування класів:
+Завдяки обом модифікаторам об'єкт `ClinicMessengerImpl` (тип `IClinicMessenger<Doctor, DetailedReport>`) можна безпечно використовувати як `IClinicMessenger<Cardiologist, Report>` — контраваріантність по `T` (Doctor → Cardiologist, зворотний напрям) і коваріантність по `K` (DetailedReport → Report, прямий напрям).
 
-```csharp
-IMessenger<EmailMessage, Message> messenger = new SimpleMessenger();
-Message message = messenger.WriteMessage("Hello World");
-Console.WriteLine(message.Text);
-messenger.SendMessage(new EmailMessage("Test"));
-IMessenger<EmailMessage, EmailMessage> outlook = new SimpleMessenger();
-EmailMessage emailMessage = outlook.WriteMessage("Message from Outlook");
-outlook.SendMessage(emailMessage);
-IMessenger<Message, Message> telegram = new SimpleMessenger();
-Message simpleMessage = telegram.WriteMessage("Message from Telegram");
-telegram.SendMessage(simpleMessage);
-```
+### Правила і обмеження
+
+| Модифікатор | Назва | Дозволено для T | Напрям присвоєння |
+|---|---|---|---|
+| `out T` | Коваріантний | Лише тип результату методу | `IFoo<Derived>` → `IFoo<Base>` |
+| `in T` | Контраваріантний | Лише тип аргументу методу | `IFoo<Base>` → `IFoo<Derived>` |
+| *(без модифікатора)* | Інваріантний | Будь-яке використання | Присвоєння заборонено |
+
+Ці модифікатори доступні лише для **інтерфейсів** і **делегатів** — не для класів і структур. Саме тому в стандартній бібліотеці .NET такі інтерфейси, як `IEnumerable<out T>` (коваріантний) і `IComparer<in T>` (контраваріантний), ведуть себе інтуїтивно: послідовність кардіологів є послідовністю лікарів, а компаратор лікарів може порівнювати кардіологів.
