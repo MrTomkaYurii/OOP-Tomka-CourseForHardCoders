@@ -43,6 +43,20 @@ public static BodyTemperature operator ++(BodyTemperature t)
 ```csharp run
 using System;
 
+// Виконуваний код
+BodyTemperature t = new BodyTemperature(36.6);
+Console.WriteLine($"Початкова: {t}");
+
+t++;
+Console.WriteLine($"Після t++: {t}");
+
+++t;
+Console.WriteLine($"Після ++t: {t}");
+
+t--;
+Console.WriteLine($"Після t--: {t}");
+
+// Клас
 class BodyTemperature
 {
     public double Celsius { get; }
@@ -58,18 +72,6 @@ class BodyTemperature
 
     public override string ToString() => $"{Celsius:F1}°C";
 }
-
-BodyTemperature t = new BodyTemperature(36.6);
-Console.WriteLine($"Початкова: {t}");
-
-t++;
-Console.WriteLine($"Після t++: {t}");
-
-++t;
-Console.WriteLine($"Після ++t: {t}");
-
-t--;
-Console.WriteLine($"Після t--: {t}");
 ```
 
 `Math.Round(..., 1)` тут необхідний через особливості арифметики чисел із плаваючою крапкою: `36.6 + 0.1` без округлення може дати `36.699999...` замість `36.7`.
@@ -85,18 +87,7 @@ Console.WriteLine($"Після t--: {t}");
 ```csharp run
 using System;
 
-class BodyTemperature
-{
-    public double Celsius { get; }
-
-    public BodyTemperature(double celsius) => Celsius = celsius;
-
-    public static BodyTemperature operator ++(BodyTemperature t)
-        => new BodyTemperature(Math.Round(t.Celsius + 0.1, 1));
-
-    public override string ToString() => $"{Celsius:F1}°C";
-}
-
+// Виконуваний код
 BodyTemperature t1 = new BodyTemperature(36.6);
 
 // Постфіксний: t2 отримує СТАРУ копію, потім t1 інкрементується
@@ -110,6 +101,19 @@ BodyTemperature t3 = new BodyTemperature(36.6);
 BodyTemperature t4 = ++t3;
 Console.WriteLine($"Префіксний:  t3={t3},  t4={t4}");
 // t3 = 36.7, t4 = 36.7 — t4 отримала стан ПІСЛЯ зміни
+
+// Клас
+class BodyTemperature
+{
+    public double Celsius { get; }
+
+    public BodyTemperature(double celsius) => Celsius = celsius;
+
+    public static BodyTemperature operator ++(BodyTemperature t)
+        => new BodyTemperature(Math.Round(t.Celsius + 0.1, 1));
+
+    public override string ToString() => $"{Celsius:F1}°C";
+}
 ```
 
 При постфіксному `t1++` компілятор виконує три дії: зберігає поточний об'єкт у тимчасову змінну, замінює `t1` результатом `operator++(t1)`, а як результат виразу повертає тимчасову (стару) копію. При префіксному `++t3` — викликає `operator++(t3)`, присвоює результат `t3` і повертає його ж.
@@ -125,6 +129,22 @@ Console.WriteLine($"Префіксний:  t3={t3},  t4={t4}");
 ```csharp run
 using System;
 
+// Виконуваний код
+MedicalDevice monitor = new MedicalDevice("Кардіомонітор", true);
+MedicalDevice scanner = new MedicalDevice("МРТ-сканер", false);
+
+// Використання в умові if — без явного .IsOnline
+if (monitor)
+    Console.WriteLine($"{monitor.Name}: готовий до роботи");
+
+if (!scanner)
+    Console.WriteLine($"{scanner.Name}: потрібне технічне обслуговування");
+
+// Тернарний оператор
+string status = monitor ? "підключений" : "відключений";
+Console.WriteLine($"Статус монітора: {status}");
+
+// Клас
 class MedicalDevice
 {
     public string Name { get; }
@@ -148,20 +168,6 @@ class MedicalDevice
     public override string ToString()
         => IsOnline ? $"{Name} [активний]" : $"{Name} [офлайн]";
 }
-
-MedicalDevice monitor = new MedicalDevice("Кардіомонітор", true);
-MedicalDevice scanner = new MedicalDevice("МРТ-сканер", false);
-
-// Використання в умові if — без явного .IsOnline
-if (monitor)
-    Console.WriteLine($"{monitor.Name}: готовий до роботи");
-
-if (!scanner)
-    Console.WriteLine($"{scanner.Name}: потрібне технічне обслуговування");
-
-// Тернарний оператор
-string status = monitor ? "підключений" : "відключений";
-Console.WriteLine($"Статус монітора: {status}");
 ```
 
 Оператори `true` і `false` завжди визначаються **парою** — компілятор вимагає наявності обох. Оператор `!` не є обов'язковим, але без нього конструкція `if (!device)` не компілюється. Семантично `!device` збігається з оператором `false` — обидва перевіряють, що пристрій «не true».
@@ -173,6 +179,26 @@ Console.WriteLine($"Статус монітора: {status}");
 ```csharp run
 using System;
 
+// Виконуваний код
+BodyTemperature temp = new BodyTemperature(37.8);
+Console.WriteLine($"Початкова температура: {temp}");
+
+if (!temp)
+    Console.WriteLine("Стан відхиляється від норми — призначено лікування");
+
+Console.WriteLine("Динаміка після лікування:");
+for (int i = 0; i < 10; i++)
+{
+    temp--;
+    Console.WriteLine($"  вимірювання {i + 1}: {temp}");
+    if (temp)
+    {
+        Console.WriteLine("Температура нормалізувалась. Лікування завершено.");
+        break;
+    }
+}
+
+// Клас
 class BodyTemperature
 {
     public double Celsius { get; }
@@ -197,24 +223,6 @@ class BodyTemperature
         IsFever  ? $"{Celsius:F1}°C (жар)"   :
         IsNormal ? $"{Celsius:F1}°C (норма)" :
                    $"{Celsius:F1}°C";
-}
-
-BodyTemperature temp = new BodyTemperature(37.8);
-Console.WriteLine($"Початкова температура: {temp}");
-
-if (!temp)
-    Console.WriteLine("Стан відхиляється від норми — призначено лікування");
-
-Console.WriteLine("Динаміка після лікування:");
-for (int i = 0; i < 10; i++)
-{
-    temp--;
-    Console.WriteLine($"  вимірювання {i + 1}: {temp}");
-    if (temp)
-    {
-        Console.WriteLine("Температура нормалізувалась. Лікування завершено.");
-        break;
-    }
 }
 ```
 

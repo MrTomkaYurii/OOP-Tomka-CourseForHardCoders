@@ -70,6 +70,19 @@ public static ТипРезультату operator СИМВОЛ(параметр1
 ```csharp run
 using System;
 
+// Виконуваний код
+BodyTemperature morning = new BodyTemperature(36.6);
+BodyTemperature evening = new BodyTemperature(37.8);
+
+// Зсув — наприклад, після фізичного навантаження
+BodyTemperature afterExercise = morning + 0.8;
+Console.WriteLine($"Після навантаження: {afterExercise}");
+
+// Різниця між вечірнім і ранковим вимірами
+double delta = evening - morning;
+Console.WriteLine($"Приріст за день: {delta:+0.0;-0.0}°C");
+
+// Клас
 class BodyTemperature
 {
     public double Celsius { get; }
@@ -90,17 +103,6 @@ class BodyTemperature
 
     public override string ToString() => $"{Celsius:F1}°C";
 }
-
-BodyTemperature morning = new BodyTemperature(36.6);
-BodyTemperature evening = new BodyTemperature(37.8);
-
-// Зсув — наприклад, після фізичного навантаження
-BodyTemperature afterExercise = morning + 0.8;
-Console.WriteLine($"Після навантаження: {afterExercise}");
-
-// Різниця між вечірнім і ранковим вимірами
-double delta = evening - morning;
-Console.WriteLine($"Приріст за день: {delta:+0.0;-0.0}°C");
 ```
 
 Тип результату оператора — не обов'язково той самий клас. Оператор `-` між двома `BodyTemperature` повертає `double`, бо різниця температур — числова величина, а не нова температура. Тип результату визначається семантикою операції.
@@ -114,6 +116,17 @@ Console.WriteLine($"Приріст за день: {delta:+0.0;-0.0}°C");
 ```csharp run
 using System;
 
+// Виконуваний код
+BodyTemperature t1 = new BodyTemperature(38.2);
+BodyTemperature t2 = new BodyTemperature(36.9);
+BodyTemperature t3 = new BodyTemperature(38.2);
+
+Console.WriteLine($"{t1} > {t2}: {(t1 > t2 ? "так" : "ні")}");
+Console.WriteLine($"{t1} < {t2}: {(t1 < t2 ? "так" : "ні")}");
+Console.WriteLine($"{t1} == {t3}: {(t1 == t3 ? "так" : "ні")}");
+Console.WriteLine($"Пацієнт має жар: {(t1.IsFever ? "так" : "ні")}");
+
+// Клас
 class BodyTemperature
 {
     public double Celsius { get; }
@@ -137,15 +150,6 @@ class BodyTemperature
     public override bool Equals(object obj) => obj is BodyTemperature t && this == t;
     public override int GetHashCode() => Math.Round(Celsius, 1).GetHashCode();
 }
-
-BodyTemperature t1 = new BodyTemperature(38.2);
-BodyTemperature t2 = new BodyTemperature(36.9);
-BodyTemperature t3 = new BodyTemperature(38.2);
-
-Console.WriteLine($"{t1} > {t2}: {(t1 > t2 ? "так" : "ні")}");
-Console.WriteLine($"{t1} < {t2}: {(t1 < t2 ? "так" : "ні")}");
-Console.WriteLine($"{t1} == {t3}: {(t1 == t3 ? "так" : "ні")}");
-Console.WriteLine($"Пацієнт має жар: {(t1.IsFever ? "так" : "ні")}");
 ```
 
 Зверніть увагу на оператор `==`: замість строгого `t1.Celsius == t2.Celsius` використовується допуск `0.05`. Це важливо для чисел із плаваючою крапкою — через особливості їх бінарного представлення два «однакові» значення після арифметичних операцій можуть трохи відрізнятись.
@@ -157,6 +161,24 @@ Console.WriteLine($"Пацієнт має жар: {(t1.IsFever ? "так" : "н�
 ```csharp run
 using System;
 
+// Клінічний сценарій: вимірювання до і після прийому жарознижуючого
+BodyTemperature before = new BodyTemperature(39.4);
+BodyTemperature after  = new BodyTemperature(37.1);
+
+Console.WriteLine($"До прийому:    {before}");
+Console.WriteLine($"Після прийому: {after}");
+
+double drop = before - after;
+Console.WriteLine($"Зниження: {drop:F1}°C");
+
+Console.WriteLine($"Температура нормалізувалась: {(after.IsNormal ? "так" : "ні")}");
+
+// Через 2 години температура трохи підвищилась
+BodyTemperature twoHoursLater = after + 0.4;
+Console.WriteLine($"Через 2 год: {twoHoursLater}");
+Console.WriteLine($"Потрібен повторний прийом: {(twoHoursLater > after ? "так" : "ні")}");
+
+// Клас
 class BodyTemperature
 {
     public double Celsius { get; }
@@ -202,23 +224,6 @@ class BodyTemperature
     public override bool Equals(object obj) => obj is BodyTemperature t && this == t;
     public override int GetHashCode() => Math.Round(Celsius, 1).GetHashCode();
 }
-
-// Клінічний сценарій: вимірювання до і після прийому жарознижуючого
-BodyTemperature before = new BodyTemperature(39.4);
-BodyTemperature after  = new BodyTemperature(37.1);
-
-Console.WriteLine($"До прийому:    {before}");
-Console.WriteLine($"Після прийому: {after}");
-
-double drop = before - after;
-Console.WriteLine($"Зниження: {drop:F1}°C");
-
-Console.WriteLine($"Температура нормалізувалась: {(after.IsNormal ? "так" : "ні")}");
-
-// Через 2 години температура трохи підвищилась
-BodyTemperature twoHoursLater = after + 0.4;
-Console.WriteLine($"Через 2 год: {twoHoursLater}");
-Console.WriteLine($"Потрібен повторний прийом: {(twoHoursLater > after ? "так" : "ні")}");
 ```
 
 ## Парні оператори
