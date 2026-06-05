@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 9
 chapterTitle: "Розділ 9. Pattern matching"
 section: 2
@@ -9,244 +9,166 @@ source: "../_combined/57-patern-vlastyvostei.md"
 
 ## 9.2. Патерн властивостей
 
-Патерн властивостей дозволяє порівнювати із значеннями певних властивостей об'єкта. Наприклад, нехай у нас буде наступний клас:
+Патерн типів (9.1) перевіряє, **чим є** об'єкт. Але часто нас цікавить не тільки тип, а й **конкретні значення** його властивостей: «чи є це пацієнт з активним статусом і пріоритетом вище 2?». Для цього існує **патерн властивостей** (property pattern) — він дозволяє перевіряти відповідність значень полів об'єкта прямо у виразі `is` або `switch`.
+
+## Синтаксис і анатомія
+
+Патерн властивостей записується у фігурних дужках: `{ Властивість: значення }`. Двокрапка тут не присвоєння, а **порівняння**: «властивість має це значення». Значенням може бути константа, null, інший патерн (у тому числі реляційний `> 2`) або `var` для захоплення.
+
+![Патерн властивостей: анатомія та варіанти](_assets/09-02/property-pattern-anatomy.png)
+
+Патерн властивостей може стояти окремо або бути частиною складнішого патерну, де зліва вказано тип:
 
 ```csharp
-class Person
-{
-    public string Name { get; set; } = "";        // Ім'я користувача
-    public string Status { get; set; } = "";      // статус користувача
-    public string Language { get; set; } = "";    // мова користувача
-}
+// Тільки властивості (без перевірки типу)
+if (patient is { Status: "Active" })
+
+// Тип + властивості разом
+if (patient is Patient { Status: "Active", Priority: > 2 })
 ```
 
-Наприклад, залежно від мови користувача виведемо йому певне повідомлення, застосувавши патерн властивостей:
+У другій формі спочатку перевіряється тип (`Patient`), і якщо він збігається — перевіряються властивості.
 
-```csharp
-Person tom = new Person { Language = "english", Status = "user", Name = "Tom" };
-Person pierre = new Person
+## Базовий приклад у клінічному контексті
+
+```csharp run
+using System;
+
+// Виконуваний код
+var patients = new[]
 {
-    Language = "french",
-    Status = "user",
-    Name = "Pierre"
+    new Patient("Іван Петренко",  "Active",   priority: 3, "Кардіологія"),
+    new Patient("Марія Коваль",   "Active",   priority: 1, "Неврологія"),
+    new Patient("Олег Сидоренко", "Discharge",priority: 2, "Хірургія"),
+    new Patient("Ганна Мельник",  "Active",   priority: 5, "Реанімація"),
 };
 
-SayHello(tom);      // Hello
-SayHello(pierre);   // Salut
+foreach (var p in patients)
+    Console.WriteLine($"{p.Name}: {GetPriority(p)}");
 
-void SayHello(Person person)
+string GetPriority(Patient p) => p switch
 {
-    if (person is Person { Language: "french" })
-    {
-        Console.WriteLine("Salut");
-    }
-    else
-    {
-        Console.WriteLine("Hello");
-    }
-}
-```
-
-Тут метод SayHello як параметр приймає об'єкт Person і зіставляє його з деяким патерном. Як патерн виступає вираз Person { Language: "french" }. Тобто параметр person повинен представляти об'єкт Person, у якого значення властивості Language дорівнює "french".
-
-При цьому можна використовувати набір властивостей. Наприклад, додамо перевірку за властивістю Status:
-
-```csharp
-Person admin = new Person { Language = "english", Status = "admin", Name = "Admin" };
-Person tom = new Person { Language = "english", Status = "user", Name = "Tom" };
-Person pierre = new Person
-{
-    Language = "french",
-    Status = "user",
-    Name = "Pierre"
+    { Status: "Active", Priority: > 3 }  => "ТЕРМІНОВО — негайна увага",
+    { Status: "Active", Priority: > 1 }  => "Активний — плановий огляд",
+    { Status: "Active" }                 => "Активний — рутинний",
+    { Status: "Discharge" }              => "Виписка оформляється",
+    _                                    => "Невизначено",
 };
 
-SayHello(admin);    // Hello, admin
-SayHello(tom);      // Hello
-SayHello(pierre);   // Salut
-
-void SayHello(Person person)
+// Клас
+class Patient
 {
-    if (person is Person { Language: "english", Status: "admin" })
+    public string Name       { get; }
+    public string Status     { get; }
+    public int    Priority   { get; }
+    public string Department { get; }
+
+    public Patient(string name, string status, int priority, string dept)
     {
-        Console.WriteLine("Hello, admin");
-    }
-    else if (person is Person { Language: "french" })
-    {
-        Console.WriteLine("Salut");
-    }
-    else
-    {
-        Console.WriteLine("Hello");
+        Name = name; Status = status; Priority = priority; Department = dept;
     }
 }
 ```
 
-Тепер вираз if перевіряє, чи параметр person є об'єктом Person, у якого властивості Language і Status мають певні значення.
+Зверніть увагу: `Priority: > 3` — це поєднання патерну властивостей з реляційним патерном. Значення `Priority` перевіряється не на рівність, а на виконання умови `> 3`. Патерни в C# **вкладаються** один в одного.
 
-Подібним чином можна застосовувати патерн властивостей у конструкції switch:
+## Захоплення значення через var
+
+Іноді нам потрібно не лише перевірити значення властивості, а й **зберегти** його у змінну для подальшого використання у виразі результату. Для цього замість конкретного значення пишуть `var ім'я`:
 
 ```csharp
-string GetMessage(Person? p) => p switch
+string GetWelcome(Patient? p) => p switch
 {
-    { Language: "english" } => "Hello!",
-    { Language: "german", Status: "admin" } => "Hallo, admin!",
-    { Language: "french" } => "Salut!",
-    { } => "undefined",
-    null => "null"       // якщо Person p = null
+    { Status: "Active", Department: var dept } => $"Пацієнт активний, відділення: {dept}",
+    { Status: var s }                          => $"Статус: {s}",
+    null                                       => "Пацієнт не знайдений"
 };
 ```
 
-Патерни властивостей припускають використання фігурних дужок, усередині яких вказуються властивості і через двокрапку їх значення `{ властивість: значення }`. І зі значенням властивості у фігурних дужках порівнюється властивість об'єкта, що передається. При цьому у фігурних дужках ми можемо вказати кілька властивостей та їх значень `{ Language: "german", Status: "admin" }` - тоді властивості об'єкта, що передається, повинні відповідати всім цим значенням.
+`Department: var dept` означає: «захопити значення властивості `Department` у змінну `dept`» — і тоді використати `dept` у рядку результату. Перевірка типу при цьому не виконується: `var` завжди успішно збігається з будь-яким значенням (у тому числі `null`).
 
-Можна залишити порожні фігурні дужки, як в останньому випадку `{ } => "undefined!"` - об'єкт, що передається, буде відповідати порожнім фігурним дужкам, якщо він не відповідає всім попереднім значенням, або наприклад, якщо його властивості не вказані або мають значення null.
+## Вкладені об'єкти (C# 10+)
 
-Тобто в даному випадку, якщо об'єкт Person p виконує рівність Language = "english", повертатиметься рядок "Hello!".
-
-Якщо об'єкт Person p одночасно виконує дві рівності Language = "german" і Status = "admin", буде повертатися рядок "Hallo, admin!".
-
-Якщо об'єкт Person p виконує рівність Language = "french", повертатиметься рядок "Salut!".
-
-Якщо об'єкт Person буде зіставлятися з порожніми фігурними дужками {} і повертатиметься рядок "undefined".
-
-Остання перевірка перевіряє значення null.
-
-Застосування:
+Якщо об'єкт містить вкладені об'єкти, патерн властивостей може заглиблюватись у них. До C# 10 для цього потрібен був вкладений патерн:
 
 ```csharp
-Person pierre = new Person
-{
-    Language = "french",
-    Status = "user",
-    Name = "Pierre"
-};
-string message = GetMessage(pierre);
-Console.WriteLine(message);          // Salut!
+// До C# 10 — явне вкладення
+if (patient is { Department: { Name: "Кардіологія" } })
 
-Person tomas = new Person
-{
-    Language = "german",
-    Status = "admin",
-    Name = "Tomas"
-};
-Console.WriteLine(GetMessage(tomas));     // Hallo, admin!
-
-Person pablo = new Person
-{
-    Language = "spanish",
-    Status = "user",
-    Name = "Pablo"
-};
-Console.WriteLine(GetMessage(pablo));     // undefined
-
-Console.WriteLine(GetMessage(null));      // null
+// C# 10+ — скорочений точковий запис
+if (patient is { Department.Name: "Кардіологія" })
 ```
 
-Крім того, ми можемо визначати в патернах властивостей змінні, передавати цим змінним значення об'єкта та використовувати при поверненні значення:
+Обидва варіанти еквівалентні, але точковий синтаксис C# 10 значно компактніший.
 
-```csharp
-string GetMessage(Person? p) => p switch
+```csharp run
+using System;
+
+// Виконуваний код
+var patients = new[]
 {
-    { Language: "german", Status: "admin" } => "Hallo, admin!",
-    { Language: "french", Name: var name } => $"Salut, {name}!",
-    { Language: var lang } => $"Unknown language: {lang}",
-    null => "null"
+    new Patient("Іван Петренко",  new Department("Кардіологія", isIntensive: false)),
+    new Patient("Марія Коваль",   new Department("Реанімація",  isIntensive: true)),
+    new Patient("Олег Сидоренко", new Department("Хірургія",    isIntensive: false)),
 };
-```
 
-Так, підвираз Name: var name говорить, що треба передати змінній name значення властивості Name. Потім її можна застосувати при генерації вихідного значення: `=> $"Salut, {name}!"`
+foreach (var p in patients)
+    Console.WriteLine($"{p.Name}: {GetAlert(p)}");
 
-Застосування:
-
-```csharp
-Person pierre = new Person
+string GetAlert(Patient p) => p switch
 {
-    Language = "french",
-    Status = "user",
-    Name = "Pierre"
+    // Вкладений патерн — перевірка властивості вкладеного об'єкта
+    { Department.IsIntensive: true }             => "РЕАНІМАЦІЯ — постійний моніторинг",
+    { Department.Name: "Кардіологія" }           => "Кардіо-відділення — ЕКГ щодня",
+    { Department: { Name: var name } }           => $"Відділення {name} — стандартний режим",
+    _                                            => "Невідомо",
 };
-string message = GetMessage(pierre);
-Console.WriteLine(message);             // Salut, Pierre!
 
-Person tomas = new Person
+// Класи
+class Department
 {
-    Language = "german",
-    Status = "admin",
-    Name = "Tomas"
-};
-Console.WriteLine(GetMessage(tomas));     // Hallo, admin!
-
-Person pablo = new Person
-{
-    Language = "spanish",
-    Status = "user",
-    Name = "Pablo"
-};
-Console.WriteLine(GetMessage(pablo));     // Unknown language: spanish
-
-Person? bob = null;
-Console.WriteLine(GetMessage(bob));       // null
-```
-
-Починаючи з версії C# 10 було спрощено зіставлення з властивостями вкладених об'єктів. Припустимо, у нас є такі класи:
-
-```csharp
-class Employee
-{
-    public string Name { get; }
-    public Company Company { get; set; }
-    public Employee(string name, Company company)
-    {
-        Name = name;
-        Company = company;
-    }
+    public string Name        { get; }
+    public bool   IsIntensive { get; }
+    public Department(string name, bool isIntensive)
+    { Name = name; IsIntensive = isIntensive; }
 }
-
-class Company
+class Patient
 {
-    public string Title { get; }
-    public Company(string title) => Title = title;
+    public string     Name       { get; }
+    public Department Department { get; }
+    public Patient(string name, Department dept) { Name = name; Department = dept; }
 }
 ```
 
-Клас Company визначає властивість Title, що зберігає назву компанії. Клас Employee визначає співробітника фірми і як Company зберігає компанію. Застосуємо патерн властивостей з урахуванням властивостей вкладеного об'єкта Company:
+## Порожній патерн властивостей {}
+
+Фігурні дужки без вмісту `{}` — це особливий випадок: він **збігається з будь-яким non-null об'єктом**:
 
 ```csharp
-var microsoft = new Company("Microsoft");
-var google = new Company("Google");
-var tom = new Employee("Tom", microsoft);
-var bob = new Employee("Bob", google);
-
-PrintCompany(tom);    // Tom works in Microsoft
-PrintCompany(bob);    // Bob works somewhere
-
-void PrintCompany(Employee employee)
+string Describe(Patient? p) => p switch
 {
-    if (employee is Employee { Company: { Title: "Microsoft" } })
-    {
-        Console.WriteLine($"{employee.Name} works in Microsoft");
-    }
-    else
-    {
-        Console.WriteLine($"{employee.Name} works somewhere");
-    }
-}
+    { Status: "Active" } => "Активний пацієнт",
+    { }                  => "Пацієнт (не активний)", // будь-який не-null
+    null                 => "Null"
+};
 ```
 
-У методі PrintCompany об'єкт employee зіставляється з патерном Employee { Company:{Title: "Microsoft" } }. Тобто співробітник компанії повинен представляти об'єкт Employee, у якого назва компанії рівна "Microsoft"
+`{}` часто стоїть передостанньою гілкою в switch як «запасний варіант для не-null» перед явною перевіркою на `null`.
 
-Однак ми також можемо скоротити цей патерн таким чином:
+## Поєднання типового та властивісного патернів
+
+Обидва патерни можна поєднувати: спочатку перевірка типу, потім — властивостей. Це особливо зручно в ієрархіях:
 
 ```csharp
-void PrintCompany(Employee employee)
+string GetInfo(MedicalStaff s) => s switch
 {
-    if (employee is Employee { Company.Title: "Microsoft" })
-    {
-        Console.WriteLine($"{employee.Name} works in Microsoft");
-    }
-    else
-    {
-        Console.WriteLine($"{employee.Name} works somewhere");
-    }
-}
+    Doctor { IsOnLeave: false, Specialty: var spec } => $"Лікар на зміні: {spec}",
+    Doctor { IsOnLeave: true }                       => "Лікар у відпустці",
+    Nurse  { Ward: var ward }                        => $"Медсестра: палата {ward}",
+    _                                                => "Персонал"
+};
 ```
+
+Тут `Doctor { IsOnLeave: false, Specialty: var spec }` — патерн типу `Doctor` (type pattern), що одночасно перевіряє властивість `IsOnLeave` (property pattern) і захоплює `Specialty` у змінну `spec` (var capture).
+
+Такі поєднання роблять `switch expression` потужним інструментом для опису складної бізнес-логіки у компактній, декларативній формі — без глибоких вкладених `if-else`.
