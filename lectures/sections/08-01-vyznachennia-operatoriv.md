@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 8
 chapterTitle: "Розділ 8. Додаткові можливості ООП у C#"
 section: 1
@@ -9,106 +9,254 @@ source: "../_combined/46-vyznachennia-operatoriv.md"
 
 ## 8.1. Визначення операторів
 
-Поряд із методами у класах та структурах ми можемо також визначати оператори. Наприклад, нехай у нас є наступний клас Counter:
+Оператори `+`, `-`, `>`, `<`, `==` добре знайомі у контексті примітивних типів: `int`, `double`, `bool`. Але коли ми створюємо власний клас, компілятор не знає, що означає «скласти» або «порівняти» два об'єкти — адже у кожного класу своя семантика. **Перевантаження операторів** (operator overloading) — це механізм, який дозволяє визначити власну логіку для стандартних операторів стосовно об'єктів нашого типу.
+
+Уявіть клінічну систему, де потрібно порівнювати температуру тіла двох пацієнтів або відстежувати її зміну після прийому жарознижуючого. Без перевантаження код виглядає громіздко і прив'язаний до деталей реалізації:
 
 ```csharp
-class Counter
+if (patient1.Temperature.Celsius > patient2.Temperature.Celsius) { ... }
+double change = afterMed.Temperature.Celsius - beforeMed.Temperature.Celsius;
+```
+
+З перевантаженням — читабельно і природно, як у математиці:
+
+```csharp
+if (tempAfter > tempBefore) { ... }
+double change = tempAfter - tempBefore;
+```
+
+Перевантаження операторів не змінює їх пріоритет, не додає нових символів і не змінює правил мови — воно лише визначає, що відбувається, коли стандартний символ застосовується до об'єктів нашого типу.
+
+## Механізм: як компілятор знаходить оператор
+
+Коли компілятор зустрічає вираз `t1 + delta`, де `t1` має тип `BodyTemperature`, він шукає у цьому класі статичний метод із підходящою сигнатурою:
+
+```csharp
+public static BodyTemperature operator+(BodyTemperature t, double delta)
+```
+
+Якщо такий метод є — вираз `t1 + delta` автоматично перетворюється на виклик `BodyTemperature.operator+(t1, delta)`. Якщо немає — помилка компіляції. Це і є «синтаксичний цукор»: зручний запис оператором, за яким приховується звичайний виклик статичного методу.
+
+![Перевантаження оператора: від виразу до виклику методу](_assets/08-01/operator-mechanism.png)
+
+## Синтаксис визначення оператора
+
+Оператор визначається як спеціальний метод у тілі класу або структури:
+
+```csharp
+public static ТипРезультату operator СИМВОЛ(параметр1[, параметр2])
 {
-    public int Value { get; set; }
+    // логіка
 }
 ```
-Цей клас представляє певний лічильник, значення якого зберігається як Value.
 
-І припустимо, у нас є два об'єкти класу Counter - два лічильники, які ми хочемо порівнювати або складати на основі їх властивості Value, використовуючи стандартні операції порівняння та додавання:
+**Обов'язкові вимоги:**
 
-```csharp
-Counter counter1 = new Counter { Value = 23 };
-Counter counter2 = new Counter { Value = 45 };
-bool result = counter1 > counter2;
-Counter c3 = counter1 + counter2;
-```
-Але на даний момент ні операція порівняння, ні операція додавання для об'єктів Counter не доступні. Ці операції можуть бути використані для ряду примітивних типів. Наприклад, за умовчанням ми можемо складати числові значення, але як складати об'єкти комплексних типів – класів та структур компілятор не знає. І для цього нам треба виконати перевантаження потрібних нам операторів.
+- Модифікатори `public static` — оператор є методом типу, а не конкретного екземпляра.
+- Ключове слово `operator` перед символом оператора.
+- Принаймні один параметр повинен мати тип класу або структури, де визначається оператор.
+- Бінарні оператори (два операнди) — приймають два параметри.
+- Унарні оператори (один операнд) — приймають один параметр.
+- Тип результату може бути будь-яким: тим самим класом, `bool`, `double`, будь-яким іншим.
 
-Визначення операторів полягає у визначенні у класі, для об'єктів якого ми хочемо визначити оператор, спеціального методу:
+## Клінічний приклад: клас BodyTemperature
 
-```csharp
-public static тип_що_повертається operator оператор(параметри)
-{ }
-```
-Цей метод повинен мати модифікатори public static, оскільки оператор, що перевантажується, буде використовуватися для всіх об'єктів даного класу. Далі йде назва типу, що повертається. Тип, що повертається представляє той тип, об'єкти якого ми хочемо отримати. Наприклад, в результаті складання двох об'єктів Counter ми очікуємо отримати новий об'єкт Counter. А в результаті порівняння двох ми хочемо отримати об'єкт типу bool, який вказує чи істинний умовний вираз, чи хибний. Але залежно від завдання типи, що повертаються, можуть бути будь-якими.
+Розглянемо клас `BodyTemperature`, що представляє температуру тіла пацієнта. Цей клас — наочний приклад для перевантаження: температури порівнюють (чи є жар?), обчислюють різницю (наскільки знизилась?), застосовують зсув (зросла на 0.5°C).
 
-Потім замість назви методу йде ключове слово operator і сам оператор. І далі у дужках перераховуються параметри. Бінарні оператори приймають два параметри, унарні – один параметр. І в будь-якому випадку один із параметрів повинен представляти той тип – клас чи структуру, в якому визначається оператор.
+### Арифметичні оператори
 
-Наприклад, перевантажимо ряд операторів для класу Counter:
+Визначимо два оператори: `+` для зсуву температури на задану величину і `-` для обчислення різниці між двома вимірами. Зверніть увагу, що вони повертають різні типи — `BodyTemperature` і `double` відповідно, адже семантика операцій різна:
 
-```csharp
-class Counter
+```csharp run
+using System;
+
+class BodyTemperature
 {
-    public int Value { get; set; }
-    public static Counter operator +(Counter counter1, Counter counter2)
+    public double Celsius { get; }
+
+    public BodyTemperature(double celsius) => Celsius = celsius;
+
+    // Зсув температури: 36.6 + 0.5 → нова температура 37.1
+    public static BodyTemperature operator +(BodyTemperature t, double delta)
     {
-        return new Counter { Value = counter1.Value + counter2.Value };
+        return new BodyTemperature(t.Celsius + delta);
     }
-    public static bool operator >(Counter counter1, Counter counter2)
+
+    // Різниця між двома вимірами: повертає double, не BodyTemperature
+    public static double operator -(BodyTemperature t1, BodyTemperature t2)
     {
-        return counter1.Value > counter2.Value;
+        return t1.Celsius - t2.Celsius;
     }
-    public static bool operator <(Counter counter1, Counter counter2)
+
+    public override string ToString() => $"{Celsius:F1}°C";
+}
+
+BodyTemperature morning = new BodyTemperature(36.6);
+BodyTemperature evening = new BodyTemperature(37.8);
+
+// Зсув — наприклад, після фізичного навантаження
+BodyTemperature afterExercise = morning + 0.8;
+Console.WriteLine($"Після навантаження: {afterExercise}");
+
+// Різниця між вечірнім і ранковим вимірами
+double delta = evening - morning;
+Console.WriteLine($"Приріст за день: {delta:+0.0;-0.0}°C");
+```
+
+Тип результату оператора — не обов'язково той самий клас. Оператор `-` між двома `BodyTemperature` повертає `double`, бо різниця температур — числова величина, а не нова температура. Тип результату визначається семантикою операції.
+
+Оскільки в операторі `+` перший параметр — `BodyTemperature`, а другий — `double`, вираз `morning + 0.8` коректний. Але `0.8 + morning` вже не компілюється — параметри не збігаються в потрібному порядку. Якщо потрібно, можна визначити ще один перевантажений варіант із переставленими параметрами.
+
+### Оператори порівняння
+
+Порівняння — найчастіший сценарій у клінічних системах: «чи є у пацієнта жар?», «яка температура вища?». Визначимо чотири оператори порівняння:
+
+```csharp run
+using System;
+
+class BodyTemperature
+{
+    public double Celsius { get; }
+    public bool IsFever => Celsius > 37.5;
+
+    public BodyTemperature(double celsius) => Celsius = celsius;
+
+    public static bool operator >(BodyTemperature t1, BodyTemperature t2)
+        => t1.Celsius > t2.Celsius;
+
+    public static bool operator <(BodyTemperature t1, BodyTemperature t2)
+        => t1.Celsius < t2.Celsius;
+
+    public static bool operator ==(BodyTemperature t1, BodyTemperature t2)
+        => Math.Abs(t1.Celsius - t2.Celsius) < 0.05;
+
+    public static bool operator !=(BodyTemperature t1, BodyTemperature t2)
+        => !(t1 == t2);
+
+    public override string ToString() => $"{Celsius:F1}°C";
+    public override bool Equals(object obj) => obj is BodyTemperature t && this == t;
+    public override int GetHashCode() => Math.Round(Celsius, 1).GetHashCode();
+}
+
+BodyTemperature t1 = new BodyTemperature(38.2);
+BodyTemperature t2 = new BodyTemperature(36.9);
+BodyTemperature t3 = new BodyTemperature(38.2);
+
+Console.WriteLine($"{t1} > {t2}: {(t1 > t2 ? "так" : "ні")}");
+Console.WriteLine($"{t1} < {t2}: {(t1 < t2 ? "так" : "ні")}");
+Console.WriteLine($"{t1} == {t3}: {(t1 == t3 ? "так" : "ні")}");
+Console.WriteLine($"Пацієнт має жар: {(t1.IsFever ? "так" : "ні")}");
+```
+
+Зверніть увагу на оператор `==`: замість строгого `t1.Celsius == t2.Celsius` використовується допуск `0.05`. Це важливо для чисел із плаваючою крапкою — через особливості їх бінарного представлення два «однакові» значення після арифметичних операцій можуть трохи відрізнятись.
+
+### Повний клас у клінічному сценарії
+
+Об'єднаємо всі оператори в повному класі і побачимо, як природно вони виглядають у реальному коді:
+
+```csharp run
+using System;
+
+class BodyTemperature
+{
+    public double Celsius { get; }
+
+    public bool IsNormal    => Celsius >= 36.0 && Celsius <= 37.0;
+    public bool IsFever     => Celsius > 37.5;
+    public bool IsHighFever => Celsius > 39.0;
+
+    public BodyTemperature(double celsius)
     {
-        return counter1.Value < counter2.Value;
+        if (celsius < 30.0 || celsius > 45.0)
+            throw new ArgumentOutOfRangeException(nameof(celsius));
+        Celsius = celsius;
     }
+
+    public static BodyTemperature operator +(BodyTemperature t, double delta)
+        => new BodyTemperature(t.Celsius + delta);
+
+    public static BodyTemperature operator -(BodyTemperature t, double delta)
+        => new BodyTemperature(t.Celsius - delta);
+
+    public static double operator -(BodyTemperature t1, BodyTemperature t2)
+        => t1.Celsius - t2.Celsius;
+
+    public static bool operator >(BodyTemperature t1, BodyTemperature t2)
+        => t1.Celsius > t2.Celsius;
+
+    public static bool operator <(BodyTemperature t1, BodyTemperature t2)
+        => t1.Celsius < t2.Celsius;
+
+    public static bool operator ==(BodyTemperature t1, BodyTemperature t2)
+        => Math.Abs(t1.Celsius - t2.Celsius) < 0.05;
+
+    public static bool operator !=(BodyTemperature t1, BodyTemperature t2)
+        => !(t1 == t2);
+
+    public override string ToString() =>
+        IsHighFever ? $"{Celsius:F1}°C (висока!)" :
+        IsFever     ? $"{Celsius:F1}°C (жар)"     :
+        IsNormal    ? $"{Celsius:F1}°C (норма)"   :
+                      $"{Celsius:F1}°C";
+
+    public override bool Equals(object obj) => obj is BodyTemperature t && this == t;
+    public override int GetHashCode() => Math.Round(Celsius, 1).GetHashCode();
 }
+
+// Клінічний сценарій: вимірювання до і після прийому жарознижуючого
+BodyTemperature before = new BodyTemperature(39.4);
+BodyTemperature after  = new BodyTemperature(37.1);
+
+Console.WriteLine($"До прийому:    {before}");
+Console.WriteLine($"Після прийому: {after}");
+
+double drop = before - after;
+Console.WriteLine($"Зниження: {drop:F1}°C");
+
+Console.WriteLine($"Температура нормалізувалась: {(after.IsNormal ? "так" : "ні")}");
+
+// Через 2 години температура трохи підвищилась
+BodyTemperature twoHoursLater = after + 0.4;
+Console.WriteLine($"Через 2 год: {twoHoursLater}");
+Console.WriteLine($"Потрібен повторний прийом: {(twoHoursLater > after ? "так" : "ні")}");
 ```
-Оскільки всі певні оператори – бінарні – тобто проводяться над двома об'єктами, то для кожного перевантаження передбачено по два параметри.
 
-Так як у випадку з операцією додавання ми хочемо скласти два об'єкти класу Counter, то оператор приймає два об'єкти цього класу. І оскільки ми хочемо в результаті складання отримати новий об'єкт Counter, то даний клас також використовується як тип, що повертається. Всі дії цього оператора зводяться до створення нового об'єкта, властивість Value якого поєднує значення властивості Value обох параметрів:
+## Парні оператори
 
-```csharp
-public static Counter operator +(Counter counter1, Counter counter2)
-{
-    return new Counter { Value = counter1.Value + counter2.Value };
-}
-```
+Деякі оператори компілятор вимагає визначати **парами**. Якщо ви визначаєте один — необхідно визначити і другий:
 
-Також визначено дві операції порівняння. Якщо ми визначаємо одну з цих операцій порівняння, ми також повинні визначити другу з цих операцій. Самі оператори порівняння порівнюють значення властивостей Value і, залежно від результату порівняння, повертають або true, або false.
+| Пара | Причина |
+|------|---------|
+| `>` і `<` | Логічна симетрія: якщо `a > b`, то `b < a` |
+| `>=` і `<=` | Аналогічно |
+| `==` і `!=` | Якщо об'єкти рівні, то вони не нерівні |
 
-Тепер використовуємо перевантажені оператори у програмі:
+Ця вимога вбудована в компілятор — він не дозволить визначити `>` без `<`. Мета обмеження — запобігти логічним суперечностям: ситуації, коли `a > b` і `a < b` обидва повертають `false`, або коли `a == b` і `a != b` обидва повертають `true`.
 
-```csharp
-Counter counter1 = new Counter { Value = 23 };
-Counter counter2 = new Counter { Value = 45 };
-bool result = counter1 > counter2;
-Console.WriteLine(result); // false
-Counter counter3 = counter1 + counter2;
-Console.WriteLine(counter3.Value); // 23 + 45 = 68
-```
-Варто зазначити, що оскільки по суті визначення оператора є методом, то цей метод ми також можемо перевантажити, тобто створити для нього ще одну версію. Наприклад, додамо до класу Counter ще один оператор:
+При перевантаженні `==` компілятор також рекомендує перевизначити `Equals(object)` і `GetHashCode()`. Причина: за замовчуванням ці методи порівнюють посилання, а не значення. Якщо залишити їх без змін, поведінка стає непослідовною — `==` порівнює значення, а `Equals()` — посилання на об'єкт у пам'яті.
 
-```csharp
-public static int operator +(Counter counter1, int val)
-{
-    return counter1.Value + val;
-}
-```
-Цей оператор складає значення властивості Value і число, повертаючи їх суму. Також ми можемо застосувати цей оператор:
+## Таблиця операторів, що підтримують перевантаження
 
-```csharp
-Counter counter1 = new Counter { Value = 23 };
-int result = counter1 + 27; // 50
-Console.WriteLine(result);
-```
-Слід зважати на те, що не всі оператори можна визначити. Зокрема ми можемо визначити логіку для наступних операторів:
+| Категорія | Оператори | Примітка |
+|-----------|-----------|----------|
+| Унарні | `+x`, `-x`, `!`, `~`, `++`, `--`, `true`, `false` | `true`/`false` — для умовних виразів |
+| Арифметичні | `+`, `-`, `*`, `/`, `%` | — |
+| Порівняння | `==`, `!=`, `<`, `>`, `<=`, `>=` | Тільки парами |
+| Порозрядні | `&`, `\|`, `^`, `<<`, `>>`, `>>>` | — |
+| Логічні | `&&`, `\|\|` | Визначаються через `&`, `\|`, `true`, `false` |
 
-- унарні оператори +x, -x, !x, ~x, ++, --, true, false
-- бінарні оператори +, -, *, /, %
-- операції порівняння ==, !=, <, >, <=, >=
-- порозрядні оператори &, |, ^, <<, >>
-- логічні оператори &&, ||
+Оператори присвоєння (`=`, `+=`, `-=` тощо), тернарний `?:`, оператор доступу `.` та `?.` перевантажити **неможливо**. При цьому `+=` та `-=` автоматично використовують перевантажений `+` і `-` — визначати їх окремо не потрібно.
 
-Крім того, є кілька операторів, які треба визначати парами:
+## Коли варто, а коли не варто перевантажувати оператори
 
-- == та !=
-- < і >
-- <= та >=
+**Варто**, якщо:
+- Тип моделює математичне або фізичне поняття: температура, відстань, маса, координата, інтервал часу.
+- Оператор має очевидну і однозначну інтерпретацію для цього типу.
+- Код з оператором читається так само природно, як математичний вираз.
 
-І є ряд операторів, які не можна перевантажити, наприклад операцію рівності = або тернарний оператор ?:, а також ряд інших. Повний список операторів, що перевантажуються, можна знайти в документації msdn
+**Не варто**, якщо:
+- Семантика оператора неочевидна або може трактуватись по-різному.
+- Ви перевантажуєте оператор виключно заради стислості — без виграшу в читабельності.
+- Тип не є «значеннєвим» поняттям. Для сутностей-ідентичностей — пацієнт, лікар, прийом — оператор `+` між двома об'єктами не має природного змісту.
+
+Перевантаження операторів — інструмент виразності, а не синтаксичний трюк. Добре спроектований оператор робить код читабельнішим; поганий вносить плутанину і ускладнює підтримку.
