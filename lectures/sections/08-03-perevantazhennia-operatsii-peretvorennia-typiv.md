@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 8
 chapterTitle: "Розділ 8. Додаткові можливості ООП у C#"
 section: 3
@@ -9,106 +9,166 @@ source: "../_combined/48-perevantazhennia-operatsii-peretvorennia-typiv.md"
 
 ## 8.3. Перевантаження операцій перетворення типів
 
-У минулій темі було розглянуто тему перевантаження операторів. І з цією темою тісно пов'язана тема перевантаження операторів перетворення типів.
+У розділі 2 ми розглядали неявні та явні перетворення між примітивними типами: `int` → `long` відбувається автоматично (implicit), а `double` → `int` потребує явного cast-у (explicit). Той самий механізм можна визначити і для власних класів — це **перевантаження операторів перетворення типів**.
 
-Раніше ми розглядали явні та неявні перетворення примітивних типів. Наприклад:
+Завдяки цьому ми можемо навчити компілятор, як перетворювати об'єкт нашого типу на інший тип (і навпаки), і контролювати — чи це відбуватиметься автоматично, чи лише при явному приведенні. Наприклад, у клінічній системі зручно присвоювати числове значення температури безпосередньо об'єкту `BodyTemperature`:
 
 ```csharp
-int x = 50;
-byte y = (byte)x; // явне перетворення від int до byte
-int z = y; // неявне перетворення від byte до int
+BodyTemperature t = 36.6;  // implicit: double → BodyTemperature
+double c = (double)t;      // explicit: BodyTemperature → double
 ```
-було б непогано мати можливість визначати логіку перетворення одних типів на інші. І за допомогою перевантаження операторів ми можемо це робити. Для цього у класі визначається метод наступної форми:
+
+## Синтаксис оператора перетворення
+
+Оператор перетворення визначається як статичний метод у класі або структурі:
 
 ```csharp
-public static implicit|explicit operator Тип_в_який_потрібно_перетворити(вихідний_тип param)
+public static implicit|explicit operator ТипРезультату(ВхіднийТип param)
 {
     // логіка перетворення
 }
 ```
-Після модифікаторів public static йде ключове слово explicit (якщо явне перетворення, тобто потрібна операція приведення типів) або implicit (якщо перетворення неявне). Потім йде ключове слово operator і далі тип, що повертається, в який треба перетворити об'єкт. У дужках як параметр передається об'єкт, який треба перетворити.
 
-Наприклад, нехай ми маємо наступний клас Counter, який представляє лічильник-секундомір і який зберігає кількість секунд у властивості Seconds:
+- `public static` — обов'язкові модифікатори.
+- `implicit` або `explicit` — визначає, чи потрібен явний cast.
+- `operator` — ключове слово.
+- `ТипРезультату` — тип, **до** якого перетворюємо.
+- `ВхіднийТип param` — тип і параметр, **з** якого перетворюємо.
 
-```csharp
-class Counter
+![Оператор перетворення типів: implicit vs explicit](_assets/08-03/conversion-implicit-explicit.png)
+
+**Обмеження:** оператор перетворення повинен або приймати параметром об'єкт свого типу, або повертати об'єкт свого типу. Тобто оператор визначений у класі `BodyTemperature` може перетворювати `double` → `BodyTemperature` (повертає свій тип) або `BodyTemperature` → `double` (приймає свій тип). Визначити оператор між двома чужими типами в середині третього класу — неможливо.
+
+## implicit: неявне перетворення
+
+Неявне перетворення відбувається автоматично — без жодного синтаксису з боку програміста. Використовується тоді, коли перетворення безпечне, без втрати даних і семантично очевидне.
+
+Визначимо implicit-перетворення з `double` у `BodyTemperature` — створення температури з числового значення:
+
+```csharp run
+using System;
+
+// Виконуваний код
+// Неявне перетворення: double → BodyTemperature (без cast)
+BodyTemperature morning = 36.6;
+BodyTemperature fever   = 38.5;
+
+Console.WriteLine($"Ранкова температура: {morning}");
+Console.WriteLine($"Температура при жарі: {fever}");
+Console.WriteLine($"Є жар: {(fever.IsFever ? "так" : "ні")}");
+
+// Клас
+class BodyTemperature
 {
-    public int Seconds { get; set; }
-    public static implicit operator Counter(int x)
-    {
-        return new Counter { Seconds = x };
-    }
-    public static explicit operator int(Counter counter)
-    {
-        return counter.Seconds;
-    }
+    public double Celsius { get; }
+    public bool IsFever => Celsius > 37.5;
+
+    public BodyTemperature(double celsius) => Celsius = celsius;
+
+    // implicit: double → BodyTemperature (безпечно, без втрат)
+    public static implicit operator BodyTemperature(double celsius)
+        => new BodyTemperature(celsius);
+
+    public override string ToString() => $"{Celsius:F1}°C";
 }
 ```
-Перший оператор перетворює число - об'єкт типу int до типу Counter. Його логіка проста – створюється новий об'єкт Counter, у якого встановлюється властивість Seconds.
 
-Другий оператор перетворює об'єкт Counter до типу int, тобто отримує з Counter число.
+Завдяки `implicit` ми можемо писати `BodyTemperature t = 36.6` — компілятор сам викличе оператор перетворення. Це зручно і читабельно, адже семантика очевидна: число 36.6 — це температура в градусах Цельсія.
 
-Застосування операторів перетворення у програмі:
+## explicit: явне перетворення
 
-```csharp
-Counter counter1 = new Counter { Seconds = 23 };
-int x = (int)counter1;
-Console.WriteLine(x); // 23
-Counter counter2 = x;
-Console.WriteLine(counter2.Seconds); // 23
-```
-Оскільки операція перетворення з Counter на int визначена з ключовим словом explicit, тобто як явне перетворення, то в цьому випадку необхідно застосувати операцію приведення типів:
+Явне перетворення вимагає від програміста написати cast явно: `(ТипРезультату)`. Це сигнал: «я свідомо роблю це перетворення і розумію наслідки».
 
-```csharp
-int x = (int)counter1;
-```
-У випадку з операцією перетворення від int до Counter нічого подібного робити не треба, оскільки ця операція визначена з ключовим словом implicit, тобто як неявна. Які операції перетворення робити явними, а які неявні, у цьому разі не настільки важливо, це вирішує розробник на власний розсуд.
+Визначимо explicit-перетворення з `BodyTemperature` у `double` — вилучення числового значення температури:
 
-Слід враховувати, що оператор перетворення типів повинен перетворювати з типу чи до типу, у якому цей оператор визначено. Тобто оператор перетворення, визначений у типі Counter, повинен або приймати як параметр об'єкт типу Counter, або повертати об'єкт типу Counter.
+```csharp run
+using System;
 
-Розглянемо також складніші перетворення, наприклад, з одного складового типу в інший складовий тип. Допустимо, у нас є ще клас Timer:
+// Виконуваний код
+BodyTemperature t = new BodyTemperature(38.2);
 
-```csharp
-class Timer
+// Явне перетворення: BodyTemperature → double (потрібен cast)
+double celsius = (double)t;
+Console.WriteLine($"Температура як число: {celsius}");
+
+// Якщо написати просто: double c = t; — буде помилка компіляції
+// (немає implicit оператора в цьому напрямку)
+
+// Клас
+class BodyTemperature
 {
-    public int Hours { get; set; }
-    public int Minutes { get; set; }
-    public int Seconds { get; set; }
-}
-class Counter
-{
-    public int Seconds { get; set; }
-    public static implicit operator Counter(int x)
-    {
-        return new Counter { Seconds = x };
-    }
-    public static explicit operator int(Counter counter)
-    {
-        return counter.Seconds;
-    }
-    public static explicit operator Counter(Timer timer)
-    {
-        int h = timer.Hours * 3600;
-        int m = timer.Minutes * 60;
-        return new Counter { Seconds = h + m + timer.Seconds };
-    }
-    public static implicit operator Timer(Counter counter)
-    {
-        int h = counter.Seconds / 3600;
-        int m = (counter.Seconds % 3600) / 60;
-        int s = counter.Seconds % 60;
-        return new Timer { Hours = h, Minutes = m, Seconds = s };
-    }
+    public double Celsius { get; }
+
+    public BodyTemperature(double celsius) => Celsius = celsius;
+
+    // explicit: BodyTemperature → double (явно — бо "просто число" без контексту)
+    public static explicit operator double(BodyTemperature t)
+        => t.Celsius;
+
+    public override string ToString() => $"{Celsius:F1}°C";
 }
 ```
-Клас Timer представляє умовний таймер, який зберігає години, хвилини та секунди. Клас Counter представляє умовний лічильник-секундомір, який зберігає кількість секунд. Виходячи з цього ми можемо визначити деяку логіку перетворення з одного типу до іншого, тобто отримання секунд в об'єкті Counter з годин, хвилин і секунд в об'єкті Timer. Наприклад, 3675 секунд по суті це 1 година, 1 хвилина та 15 секунд
 
-Застосування операцій перетворення:
+Чому тут `explicit`, а не `implicit`? Коли ми витягуємо `double` з `BodyTemperature`, результат втрачає семантичний контекст — це вже «просто число», а не температура. Програміст має явно підтвердити, що він хоче саме це. Якщо б перетворення було неявним, можна було б випадково отримати число там, де очікувався об'єкт `BodyTemperature`, і не помітити помилки.
 
-```csharp
-Counter counter1 = new Counter { Seconds = 115 };
-Timer timer = counter1;
-Console.WriteLine($"{timer.Hours}:{timer.Minutes}:{timer.Seconds}");
-Counter counter2 = (Counter)timer;
-Console.WriteLine(counter2.Seconds); // 115
+## Перетворення між двома власними типами
+
+Оператори перетворення можна визначити і між двома складовими типами. Розглянемо конвертацію між `BodyTemperature` (градуси Цельсія) і `FahrenheitTemperature` (градуси Фаренгейта) — типова задача в міжнародних клінічних системах:
+
+```csharp run
+using System;
+
+// Виконуваний код
+BodyTemperature celsius = new BodyTemperature(38.5);
+
+// explicit: BodyTemperature → FahrenheitTemperature (формульне перетворення)
+FahrenheitTemperature fahrenheit = (FahrenheitTemperature)celsius;
+Console.WriteLine($"Цельсій:    {celsius}");
+Console.WriteLine($"Фаренгейт:  {fahrenheit}");
+
+// explicit: FahrenheitTemperature → BodyTemperature (назад)
+BodyTemperature backToCelsius = (BodyTemperature)fahrenheit;
+Console.WriteLine($"Назад:      {backToCelsius}");
+
+// Клас температури в Цельсіях
+class BodyTemperature
+{
+    public double Celsius { get; }
+
+    public BodyTemperature(double celsius) => Celsius = celsius;
+
+    // explicit → FahrenheitTemperature (формула: F = C * 9/5 + 32)
+    public static explicit operator FahrenheitTemperature(BodyTemperature t)
+        => new FahrenheitTemperature(t.Celsius * 9.0 / 5.0 + 32.0);
+
+    public override string ToString() => $"{Celsius:F1}°C";
+}
+
+// Клас температури у Фаренгейтах
+class FahrenheitTemperature
+{
+    public double Fahrenheit { get; }
+
+    public FahrenheitTemperature(double fahrenheit) => Fahrenheit = fahrenheit;
+
+    // explicit → BodyTemperature (формула: C = (F - 32) * 5/9)
+    public static explicit operator BodyTemperature(FahrenheitTemperature f)
+        => new BodyTemperature((f.Fahrenheit - 32.0) * 5.0 / 9.0);
+
+    public override string ToString() => $"{Fahrenheit:F1}°F";
+}
 ```
+
+Обидва перетворення тут `explicit`, бо вони нетривіальні: задіяна формула, є заокруглення, і читач коду повинен бачити, що відбувається перетворення між системами вимірювання. Неявне перетворення тут приховало б важливий факт.
+
+## Коли обирати implicit, а коли explicit
+
+| Критерій | implicit | explicit |
+|----------|----------|----------|
+| Можлива втрата даних? | Ні | Так (або невідомо) |
+| Семантика очевидна? | Так | Неочевидна або потребує уваги |
+| Задіяна нетривіальна формула? | Ні | Так |
+| Перетворення між різними одиницями вимірювання? | Ні | Так |
+| Приклад у клінічному домені | `double` → `BodyTemperature` | `BodyTemperature` → `FahrenheitTemperature` |
+
+Загальне правило: **якщо є хоч найменший сумнів — робіть explicit**. Явний cast у коді — це документація: він повідомляє читачеві, що тут відбувається свідоме перетворення типів.
