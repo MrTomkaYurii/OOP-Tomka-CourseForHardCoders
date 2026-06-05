@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 8
 chapterTitle: "Розділ 8. Додаткові можливості ООП у C#"
 section: 4
@@ -9,242 +9,264 @@ source: "../_combined/49-indeksatory.md"
 
 ## 8.4. Індексатори
 
-Індексатори дозволяють індексувати об'єкти та звертатися до даних щодо індексу. Фактично, за допомогою індексаторів ми можемо працювати з об'єктами як з масивами. За формою вони нагадують властивості зі стандартними блоками get та set, які повертають та надають значення.
+Масиви зручні тим, що до елементів можна звертатися за індексом: `arr[0]`, `arr[i]`. Але іноді ми хочемо, щоб і власний клас підтримував таку синтаксичну форму — наприклад, звертатися до пацієнтів відділення як `ward[0]`, `ward[i]`, або до атрибутів пацієнта як `patient["diagnosis"]`. Саме для цього у C# існують **індексатори** (indexers).
 
-Формальне визначення індексатора:
+Індексатор — це спеціальний член класу, який дозволяє звертатися до об'єкта за допомогою квадратних дужок, як до масиву або словника. За своєю формою він нагадує властивість: також має блоки `get` і `set`, також має тип. Ключова відмінність — замість фіксованої назви використовується ключове слово `this` і параметр у квадратних дужках.
+
+## Синтаксис індексатора
 
 ```csharp
-тип_що_повертається this [Тип параметр1, ...]
+тип_результату this[Тип параметр, ...]
 {
     get { ... }
     set { ... }
 }
 ```
-На відміну від властивостей, індексатор не має назви. Замість нього вказується ключове слово this, після якого у квадратних дужках йдуть параметри. Індексатор повинен мати щонайменше один параметр.
 
-Подивимося на прикладі. Припустимо, у нас є клас Person, який представляє людину, і клас Company, який представляє деяку компанію, де працюють люди. Використовуємо індексатори для визначення класу Company:
+- `this` — ключове слово замість назви. Означає «доступ до цього об'єкта за індексом».
+- Тип у квадратних дужках — тип індексу (може бути `int`, `string` або будь-яким іншим).
+- `get` — повертає значення за вказаним індексом.
+- `set` — записує значення; переданий об'єкт доступний через неявний параметр `value`.
+- Індексатор не може бути статичним — він завжди прив'язаний до екземпляра.
 
-```csharp
-class Person
+![Індексатор: синтаксис та порівняння з властивістю](_assets/08-04/indexer-anatomy.png)
+
+## Числовий індексатор
+
+Найпоширеніший варіант — індексатор з параметром `int`, який дозволяє звертатися до елементів внутрішньої колекції об'єкта. Визначимо клас `Ward` (відділення лікарні), що зберігає масив пацієнтів і надає доступ до них за позицією:
+
+```csharp run
+using System;
+
+// Виконуваний код
+Ward cardiology = new Ward("Кардіологія", new Patient[]
 {
-    public string Name { get; }
-    public Person(string name) => Name = name;
-}
-class Company
-{
-    Person[] personal;
-    public Company(Person[] people) => personal = people;
-    // індексатор
-    public Person this[int index]
-    {
-        get => personal[index];
-        set => personal[index] = value;
-    }
-}
-```
-Для зберігання персоналу компанії у класі визначено масив personal, що складається з об'єктів Person. Для доступу до цих об'єктів визначено індексатор:
-
-```csharp
-public Person this[int index]
-```
-Індексатор у принципі подібний до стандартної властивості. По-перше, для індексатора визначається тип у разі тип Person. Тип індексатора визначає, які об'єкти отримуватиме і повертатиме індексатор.
-
-По-друге, для індексатора визначено параметр int index, через який звертаємось до елементів усередині об'єкту Company.
-
-Для повернення об'єкта в індексаторі визначено блок get:
-
-```csharp
-get => personal[index];
-```
-Оскільки індексатор має тип Person, то у блоці get нам треба повернути об'єкт цього типу за допомогою оператора return. Тут ми можемо визначити різноманітну логіку. В даному випадку просто повертаємо об'єкт із масиву personal.
-
-У блоці set, як і в звичайній властивості, отримуємо через параметр value переданий об'єкт Person і зберігаємо його в масив за індексом.
-
-```csharp
-set => personal[index] = value;
-```
-Після цього ми можемо працювати з об'єктом Company як із набором об'єктів Person:
-
-```csharp
-var microsoft = new Company(new[]
-{
-    new Person("Tom"), new Person("Bob"), new Person("Sam"), new Person("Alice")
+    new Patient("Іван Петренко"),
+    new Patient("Марія Коваль"),
+    new Patient("Олег Сидоренко"),
 });
-// отримуємо об'єкт із індексатора
-Person firstPerson = microsoft[0];
-Console.WriteLine(firstPerson.Name); // Tom
-// перевстановлюємо об'єкт
-microsoft[0] = new Person("Mike");
-Console.WriteLine(microsoft[0].Name); // Mike
-```
-Варто зазначити, що якщо індексатору буде передано некоректний індекс, який відсутній у масиві person, ми отримаємо виняток, як і у разі звернення безпосередньо до елементів масиву. І тут можна передбачити якусь додаткову логіку. Наприклад, перевіряти переданий індекс:
 
-```csharp
-class Company
-{
-    Person[] personal;
-    public Company(Person[] people) => personal = people;
-    // індексатор
-    public Person this[int index]
-    {
-        get
-        {
-            // якщо індекс є в масиві
-            if (index >= 0 && index < personal.Length)
-                return personal[index];
-            // то повертаємо об'єкт Person за індексом
-            else
-                throw new ArgumentOutOfRangeException();
-            // інакше генеруємо виняток
-        }
-        set
-        {
-            // якщо індекс є у масиві
-            if (index >= 0 && index < personal.Length)
-                personal[index] = value; // встановлюємо значення за індексом
-        }
-    }
-}
-```
-Тут у блоці get якщо переданий індекс є у масиві, то повертаємо об'єкт за індексом. Якщо індексу немає у масиві, то генеруємо виняток. Аналогічно в блоці set встановлюємо значення індексу, якщо індекс є в масиві.
+// Доступ через індексатор — як у масиві
+Patient first = cardiology[0];
+Console.WriteLine($"Перший пацієнт: {first.Name}");
 
-### Індекси
+// Заміна елемента через set
+cardiology[0] = new Patient("Андрій Мельник");
+Console.WriteLine($"Після виписки: {cardiology[0].Name}");
 
-Індексатор отримує набір індексів як параметрів. Однак індекси необов'язково мають представляти тип int, що встановлюються/повертаються значення необов'язково зберігати в масиві. Наприклад, ми можемо розглядати об'єкт як сховище атрибутів/властивостей та передавати ім'я атрибута у вигляді рядка:
+// Ітерація
+for (int i = 0; i < 3; i++)
+    Console.WriteLine($"  [{i}] {cardiology[i].Name}");
 
-```csharp
-User tom = new User();
-// встановлюємо значення
-tom["name"] = "Tom";
-tom["email"] = "tom@gmail.ru";
-tom["phone"] = "+1234556767";
-// отримуємо значення
-Console.WriteLine(tom["name"]); // Tom
-class User
-{
-    string name = "";
-    string email = "";
-    string phone = "";
-    public string this[string propname]
-    {
-        get
-        {
-            switch (propname)
-            {
-                case "name": return name;
-                case "email": return email;
-                case "phone": return phone;
-                default: throw new Exception("Unknown property name");
-            }
-        }
-        set
-        {
-            switch (propname)
-            {
-                case "name":
-                    name = value;
-                    break;
-                case "email":
-                    email = value;
-                    break;
-                case "phone":
-                    phone = value;
-                    break;
-            }
-        }
-    }
-}
-```
-У цьому випадку індексатор у класі User як індекс отримує рядок, який зберігає назву атрибута (в даному випадку назва поля класу).
-
-У блоці get, залежно від значення рядкового індексу, повертається значення того чи іншого поля класу. Якщо передано невідому назву, то генерується виняток. У блоці set схожа логіка – за індексом дізнаємося, для якого поля треба встановити значення.
-
-### Застосування кількох параметрів
-
-Також індексатор може приймати кілька параметрів. Допустимо, у нас є клас, у якому сховище визначено у вигляді двомірного масиву або матриці:
-
-```csharp
-class Matrix
-{
-    int[,] numbers = new int[,] { { 1, 2, 4 }, { 2, 3, 6 }, { 3, 4, 8 } };
-    public int this[int i, int j]
-    {
-        get => numbers[i, j];
-        set => numbers[i, j] = value;
-    }
-}
-```
-Тепер у визначенні індексатора використовуються два індекси - i і j. І в програмі ми вже повинні звертатися до об'єкта, використовуючи два індекси:
-
-```csharp
-Matrix matrix = new Matrix();
-Console.WriteLine(matrix[0, 0]);
-matrix[0, 0] = 111;
-Console.WriteLine(matrix[0, 0]);
-```
-Слід враховувати, що індексатор не може бути статичним і застосовується лише до екземпляру класу. Але при цьому індексатори можуть бути віртуальними та абстрактними та можуть перевизначатися у похідних класах.
-
-### Блоки get та set
-
-Як і у властивостях, в індексаторах можна опускати блок get чи set, якщо в них немає потреби. Наприклад, видалимо блок set і зробимо індексатор доступним тільки для читання:
-
-```csharp
-class Matrix
-{
-    int[,] numbers = new int[,] { { 1, 2, 4 }, { 2, 3, 6 }, { 3, 4, 8 } };
-    public int this[int i, int j]
-    {
-        get => numbers[i, j];
-    }
-}
-```
-Також ми можемо обмежувати доступ до блоків get та set, використовуючи модифікатори доступу. Наприклад, зробимо блок set приватним:
-
-```csharp
-class Matrix
-{
-    int[,] numbers = new int[,] { { 1, 2, 4 }, { 2, 3, 6 }, { 3, 4, 8 } };
-    public int this[int i, int j]
-    {
-        get => numbers[i, j];
-        private set => numbers[i, j] = value;
-    }
-}
-```
-### Перевантаження індексаторів
-
-Подібно до методів індексатори можна перевантажувати. У цьому випадку також індексатори повинні відрізнятися за кількістю, типом або порядком використовуваних параметрів. Наприклад:
-
-```csharp
-var microsoft = new Company(new Person[] { new("Tom"), new("Bob"), new("Sam") });
-Console.WriteLine(microsoft[0].Name); // Tom
-Console.WriteLine(microsoft["Bob"].Name); // Bob
-class Person
+// Класи
+class Patient
 {
     public string Name { get; }
-    public Person(string name) => Name = name;
+    public Patient(string name) => Name = name;
 }
-class Company
+
+class Ward
 {
-    Person[] personal;
-    public Company(Person[] people) => personal = people;
-    // індексатор
-    public Person this[int index]
+    public string Name { get; }
+    private Patient[] _patients;
+
+    public Ward(string name, Patient[] patients)
     {
-        get => personal[index];
-        set => personal[index] = value;
+        Name = name;
+        _patients = patients;
     }
-    public Person this[string name]
+
+    public Patient this[int index]
     {
         get
         {
-            foreach (var person in personal)
-            {
-                if (person.Name == name) return person;
-            }
-            throw new Exception("Unknown name");
+            if (index < 0 || index >= _patients.Length)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            return _patients[index];
+        }
+        set
+        {
+            if (index < 0 || index >= _patients.Length)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            _patients[index] = value;
         }
     }
 }
 ```
-У цьому випадку клас Company містить дві версії індексатора. Перша версія отримує та встановлює об'єкт Person за індексом, а друга - тільки отримує об'єкт Person на його ім'я.
+
+Блок `get` перевіряє межі масиву і генерує `ArgumentOutOfRangeException`, якщо індекс некоректний — так само, як поводиться звичайний масив при виході за межі. Блок `set` виконує ту саму перевірку перед записом.
+
+## Рядковий індексатор
+
+Індекс не обов'язково має бути цілим числом. Рядковий індекс зручний, коли об'єкт зберігає набір іменованих атрибутів. Визначимо `Patient` із доступом до клінічних даних за ключовим рядком:
+
+```csharp run
+using System;
+
+// Виконуваний код
+Patient patient = new Patient("Іван Петренко");
+patient["diagnosis"] = "Гіпертонія II ст.";
+patient["allergies"] = "Пеніцилін";
+patient["notes"]     = "Контроль АТ двічі на день";
+
+Console.WriteLine($"Пацієнт: {patient.Name}");
+Console.WriteLine($"Діагноз:  {patient["diagnosis"]}");
+Console.WriteLine($"Алергії:  {patient["allergies"]}");
+Console.WriteLine($"Примітки: {patient["notes"]}");
+
+// Клас
+class Patient
+{
+    public string Name { get; }
+    private string _diagnosis = "";
+    private string _allergies = "";
+    private string _notes = "";
+
+    public Patient(string name) => Name = name;
+
+    public string this[string attribute]
+    {
+        get
+        {
+            switch (attribute)
+            {
+                case "diagnosis": return _diagnosis;
+                case "allergies": return _allergies;
+                case "notes":     return _notes;
+                default: throw new ArgumentException($"Невідомий атрибут: {attribute}");
+            }
+        }
+        set
+        {
+            switch (attribute)
+            {
+                case "diagnosis": _diagnosis = value; break;
+                case "allergies": _allergies = value; break;
+                case "notes":     _notes = value;     break;
+                default: throw new ArgumentException($"Невідомий атрибут: {attribute}");
+            }
+        }
+    }
+}
+```
+
+Рядковий індексатор дає інтерфейс, схожий на словник, але з чіткими дозволеними ключами і можливістю додати валідацію або логіку перетворення прямо в `get`/`set`.
+
+## Індексатор із кількома параметрами
+
+Індексатор може приймати більше одного параметра. Це корисно для двовимірних структур, наприклад, для розкладу прийомів лікаря, де день і час — це два незалежні виміри:
+
+```csharp run
+using System;
+
+// Виконуваний код
+AppointmentGrid schedule = new AppointmentGrid(5, 16);
+
+schedule[0, 9]  = "Кардіологія — Петренко І.";
+schedule[0, 11] = "Неврологія  — Коваль М.";
+schedule[1, 10] = "Ортопедія   — Сидоренко О.";
+
+Console.WriteLine($"Пн 09:00 — {schedule[0, 9]}");
+Console.WriteLine($"Пн 11:00 — {schedule[0, 11]}");
+Console.WriteLine($"Вт 10:00 — {schedule[1, 10]}");
+
+string slot = schedule[0, 14];
+Console.WriteLine($"Пн 14:00 — {(slot != null ? slot : "(вільно)")}");
+
+// Клас
+class AppointmentGrid
+{
+    private string[,] _slots;
+
+    public AppointmentGrid(int days, int hours)
+    {
+        _slots = new string[days, hours];
+    }
+
+    // Два параметри: день (0=Пн..4=Пт) і година (8..17)
+    public string this[int day, int hour]
+    {
+        get => _slots[day, hour];
+        set => _slots[day, hour] = value;
+    }
+}
+```
+
+Синтаксис звернення `schedule[0, 9]` виглядає так само природно, як доступ до двовимірного масиву. Компілятор транслює це в виклик індексатора з двома аргументами.
+
+## Модифікатори доступу та readonly-індексатор
+
+Як і у властивостей, в індексаторах можна опустити блок `set` (тоді індексатор лише для читання) або обмежити його доступ модифікатором:
+
+```csharp
+// Тільки для читання — set відсутній
+public Patient this[int index]
+{
+    get => _patients[index];
+}
+
+// set приватний — зовні не можна записати
+public Patient this[int index]
+{
+    get => _patients[index];
+    private set => _patients[index] = value;
+}
+```
+
+Readonly-індексатор корисний для незмінних колекцій (наприклад, архівних записів), де зовнішній код має тільки читати дані, але не змінювати їх.
+
+## Перевантаження індексаторів
+
+Так само як і методи, індексатори можна **перевантажувати** — визначити кілька версій з різними типами або кількістю параметрів. Визначимо `Ward` одночасно з числовим доступом (за позицією) і рядковим (за ім'ям пацієнта):
+
+```csharp run
+using System;
+
+// Виконуваний код
+Ward ward = new Ward(new Patient[]
+{
+    new Patient("Іван Петренко"),
+    new Patient("Марія Коваль"),
+    new Patient("Олег Сидоренко"),
+});
+
+// Доступ за числовим індексом
+Console.WriteLine($"Пацієнт [0]: {ward[0].Name}");
+Console.WriteLine($"Пацієнт [2]: {ward[2].Name}");
+
+// Доступ за ім'ям
+Patient found = ward["Марія Коваль"];
+Console.WriteLine($"Знайдено за ім'ям: {found.Name}");
+
+// Класи
+class Patient
+{
+    public string Name { get; }
+    public Patient(string name) => Name = name;
+}
+
+class Ward
+{
+    private Patient[] _patients;
+
+    public Ward(Patient[] patients) => _patients = patients;
+
+    // Перший індексатор — доступ за позицією
+    public Patient this[int index] => _patients[index];
+
+    // Другий індексатор — пошук за ім'ям
+    public Patient this[string name]
+    {
+        get
+        {
+            foreach (var p in _patients)
+                if (p.Name == name) return p;
+            throw new ArgumentException($"Пацієнт '{name}' не знайдений");
+        }
+    }
+}
+```
+
+Компілятор розрізняє перевантажені варіанти за типом аргументу у дужках: `ward[0]` — це `int`, тому викликається перший індексатор; `ward["Марія Коваль"]` — це `string`, тому другий. Перевантаження за кількістю параметрів також дозволене.
+
+Індексатори можуть бути **віртуальними** і **абстрактними** — їх можна перевизначати у похідних класах так само, як і методи, що дозволяє будувати гнучкі ієрархії класів із уніфікованим синтаксисом доступу.
