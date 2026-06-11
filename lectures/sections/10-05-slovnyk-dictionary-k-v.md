@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 10
 chapterTitle: "Розділ 10. Колекції"
 section: 5
@@ -7,184 +7,324 @@ title: "Словник Dictionary<K, V>"
 source: "../_combined/66-slovnyk-dictionary-k-v.md"
 ---
 
-## 10.5. Словник Dictionary<K, V>
+## 10.5. Словник Dictionary\<K, V\>
 
-Ще один поширений тип колекції - словники. Словник зберігає об'єкти, які представляють пару ключ-значення. Клас словника `Dictionary<K, V>` типізується двома типами: параметр `K` є типом ключів, а параметр `V` представляє тип значень.
+Уявіть задачу: є список пацієнтів, і потрібно швидко знайти пацієнта за його ідентифікатором `"P001"`. При використанні `List<T>` доведеться перебирати весь список поелементно — O(n). При 10 000 пацієнтів це 10 000 порівнянь у гіршому випадку.
 
-### Створення та ініціалізація словника
+`Dictionary<K, V>` вирішує цю задачу за **O(1)** в середньому. Це колекція пар **ключ → значення**, де ключ унікальний і забезпечує миттєвий доступ до відповідного значення. `Dictionary<K, V>` — правильний вибір щоразу, коли потрібен швидкий пошук за ідентифікатором, кодом або будь-яким унікальним атрибутом.
 
-Клас `Dictionary` надає низку конструкторів для створення словника. Наприклад, ми можемо створити порожній словник:
+## Внутрішня структура: хеш-таблиця
+
+Всередині `Dictionary<K, V>` зберігає дані у **хеш-таблиці**. Принцип роботи:
+
+1. При додаванні пари `key → value` обчислюється хеш ключа: `key.GetHashCode()`.
+2. За хешем визначається **індекс бакету** (bucket): `index = hash % bucketCount`.
+3. Пара зберігається у відповідному бакеті.
+4. При пошуку за ключем ті самі два кроки дають індекс — і значення знаходиться без перебору.
+
+![Dictionary<K,V> — внутрішня структура (хеш-таблиця)](_assets/10-05/dictionary-hash-structure.png)
+
+Якщо два різних ключі дають однаковий індекс бакету (**колізія**), елементи зберігаються разом у тому ж бакеті у вигляді ланцюжка. Добре реалізований `GetHashCode()` мінімізує колізії, тому на практиці пошук майже завжди O(1).
+
+Тип ключа `K` повинен коректно реалізувати `GetHashCode()` і `Equals()`. Для вбудованих типів (`string`, `int`, `Guid` тощо) це вже зроблено. Для власних класів — потрібно явно перевизначити ці методи або використовувати незмінні типи-значення.
+
+## Створення та ініціалізація
+
+`Dictionary<K, V>` типізується двома параметрами: тип ключа `K` і тип значення `V`:
 
 ```csharp
-Dictionary<int, string> people = new Dictionary<int, string>();
-```
+// Порожній словник: int-ключ → рядкове значення
+Dictionary<int, string> rooms = new Dictionary<int, string>();
 
-Тут словник `people` як ключі приймає значення типу `int`, а як значення - рядки.
+// Ключ — рядок (код пацієнта), значення — рядок (ПІБ)
+var patientIndex = new Dictionary<string, string>();
 
-При визначенні словника його відразу можна ініціалізувати значеннями:
-
-```csharp
-var people = new Dictionary<int, string>()
+// Ініціалізатор з фігурними дужками — синтаксис { ключ, значення }
+var diagnoses = new Dictionary<string, string>()
 {
-    { 5, "Tom" },
-    { 3, "Sam" },
-    { 11, "Bob" }
+    { "P001", "Гіпертонія" },
+    { "P002", "Діабет" },
+    { "P003", "Аритмія" }
+};
+
+// Альтернативний синтаксис з індексатором [ключ] = значення
+var medications = new Dictionary<string, string>()
+{
+    ["ASP100"] = "Аспірин 100мг",
+    ["IBU400"] = "Ібупрофен 400мг",
+    ["MET850"] = "Метформін 850мг"
 };
 ```
 
-При ініціалізації застосовується ініціалізатор - у фігурних дужках після виклику конструктора передаються об'єкту початкові дані. У випадку зі словником ми можемо передати в ініціалізаторі набір елементів, де кожен елемент полягає у фігурних дужках, наприклад:
+Обидва синтаксиси рівноцінні — використовуйте той, що читається краще для конкретної задачі.
+
+## KeyValuePair\<TKey, TValue\>
+
+Кожен елемент словника внутрішньо представляється структурою `KeyValuePair<TKey, TValue>`. Ця структура має дві властивості: `Key` — ключ елемента і `Value` — його значення. Вона з'являється при ітерації словника через `foreach`, при ініціалізації через конструктор, і при роботі з колекцією `Keys`/`Values`.
 
 ```csharp
-{ 5, "Tom" }
+// Створення через KeyValuePair (рідкісний сценарій — для ініціалізації з колекції)
+var pair = new KeyValuePair<string, string>("P001", "Петренко Іван");
+var pairs = new List<KeyValuePair<string, string>> { pair };
+var dict = new Dictionary<string, string>(pairs);
 ```
 
-Кожен елемент становить два значення: перше значення представляє ключ, а друге значення - власне значення елемента. Оскільки при оголошенні словника `people` для ключів вказано тип `int`, а для значень - тип `string`, то в елементі словника спочатку вказується число `int`, потім рядок. Тобто, у випадку вище елемент має ключ `5`, а значення - `"Tom"`. Потім за ключем елемента ми зможемо отримати його значення.
+## Отримання та зміна елементів
 
-Також ми можемо застосовувати інший спосіб ініціалізації:
+Доступ до елемента відбувається через індексатор `dict[key]`:
 
 ```csharp
-var people = new Dictionary<int, string>()
+var patientNames = new Dictionary<string, string>()
 {
-    [5] = "Tom",
-    [6] = "Sam",
-    [7] = "Bob"
-};
-```
-
-При такому способі ініціалізації в квадратних дужках вказується ключ і йому присвоюється значення елемента. Але загалом цей спосіб ініціалізації буде рівноцінний попередньому.
-
-### KeyValuePair
-
-Варто зазначити, кожен елемент у словнику представляє структуру `KeyValuePair<TKey, TValue>`, де параметр `TKey` представляє тип ключа, а параметр `TValue` - тип значень елементів. Ця структура надає властивості `Key` і `Value`, за допомогою яких можна отримати відповідно ключ та значення елемента у словнику. І одна з версій конструктора `Dictionary` дозволяє ініціалізувати словник колекцією об'єктів `KeyValuePair`:
-
-```csharp
-var mike = new KeyValuePair<int, string>(56, "Mike");
-var employees = new List<KeyValuePair<int, string>>() { mike };
-var people = new Dictionary<int, string>(employees);
-```
-
-Конструктор типу `KeyValuePair` приймає два параметри - ключ елемента та його значення. Тобто в даному випадку створюється один такий елемент `mike` з ключем `56` і значенням `"Mike"`. І цей елемент додається до списку працівників, яким потім ініціалізується словник.
-
-Можна поєднати обидва способи ініціалізації:
-
-```csharp
-var mike = new KeyValuePair<int, string>(56, "Mike");
-var employees = new List<KeyValuePair<int, string>>() { mike };
-var people = new Dictionary<int, string>(employees)
-{
-    [5] = "Tom",
-    [6] = "Sam",
-    [7] = "Bob",
-};
-```
-
-В даному випадку в словнику `people` буде чотири елементи.
-
-### Перебір словника
-
-Для перебору словника можна застосовувати цикл `foreach`:
-
-```csharp
-var people = new Dictionary<int, string>()
-{
-    [5] = "Tom",
-    [6] = "Sam",
-    [7] = "Bob"
+    ["P001"] = "Петренко Іван",
+    ["P002"] = "Коваль Марія",
 };
 
-foreach (var person in people)
+// Читання
+string name = patientNames["P001"];   // "Петренко Іван"
+
+// Оновлення існуючого ключа
+patientNames["P002"] = "Коваль Марія Степанівна";
+
+// Додавання нового ключа — якщо ключ відсутній
+patientNames["P003"] = "Сидоренко Олег";
+```
+
+Якщо звернутися за **неіснуючим ключем** через `dict[key]` — буде кинуто `KeyNotFoundException`. Для безпечного доступу використовуйте `TryGetValue`.
+
+## Властивості Dictionary\<K, V\>
+
+- `Count` — кількість пар у словнику.
+- `Keys` — колекція всіх ключів типу `ICollection<K>`. Ітерується через `foreach`.
+- `Values` — колекція всіх значень типу `ICollection<V>`.
+
+```csharp
+var rooms = new Dictionary<int, string>()
 {
-    Console.WriteLine($"key: {person.Key} value: {person.Value}");
+    [101] = "Кардіологія",
+    [102] = "Неврологія",
+    [201] = "Хірургія"
+};
+
+Console.WriteLine($"Палат: {rooms.Count}");
+
+foreach (var roomNum in rooms.Keys)
+    Console.WriteLine($"Палата {roomNum}");
+
+foreach (var dept in rooms.Values)
+    Console.WriteLine($"Відділення: {dept}");
+```
+
+## Перебір словника
+
+При `foreach` кожен елемент словника — це `KeyValuePair<K, V>`:
+
+```csharp
+var patientNames = new Dictionary<string, string>()
+{
+    ["P001"] = "Петренко Іван",
+    ["P002"] = "Коваль Марія",
+    ["P003"] = "Сидоренко Олег"
+};
+
+foreach (var entry in patientNames)
+{
+    Console.WriteLine($"ID: {entry.Key}  Пацієнт: {entry.Value}");
 }
 ```
 
-При переборі кожен елемент буде поміщатися в змінну, яка представляє тип `KeyValuePair`, відповідно за допомогою властивостей `Key` та `Value` ми зможемо отримати ключ та значення елемента. Консольний вивід програми:
-
-![Рисунок з оригінального документа](_assets/_docx/image101.png)
-
-```text
-key: 5 value: Tom
-key: 6 value: Sam
-key: 7 value: Bob
-```
-
-### Отримання елементів
-
-Для звернення до елементів зі словника застосовується їхній ключ, який передається у квадратних дужках:
+З C# 7+ можна одразу деструктурувати пару:
 
 ```csharp
-словник[ключ]
-```
-
-Таким чином ми можемо отримати та змінити елементи словника
-
-```csharp
-var people = new Dictionary<int, string>()
+foreach (var (id, name) in patientNames)
 {
-    [5] = "Tom",
-    [6] = "Sam",
-    [7] = "Bob",
+    Console.WriteLine($"{id} → {name}");
+}
+```
+
+## Методи Dictionary\<K, V\>
+
+| Метод | Що робить | Складність |
+|-------|-----------|-----------|
+| `Add(key, value)` | Додає пару; виняток якщо ключ вже є | O(1)* |
+| `TryAdd(key, value)` | Додає якщо ключ відсутній; повертає `bool` | O(1)* |
+| `Remove(key)` | Видаляє пару за ключем; повертає `bool` | O(1)* |
+| `Remove(key, out V)` | Видаляє і повертає значення через `out` | O(1)* |
+| `ContainsKey(key)` | Чи є ключ у словнику | O(1)* |
+| `ContainsValue(value)` | Чи є значення у словнику | O(n) |
+| `TryGetValue(key, out V)` | Безпечне читання; `false` якщо ключ відсутній | O(1)* |
+| `Clear()` | Очищає словник | O(n) |
+
+### TryGetValue — найважливіший метод безпечного доступу
+
+`TryGetValue` — рекомендований спосіб читання зі словника в production-коді. Він не кидає виняток на відсутньому ключі і повертає `false`:
+
+```csharp
+if (patientNames.TryGetValue("P999", out var name))
+    Console.WriteLine($"Знайдено: {name}");
+else
+    Console.WriteLine("Пацієнт P999 не знайдений.");
+```
+
+Порівняйте з небезпечним варіантом:
+
+```csharp
+// НЕБЕЗПЕЧНО — кидає KeyNotFoundException якщо ключ відсутній:
+var name = patientNames["P999"];
+```
+
+## Каталог медикаментів — runnable приклад
+
+Медичний каталог: пошук препарату за кодом, оновлення, видалення:
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+// Каталог: код препарату → назва
+var catalog = new Dictionary<string, string>()
+{
+    ["ASP100"] = "Аспірин 100мг",
+    ["IBU400"] = "Ібупрофен 400мг",
+    ["MET850"] = "Метформін 850мг",
+    ["LIS10"]  = "Лізиноприл 10мг"
 };
 
-// отримуємо елемент за ключом 6
-string sam = people[6]; // Sam
-Console.WriteLine(sam); // Sam
+Console.WriteLine($"Препаратів у каталозі: {catalog.Count}");
 
-// встановлюємо значення по ключу 6
-people[6] = "Mike";
-Console.WriteLine(people[6]); // Mike
+// Перебір усіх записів
+Console.WriteLine("\n=== Каталог медикаментів ===");
+foreach (var (code, name) in catalog)
+    Console.WriteLine($"  [{code}]  {name}");
 
-// додаємо новий елемент за ключом 22
-people[22] = "Eugene";
-Console.WriteLine(people[22]); // Eugene
+// Пошук за кодом — O(1)
+Console.WriteLine();
+string[] lookupCodes = { "IBU400", "PARA500", "LIS10" };
+foreach (var code in lookupCodes)
+{
+    if (catalog.TryGetValue(code, out var med))
+        Console.WriteLine($"Знайдено [{code}]: {med}");
+    else
+        Console.WriteLine($"Не знайдено: [{code}]");
+}
+
+// Оновлення назви та додавання нового
+catalog["MET850"] = "Метформін 850мг (пролонгований)";
+catalog.TryAdd("PARA500", "Парацетамол 500мг");
+Console.WriteLine($"\nПісля оновлення: {catalog["MET850"]}");
+Console.WriteLine($"Новий препарат: {catalog["PARA500"]}");
+
+// Видалення
+bool removed = catalog.Remove("ASP100", out var removedName);
+Console.WriteLine($"\nВидалено ASP100 ({removedName}): {removed}");
+Console.WriteLine($"Препаратів у каталозі: {catalog.Count}");
+
+// Ключі відділень
+Console.WriteLine("\nДоступні коди:");
+foreach (var key in catalog.Keys)
+    Console.Write($"{key}  ");
+Console.WriteLine();
 ```
 
-Більше того, ми можемо також додати новий елемент до словника. При встановленні значення за ключом, якщо елемент із таким ключем вже є у словнику, значення перевстановлюється. Якщо елемента з подібним ключем немає у словнику, то елемент додається.
+## Реєстратура пацієнтів — runnable приклад
 
-### Методи та властивості Dictionary
+Реалістичний приклад з класом: реєстр пацієнтів за ідентифікатором:
 
-Серед методів класу `Dictionary` можна виділити такі:
+```csharp run
+using System;
+using System.Collections.Generic;
 
-- `void Add(K key, V value)`: додає новий елемент у словник
-- `void Clear()`: очищує словник
-- `bool ContainsKey(K key)`: перевіряє наявність елемента з певним ключем і повертає `true` за його наявності у словнику
-- `bool ContainsValue(V value)`: перевіряє наявність елемента з певним значенням та повертає `true` за його наявності у словнику
-- `bool Remove(K key)`: видаляє по ключу елемент зі словника
-- Інша версія цього методу дозволяє отримати видалений елемент у вихідний параметр: `bool Remove(K key, out V value)`
-- `bool TryGetValue(K key, out V value)`: отримує зі словника елемент ключа `key`. При успішному отриманні передає значення елемента у вихідний параметр `value` і повертає `true`
-- `bool TryAdd(K key, V value)`: додає до словника елемент із ключем `key` та значенням `value`. При успішному додаванні повертає `true`
+// Виконуваний код
+var registry = new PatientRegistry();
 
-З властивостей слід зазначити властивість `Count`, яка повертає кількість елементів у словнику.
+registry.Register("P001", new Patient("Петренко Іван",  42, "Гіпертонія"));
+registry.Register("P002", new Patient("Коваль Марія",   35, "Діабет 2 типу"));
+registry.Register("P003", new Patient("Сидоренко Олег", 58, "Аритмія"));
+registry.Register("P004", new Patient("Мельник Ганна",  29, "Мігрень"));
 
-Застосування методів:
+Console.WriteLine($"Пацієнтів у реєстрі: {registry.Count}\n");
 
-```csharp
-// умовна телефонна книга
-var phoneBook = new Dictionary<string, string>();
+registry.PrintAll();
 
-// додаємо елемент: ключ - номер телефону, значення - ім'я абонента
-phoneBook.Add("+123456", "Tom");
+Console.WriteLine();
+registry.Lookup("P002");
+registry.Lookup("P999");
 
-// альтернативне додавання
-// phoneBook["+123456"] = "Tom";
+registry.Discharge("P003");
+Console.WriteLine($"\nПісля виписки: {registry.Count} пацієнтів");
 
-// Перевірка наявності
-var phoneExists1 = phoneBook.ContainsKey("+123456"); // true
-Console.WriteLine($"+123456: {phoneExists1}");
+// Класи — після виконуваного коду
+class Patient
+{
+    public string Name { get; }
+    public int Age { get; }
+    public string Diagnosis { get; }
 
-var phoneExists2 = phoneBook.ContainsKey("+567456"); // false
-Console.WriteLine($"+567456: {phoneExists2}");
+    public Patient(string name, int age, string diagnosis)
+    {
+        Name = name;
+        Age = age;
+        Diagnosis = diagnosis;
+    }
 
-var abonentExists1 = phoneBook.ContainsValue("Tom"); // true
-Console.WriteLine($"Tom: {abonentExists1}");
+    public override string ToString() =>
+        $"{Name}, {Age} р. — {Diagnosis}";
+}
 
-var abonentExists2 = phoneBook.ContainsValue("Bob"); // false
-Console.WriteLine($"Bob: {abonentExists2}");
+class PatientRegistry
+{
+    private Dictionary<string, Patient> _data = new Dictionary<string, Patient>();
 
-// видалення елемента
-phoneBook.Remove("+123456");
+    public int Count => _data.Count;
 
-// перевіряємо кількість елементів після видалення
-Console.WriteLine($"Count: {phoneBook.Count}");
-// Count: 0
+    public void Register(string id, Patient patient)
+    {
+        if (_data.TryAdd(id, patient))
+            Console.WriteLine($"  Зареєстровано [{id}]: {patient.Name}");
+        else
+            Console.WriteLine($"  Помилка: ID {id} вже існує.");
+    }
+
+    public void Lookup(string id)
+    {
+        if (_data.TryGetValue(id, out var p))
+            Console.WriteLine($"Пацієнт [{id}]: {p}");
+        else
+            Console.WriteLine($"Пацієнт [{id}] не знайдений.");
+    }
+
+    public void Discharge(string id)
+    {
+        if (_data.Remove(id, out var p))
+            Console.WriteLine($"Виписано [{id}]: {p.Name}");
+        else
+            Console.WriteLine($"Пацієнт [{id}] не знайдений.");
+    }
+
+    public void PrintAll()
+    {
+        Console.WriteLine("=== Поточний реєстр ===");
+        foreach (var (id, p) in _data)
+            Console.WriteLine($"  [{id}]  {p}");
+    }
+}
 ```
+
+## Складність операцій
+
+![Dictionary<K,V> — складність операцій vs List<T>](_assets/10-05/dictionary-complexity.png)
+
+## Коли Dictionary\<K, V\>?
+
+`Dictionary<K, V>` — правильний вибір коли:
+
+- Потрібен **швидкий пошук за ключем**: O(1) vs O(n) у `List<T>`.
+- Дані мають природну структуру **ключ → значення**: ID пацієнта → пацієнт, код препарату → препарат.
+- Потрібно перевіряти **наявність** елемента за ідентифікатором.
+- Потрібен **підрахунок** (ключ → кількість) або **групування** (ключ → список).
+
+`List<T>` залишається кращим вибором, коли:
+
+- Порядок елементів важливий і ключова операція — перебір.
+- Немає унікального ідентифікатора для елементів.
+- Колекція мала (< ~20 елементів) — різниця O(1) vs O(n) несуттєва.
