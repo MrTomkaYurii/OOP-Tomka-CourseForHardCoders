@@ -1,239 +1,200 @@
-﻿---
+---
 chapter: 10
 chapterTitle: "Розділ 10. Колекції"
 section: 6
 number: "10.6"
-title: "Клас ObservableCollection"
+title: "Клас ObservableCollection<T>"
 source: "../_combined/67-klas-observablecollection.md"
 ---
 
-## 10.6. Клас ObservableCollection
+## 10.6. Клас ObservableCollection\<T\>
 
-Окрім стандартних класів колекцій типу списків, черг, словників, стеків .NET також надає спеціальний клас `ObservableCollection<T>`. На відміну від раніше розглянутих колекцій цей клас визначений у просторі імен `System.Collections.ObjectModel`. За функціональністю колекція `ObservableCollection` схожа на список `List` за винятком, що дозволяє сповістити зовнішні об'єкти про те, що колекція була змінена.
+`List<T>`, `Queue<T>`, `Dictionary<K,V>` — всі ці колекції ефективно зберігають і організовують дані. Але жодна з них **не повідомляє** зовнішній код про те, що щось змінилось. Якщо хтось додав пацієнта до списку — UI-компонент, що відображає цей список, нічого про це не знатиме і не перемалює себе.
 
-### Створення та ініціалізація ObservableCollection
+Клас `ObservableCollection<T>` з простору імен `System.Collections.ObjectModel` вирішує саме цю задачу. За своїми методами він ідентичний `List<T>` (індексований доступ, `Add`, `Remove`, `Insert`, `Move`), але кожна зміна колекції генерує **подію `CollectionChanged`**. Будь-який підписник може відреагувати: перемалювати UI, зберегти лог, синхронізувати стан.
 
-Для створення об'єкта клас `ObservableCollection` надає низку конструкторів. Насамперед ми можемо створити порожню колекцію:
+`ObservableCollection<T>` є базою для прив'язки даних у WPF, MAUI, Xamarin. Якщо ви прив'язуєте колекцію до `ListView` чи `DataGrid` — майже завжди потрібна саме `ObservableCollection<T>`.
 
-```csharp
-using System.Collections.ObjectModel;
+## Внутрішня структура: подія CollectionChanged
 
-ObservableCollection<string> people = new ObservableCollection<string>();
-```
+При кожній зміні `ObservableCollection<T>` генерує подію `CollectionChanged` і передає підписникам об'єкт `NotifyCollectionChangedEventArgs`, де зберігається:
 
-У цьому випадку колекція людей типізується типом `string`, тому може зберігати лише рядки.
+- `Action` — тип зміни: `Add`, `Remove`, `Replace`, `Move`, `Reset`.
+- `NewItems` — список доданих або нових елементів (для `Add`, `Replace`).
+- `OldItems` — список видалених або замінених елементів (для `Remove`, `Replace`).
 
-Інша версія конструктора дозволяє передати в `ObservableCollection` об'єкти з іншої колекції або масиву:
+![ObservableCollection<T> — сповіщення про зміни](_assets/10-06/observablecollection-event-flow.png)
 
-```csharp
-var people = new ObservableCollection<string>(new string[] { "Tom", "Bob", "Sam" });
-```
-
-Для ініціалізації можна через ініціалізатор у фігурних дужках передати значення
-
-```csharp
-var people = new ObservableCollection<string>
-{
-    "Tom", "Bob", "Sam"
-};
-```
-
-Також можна поєднувати попередні два способи:
-
-```csharp
-var people = new ObservableCollection<string>(new string[] { "Mike", "Alice", "Kate" })
-{
-    "Tom", "Bob", "Sam"
-};
-```
-
-### Звернення до елементів колекції
-
-Для звернення до елементів `ObservableCollection` можна застосовувати індекси на зразок масивів або списків `List`:
-
-```csharp
-var people = new ObservableCollection<string>
-{
-    "Tom", "Bob", "Sam"
-};
-
-// отримуємо перший елемент
-Console.WriteLine(people[0]); // Tom
-
-// змінюємо перший елемент
-people[0] = "Tomas";
-Console.WriteLine(people[0]); // Tomas
-```
-
-### Перебір колекції
-
-Для перебору колекції можна використовувати стандартні цикли:
+## Створення та ініціалізація
 
 ```csharp
 using System.Collections.ObjectModel;
 
-var people = new ObservableCollection<string>
+// Порожня колекція
+ObservableCollection<string> ward = new ObservableCollection<string>();
+
+// З масиву
+var fromArray = new ObservableCollection<string>(new[] { "Петренко", "Коваль" });
+
+// Через ініціалізатор
+var fromInit = new ObservableCollection<string>
 {
-    "Tom", "Bob", "Sam"
+    "Петренко І.",
+    "Коваль М.",
+    "Сидоренко О."
 };
-
-foreach (var person in people)
-{
-    Console.WriteLine(person);
-}
-
-for (int i = 0; i < people.Count; i++)
-{
-    Console.WriteLine(people[i]);
-}
 ```
 
-За допомогою властивості `Count` можна отримати кількість елементів колекції.
+## Доступ до елементів та методи
 
-### Методи ObservableCollection
-
-Серед методів класу `ObservableCollection` можна назвати такі:
-
-- `void Add(T item)`: додавання нового елемента до колекції
-- `CopyTo(T[] array, int index)`: копіює в масив `array` елементи з колекції починаючи з індексу `index`
-- `bool Contains(T item)`: повертає `true`, якщо елемент `item` є в колекції
-- `Clear()`: видаляє з колекції всі елементи
-- `int IndexOf(T item)`: повертає індекс першого входження елемента в колекції
-- `void Insert(int index, T item)`: вставляє елемент `item` в колекцію за індексом `index`. Якщо такого індексу у колекції немає, то генерується виняток
-- `bool Remove(T item)`: видаляє елемент `item` із колекції, і якщо видалення пройшло успішно, то повертає `true`. Якщо в колекції кілька однакових елементів, то видаляється лише перший з них
-- `void RemoveAt(int index)`: видалення елемента за вказаним індексом `index`. Якщо такого індексу у колекції немає, то генерується виняток
-- `void Move(int oldIndex, int newIndex)`: переміщає елемент з індексу `oldIndex` на позицію за індексом `newIndex`
-
-Застосування методів:
+`ObservableCollection<T>` надає ті самі операції, що й `List<T>`:
 
 ```csharp
-using System.Collections.ObjectModel;
+var patients = new ObservableCollection<string> { "Петренко І.", "Коваль М." };
 
-var people = new ObservableCollection<string>();
+// Доступ за індексом
+Console.WriteLine($"Перший: {patients[0]}");
 
-// додаємо елемент
-people.Add("Bob");
+// Зміна елемента за індексом (генерує Replace)
+patients[0] = "Петренко Іван Степанович";
 
-// вставляємо елемент за індексом 0
-people.Insert(0, "Tom");
-
-// перевірка наявності елемента
-bool bobExists = people.Contains("Bob");
-// true
-Console.WriteLine($"Bob exists: {bobExists}");
-
-bool mikeExists = people.Contains("Mike");
-// false
-Console.WriteLine($"Mike exists: {mikeExists}");
-
-// видаляємо елемент
-people.Remove("Tom");
-
-// видаляємо елемент за індексом 0
-people.RemoveAt(0);
+// Перебір
+foreach (var p in patients)
+    Console.WriteLine(p);
 ```
 
-### Повідомлення про зміну колекції
+**Повний перелік методів:**
 
-Клас `ObservableCollection` визначає подію `CollectionChanged`, підписавшись на яку ми можемо обробити будь-які зміни колекції. Ця подія представляє делегат `NotifyCollectionChangedEventHandler`:
+| Метод | Що робить |
+|-------|-----------|
+| `Add(item)` | Додати в кінець |
+| `Insert(index, item)` | Вставити за індексом |
+| `Remove(item)` | Видалити перше входження |
+| `RemoveAt(index)` | Видалити за індексом |
+| `Move(oldIndex, newIndex)` | Перемістити елемент на нову позицію |
+| `Clear()` | Очистити (генерує Reset) |
+| `Contains(item)` | Перевірити наявність |
+| `IndexOf(item)` | Індекс першого входження |
+| `CopyTo(array, index)` | Скопіювати в масив |
 
-```csharp
-void NotifyCollectionChangedEventHandler(object? sender, NotifyCollectionChangedEventArgs e);
-```
+Метод `Move` — унікальна особливість `ObservableCollection<T>`, якої немає в `List<T>`. Він переміщує елемент і генерує подію `Move`, що дозволяє UI-компонентам правильно анімувати переупорядкування.
 
-Другий параметр делегата - об'єкт `NotifyCollectionChangedEventArgs` зберігає всю інформацію про подію. Зокрема, його властивість `Action` дозволяє дізнатися про характер змін. Воно зберігає одне із значень з переліку `NotifyCollectionChangedAction`:
+## Підписка на CollectionChanged — runnable приклад
 
-- `NotifyCollectionChangedAction.Add`: додавання
-- `NotifyCollectionChangedAction.Remove`: видалення
-- `NotifyCollectionChangedAction.Replace`: заміна
-- `NotifyCollectionChangedAction.Move`: переміщення об'єкта всередині колекції на нову позицію
-- `NotifyCollectionChangedAction.Reset`: скидання вмісту колекції (наприклад, під час її очищення за допомогою методу `Clear()`)
+Базовий сценарій: відстежуємо всі зміни списку пацієнтів у відділенні:
 
-Крім того, властивості `NewItems` і `OldItems` дозволяють отримати відповідно додані та видалені об'єкти. Таким чином, ми отримуємо повний контроль над обробкою додавання, видалення та заміни об'єктів у колекції.
-
-Допустимо, у нас буде наступний клас `Person`, який представляє користувача:
-
-```csharp
-class Person
-{
-    public string Name { get; }
-    public Person(string name) => Name = name;
-}
-```
-
-Для керування колекцією об'єктів `Person` визначимо таку програму:
-
-```csharp
+```csharp run
+using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 
-var people = new ObservableCollection<Person>()
+var ward = new ObservableCollection<string>
 {
-    new Person("Tom"),
-    new Person("Sam")
+    "Петренко І.",
+    "Коваль М."
 };
 
-// підписуємось на подію зміни колекції
-people.CollectionChanged += People_CollectionChanged;
-
-people.Add(new Person("Bob"));
-// додаємо новий елемент
-
-people.RemoveAt(1);
-// видаляємо елемент
-
-people[0] = new Person("Eugene");
-// замінюємо елемент
-
-Console.WriteLine("\nСписок користувачів:");
-foreach (var person in people)
-{
-    Console.WriteLine(person.Name);
-}
-
-// обробник зміни колекції
-void People_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+// Підписка на подію
+ward.CollectionChanged += (sender, e) =>
 {
     switch (e.Action)
     {
         case NotifyCollectionChangedAction.Add:
-            // якщо додавання
-            if (e.NewItems?[0] is Person newPerson)
-            {
-                Console.WriteLine($"Додано новий об'єкт: {newPerson.Name}");
-            }
+            Console.WriteLine($"  [+] Надійшов: {e.NewItems?[0]}");
             break;
-
         case NotifyCollectionChangedAction.Remove:
-            // якщо видалення
-            if (e.OldItems?[0] is Person oldPerson)
-            {
-                Console.WriteLine($"Вилучений об'єкт: {oldPerson.Name}");
-            }
+            Console.WriteLine($"  [-] Виписано: {e.OldItems?[0]}");
             break;
-
         case NotifyCollectionChangedAction.Replace:
-            // якщо заміна
-            if (e.NewItems?[0] is Person replacingPerson &&
-                e.OldItems?[0] is Person replacedPerson)
-            {
-                Console.WriteLine($"Об'єкт {replacedPerson.Name} замінено на об'єкт {replacingPerson.Name}.");
-            }
+            Console.WriteLine($"  [~] Замінено: {e.OldItems?[0]} -> {e.NewItems?[0]}");
+            break;
+        case NotifyCollectionChangedAction.Move:
+            Console.WriteLine($"  [m] Переміщено: {e.OldItems?[0]}");
+            break;
+        case NotifyCollectionChangedAction.Reset:
+            Console.WriteLine($"  [!] Список очищено");
             break;
     }
+};
+
+Console.WriteLine("=== Зміни у відділенні ===");
+ward.Add("Сидоренко О.");
+ward.Add("Мельник Г.");
+ward.Remove("Коваль М.");
+ward[0] = "Петренко Іван Степанович";
+ward.Move(1, 0);
+ward.Clear();
+
+Console.WriteLine($"\nПалата: {ward.Count} пацієнтів");
+```
+
+## Відстеження з об'єктами Patient — runnable приклад
+
+Розширений приклад з класом: журналюємо кожну зміну складу відділення:
+
+```csharp run
+using System;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+
+// Виконуваний код
+var patients = new ObservableCollection<Patient>();
+
+patients.CollectionChanged += WardChanged;
+
+patients.Add(new Patient("Петренко Іван",  "кардіологія"));
+patients.Add(new Patient("Коваль Марія",   "неврологія"));
+patients.Add(new Patient("Сидоренко Олег", "хірургія"));
+
+patients.RemoveAt(1);
+
+patients[0] = new Patient("Петренко Іван Степанович", "кардіологія");
+
+Console.WriteLine("\n=== Поточний склад відділення ===");
+for (int i = 0; i < patients.Count; i++)
+    Console.WriteLine($"  {i+1}. {patients[i]}");
+
+void WardChanged(object? sender, NotifyCollectionChangedEventArgs e)
+{
+    switch (e.Action)
+    {
+        case NotifyCollectionChangedAction.Add:
+        {
+            if (e.NewItems?[0] is Patient p)
+                Console.WriteLine($"[Прийом]  {p.Name} ({p.Department})");
+            break;
+        }
+        case NotifyCollectionChangedAction.Remove:
+        {
+            if (e.OldItems?[0] is Patient p)
+                Console.WriteLine($"[Виписка] {p.Name}");
+            break;
+        }
+        case NotifyCollectionChangedAction.Replace:
+        {
+            if (e.OldItems?[0] is Patient old && e.NewItems?[0] is Patient newPat)
+                Console.WriteLine($"[Оновлення] {old.Name} -> {newPat.Name}");
+            break;
+        }
+    }
+}
+
+class Patient
+{
+    public string Name { get; }
+    public string Department { get; }
+    public Patient(string name, string dept) { Name = name; Department = dept; }
+    public override string ToString() => $"{Name} ({Department})";
 }
 ```
 
-Тут як обробник змін колекції виступає метод `People_CollectionChanged`, в якому за допомогою параметра `NotifyCollectionChangedEventArgs` отримуємо інформацію про зміну. Консольний вивід програми:
+## Коли ObservableCollection\<T\>?
 
-![Рисунок з оригінального документа](_assets/_docx/image102.png)
+| Ситуація | Рекомендація |
+|----------|-------------|
+| WPF / MAUI / Xamarin прив'язка до UI | **ObservableCollection** — обов'язково |
+| Потрібно реагувати на зміни ззовні | **ObservableCollection** + `CollectionChanged` |
+| Звичайне зберігання і перебір даних | **List\<T\>** — легший overhead |
+| Великі батч-операції без UI | **List\<T\>** — немає зайвих подій |
 
-```text
-Додано новий об'єкт: Bob
-Вилучений об'єкт: Sam
-Об'єкт Tom замінено на об'єкт Eugene.
-
-Список користувачів:
-Eugene
-Bob
-```
+`ObservableCollection<T>` генерує подію на **кожну** окрему зміну. Якщо потрібно додати 10 000 елементів — краще створити `List<T>`, наповнити його, а потім передати в конструктор `ObservableCollection<T>(list)`, щоб уникнути 10 000 подій.
