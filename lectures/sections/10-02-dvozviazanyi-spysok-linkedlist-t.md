@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 10
 chapterTitle: "Розділ 10. Колекції"
 section: 2
@@ -7,139 +7,195 @@ title: "Двозв'язаний список LinkedList<T>"
 source: "../_combined/63-dvozviazanyi-spysok-linkedlist-t.md"
 ---
 
-## 10.2. Двозв'язаний список LinkedList<T>
+## 10.2. Двозв'язаний список LinkedList\<T\>
 
-Клас `LinkedList<T>` представляє двозв'язковий список, в якому кожен елемент зберігає посилання одночасно на наступний і попередній елемент.
+`List<T>` — потужна колекція загального призначення, але вона побудована на масиві. Це означає, що вставка або видалення елемента **не в кінці** списку вимагає зсуву всіх сусідніх елементів: O(n) за часом. Якщо ваш алгоритм часто додає або видаляє елементи на початку, у кінці або після конкретного відомого елемента — `LinkedList<T>` може бути значно ефективнішим вибором.
 
-### Створення зв'язаного списку
+Клас `LinkedList<T>` з простору імен `System.Collections.Generic` представляє **двозв'язний список** — лінійну структуру даних, в якій кожен елемент зберігає посилання одночасно на **наступний** і **попередній** елемент. Завдяки цьому вставка та видалення на відомій позиції виконуються за O(1) — без жодних зсувів.
 
-Для створення зв'язкового списку можна використати один із його конструкторів. Наприклад, створимо порожній зв'язковий список:
+## Внутрішня структура
+
+На відміну від `List<T>`, де елементи зберігаються в суцільному масиві пам'яті, `LinkedList<T>` зберігає кожен елемент окремо у вигляді **вузла** — об'єкта класу `LinkedListNode<T>`. Вузли з'єднані між собою посиланнями: кожен знає свого сусіда ліворуч і праворуч. Сам список зберігає лише два покажчики — на **голову** (перший вузол) і **хвіст** (останній вузол).
+
+![LinkedList<T> — структура двозв'язного списку](_assets/10-02/linkedlist-structure.png)
+
+Коли потрібно вставити вузол між двома існуючими, достатньо переписати чотири посилання — без копіювання даних. Саме тому вставка і видалення на відомій позиції — O(1). Але є і зворотний бік: **індексований доступ** (`list[i]`) відсутній — щоб дістатись до i-го елемента, треба пройти від голови до нього крок за кроком, що дає O(n).
+
+## LinkedListNode\<T\>: вузол списку
+
+Якщо у `List<T>` кожен елемент — це просто значення типу `T`, то в `LinkedList<T>` кожен елемент обгортається у вузол `LinkedListNode<T>`. Саме через вузли виконуються всі операції вставки після/перед конкретним елементом.
+
+Клас `LinkedListNode<T>` має три властивості:
+
+- `Value` — значення вузла типу `T`. Єдине місце, де зберігається сам елемент.
+- `Next` — посилання на наступний вузол типу `LinkedListNode<T>`. У хвостового вузла — `null`.
+- `Previous` — посилання на попередній вузол типу `LinkedListNode<T>`. У головного вузла — `null`.
+
+Зберігши посилання на конкретний вузол у змінній, ви отримуєте точку вставки: можна додати нового сусіда за O(1), не шукаючи позицію повторно.
+
+## Властивості LinkedList\<T\>
+
+Сам клас `LinkedList<T>` визначає три властивості:
+
+- `Count` — кількість елементів у списку.
+- `First` — перший вузол списку як об'єкт `LinkedListNode<T>`. Для порожнього списку — `null`.
+- `Last` — останній вузол списку. Для порожнього списку — `null`.
+
+### Створення та ініціалізація
+
+`LinkedList<T>` можна створити порожнім або ініціалізувати з будь-якої колекції, що реалізує `IEnumerable<T>`:
 
 ```csharp
-LinkedList<string> people = new LinkedList<string>();
+// Порожній список
+LinkedList<string> queue = new LinkedList<string>();
+
+// З іншої колекції
+var names = new List<string> { "Петренко", "Коваль", "Сидоренко" };
+LinkedList<string> fromList = new LinkedList<string>(names);
+
+// З масиву
+LinkedList<string> fromArray = new LinkedList<string>(new[] { "A", "B", "C" });
 ```
 
-У цьому випадку пов'язаний список `people` призначений для зберігання рядків.
+### Обхід вперед і назад — runnable приклад
 
-Також можна до конструктора передати колекцію елементів, наприклад, список `List`, за яким буде створено зв'язковий список:
+Одна з практичних переваг `LinkedList<T>` — можливість рухатись у **будь-якому напрямку** через властивості `Next` і `Previous`. Це корисно, наприклад, при роботі з хронологічними записами, де потрібен перегляд як від найстаршого до найновішого, так і у зворотному порядку:
 
-```csharp
-var employees = new List<string> { "Tom", "Sam", "Bob" };
+```csharp run
+using System;
+using System.Collections.Generic;
 
-LinkedList<string> people = new LinkedList<string>(employees);
-
-foreach (string person in people)
+// Денний журнал прийомів у відділенні
+var journal = new LinkedList<string>(new[]
 {
-    Console.WriteLine(person);
-}
-```
+    "08:00 — Петренко І. (кардіо)",
+    "09:30 — Коваль М. (невро)",
+    "11:00 — Сидоренко О. (кардіо)",
+    "13:15 — Мельник Г. (хірург)"
+});
 
-### LinkedListNode
+Console.WriteLine($"Прийомів за день: {journal.Count}");
+Console.WriteLine($"Перший:  {journal.First?.Value}");
+Console.WriteLine($"Останній: {journal.Last?.Value}");
 
-Якщо у простому списку `List<T>` кожен елемент представляє об'єкт типу `T`, то в `LinkedList<T>` кожен вузол представляє об'єкт класу `LinkedListNode<T>`. А елементи `T`, що додаються до пов'язаного списку, фактично обертаються в об'єкт `LinkedListNode`.
-
-Клас `LinkedListNode` має такі властивості:
-
-- `Value`: повертає або встановлює значення вузла, представлене типом `T`
-- `Next`: повертає посилання на наступний елемент типу `LinkedListNode<T>` у списку. Якщо наступний елемент відсутній, має значення `null`
-- `Previous`: повертає посилання на попередній елемент типу `LinkedListNode<T>` у списку. Якщо попередній елемент відсутній, має значення `null`
-
-### Властивості LinkedList
-
-Клас `LinkedList` визначає такі властивості:
-
-- `Count`: кількість елементів у зв'язаному списку
-- `First`: перший вузол у списку як об'єкт `LinkedListNode<T>`
-- `Last`: останній вузол у списку як об'єкт `LinkedListNode<T>`
-
-Використовуємо ці властивості:
-
-```csharp
-var employees = new List<string> { "Tom", "Sam", "Bob" };
-
-LinkedList<string> people = new LinkedList<string>(employees);
-Console.WriteLine(people.Count);        // 3
-Console.WriteLine(people.First?.Value); // Tom
-Console.WriteLine(people.Last?.Value);  // Bob
-```
-
-Використовуючи властивості `LinkedList` і `LinkedListNode`, можна пройтись по всіх елементах списку у прямому або зворотному порядку:
-
-```csharp
-LinkedList<string> people = new LinkedList<string>(new[] { "Tom", "Sam", "Bob" });
-
-// від початку до кінця списку
-var currentNode = people.First;
-while (currentNode != null)
+// Прямий обхід — від ранку до вечора
+Console.WriteLine("\n--- Журнал (хронологічно) ---");
+var node = journal.First;
+while (node != null)
 {
-    Console.WriteLine(currentNode.Value);
-    currentNode = currentNode.Next;
+    Console.WriteLine($"  {node.Value}");
+    node = node.Next;
 }
 
-// з кінця до початку списку
-currentNode = people.Last;
-while (currentNode != null)
+// Зворотній обхід — від останнього прийому
+Console.WriteLine("\n--- Журнал (від останнього) ---");
+node = journal.Last;
+while (node != null)
 {
-    Console.WriteLine(currentNode.Value);
-    currentNode = currentNode.Previous;
-}
-```
-
-### Методи LinkedList
-
-Використовуючи методи класу `LinkedList<T>`, можна звертатися до різних елементів як наприкінці, так і на початку списку:
-
-- `AddAfter(LinkedListNode<T> node, LinkedListNode<T> newNode)`: вставляє вузол `newNode` у список після вузла `node`.
-- `AddAfter(LinkedListNode<T> node, T value)`: вставляє новий вузол зі значенням `value` після вузла `node`.
-- `AddBefore(LinkedListNode<T> node, LinkedListNode<T> newNode)`: вставляє в список вузол `newNode` перед вузлом `node`.
-- `AddBefore(LinkedListNode<T> node, T value)`: вставляє новий вузол зі значенням `value` перед вузлом `node`.
-- `AddFirst(LinkedListNode<T> node)`: вставляє новий вузол на початок списку
-- `AddFirst(T value)`: вставляє новий вузол зі значенням `value` на початок списку
-- `AddLast(LinkedListNode<T> node)`: вставляє новий вузол у кінець списку
-- `AddLast(T value)`: вставляє новий вузол зі значенням `value` до кінця списку
-- `RemoveFirst()`: видаляє перший вузол зі списку. Після цього новим першим вузлом стає вузол, що йде за видаленим
-- `RemoveLast()`: видаляє останній вузол зі списку
-
-Застосуємо деякі з цих методів:
-
-```csharp
-var people = new LinkedList<string>();
-
-people.AddLast("Tom"); // вставляємо вузол зі значенням Tom на останнє місце
-// так як у списку немає вузлів, то останній буде також першим
-
-people.AddFirst("Bob"); // вставляємо вузол зі значенням Bob на перше місце
-
-// вставляємо після першого вузла новий вузол зі значенням Mike
-if (people.First != null)
-{
-    people.AddAfter(people.First, "Mike");
-}
-
-// тепер у нас список має таку послідовність: Bob Mike Tom
-foreach (var person in people)
-{
-    Console.WriteLine(person);
+    Console.WriteLine($"  {node.Value}");
+    node = node.Previous;
 }
 ```
 
-Подібним чином можна створювати пов'язані списки та інші типи:
+## Методи LinkedList\<T\>
 
-```csharp
-var company = new LinkedList<Person>();
+`LinkedList<T>` надає повний набір методів для роботи з вузлами. Ключова особливість: методи `AddAfter`, `AddBefore`, `Remove(node)` приймають **вузол** (`LinkedListNode<T>`), а не значення — тому для цільової вставки потрібно спочатку отримати або зберегти посилання на вузол.
 
-company.AddLast(new Person("Tom"));
-company.AddLast(new Person("Sam"));
-company.AddFirst(new Person("Bill"));
+**Додавання:**
 
-foreach (var person in company)
+- `AddFirst(T value)` / `AddFirst(LinkedListNode<T> node)` — вставляє на початок списку.
+- `AddLast(T value)` / `AddLast(LinkedListNode<T> node)` — вставляє в кінець списку.
+- `AddAfter(LinkedListNode<T> node, T value)` / `AddAfter(node, LinkedListNode<T> newNode)` — вставляє після вказаного вузла.
+- `AddBefore(LinkedListNode<T> node, T value)` / `AddBefore(node, LinkedListNode<T> newNode)` — вставляє перед вказаним вузлом.
+
+Всі методи `Add*` повертають `LinkedListNode<T>` — посилання на щойно створений вузол. Збережіть його, якщо плануєте звертатись до цього вузла пізніше.
+
+**Видалення:**
+
+- `RemoveFirst()` — видаляє перший вузол. Новим першим стає наступний за ним.
+- `RemoveLast()` — видаляє останній вузол.
+- `Remove(LinkedListNode<T> node)` — видаляє конкретний вузол за посиланням: O(1).
+- `Remove(T value)` — знаходить перший вузол із вказаним значенням і видаляє його: O(n).
+
+**Пошук:**
+
+- `Find(T value)` — повертає перший `LinkedListNode<T>` із заданим значенням або `null`.
+- `FindLast(T value)` — повертає останній відповідний вузол.
+- `Contains(T value)` — перевіряє, чи є значення у списку.
+
+**Інше:**
+
+- `Clear()` — очищає весь список.
+- `CopyTo(T[] array, int index)` — копіює елементи в масив.
+
+### Маніпуляції з хірургічною чергою — runnable приклад
+
+Розглянемо реалістичний сценарій: черга на хірургічну операцію, де нові пацієнти можуть додаватись як планово (в кінець), так і позачергово (на початок або після конкретного пацієнта):
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+void PrintQueue(LinkedList<string> q)
 {
-    Console.WriteLine(person.Name);
+    int i = 1;
+    var n = q.First;
+    while (n != null)
+    {
+        Console.WriteLine($"  {i++}. {n.Value}");
+        n = n.Next;
+    }
 }
 
-class Person
+var surgeryQueue = new LinkedList<string>();
+
+// Планові записи — в кінець
+surgeryQueue.AddLast("Петренко І. — апендектомія");
+surgeryQueue.AddLast("Коваль М.  — холецистектомія");
+surgeryQueue.AddLast("Мельник Г. — герніопластика");
+
+Console.WriteLine("=== Первинна черга ===");
+PrintQueue(surgeryQueue);
+
+// Термінова операція — першочергово
+surgeryQueue.AddFirst("ТЕРМІНОВО: Бойко Т. — перитоніт");
+Console.WriteLine($"\nДодано термінового. Перший: {surgeryQueue.First?.Value}");
+
+// Зберігаємо посилання на вузол для подальшої вставки після нього
+var kovalNode = surgeryQueue.Find("Коваль М.  — холецистектомія");
+if (kovalNode != null)
 {
-    public string Name { get; }
-    public Person(string name) => Name = name;
+    surgeryQueue.AddAfter(kovalNode, "Сидоренко О. — лапароскопія");
+    Console.WriteLine("Вставлено Сидоренка після Коваля.");
 }
+
+Console.WriteLine($"\nВсього в черзі: {surgeryQueue.Count}");
+Console.WriteLine("\n=== Фінальна черга ===");
+PrintQueue(surgeryQueue);
+
+// Перша операція завершена — видаляємо
+surgeryQueue.RemoveFirst();
+Console.WriteLine($"\nПісля завершення першої операції: {surgeryQueue.Count} в черзі.");
+Console.WriteLine($"Наступний: {surgeryQueue.First?.Value}");
 ```
+
+## Складність операцій
+
+![LinkedList<T> vs List<T> — складність ключових операцій](_assets/10-02/linkedlist-complexity.png)
+
+Ключовий висновок: `LinkedList<T>` виграє там, де `List<T>` витрачає O(n) на зсув елементів — а саме при роботі з **початком і серединою** колекції. Але `LinkedList<T>` програє, де потрібен **прямий доступ за індексом**: його просто немає.
+
+Також слід враховувати **витрати пам'яті**: кожен вузол `LinkedListNode<T>` додатково зберігає два посилання (`Next` і `Previous`), що збільшує споживання пам'яті порівняно з `List<T>`, де елементи зберігаються щільно в масиві.
+
+## Коли LinkedList\<T\>, а коли List\<T\>?
+
+| Сценарій | Рекомендація |
+|----------|-------------|
+| Часте додавання/видалення на початку або в середині | **LinkedList** — O(1) після знаходження вузла |
+| Реалізація черги з пріоритетами (вставка між елементами) | **LinkedList** — природна модель |
+| Потрібен доступ за індексом (`list[i]`) | **List** — O(1) vs відсутність у LinkedList |
+| Більшість операцій — додавання в кінець і читання | **List** — менший overhead пам'яті |
+| Колекція невелика (< 100 елементів) | **List** — різниця несуттєва, код простіший |
+| LINQ-запити, сортування, пошук за умовою | **List** — краща підтримка в стандартній бібліотеці |
+
+Загальна рекомендація: **за замовчуванням використовуйте `List<T>`**. Обирайте `LinkedList<T>` лише тоді, коли профіль операцій вашого алгоритму явно вигравав би від O(1) вставки/видалення на краях або після відомого вузла — і ви готові пожертвувати індексованим доступом та додатковою пам'яттю.
