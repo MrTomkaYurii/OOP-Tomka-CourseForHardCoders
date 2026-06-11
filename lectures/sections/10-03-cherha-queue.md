@@ -1,157 +1,201 @@
-﻿---
+---
 chapter: 10
 chapterTitle: "Розділ 10. Колекції"
 section: 3
 number: "10.3"
-title: "Черга Queue"
+title: "Черга Queue<T>"
 source: "../_combined/64-cherha-queue.md"
 ---
 
-## 10.3. Черга Queue
+## 10.3. Черга Queue\<T\>
 
-Клас `Queue` представляє звичайну чергу, яка працює за алгоритмом FIFO ("перший увійшов - перший вийшов").
+У реальному житті черга — інтуїтивна структура: хто прийшов першим, той і обслуговується першим. У програмуванні цей принцип називається **FIFO** (First In — First Out): елемент, доданий до колекції раніше, вилучається з неї раніше.
 
-### Створення черги
+Клас `Queue<T>` з простору імен `System.Collections.Generic` реалізує саме цей принцип. На відміну від `List<T>`, де є індексований доступ і вставка в будь-яку позицію, `Queue<T>` надає лише дві основні операції: **Enqueue** (додати в кінець) і **Dequeue** (забрати з початку). Такий обмежений, але чіткий контракт робить черги ідеальними там, де важливий порядок обробки: черга пацієнтів на прийом, задачі у виконавця, повідомлення в черзі обробки.
 
-Для створення черги можна використовувати один із трьох її конструкторів. Насамперед можна створити порожню чергу:
+## Внутрішня структура
+
+Всередині `Queue<T>` зберігає елементи у **кільцевому масиві** (circular buffer). На відміну від `List<T>`, де при видаленні з початку всі елементи зсуваються, черга використовує два індекси — **head** (вказівник на перший елемент) і **tail** (вказівник на наступну вільну позицію). При `Dequeue` лише head зсувається вперед — жодного копіювання. Тому обидві основні операції виконуються за **O(1)**.
+
+![Queue<T> — принцип FIFO](_assets/10-03/queue-fifo-structure.png)
+
+Якщо кільцевий масив заповнюється, `Queue<T>` виділяє новий масив більшого розміру і копіює дані — аналогічно до `List<T>`. Тому `Enqueue` — O(1) **амортизована**: більшість операцій O(1), але іноді виникає O(n) перевиділення.
+
+## Створення черги
+
+`Queue<T>` типізується елементом, що зберігається, і підтримує кілька способів ініціалізації:
 
 ```csharp
-Queue<string> people = new Queue<string>();
+// Порожня черга
+Queue<string> waitingRoom = new Queue<string>();
+
+// З початковою ємністю (без елементів — лише буфер)
+Queue<string> withCapacity = new Queue<string>(32);
+
+// З іншої колекції або масиву
+var names = new List<string> { "Петренко", "Коваль", "Мельник" };
+Queue<string> fromList = new Queue<string>(names);
 ```
 
-Під час створення порожньої черги можна вказати ємність черги:
+Властивість `Count` повертає поточну кількість елементів у черзі.
+
+## Методи Queue\<T\>
+
+### Enqueue та Dequeue
+
+`Enqueue(T item)` додає елемент до хвоста черги, `Dequeue()` вилучає і повертає елемент з голови:
 
 ```csharp
-Queue<string> people = new Queue<string>(16);
+var queue = new Queue<string>();
+queue.Enqueue("А");  // { А }
+queue.Enqueue("Б");  // { А, Б }
+queue.Enqueue("В");  // { А, Б, В }
+
+var first = queue.Dequeue();  // повертає "А", черга стає { Б, В }
 ```
 
-Також можна ініціалізувати чергу елементами з іншої колекції або масивом:
+Важливо: якщо викликати `Dequeue()` або `Peek()` на **порожній** черзі — програма кине `InvalidOperationException`. Завжди перевіряйте `Count > 0` або використовуйте `Try`-варіанти методів.
+
+### Peek — підглянути без видалення
+
+`Peek()` повертає перший елемент черги, але не видаляє його. Корисно, коли потрібно прийняти рішення на основі поточного елемента, не обробляючи його одразу:
 
 ```csharp
-var employees = new List<string> { "Tom", "Sam", "Bob" };
-Queue<string> people = new Queue<string>(employees);
-
-foreach (var person in people)
+if (queue.Count > 0)
 {
-    Console.WriteLine(person);
-}
-
-Console.WriteLine(people.Count); // 3
-```
-
-Для перебору черги можна використовувати стандартний цикл `foreach`.
-
-Для отримання кількості елементів у черзі у класі визначено властивість `Count`.
-
-### Методи Queue
-
-У класу `Queue<T>` можна назвати такі методи:
-
-- `void Clear()`: очищає чергу
-- `bool Contains(T item)`: повертає `true`, якщо елемент `item` є в черзі
-- `T Dequeue()`: витягує та повертає перший елемент черги
-- `void Enqueue(T item)`: додає елемент до кінця черги
-- `T Peek()`: просто повертає перший елемент із початку черги без його видалення
-
-Подивимося застосування черги практично:
-
-```csharp
-var people = new Queue<string>();
-
-// додаємо елементи
-people.Enqueue("Tom"); // people = { Tom }
-people.Enqueue("Bob"); // people = { Tom, Bob }
-people.Enqueue("Sam"); // people = { Tom, Bob, Sam }
-
-// отримуємо елемент із самого початку черги
-var firstPerson = people.Peek();
-Console.WriteLine(firstPerson); // Tom
-
-// видаляємо елементи
-var person1 = people.Dequeue(); // people = { Bob, Sam }
-Console.WriteLine(person1); // Tom
-
-var person2 = people.Dequeue(); // people = { Sam }
-Console.WriteLine(person2); // Bob
-
-var person3 = people.Dequeue(); // people = { }
-Console.WriteLine(person3); // Sam
-```
-
-Варто зазначити, що якщо за допомогою методів `Peek` або `Dequeue` ми спробуємо отримати перший елемент черги, яка порожня, програма видасть виняток. Відповідно перед отриманням елемента ми можемо перевіряти кількість елементів у черзі:
-
-```csharp
-if (people.Count > 0)
-{
-    var person = people.Peek();
-    people.Dequeue();
+    var next = queue.Peek();   // прочитали, не видалили
+    // ... перевірка ...
+    var processed = queue.Dequeue();  // тепер забираємо
 }
 ```
 
-Або можна використовувати пару методів:
+### TryDequeue і TryPeek
 
-- `bool TryDequeue(out T result)`: передає в змінну `result` перший елемент черги з його видаленням з черги, повертає `true`, якщо черга не порожня і успішно отриманий елемент.
-- `bool TryPeek(out T result)`: передає в змінну `result` перший елемент черги без його вилучення з черги, повертає `true`, якщо черга не порожня і успішно отриманий елемент.
+Безпечні варіанти, що не кидають виняток на порожній черзі. Повертають `true`, якщо операція успішна, і передають результат через `out`-параметр:
 
-Застосування методів:
+- `bool TryDequeue(out T result)` — вилучає перший елемент, якщо черга не порожня.
+- `bool TryPeek(out T result)` — читає перший елемент без видалення, якщо черга не порожня.
 
-```csharp
-var people = new Queue<string>();
+### Повний перелік методів
 
-// додаємо елементи
-people.Enqueue("Tom"); // people = { Tom }
+| Метод | Що робить | Складність |
+|-------|-----------|-----------|
+| `Enqueue(item)` | Додає елемент до хвоста | O(1)* |
+| `Dequeue()` | Вилучає і повертає елемент з голови | O(1) |
+| `Peek()` | Повертає перший елемент без видалення | O(1) |
+| `TryDequeue(out T)` | Безпечний Dequeue; повертає false якщо порожня | O(1) |
+| `TryPeek(out T)` | Безпечний Peek; повертає false якщо порожня | O(1) |
+| `Contains(item)` | Чи є елемент у черзі | O(n) |
+| `Clear()` | Очищає чергу | O(n) |
+| `CopyTo(arr, i)` | Копіює в масив починаючи з індексу i | O(n) |
+| `ToArray()` | Повертає новий масив зі збереженням порядку | O(n) |
 
-// видаляємо елементи
-var success1 = people.TryDequeue(out var person1); // success1 = true
-if (success1)
+## Черга реєстратури — runnable приклад
+
+Змоделюємо ранкову чергу пацієнтів у реєстратурі. Нові пацієнти займають чергу, реєстратор обслуговує по одному в порядку надходження:
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+var registrationDesk = new Queue<string>();
+
+// Пацієнти записуються в чергу
+registrationDesk.Enqueue("Петренко І. — прийом 08:00");
+registrationDesk.Enqueue("Коваль М.   — аналізи");
+registrationDesk.Enqueue("Сидоренко О. — кардіолог");
+registrationDesk.Enqueue("Мельник Г.  — терапевт");
+
+Console.WriteLine($"Черга на реєстрацію: {registrationDesk.Count} осіб");
+Console.WriteLine($"Перший у черзі: {registrationDesk.Peek()}");
+Console.WriteLine();
+
+// Реєстратор обслуговує по одному
+Console.WriteLine("=== Процес реєстрації ===");
+while (registrationDesk.Count > 0)
 {
-    Console.WriteLine(person1); // Tom
+    var patient = registrationDesk.Dequeue();
+    Console.WriteLine($"✓ Зареєстровано: {patient}");
+    Console.WriteLine($"  Залишилось у черзі: {registrationDesk.Count}");
 }
 
-var success2 = people.TryPeek(out var person2); // success2 = false
-if (success2)
-{
-    Console.WriteLine(person2);
-}
+Console.WriteLine("\nРеєстрацію завершено.");
+
+// TryDequeue на порожній черзі — безпечний варіант
+var success = registrationDesk.TryDequeue(out var next);
+Console.WriteLine($"\nСпроба Dequeue з порожньої черги: {(success ? "успішно" : "черга порожня")}");
 ```
 
-Черги досить часто зустрічаються в реальному житті. Наприклад, черга пацієнтів на прийом до лікаря. Реалізуємо цю ситуацію:
+## Черга пацієнтів у лікаря — runnable приклад
 
-```csharp
-var patients = new Queue<Person>();
-patients.Enqueue(new Person("Tom"));
-patients.Enqueue(new Person("Bob"));
-patients.Enqueue(new Person("Sam"));
+Розширений приклад із класами: черга пацієнтів передається лікарю, який послідовно їх приймає:
 
-var practitioner = new Doctor();
-practitioner.TakePatients(patients);
+```csharp run
+using System;
+using System.Collections.Generic;
 
-class Person
+// Виконуваний код
+var patients = new Queue<Patient>();
+patients.Enqueue(new Patient("Петренко Іван",    "гіпертонія"));
+patients.Enqueue(new Patient("Коваль Марія",     "діабет"));
+patients.Enqueue(new Patient("Сидоренко Олег",   "аритмія"));
+patients.Enqueue(new Patient("Мельник Ганна",    "мігрень"));
+
+Console.WriteLine($"Очікують прийому: {patients.Count} пацієнтів\n");
+
+var doctor = new Doctor("Іванченко В.О.", "кардіолог");
+doctor.ConductReception(patients);
+
+Console.WriteLine($"\nЧерга після прийому: {patients.Count} осіб");
+
+// Класи — після виконуваного коду
+class Patient
 {
     public string Name { get; }
-    public Person(string name) => Name = name;
+    public string Diagnosis { get; }
+    public Patient(string name, string diagnosis)
+    {
+        Name = name;
+        Diagnosis = diagnosis;
+    }
 }
 
 class Doctor
 {
-    public void TakePatients(Queue<Person> patients)
-    {
-        while (patients.Count > 0)
-        {
-            var patient = patients.Dequeue();
-            Console.WriteLine($"Огляд пацієнта {patient.Name}");
-        }
+    private string _name;
+    private string _speciality;
 
-        Console.WriteLine("Лікар завершив огляд пацієнтів");
+    public Doctor(string name, string speciality)
+    {
+        _name = name;
+        _speciality = speciality;
+    }
+
+    public void ConductReception(Queue<Patient> queue)
+    {
+        Console.WriteLine($"Лікар {_name} ({_speciality}) розпочинає прийом:");
+        int num = 1;
+        while (queue.TryDequeue(out var patient))
+        {
+            Console.WriteLine($"  {num++}. {patient.Name} — скарга: {patient.Diagnosis}");
+        }
+        Console.WriteLine("Прийом завершено.");
     }
 }
 ```
 
-Тут клас лікаря - клас `Doctor` у методі `TakePatients` приймає чергу пацієнтів у вигляді об'єктів `Person`. І поки в черзі є об'єкти, витягує по одному об'єкту. Консольний вивід:
+## Складність операцій
 
-```text
-Огляд пацієнта Tom
-Огляд пацієнта Bob
-Огляд пацієнта Sam
-Лікар завершив огляд пацієнтів
-```
+![Queue<T> — складність операцій та порівняння з List<T>](_assets/10-03/queue-complexity.png)
+
+Ключова перевага `Queue<T>` над `List<T>` — **O(1) для Dequeue**. Якщо ви реалізуєте чергу через `List<T>` і видаляєте елемент з початку через `RemoveAt(0)` — кожна така операція зсуває весь список: O(n). При великих обсягах даних це критично.
+
+## Коли Queue\<T\>?
+
+`Queue<T>` — правильний вибір, коли:
+
+- **Порядок обробки важливий**: потрібно зберегти FIFO-порядок (черга задач, повідомлень, запитів).
+- **Операції тільки з кінцями**: ніколи не потрібен доступ до середини колекції.
+- **Видалення з початку часте**: `List<T>` для цього невигідний — O(n) на кожне `RemoveAt(0)`.
+
+Якщо ж потрібен доступ за індексом, пошук по середині, або порядок **LIFO** (останній прийшов — перший вийшов) — розгляньте відповідно `List<T>` або `Stack<T>`.
