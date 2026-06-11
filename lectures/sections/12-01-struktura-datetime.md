@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 12
 chapterTitle: "Розділ 12. Робота з датами та часом"
 section: 1
@@ -9,159 +9,246 @@ source: "../_combined/75-struktura-datetime.md"
 
 ## 12.1. Структура DateTime
 
-Для роботи з датами та часом у .NET призначена структура `DateTime`. Вона представляє дату та час від 00:00:00 1 січня 0001 до 23:59:59 31 грудня 9999 року.
+Дата і час — невід'ємна частина медичних інформаційних систем. Час прийому пацієнта, дата виписки, вік пацієнта в роках, тривалість госпіталізації, терміни зберігання аналізів — усе це вимагає роботи з датами. Центральний тип у .NET для цього завдання — структура `DateTime` з простору імен `System`.
 
-Для створення нового об'єкта `DateTime` можна також використовувати конструктор. Порожній конструктор створює початкову дату:
+`DateTime` — це **структура** (struct), тобто **значущий тип** (value type). На відміну від класів, екземпляр `DateTime` зберігається безпосередньо на стеку або всередині об'єкта і копіюється при присвоєнні — так само як `int` або `double`. Порівняння двох `DateTime` через `==` порівнює їхні **значення**, а не посилання.
 
-```csharp
-DateTime dateTime = new DateTime();
-Console.WriteLine(dateTime); // 01.01.0001 0:00:00
-```
+![Структура DateTime — внутрішня будова та ключові властивості](_assets/12-01/datetime-structure.png)
 
-Тобто ми отримаємо мінімально можливе значення, яке також можна одержати так:
+## Внутрішнє представлення: тіки
 
-```csharp
-Console.WriteLine(DateTime.MinValue);
-```
-
-Щоб задати конкретну дату, потрібно використовувати один із конструкторів, які приймають параметри:
+Внутрішньо `DateTime` зберігає єдине 64-бітне ціле число — кількість **тіків** (ticks). Один тік дорівнює 100 наносекундам. Відлік іде від полудня 1 січня 0001 року (00:00:00.0000000) за григоріанським календарем. Доступ до тіків — через властивість `Ticks`:
 
 ```csharp
-DateTime date1 = new DateTime(2015, 7, 20); // рік - місяць - день
-Console.WriteLine(date1); // 20.07.2015 0:00:00
+DateTime admission = new DateTime(2026, 6, 11, 9, 30, 0);
+Console.WriteLine(admission.Ticks); // 638 814 126 000 000 000
 ```
 
-Встановлення часу:
+Знання про тіки важливе для двох причин: по-перше, всі операції порівняння і арифметика дат зводяться до порівняння та арифметики цих цілих чисел, що є дуже швидким; по-друге, `TimeSpan` (розд. 12.4) також зберігає тіки — тому два типи легко взаємодіють.
+
+## DateTimeKind: прив'язка до часового поясу
+
+Кожен об'єкт `DateTime` має властивість `Kind` типу `DateTimeKind` — вона визначає, до якого часового поясу прив'язане значення:
+
+| Kind | Значення | Коли використовується |
+|------|---------|----------------------|
+| `Unspecified` | Невідомо (за замовчуванням) | Локальні розрахунки без прив'язки до поясу |
+| `Local` | Локальний час ОС | Відображення в UI поточного сервера/комп'ютера |
+| `Utc` | Час UTC (Coordinated Universal Time) | Зберігання у БД, API, аудит-журнали |
 
 ```csharp
-DateTime date1 = new DateTime(2015, 7, 20, 18, 30, 25); // рік - місяць - день - година - хвилина - секунда
-Console.WriteLine(date1); // 20.07.2015 18:30:25
+DateTime local = DateTime.Now;        // Kind = Local
+DateTime utc   = DateTime.UtcNow;     // Kind = Utc
+DateTime unsp  = new DateTime(2026, 6, 11); // Kind = Unspecified
 ```
 
-Якщо необхідно отримати поточний час і дату, можна використовувати ряд властивостей `DateTime`:
+**Чому це критично в медичних системах:** якщо лікарня або телемедичний сервіс працює в кількох часових поясах, зберігання `DateTime.Now` (Local) у базі даних призводить до помилок при агрегації даних. Правило: **завжди зберігати у БД UTC** (`DateTime.UtcNow`), а конвертацію у локальний час виконувати на рівні UI.
+
+## Конструктори DateTime
 
 ```csharp
-Console.WriteLine(DateTime.Now);
-Console.WriteLine(DateTime.UtcNow);
-Console.WriteLine(DateTime.Today);
+// Мінімальна дата (01.01.0001 00:00:00)
+DateTime zero = new DateTime();
+Console.WriteLine(DateTime.MinValue); // 01.01.0001 0:00:00
+
+// Рік, місяць, день
+DateTime birthDate = new DateTime(1958, 4, 15); // 15 квітня 1958 р.
+
+// Рік, місяць, день, година, хвилина, секунда
+DateTime admission = new DateTime(2026, 6, 11, 9, 30, 0); // 09:30:00
+
+// Повна точність: + мілісекунди
+DateTime precise  = new DateTime(2026, 6, 11, 9, 30, 0, 123); // 09:30:00.123
+
+// З явним Kind
+DateTime utc = new DateTime(2026, 6, 11, 7, 30, 0, DateTimeKind.Utc);
 ```
 
-Консольний вивід:
+## Статичні властивості
 
-```text
-20.07.2015 11:43:33
-20.07.2015 8:43:33
-20.07.2015 0:00:00
-```
-
-Властивість `DateTime.Now` бере поточну дату та час комп'ютера, `DateTime.UtcNow` - дата та час щодо часу за Грінвічем (GMT) та `DateTime.Today` - лише поточна дата.
-
-Працюючи з датами треба враховувати, що за умовчанням подання дат застосовується григоріанський календар. Але що буде, якщо ми захочемо отримати день тижня для 5 жовтня 1582:
+| Властивість | Що повертає |
+|-------------|-----------|
+| `DateTime.Now` | Поточна дата і час (Kind=Local) |
+| `DateTime.UtcNow` | Поточна дата і час (Kind=Utc) |
+| `DateTime.Today` | Поточна дата, час = 00:00:00 |
+| `DateTime.MinValue` | 01.01.0001 00:00:00 |
+| `DateTime.MaxValue` | 31.12.9999 23:59:59 |
 
 ```csharp
-DateTime someDate = new DateTime(1582, 10, 5);
-Console.WriteLine(someDate.DayOfWeek);
+Console.WriteLine(DateTime.Now);    // 11.06.2026 11:43:33
+Console.WriteLine(DateTime.UtcNow); // 11.06.2026  8:43:33 (UTC+3 → -3 год)
+Console.WriteLine(DateTime.Today);  // 11.06.2026  0:00:00
 ```
 
-Консоль висвітить значення `Tuesday`, тобто вівторок. Проте, як відомо з історії, вперше перехід з юліанського календаря на григоріанський відбувся у жовтні 1582 року. Тоді після дати 4 жовтня (четвер) (ще за юліанським календарем) відразу перейшли до 15 жовтня (п'ятниця) (вже за григоріанським календарем). Таким чином фактично викинули 10 днів. Тобто після 4 жовтня йшло 15 жовтня.
+## Властивості екземпляра
 
-У більшості випадків цей факт навряд чи якось вплине на обчислення, проте при роботі з дуже давніми датами цей аспект слід враховувати.
+Об'єкт `DateTime` надає доступ до кожного компоненту окремо:
 
-### Операції з DateTime
-
-Основні операції зі структурою `DateTime` пов'язані зі складанням чи відніманням дат. Наприклад, треба до деякої дати додати або, навпаки, забрати кілька днів.
-
-Для додавання дат використовується низка методів:
-
-- `Add(TimeSpan value)`: додає до дати значення `TimeSpan`
-- `AddDays(double value)`: додає до поточної дати кілька днів
-- `AddHours(double value)`: додає до поточної дати кілька годин
-- `AddMinutes(double value)`: додає кілька хвилин до поточної дати
-- `AddMonths(int value)`: додає до поточної дати кілька місяців
-- `AddYears(int value)`: додає до поточної дати кілька років
-
-Наприклад, додамо до деякої дати 3 години:
+| Властивість | Тип | Опис |
+|-------------|-----|------|
+| `Year` / `Month` / `Day` | int | Рік, місяць (1-12), день (1-31) |
+| `Hour` / `Minute` / `Second` | int | Година (0-23), хвилина (0-59), секунда (0-59) |
+| `Millisecond` | int | Мілісекунди (0-999) |
+| `DayOfWeek` | DayOfWeek | День тижня (`DayOfWeek.Monday` тощо) |
+| `DayOfYear` | int | Порядковий номер дня у році (1-366) |
+| `TimeOfDay` | TimeSpan | Час доби від початку дня |
+| `Date` | DateTime | Лише дата, час = 00:00:00 |
+| `Kind` | DateTimeKind | Тип часової прив'язки |
+| `Ticks` | long | Кількість тіків |
 
 ```csharp
-DateTime date1 = new DateTime(2015, 7, 20, 18, 30, 25); // 20.07.2015 18:30:25
-Console.WriteLine(date1.AddHours(3)); // 20.07.2015 21:30:25
+DateTime dt = new DateTime(2026, 6, 11, 14, 30, 25);
+
+Console.WriteLine(dt.Year);        // 2026
+Console.WriteLine(dt.DayOfWeek);   // Thursday
+Console.WriteLine(dt.DayOfYear);   // 162
+Console.WriteLine(dt.TimeOfDay);   // 14:30:25
+Console.WriteLine(dt.Date);        // 11.06.2026 0:00:00
 ```
 
-Для віднімання дат використовується метод `Subtract(DateTime date)`:
+## Арифметика дат: методи Add*
+
+Усі методи `Add*` повертають **новий** об'єкт `DateTime` — не змінюють оригінал (структура є незмінним значенням у цьому сенсі):
+
+| Метод | Опис |
+|-------|------|
+| `AddYears(n)` | Додати/відняти роки |
+| `AddMonths(n)` | Додати/відняти місяці |
+| `AddDays(n)` | Додати/відняти дні |
+| `AddHours(n)` | Додати/відняти години |
+| `AddMinutes(n)` | Додати/відняти хвилини |
+| `AddSeconds(n)` | Додати/відняти секунди |
+| `Add(TimeSpan)` | Додати довільний інтервал |
+
+Для віднімання передають **від'ємне число**:
 
 ```csharp
-DateTime date1 = new DateTime(2015, 7, 20, 18, 30, 25); // 20.07.2015 18:30:25
-DateTime date2 = new DateTime(2015, 7, 20, 15, 30, 25); // 20.07.2015 15:30:25
-Console.WriteLine(date1.Subtract(date2)); // 03:00:00
+DateTime admission = new DateTime(2026, 6, 11, 9, 30, 0);
+
+DateTime discharge = admission.AddDays(7);        // виписка через 7 днів
+DateTime nextVisit = discharge.AddMonths(1);       // повторний огляд за місяць
+DateTime before    = admission.AddHours(-2);       // 2 години до прийому
+
+Console.WriteLine(discharge);  // 18.06.2026 9:30:00
+Console.WriteLine(nextVisit);  // 18.07.2026 9:30:00
 ```
 
-Тут дати розрізняються на три години, тож результатом буде дата `"03:00:00"`.
+## Різниця між датами: Subtract і оператор –
 
-Метод `Subtract` не має можливостей для окремого віднімання днів, годин і таке інше. Але це й не треба, тому що ми можемо передавати в метод `AddDays()` та інші методи додавання негативних значень:
+Метод `Subtract(DateTime)` і оператор `–` між двома датами повертають **`TimeSpan`** — об'єкт, що представляє тривалість інтервалу (розд. 12.4):
 
 ```csharp
-// віднімемо три години
-DateTime date1 = new DateTime(2015, 7, 20, 18, 30, 25); // 20.07.2015 18:30:25
-Console.WriteLine(date1.AddHours(-3)); // 20.07.2015 15:30:25
+DateTime admission  = new DateTime(2026, 6, 1, 10, 0, 0);
+DateTime discharge  = new DateTime(2026, 6, 8, 14, 30, 0);
+
+TimeSpan stay = discharge - admission;          // або discharge.Subtract(admission)
+Console.WriteLine(stay.Days);                   // 7
+Console.WriteLine(stay.TotalHours);             // 172.5
 ```
 
-Крім операцій складання та віднімання ще є ряд методів форматування дат:
+## Порівняння дат
+
+Оператори `>`, `<`, `>=`, `<=`, `==`, `!=` для `DateTime` порівнюють значення хронологічно:
 
 ```csharp
-DateTime date1 = new DateTime(2015, 7, 20, 18, 30, 25);
-Console.WriteLine(date1.ToLocalTime()); // 20.07.2015 21:30:25
-Console.WriteLine(date1.ToUniversalTime()); // 20.07.2015 15:30:25
-Console.WriteLine(date1.ToLongDateString()); // 20 липня 2015 р.
-Console.WriteLine(date1.ToShortDateString()); // 20.07.2015
-Console.WriteLine(date1.ToLongTimeString()); // 18:30:25
-Console.WriteLine(date1.ToShortTimeString()); // 18:30
+DateTime d1 = new DateTime(2026, 6, 1);
+DateTime d2 = new DateTime(2026, 7, 1);
+
+bool earlier = d1 < d2;  // true — червень раніше за липень
+bool equal   = d1 == d1; // true
+
+int cmp = DateTime.Compare(d1, d2); // -1 (d1 < d2), 0 (рівні), +1 (d1 > d2)
 ```
 
-Метод `ToLocalTime()` перетворює час UTC на локальний час, додаючи зсув щодо часу за Грінвічем. Метод `ToUniversalTime()`, навпаки, перетворює локальний час на час UTC, тобто віднімає зсув щодо часу за Грінвічем. Інші методи перетворять дату до певного формату.
-
-### Форматування дат та часу
-
-Для форматування виведення дат та часу застосовується ряд строкових форматів:
-
-Виведемо поточну дату та час у всіх форматах:
+Для перевірки чи дата потрапляє у діапазон достатньо двох умов:
 
 ```csharp
-DateTime now = DateTime.Now;
-Console.WriteLine($"D: {now.ToString("D")}");
-Console.WriteLine($"d: {now.ToString("d")}");
-Console.WriteLine($"F: {now.ToString("F")}");
-Console.WriteLine($"f: {now:f}");
-Console.WriteLine($"G: {now:G}");
-Console.WriteLine($"g: {now:g}");
-Console.WriteLine($"M: {now:M}");
-Console.WriteLine($"O: {now:O}");
-Console.WriteLine($"o: {now:o}");
-Console.WriteLine($"R: {now:R}");
-Console.WriteLine($"s: {now:s}");
-Console.WriteLine($"T: {now:T}");
-Console.WriteLine($"t: {now:t}");
-Console.WriteLine($"U: {now:U}");
-Console.WriteLine($"u: {now:u}");
-Console.WriteLine($"Y: {now:Y}");
+DateTime start = new DateTime(2026, 6, 1);
+DateTime end   = new DateTime(2026, 6, 30);
+DateTime today = DateTime.Today;
+
+bool inRange = today >= start && today <= end;
 ```
 
-Консольний вивід:
+## Корисні статичні методи
 
-```text
-D: 6 січня 2022 р.
-d: 06.01.2022
-F: 6 січня 2022 р. 14:45:20
-f: 6 січня 2022 р. 14:45
-G: 06.01.2022 14:45:20
-g: 06.01.2022 14:45
-M: 6 січня
-O: 2022-01-06T14:45:20.3942344+04:00
-o: 2022-01-06T14:45:20.3942344+04:00
-R: Thu, 06 Jan 2022 14:45:20 GMT
-s: 2022-01-06T14:45:20
-T: 14:45:20
-t: 14:45
-U: 6 січня 2022 р. 10:45:20
-u: 2022-01-06 14:45:20Z
-Y: січень 2022 р.
+```csharp
+// Перевірка високосного року
+bool leap = DateTime.IsLeapYear(2024); // true
+
+// Кількість днів у місяці
+int days = DateTime.DaysInMonth(2024, 2); // 29 (2024 — високосний)
+```
+
+## Дата народження та вік пацієнта — runnable приклад
+
+Розрахунок віку пацієнта та основні операції з датами прийому:
+
+```csharp run
+using System;
+
+DateTime birthDate = new DateTime(1958, 4, 15);
+DateTime admission = new DateTime(2026, 6, 11, 9, 30, 0);
+DateTime discharge = admission.AddDays(7);
+
+Console.WriteLine("=== Картка пацієнта ===");
+Console.WriteLine($"Дата народження: {birthDate:dd.MM.yyyy}");
+Console.WriteLine($"День народження: {birthDate.DayOfWeek}");
+
+int age = admission.Year - birthDate.Year;
+if (birthDate.Date > admission.AddYears(-age).Date) age--;
+Console.WriteLine($"Вік при вступі: {age} р.");
+
+Console.WriteLine($"\n=== Госпіталізація ===");
+Console.WriteLine($"Прийом:  {admission:dd.MM.yyyy HH:mm}");
+Console.WriteLine($"Виписка: {discharge:dd.MM.yyyy HH:mm}");
+
+TimeSpan stay = discharge - admission;
+Console.WriteLine($"Тривалість: {stay.Days} днів");
+
+DateTime nextVisit = discharge.AddMonths(1);
+Console.WriteLine($"Повторний огляд: {nextVisit:dd.MM.yyyy}");
+
+Console.WriteLine($"\n=== Властивості DateTime ===");
+Console.WriteLine($"DayOfYear: {admission.DayOfYear}");
+Console.WriteLine($"Kind:      {DateTime.UtcNow.Kind}");
+Console.WriteLine($"IsLeapYear(2026): {DateTime.IsLeapYear(2026)}");
+Console.WriteLine($"DaysInMonth(2026,2): {DateTime.DaysInMonth(2026, 2)}");
+```
+
+## Розклад прийомів у відділенні — runnable приклад
+
+Робота з датами та часом в контексті розкладу пацієнтів:
+
+```csharp run
+using System;
+
+Console.WriteLine("=== Розклад прийомів кардіологічного відділення ===");
+Console.WriteLine($"{"Пацієнт",-22} {"Прийом",16} {"Виписка",16} {"Днів",6}");
+Console.WriteLine(new string('-', 65));
+
+var records = new[]
+{
+    ("Петренко Іван",     new DateTime(2026,6,1,  9,  0, 0), new DateTime(2026,6, 8, 14, 0, 0)),
+    ("Коваль Марія",      new DateTime(2026,6,3,  11, 30, 0), new DateTime(2026,6,10, 10, 0, 0)),
+    ("Сидоренко Олег",    new DateTime(2026,6,10, 8,  0, 0), new DateTime(2026,6,15, 16, 0, 0)),
+};
+
+TimeSpan totalStay = TimeSpan.Zero;
+foreach (var (name, adm, dis) in records)
+{
+    TimeSpan stay = dis - adm;
+    totalStay += stay;
+    Console.WriteLine($"{name,-22} {adm:dd.MM.yy HH:mm,16} {dis:dd.MM.yy HH:mm,16} {stay.Days,6}");
+}
+
+Console.WriteLine(new string('-', 65));
+Console.WriteLine($"{"Середня тривалість:",-22} {totalStay.TotalDays / records.Length,39:F1} днів");
+
+Console.WriteLine($"\n=== Порівняння дат ===");
+DateTime today  = new DateTime(2026, 6, 11);
+DateTime future = today.AddDays(30);
+Console.WriteLine($"Сьогодні: {today:dd.MM.yyyy}");
+Console.WriteLine($"За 30 днів: {future:dd.MM.yyyy}  Day={future.DayOfWeek}");
+Console.WriteLine($"Compare(today, future) = {DateTime.Compare(today, future)}");
 ```
