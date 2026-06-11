@@ -1,4 +1,4 @@
-﻿---
+---
 chapter: 11
 chapterTitle: "Розділ 11. Робота з рядками"
 section: 2
@@ -9,219 +9,236 @@ source: "../_combined/71-operatsii-z-riadkamy.md"
 
 ## 11.2. Операції з рядками
 
-### Об'єднання рядків
+Клас `String` надає широкий набір методів для пошуку, поділу, об'єднання, зміни та аналізу рядків. Усі вони дотримуються принципу незмінності (immutability) з розділу 11.1: жоден метод не модифікує оригінальний рядок — кожен повертає **новий об'єкт** у heap.
 
-Конкатенація рядків або об'єднання може проводитись як за допомогою операції `+`, так і за допомогою методу `Concat`:
+![Операції з рядками — групи методів класу String](_assets/11-02/string-operations-overview.png)
+
+## Об'єднання рядків
+
+Конкатенація виконується оператором `+` або статичним методом `Concat`:
 
 ```csharp
-string s1 = "hello";
-string s2 = "world";
-string s3 = s1 + " " + s2; // результат: рядок "hello world"
-string s4 = string.Concat(s3, "!!!"); // результат: рядок "hello world!!!"
+string firstName = "Іван";
+string lastName  = "Петренко";
 
-Console.WriteLine(s4);
+string fullName  = lastName + " " + firstName;              // оператор +
+string fullName2 = string.Concat(lastName, " ", firstName); // метод Concat
 ```
 
-Метод `Concat` є статичним методом класу `string`, що приймає як параметри два рядки. Також є інші версії методу, які приймають іншу кількість параметрів.
-
-Для об'єднання рядків також може використовуватися метод `Join`:
+Для з'єднання масиву рядків через роздільник використовується `Join`:
 
 ```csharp
-string s5 = "apple";
-string s6 = "a day";
-string s7 = "keeps";
-string s8 = "a doctor";
-string s9 = "away";
-string[] values = new string[] { s5, s6, s7, s8, s9 };
-
-string s10 = string.Join(" ", values);
-Console.WriteLine(s10); // apple a day keeps a doctor away
+string[] parts = { "Петренко", "Іван", "67", "кардіологія", "I10.9" };
+string record  = string.Join(";", parts); // "Петренко;Іван;67;кардіологія;I10.9"
 ```
 
-Метод `Join` також є статичним. Використана вище версія методу отримує два параметри: рядок-розділювач (у даному випадку пробіл) та масив рядків, які з'єднуватимуться та розділятимуться роздільником.
+`Join` є статичним методом і приймає також `IEnumerable<string>`, що дозволяє передавати будь-які колекції напряму.
 
-### Порівняння рядків
+## Пошук у рядку
 
-Для порівняння рядків застосовується статичний метод `Compare`:
+**`Contains`** перевіряє наявність підрядка. За замовчуванням пошук чутливий до регістру; для нечутливого пошуку передається `StringComparison`:
 
 ```csharp
-string s1 = "hello";
-string s2 = "world";
+string diagnosis = "Гіпертензія артеріальна";
 
-int result = string.Compare(s1, s2);
-
-if (result < 0)
-{
-    Console.WriteLine("Рядок s1 перед рядком s2");
-}
-else if (result > 0)
-{
-    Console.WriteLine("Рядок s1 стоїть після рядка s2");
-}
-else
-{
-    Console.WriteLine("Рядки s1 і s2 ідентичні");
-}
-
-// результатом буде "Рядок s1 перед рядком s2"
+bool found1 = diagnosis.Contains("артеріальна");                                    // true
+bool found2 = diagnosis.Contains("АРТЕРІАЛЬНА");                                    // false
+bool found3 = diagnosis.Contains("АРТЕРІАЛЬНА", StringComparison.OrdinalIgnoreCase); // true
 ```
 
-Ця версія методу `Compare` приймає два рядки та повертає число. Якщо перший рядок за алфавітом стоїть вище другого, то повертається число менше нуля. В іншому випадку повертається число більше від нуля. І третій випадок - якщо рядки дорівнюють, то повертається число 0.
+Порівняння через `StringComparison.OrdinalIgnoreCase` є **надійнішим і швидшим** за `diagnosis.ToLower().Contains(...)`, бо не виділяє проміжний рядок у heap.
 
-В даному випадку оскільки символ `h` за алфавітом стоїть вище символу `w`, то і перший рядок буде стояти вище.
-
-### Пошук у рядку
-
-За допомогою методу `IndexOf` ми можемо визначити індекс першого входження окремого символу або підрядка у рядку:
+**`IndexOf` та `LastIndexOf`** повертають позицію першого / останнього входження (`-1` якщо не знайдено). `IndexOf` також приймає `startIndex` — початок пошуку, що дозволяє знаходити **наступні** входження у тексті:
 
 ```csharp
-string s1 = "hello world";
-char ch = 'o';
-int indexOfChar = s1.IndexOf(ch); // дорівнює 4
-Console.WriteLine(indexOfChar);
+string notes = "Прийом: 09:00. Виписка: 14:00. Повторний прийом: 17:00";
 
-string substring = "wor";
-int indexOfSubstring = s1.IndexOf(substring);
-// дорівнює 6
-Console.WriteLine(indexOfSubstring);
+int first = notes.IndexOf("прийом", StringComparison.OrdinalIgnoreCase);       // 0
+int next  = notes.IndexOf("прийом", first + 1, StringComparison.OrdinalIgnoreCase); // 42
 ```
 
-Подібним чином діє метод `LastIndexOf`, тільки знаходить індекс останнього входження символу або підрядка в рядок.
-
-Ще одна група методів дозволяє дізнатися, чи починається чи закінчується рядок на певний підрядок. Для цього призначені методи `StartsWith` та `EndsWith`. Наприклад, у масиві рядків зберігається список файлів, і нам треба вивести всі файли з розширенням exe:
+**`StartsWith` та `EndsWith`** перевіряють початок і кінець рядка — зручно для перевірки форматів:
 
 ```csharp
-var files = new string[]
-{
-    "myapp.exe",
-    "forest.jpg",
-    "main.exe",
-    "book.pdf",
-    "river.png"
+string icdCode = "I10.9";
+bool isCardio = icdCode.StartsWith("I");  // true — серцево-судинні хвороби
+bool hasSpec  = icdCode.EndsWith(".9");   // true — неуточнена форма
+```
+
+## Поділ та витягування підрядків
+
+**`Split`** розбиває рядок на масив підрядків за роздільником. Параметр `StringSplitOptions.RemoveEmptyEntries` видаляє порожні елементи (на випадок подвійних роздільників):
+
+```csharp
+string record = "Петренко;Іван;;67;кардіологія";
+string[] fields = record.Split(';', StringSplitOptions.RemoveEmptyEntries);
+// ["Петренко", "Іван", "67", "кардіологія"]
+```
+
+`Split` також приймає масив символів-роздільників:
+
+```csharp
+string notes = "АТ: 140/90\nЧСС: 78\nSpO2: 97%";
+string[] lines = notes.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+```
+
+**`Substring(startIndex)`** — витягти підрядок від позиції до кінця.  
+**`Substring(startIndex, length)`** — витягти підрядок заданої довжини:
+
+```csharp
+string icd  = "I10.9 — Гіпертензія";
+string code = icd.Substring(0, 5);  // "I10.9"
+string desc = icd.Substring(8);     // "Гіпертензія"
+```
+
+## Зміна рядка
+
+**`Replace`** замінює **всі** входження підрядка або символу на інший. Оскільки метод повертає новий рядок, виклики можна **ланцюгувати**:
+
+```csharp
+string template = "Пацієнт {NAME} прийнятий {DATE}";
+string filled   = template
+    .Replace("{NAME}", "Петренко І.С.")
+    .Replace("{DATE}", "10.06.2026");
+// "Пацієнт Петренко І.С. прийнятий 10.06.2026"
+```
+
+**`Insert(index, value)`** вставляє підрядок на вказану позицію:
+
+```csharp
+string name    = "Петренко Іван";
+string updated = name.Insert(9, "Степанович ");
+// "Петренко Степанович Іван"
+```
+
+**`Remove(startIndex)`** видаляє всі символи з позиції до кінця.  
+**`Remove(startIndex, count)`** видаляє рівно `count` символів:
+
+```csharp
+string record = "ID:00042 Петренко";
+string name   = record.Remove(0, 9); // "Петренко"
+```
+
+## Обрізка рядка
+
+**`Trim()`** видаляє пробільні символи на початку та в кінці:
+
+```csharp
+string raw     = "  Петренко Іван  \t";
+string cleaned = raw.Trim(); // "Петренко Іван"
+```
+
+**`TrimStart()`** і **`TrimEnd()`** обрізають тільки один бік. Можна передати символи для видалення:
+
+```csharp
+string code  = "###I10.9###";
+string clean = code.Trim('#'); // "I10.9"
+```
+
+**`PadLeft(totalWidth)`** та **`PadRight(totalWidth)`** доповнюють рядок пробілами до заданої ширини. Корисно для вирівнювання колонок у текстових звітах:
+
+```csharp
+Console.WriteLine("Петренко".PadRight(20) + "| I10.9");
+Console.WriteLine("Коваль".PadRight(20)   + "| J45.0");
+// Петренко            | I10.9
+// Коваль              | J45.0
+```
+
+## Зміна регістру та порівняння
+
+`ToUpper()` і `ToLower()` нормалізують регістр. Але для **порівняння** без урахування регістру краще передавати `StringComparison` напряму — без проміжної алокації:
+
+```csharp
+string input = "кардіологія";
+
+// НЕ оптимально: виділяє новий рядок у heap
+bool match1 = input.ToLower() == "кардіологія";
+
+// Краще: без зайвої алокації
+bool match2 = string.Equals(input, "Кардіологія", StringComparison.OrdinalIgnoreCase);
+```
+
+Статичний метод `string.Compare(s1, s2)` повертає від'ємне число якщо `s1 < s2`, нуль якщо рівні, додатне якщо `s1 > s2` — використовується для лексикографічного сортування:
+
+```csharp
+int cmp = string.Compare("Іваненко", "Петренко"); // < 0 — Іваненко стоїть вище за алфавітом
+```
+
+## Парсинг медичної картки — runnable приклад
+
+Розбираємо рядок медичного запису на поля, перевіряємо формат і формуємо листа:
+
+```csharp run
+using System;
+
+string record = "Петренко;Іван;67;кардіологія;I10.9";
+
+string[] fields  = record.Split(';');
+string lastName  = fields[0];
+string firstName = fields[1];
+int    age       = int.Parse(fields[2]);
+string dept      = fields[3];
+string icd       = fields[4];
+
+Console.WriteLine("=== Картка пацієнта ===");
+Console.WriteLine($"ПІБ:        {lastName} {firstName}");
+Console.WriteLine($"Вік:        {age} р.");
+Console.WriteLine($"Відділення: {dept}");
+Console.WriteLine($"МКХ-10:     {icd}");
+
+bool isCardio = dept.Contains("кардіо", StringComparison.OrdinalIgnoreCase);
+bool isHypert = icd.StartsWith("I10");
+Console.WriteLine($"\nКардіологія: {isCardio}");
+Console.WriteLine($"Гіпертензія: {isHypert}");
+
+string letter = "Шановний пацієнте {NAME}, ваш код діагнозу: {ICD}."
+    .Replace("{NAME}", $"{firstName} {lastName}")
+    .Replace("{ICD}",  icd);
+Console.WriteLine($"\n{letter}");
+
+string rebuilt = string.Join(" | ", lastName, firstName, icd);
+Console.WriteLine($"\nЗапис: {rebuilt}");
+```
+
+## Форматування звіту відділення — runnable приклад
+
+Вирівнювання колонок через `PadRight`, аналіз кодів МКХ через `StartsWith`:
+
+```csharp run
+using System;
+
+string[] patients = {
+    "Петренко Іван;I10.9;кардіологія",
+    "Коваль Марія;J45.0;пульмонологія",
+    "Сидоренко Олег;K25.3;гастроентерологія",
+    "Мельник Ганна;M54.5;неврологія",
 };
 
-for (int i = 0; i < files.Length; i++)
+Console.WriteLine("=== Список пацієнтів ===");
+Console.WriteLine("Ім'я".PadRight(22) + "МКХ".PadRight(8) + "Відділення");
+Console.WriteLine(new string('-', 55));
+
+foreach (var row in patients)
 {
-    if (files[i].EndsWith(".exe"))
-    {
-        Console.WriteLine(files[i]);
-    }
+    string[] f   = row.Split(';');
+    string name  = f[0];
+    string icd   = f[1];
+    string dept  = f[2];
+
+    char system = icd[0];
+    string flag = system == 'I' ? "[серце]"  :
+                  system == 'J' ? "[легені]" :
+                  system == 'K' ? "[ШКТ]"   : "[інше]";
+
+    Console.WriteLine($"{name.PadRight(22)}{icd.PadRight(8)}{dept}  {flag}");
 }
-```
 
-### Поділ рядків
+Console.WriteLine(new string('-', 55));
 
-За допомогою функції `Split` ми можемо розділити рядок на масив підрядків. Як параметр функція `Split` приймає масив символів або рядків, які будуть служити роздільниками. Наприклад, підрахуємо кількість слів у терміні, розділивши її за пробільними символами:
+int cardioCount = 0;
+foreach (var row in patients)
+    if (row.Contains("кардіологія", StringComparison.OrdinalIgnoreCase))
+        cardioCount++;
 
-```csharp
-string text = "І тому все так сталося";
-
-string[] words = text.Split(new char[] { ' ' });
-
-foreach (string s in words)
-{
-    Console.WriteLine(s);
-}
-```
-
-Це не найкращий спосіб поділу по пробілах, так як у вхідному рядку у нас могло б бути кілька поспіль пробілів, що йдуть, і в підсумковий масив також би потрапляли прогалини, тому краще використовувати іншу версію методу:
-
-```csharp
-string[] words = text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-```
-
-Другий параметр `StringSplitOptions.RemoveEmptyEntries` говорить, що треба видалити всі порожні підрядки.
-
-### Обрізання рядка
-
-Для обрізання початкових або кінцевих символів використовується функція `Trim`:
-
-```csharp
-string text = " hello world ";
-text = text.Trim(); // результат "hello world"
-text = text.Trim(new char[] { 'd', 'h' }); // результат "ello worl"
-```
-
-Функція `Trim` без параметрів обрізає початкові та кінцеві пробіли та повертає обрізаний рядок. Щоб явно вказати, які початкові та кінцеві символи слід обрізати, ми можемо передати у функцію масив цих символів.
-
-Ця функція має часткові аналоги: функція `TrimStart` обрізає початкові символи, а функція `TrimEnd` обрізає кінцеві символи.
-
-Обрізати певну частину рядка дозволяє функція `Substring`:
-
-```csharp
-string text = "хороший день";
-
-// обрізаємо починаючи з третього символу
-text = text.Substring(2);
-// результат "роший день"
-Console.WriteLine(text);
-
-// обрізаємо спочатку до останніх двох символів
-text = text.Substring(0, text.Length - 2);
-// результат "роший де"
-Console.WriteLine(text);
-```
-
-Функція `Substring` також повертає обрізаний рядок. Як параметр перша використана версія застосовує індекс, починаючи з якого треба обрізати рядок. Друга версія застосовує два параметри - індекс початку обрізки і довжину частини рядка, що вирізається.
-
-### Вставка
-
-Для вставки одного рядка в інший застосовується функція `Insert`:
-
-```csharp
-string text = "Гарний день";
-string substring = "чудовий ";
-
-text = text.Insert(7, substring);
-Console.WriteLine(text); // Гарний чудовий день
-```
-
-Першим параметром функції `Insert` є індекс, за яким треба вставляти підрядок, а другий параметр - власне підрядок.
-
-### Видалення рядків
-
-Видалити частину рядка допомагає метод `Remove`:
-
-```csharp
-string text = "Гарний день";
-
-// Індекс останнього символу
-int ind = text.Length - 1;
-
-// вирізаємо останній символ
-text = text.Remove(ind);
-Console.WriteLine(text); // Гарний ден
-
-// вирізаємо перші два символи
-text = text.Remove(0, 2);
-Console.WriteLine(text); // рний ден
-```
-
-Перша версія методу `Remove` приймає індекс у рядку, з якого треба видалити всі символи. Друга версія приймає ще один параметр - скільки символів треба видалити.
-
-### Заміна
-
-Щоб замінити один символ або підрядок на інший, застосовується метод `Replace`:
-
-```csharp
-string text = "хороший день";
-
-text = text.Replace("хороший", "поганий");
-Console.WriteLine(text); // поганий день
-
-text = text.Replace("о", "");
-Console.WriteLine(text); // пганий день
-```
-
-У другому випадку застосування функції `Replace` рядок з одного символу `"о"` замінюється порожнім рядком, тобто фактично видаляється з тексту. Подібним способом легко видаляти певний текст у рядках.
-
-### Зміна регістру
-
-Для приведення рядка до верхнього та нижнього регістру використовуються відповідно функції `ToUpper()` та `ToLower()`:
-
-```csharp
-string hello = "Hello world!";
-
-Console.WriteLine(hello.ToLower()); // hello world!
-Console.WriteLine(hello.ToUpper()); // HELLO WORLD!
+Console.WriteLine($"Кардіологія: {cardioCount} з {patients.Length} пацієнтів");
 ```
