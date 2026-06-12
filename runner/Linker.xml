@@ -3,6 +3,10 @@
   <assembly fullname="System.Console">
     <type fullname="System.Console" preserve="all"/>
   </assembly>
+  <!-- Facade-assembly (type-forwarder) для Thread — потрібна щоб runtime міг резолвити
+       System.Threading.Thread.dll коли завантажує динамічно скомпільований код користувача -->
+  <assembly fullname="System.Threading.Thread" preserve="all"/>
+  <assembly fullname="System.Threading.ThreadPool" preserve="all"/>
   <!-- Зберігаємо рефлексію для запуску скомпільованого коду користувача -->
   <assembly fullname="System.Private.CoreLib">
     <type fullname="System.Reflection.MethodBase" preserve="all"/>
