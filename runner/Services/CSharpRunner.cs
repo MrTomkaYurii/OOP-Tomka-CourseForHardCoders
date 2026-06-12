@@ -73,6 +73,11 @@ public class CSharpRunner
         catch (TargetInvocationException ex)
         {
             var inner = ex.InnerException ?? ex;
+            if (inner is PlatformNotSupportedException)
+            {
+                sb.Append("\n[Браузер] System.Threading.Thread не підтримується у браузері (WebAssembly однопоточний).\nВідкрий цей приклад у dotnetfiddle.net — там працює повноцінний .NET.");
+                return new RunResult(false, sb.ToString());
+            }
             sb.Append($"\n[{inner.GetType().Name}] {inner.Message}");
             return new RunResult(false, sb.ToString());
         }
