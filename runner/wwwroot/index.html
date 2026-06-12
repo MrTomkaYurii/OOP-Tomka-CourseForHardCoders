@@ -18,45 +18,6 @@
         </div>
     </div>
     <script src="js/runner.js?v=13"></script>
-    <script>
-      // Динамічно завантажуємо Blazor лише тоді, коли crossOriginIsolated = true.
-      // Це потрібно для WasmEnableThreads: Blazor падає при старті якщо SharedArrayBuffer недоступний.
-      //
-      // Логіка:
-      //   crossOriginIsolated = true  → COOP/COEP вже активні (SW працює) → вантажимо Blazor
-      //   crossOriginIsolated = false → встановлюємо SW, перезавантажуємо сторінку (Blazor НЕ вантажимо)
-      //   SW недоступний             → вантажимо Blazor без threading як fallback
-      (function () {
-        function loadBlazor() {
-          var s = document.createElement('script');
-          s.src = '_framework/blazor.webassembly.js';
-          document.body.appendChild(s);
-        }
-
-        if (window.crossOriginIsolated) {
-          // Вже ізольовано — можна запускати Blazor з threading
-          loadBlazor();
-        } else if ('serviceWorker' in navigator) {
-          // Не ізольовано: встановлюємо SW і перезавантажуємо один раз.
-          // Blazor не вантажимо — він упаде без SharedArrayBuffer.
-          navigator.serviceWorker.register('coi-serviceworker.js').then(function () {
-            if (!navigator.serviceWorker.controller) {
-              // SW щойно зареєстровано і ще не контролює сторінку → потрібен reload
-              window.location.reload();
-            } else {
-              // SW вже активний і контролює, але crossOriginIsolated ще false.
-              // Повторний reload нічого не дасть — вантажимо як fallback.
-              loadBlazor();
-            }
-          }).catch(function () {
-            // SW не вдалося встановити — вантажимо Blazor як є (без threading)
-            loadBlazor();
-          });
-        } else {
-          // Браузер не підтримує SW (приватний режим Firefox тощо) — fallback
-          loadBlazor();
-        }
-      })();
-    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
 </body>
 </html>
