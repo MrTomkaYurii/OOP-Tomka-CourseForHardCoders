@@ -25,17 +25,6 @@ source: ""
 using System;
 using System.Text.Json;
 
-// Моделі даних медичної картки
-class PatientCard
-{
-    public int    Id          { get; set; }
-    public string FullName    { get; set; } = "";
-    public int    Age         { get; set; }
-    public string Diagnosis   { get; set; } = "";
-    public bool   Hospitalized { get; set; }
-    public double Glucose     { get; set; }
-}
-
 // Серіалізація: об'єкт → JSON рядок
 var card = new PatientCard
 {
@@ -60,6 +49,17 @@ Console.WriteLine(prettyJson);
 // Десеріалізація: JSON рядок → об'єкт
 PatientCard? restored = JsonSerializer.Deserialize<PatientCard>(json);
 Console.WriteLine($"\nВідновлено: {restored?.FullName}, діагноз={restored?.Diagnosis}, вік={restored?.Age.ToString()}");
+
+// Моделі даних медичної картки
+class PatientCard
+{
+    public int    Id          { get; set; }
+    public string FullName    { get; set; } = "";
+    public int    Age         { get; set; }
+    public string Diagnosis   { get; set; } = "";
+    public bool   Hospitalized { get; set; }
+    public double Glucose     { get; set; }
+}
 ```
 
 `JsonSerializer.Serialize` без опцій генерує компактний JSON без пробілів — це оптимально для мережевої передачі. `WriteIndented = true` додає відступи для читабельності — зручно для конфігурацій і логів.
@@ -73,17 +73,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-
-class MedRecord
-{
-    public int      PatientId  { get; set; }
-    public string   PatientName { get; set; } = "";
-    public string   TestName   { get; set; } = "";
-    public double   Value      { get; set; }
-    public string   Unit       { get; set; } = "";
-    public string   Status     { get; set; } = "";
-    public DateTime RecordedAt { get; set; }
-}
 
 string filePath = Path.Combine(Path.GetTempPath(), "med_records.json");
 
@@ -128,6 +117,17 @@ if (loaded != null)
 }
 
 File.Delete(filePath);
+
+class MedRecord
+{
+    public int      PatientId  { get; set; }
+    public string   PatientName { get; set; } = "";
+    public string   TestName   { get; set; } = "";
+    public double   Value      { get; set; }
+    public string   Unit       { get; set; } = "";
+    public string   Status     { get; set; } = "";
+    public DateTime RecordedAt { get; set; }
+}
 ```
 
 Передача `Stream` у `JsonSerializer.Serialize/Deserialize` ефективніша за `string`-варіант: бібліотека пише напряму у потік без проміжного рядкового буфера — важливо для великих об'єктів.
@@ -140,15 +140,6 @@ File.Delete(filePath);
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-class PatientVitals
-{
-    public int    PatientId    { get; set; }
-    public string fullName     { get; set; } = "";  // camelCase назва
-    public double BloodPressure { get; set; }
-    public int    HeartRate    { get; set; }
-    public string? Notes       { get; set; }        // null-able
-}
 
 var vitals = new PatientVitals
 {
@@ -186,6 +177,15 @@ string json = """{"patientid":1002,"fullname":"Бойко О.П.","bloodpressure
 var relaxedOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 PatientVitals? loaded = JsonSerializer.Deserialize<PatientVitals>(json, relaxedOptions);
 Console.WriteLine($"\nНечутливо до регістру: {loaded?.fullName}, пульс={loaded?.HeartRate.ToString()}");
+
+class PatientVitals
+{
+    public int    PatientId    { get; set; }
+    public string fullName     { get; set; } = "";  // camelCase назва
+    public double BloodPressure { get; set; }
+    public int    HeartRate    { get; set; }
+    public string? Notes       { get; set; }        // null-able
+}
 ```
 
 ### Типові JsonSerializerOptions для медичного застосунку
@@ -206,6 +206,15 @@ var standardOptions = new JsonSerializerOptions
     Converters = { new JsonStringEnumConverter() }
 };
 
+var apt = new Appointment { Id = 5, Doctor = "Коваленко О.П.", Status = PatientStatus.InTreatment, Room = null };
+string json = JsonSerializer.Serialize(apt, standardOptions);
+Console.WriteLine("Стандартний API JSON:");
+Console.WriteLine(json);
+
+// Десеріалізація
+Appointment? loaded = JsonSerializer.Deserialize<Appointment>(json, standardOptions);
+Console.WriteLine($"\nПовернуто: id={loaded?.Id.ToString()}, лікар={loaded?.Doctor}, статус={loaded?.Status}");
+
 // Використовуємо enum
 enum PatientStatus { Active, Discharged, InTreatment }
 
@@ -216,15 +225,6 @@ class Appointment
     public PatientStatus Status { get; set; }
     public string?       Room   { get; set; }
 }
-
-var apt = new Appointment { Id = 5, Doctor = "Коваленко О.П.", Status = PatientStatus.InTreatment, Room = null };
-string json = JsonSerializer.Serialize(apt, standardOptions);
-Console.WriteLine("Стандартний API JSON:");
-Console.WriteLine(json);
-
-// Десеріалізація
-Appointment? loaded = JsonSerializer.Deserialize<Appointment>(json, standardOptions);
-Console.WriteLine($"\nПовернуто: id={loaded?.Id.ToString()}, лікар={loaded?.Doctor}, статус={loaded?.Status}");
 ```
 
 ## Атрибути керування серіалізацією
@@ -235,6 +235,25 @@ Console.WriteLine($"\nПовернуто: id={loaded?.Id.ToString()}, лікар
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
+var record = new DiagnosisRecord
+{
+    PatientId     = 1001,
+    DiagnosisCode = "J06.9",
+    InternalNotes = "ці дані НЕ збережуться у JSON",
+    PatientName   = "Петренко І.О.",
+    RecordedAt    = DateTime.Now,
+    Ward          = "Терапія",
+    OptionalValue = null
+};
+
+string json = JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true });
+Console.WriteLine("JSON з атрибутами:");
+Console.WriteLine(json);
+
+// Перевіряємо: InternalNotes відсутній у JSON
+Console.WriteLine($"\nПоле 'InternalNotes' у JSON: {json.Contains("InternalNotes").ToString()} (має бути False)");
+Console.WriteLine($"Поле 'patient_id' у JSON: {json.Contains("patient_id").ToString()} (має бути True)");
 
 class DiagnosisRecord
 {
@@ -259,25 +278,6 @@ class DiagnosisRecord
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public double? OptionalValue { get; set; } // null або 0 — не записується
 }
-
-var record = new DiagnosisRecord
-{
-    PatientId     = 1001,
-    DiagnosisCode = "J06.9",
-    InternalNotes = "ці дані НЕ збережуться у JSON",
-    PatientName   = "Петренко І.О.",
-    RecordedAt    = DateTime.Now,
-    Ward          = "Терапія",
-    OptionalValue = null
-};
-
-string json = JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true });
-Console.WriteLine("JSON з атрибутами:");
-Console.WriteLine(json);
-
-// Перевіряємо: InternalNotes відсутній у JSON
-Console.WriteLine($"\nПоле 'InternalNotes' у JSON: {json.Contains("InternalNotes").ToString()} (має бути False)");
-Console.WriteLine($"Поле 'patient_id' у JSON: {json.Contains("patient_id").ToString()} (має бути True)");
 ```
 
 | Атрибут | Призначення |
@@ -296,22 +296,6 @@ Console.WriteLine($"Поле 'patient_id' у JSON: {json.Contains("patient_id").
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-
-// Вкладені класи
-class Address
-{
-    public string City   { get; set; } = "";
-    public string Street { get; set; } = "";
-}
-
-class Patient
-{
-    public int             Id         { get; set; }
-    public string          Name       { get; set; } = "";
-    public Address?        Address    { get; set; }
-    public List<string>    Diagnoses  { get; set; } = new();
-    public Dictionary<string, double> LabResults { get; set; } = new();
-}
 
 var patient = new Patient
 {
@@ -339,6 +323,22 @@ Console.WriteLine($"  {loaded?.Name}, м.{loaded?.Address?.City}");
 Console.WriteLine($"  Діагнози: {string.Join(", ", loaded?.Diagnoses ?? new())}");
 foreach (var (test, val) in loaded?.LabResults ?? new())
     Console.WriteLine($"  {test}: {val.ToString()}");
+
+// Вкладені класи
+class Address
+{
+    public string City   { get; set; } = "";
+    public string Street { get; set; } = "";
+}
+
+class Patient
+{
+    public int             Id         { get; set; }
+    public string          Name       { get; set; } = "";
+    public Address?        Address    { get; set; }
+    public List<string>    Diagnoses  { get; set; } = new();
+    public Dictionary<string, double> LabResults { get; set; } = new();
+}
 ```
 
 ## Практичний сценарій: JSON-конфігурація медичного застосунку
@@ -349,33 +349,6 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Collections.Generic;
-
-// Конфігурація клініки — типовий сценарій для JSON
-class ClinicConfig
-{
-    [JsonPropertyName("clinic_name")]
-    public string ClinicName { get; set; } = "";
-    
-    [JsonPropertyName("departments")]
-    public List<string> Departments { get; set; } = new();
-    
-    [JsonPropertyName("max_patients_per_day")]
-    public int MaxPatientsPerDay { get; set; }
-    
-    [JsonPropertyName("lab_thresholds")]
-    public LabThresholds Thresholds { get; set; } = new();
-    
-    [JsonPropertyName("last_updated")]
-    public DateTime LastUpdated { get; set; }
-}
-
-class LabThresholds
-{
-    [JsonPropertyName("glucose_max")]    public double GlucoseMax    { get; set; }
-    [JsonPropertyName("pulse_min")]      public int    PulseMin      { get; set; }
-    [JsonPropertyName("pulse_max")]      public int    PulseMax      { get; set; }
-    [JsonPropertyName("hemoglobin_min")] public double HemoglobinMin { get; set; }
-}
 
 string configPath = Path.Combine(Path.GetTempPath(), "clinic_config.json");
 
@@ -413,6 +386,33 @@ bool criticalGlucose = loaded != null && patientGlucose > loaded.Thresholds.Gluc
 Console.WriteLine($"\nГлюкоза {patientGlucose.ToString()} ммоль/л — {(criticalGlucose ? "КРИТИЧНО" : "норма")}");
 
 File.Delete(configPath);
+
+// Конфігурація клініки — типовий сценарій для JSON
+class ClinicConfig
+{
+    [JsonPropertyName("clinic_name")]
+    public string ClinicName { get; set; } = "";
+    
+    [JsonPropertyName("departments")]
+    public List<string> Departments { get; set; } = new();
+    
+    [JsonPropertyName("max_patients_per_day")]
+    public int MaxPatientsPerDay { get; set; }
+    
+    [JsonPropertyName("lab_thresholds")]
+    public LabThresholds Thresholds { get; set; } = new();
+    
+    [JsonPropertyName("last_updated")]
+    public DateTime LastUpdated { get; set; }
+}
+
+class LabThresholds
+{
+    [JsonPropertyName("glucose_max")]    public double GlucoseMax    { get; set; }
+    [JsonPropertyName("pulse_min")]      public int    PulseMin      { get; set; }
+    [JsonPropertyName("pulse_max")]      public int    PulseMax      { get; set; }
+    [JsonPropertyName("hemoglobin_min")] public double HemoglobinMin { get; set; }
+}
 ```
 
 ![Атрибути JSON та JsonSerializerOptions](_assets/18-06/json-attributes.png)

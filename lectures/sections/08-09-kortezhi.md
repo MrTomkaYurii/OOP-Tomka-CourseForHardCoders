@@ -92,9 +92,9 @@ var (patientName, _, _) = patient;
 Console.WriteLine($"Ім'я: {patientName}");
 
 // Мутабельність — на відміну від анонімних типів
-var record = (Diagnosis: "Гіпертонія", Room: 7);
-record.Room = 12; // можна змінити
-Console.WriteLine($"Діагноз: {record.Diagnosis}, палата: {record.Room}");
+var visit = (Diagnosis: "Гіпертонія", Room: 7);
+visit.Room = 12; // можна змінити
+Console.WriteLine($"Діагноз: {visit.Diagnosis}, палата: {visit.Room}");
 
 // Обмін значеннями через кортеж
 string doctorA = "Олег Петренко";

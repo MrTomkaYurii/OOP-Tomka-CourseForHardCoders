@@ -194,23 +194,6 @@ interface IMovable { void Move(); }
 using System;
 using System.Reflection;
 
-class PatientRecord
-{
-    public string  Id      { get; }
-    public string  Name    { get; set; }
-    public string  IcdCode { get; set; }
-    public int     Age     { get; set; }
-    private double _bmi;
-
-    public PatientRecord(string id, string name, string icd, int age)
-    {
-        Id = id; Name = name; IcdCode = icd; Age = age;
-    }
-
-    public string GetSummary()    => $"{Name} ({Age} р.) — {IcdCode}";
-    private bool  IsHighRisk()    => IcdCode.StartsWith("I") || IcdCode.StartsWith("C");
-}
-
 Type t = typeof(PatientRecord);
 
 Console.WriteLine("=== Загальна інформація ===");
@@ -241,33 +224,29 @@ Type? t3 = Type.GetType("PatientRecord");
 Console.WriteLine($"GetType(s): {(t3 != null ? t3.Name : "null (немає namespace)")}");
 
 Console.WriteLine($"\nВсі три однакові: {t1 == t2}");
+
+class PatientRecord
+{
+    public string  Id      { get; }
+    public string  Name    { get; set; }
+    public string  IcdCode { get; set; }
+    public int     Age     { get; set; }
+    private double _bmi;
+
+    public PatientRecord(string id, string name, string icd, int age)
+    {
+        Id = id; Name = name; IcdCode = icd; Age = age;
+    }
+
+    public string GetSummary()    => $"{Name} ({Age} р.) — {IcdCode}";
+    private bool  IsHighRisk()    => IcdCode.StartsWith("I") || IcdCode.StartsWith("C");
+}
 ```
 
 ## Порівняння typeof і GetType() для поліморфних об'єктів — runnable приклад
 
 ```csharp run
 using System;
-
-class MedicalRecord
-{
-    public string Id { get; }
-    public MedicalRecord(string id) => Id = id;
-    public virtual string RecordType => "Base";
-}
-
-class InpatientRecord : MedicalRecord
-{
-    public int StayDays { get; }
-    public InpatientRecord(string id, int days) : base(id) => StayDays = days;
-    public override string RecordType => "Inpatient";
-}
-
-class OutpatientRecord : MedicalRecord
-{
-    public string Clinic { get; }
-    public OutpatientRecord(string id, string clinic) : base(id) => Clinic = clinic;
-    public override string RecordType => "Outpatient";
-}
 
 MedicalRecord[] records = {
     new InpatientRecord("R001", 7),
@@ -305,6 +284,27 @@ foreach (var rec in records)
     if (rec.GetType() == typeof(OutpatientRecord)) outCount++;
 }
 Console.WriteLine($"Стаціонарних: {inCount}, Амбулаторних: {outCount}");
+
+class MedicalRecord
+{
+    public string Id { get; }
+    public MedicalRecord(string id) => Id = id;
+    public virtual string RecordType => "Base";
+}
+
+class InpatientRecord : MedicalRecord
+{
+    public int StayDays { get; }
+    public InpatientRecord(string id, int days) : base(id) => StayDays = days;
+    public override string RecordType => "Inpatient";
+}
+
+class OutpatientRecord : MedicalRecord
+{
+    public string Clinic { get; }
+    public OutpatientRecord(string id, string clinic) : base(id) => Clinic = clinic;
+    public override string RecordType => "Outpatient";
+}
 ```
 
 ### Отримання типу

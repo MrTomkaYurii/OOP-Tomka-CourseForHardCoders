@@ -22,14 +22,6 @@ using System;
 using System.IO;
 using System.Xml.Serialization;
 
-public class Patient
-{
-    public int    Id       { get; set; }
-    public string Name     { get; set; } = "";
-    public string Ward     { get; set; } = "";
-    public int    Age      { get; set; }
-}
-
 // Серіалізація
 Patient patient = new Patient { Id = 1001, Name = "Петренко Іван", Ward = "Терапія", Age = 45 };
 
@@ -45,6 +37,14 @@ Console.WriteLine(xml);
 using StringReader sr = new StringReader(xml);
 Patient? loaded = (Patient?)serializer.Deserialize(sr);
 Console.WriteLine($"\nЗавантажено: {loaded?.Name}, відділення: {loaded?.Ward}");
+
+public class Patient
+{
+    public int    Id       { get; set; }
+    public string Name     { get; set; } = "";
+    public string Ward     { get; set; } = "";
+    public int    Age      { get; set; }
+}
 ```
 
 За замовчуванням ім'я кореневого елемента збігається з ім'ям класу, а кожна властивість стає дочірнім елементом. Атрибути-анотації дозволяють повністю змінити цю поведінку.
@@ -57,6 +57,20 @@ Console.WriteLine($"\nЗавантажено: {loaded?.Name}, відділенн
 using System;
 using System.IO;
 using System.Xml.Serialization;
+
+PatientRecord rec = new PatientRecord
+{
+    PatientId    = "PT-1001",
+    Name         = "Петренко Іван Олексійович",
+    Ward         = "Терапія",
+    Age          = 45,
+    LastAccessed = DateTime.Now   // буде проігноровано
+};
+
+XmlSerializer xs = new XmlSerializer(typeof(PatientRecord));
+using StringWriter sw = new StringWriter();
+xs.Serialize(sw, rec);
+Console.WriteLine(sw.ToString());
 
 [XmlRoot("patient", Namespace = "http://clinic.ua/2024")]
 public class PatientRecord
@@ -80,20 +94,6 @@ public class PatientRecord
     // Числова властивість без зміни імені
     public int Age { get; set; }
 }
-
-PatientRecord rec = new PatientRecord
-{
-    PatientId    = "PT-1001",
-    Name         = "Петренко Іван Олексійович",
-    Ward         = "Терапія",
-    Age          = 45,
-    LastAccessed = DateTime.Now   // буде проігноровано
-};
-
-XmlSerializer xs = new XmlSerializer(typeof(PatientRecord));
-using StringWriter sw = new StringWriter();
-xs.Serialize(sw, rec);
-Console.WriteLine(sw.ToString());
 ```
 
 | Атрибут | Що робить |
@@ -113,6 +113,27 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
+
+FullPatientRecord record = new FullPatientRecord
+{
+    Id   = "PT-1001",
+    Name = "Петренко Іван Олексійович",
+    Diagnoses = new List<DiagnosisEntry>
+    {
+        new() { Code = "J06.9", Description = "ГРВІ" },
+        new() { Code = "I10",   Description = "Гіпертонія" }
+    },
+    Vitals = new List<VitalSign>
+    {
+        new() { Type = "temperature", Unit = "C",   Value = "37.2" },
+        new() { Type = "pulse",       Unit = "bpm", Value = "82"   }
+    }
+};
+
+XmlSerializer xs = new XmlSerializer(typeof(FullPatientRecord));
+using StringWriter sw = new StringWriter();
+xs.Serialize(sw, record);
+Console.WriteLine(sw.ToString());
 
 public class DiagnosisEntry
 {
@@ -157,27 +178,6 @@ public class FullPatientRecord
     [XmlArrayItem("sign")]
     public List<VitalSign> Vitals { get; set; } = new();
 }
-
-FullPatientRecord record = new FullPatientRecord
-{
-    Id   = "PT-1001",
-    Name = "Петренко Іван Олексійович",
-    Diagnoses = new List<DiagnosisEntry>
-    {
-        new() { Code = "J06.9", Description = "ГРВІ" },
-        new() { Code = "I10",   Description = "Гіпертонія" }
-    },
-    Vitals = new List<VitalSign>
-    {
-        new() { Type = "temperature", Unit = "C",   Value = "37.2" },
-        new() { Type = "pulse",       Unit = "bpm", Value = "82"   }
-    }
-};
-
-XmlSerializer xs = new XmlSerializer(typeof(FullPatientRecord));
-using StringWriter sw = new StringWriter();
-xs.Serialize(sw, record);
-Console.WriteLine(sw.ToString());
 ```
 
 ## Серіалізація з простором імен
@@ -187,16 +187,6 @@ using System;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
-
-[XmlRoot("clinic", Namespace = "http://clinic.ua/schema/2024")]
-public class ClinicDocument
-{
-    [XmlElement("name")]
-    public string ClinicName { get; set; } = "";
-
-    [XmlElement("registrationDate")]
-    public string RegDate { get; set; } = "";
-}
 
 ClinicDocument doc = new ClinicDocument
 {
@@ -212,6 +202,16 @@ ns.Add("",       "");   // прибирає зайвий xsi/xsd
 using StringWriter sw = new StringWriter();
 xs.Serialize(sw, doc, ns);
 Console.WriteLine(sw.ToString());
+
+[XmlRoot("clinic", Namespace = "http://clinic.ua/schema/2024")]
+public class ClinicDocument
+{
+    [XmlElement("name")]
+    public string ClinicName { get; set; } = "";
+
+    [XmlElement("registrationDate")]
+    public string RegDate { get; set; } = "";
+}
 ```
 
 `XmlSerializerNamespaces` дозволяє додавати або прибирати простори імен з вихідного XML. Якщо передати `ns.Add("", "")` — серіалізатор не додає зайвих `xmlns:xsi` та `xmlns:xsd`.
@@ -220,37 +220,9 @@ Console.WriteLine(sw.ToString());
 
 ```csharp run
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
-
-[XmlRoot("examination")]
-public class ExamRecord
-{
-    [XmlAttribute("patientId")]
-    public string PatientId { get; set; } = "";
-
-    [XmlElement("examDate")]
-    public string ExamDate { get; set; } = "";
-
-    [XmlElement("conclusion")]
-    public string Conclusion { get; set; } = "";
-
-    [XmlArray("tests")]
-    [XmlArrayItem("test")]
-    public List<TestResult> Tests { get; set; } = new();
-}
-
-public class TestResult
-{
-    [XmlAttribute("name")]
-    public string Name { get; set; } = "";
-
-    [XmlAttribute("status")]
-    public string Status { get; set; } = "";
-
-    [XmlText]
-    public string Value { get; set; } = "";
-}
 
 string xmlData = """
 <?xml version="1.0" encoding="utf-16"?>
@@ -280,14 +252,66 @@ if (exam != null)
     foreach (TestResult t in exam.Tests)
         Console.WriteLine($"  {t.Name}: {t.Value} [{t.Status}]");
 }
+
+[XmlRoot("examination")]
+public class ExamRecord
+{
+    [XmlAttribute("patientId")]
+    public string PatientId { get; set; } = "";
+
+    [XmlElement("examDate")]
+    public string ExamDate { get; set; } = "";
+
+    [XmlElement("conclusion")]
+    public string Conclusion { get; set; } = "";
+
+    [XmlArray("tests")]
+    [XmlArrayItem("test")]
+    public List<TestResult> Tests { get; set; } = new();
+}
+
+public class TestResult
+{
+    [XmlAttribute("name")]
+    public string Name { get; set; } = "";
+
+    [XmlAttribute("status")]
+    public string Status { get; set; } = "";
+
+    [XmlText]
+    public string Value { get; set; } = "";
+}
 ```
 
 ## Наслідування та [XmlInclude]
 
 ```csharp run
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
+
+LabContainer lab = new LabContainer
+{
+    Tests = new List<MedicalTest>
+    {
+        new BloodTest { TestId = "BT-001", Date = "2024-03-15", Hemoglobin = 135.0, Glucose = 5.1 },
+        new EcgRecord { TestId = "EC-001", Date = "2024-03-15", HeartRate = 72, Rhythm = "Синусовий" }
+    }
+};
+
+XmlSerializer xs = new XmlSerializer(typeof(LabContainer));
+using StringWriter sw = new StringWriter();
+xs.Serialize(sw, lab);
+string xml = sw.ToString();
+Console.WriteLine(xml);
+
+// Roundtrip — читаємо назад
+using StringReader sr = new StringReader(xml);
+LabContainer? loaded = (LabContainer?)xs.Deserialize(sr);
+Console.WriteLine($"\nЗавантажено {loaded?.Tests.Count.ToString()} тестів:");
+foreach (MedicalTest t in loaded?.Tests ?? new())
+    Console.WriteLine($"  [{t.GetType().Name}] {t.TestId} — {t.Date}");
 
 // Базовий клас — треба оголосити всі похідні типи
 [XmlInclude(typeof(BloodTest))]
@@ -326,28 +350,6 @@ public class LabContainer
     [XmlElement("test")]
     public List<MedicalTest> Tests { get; set; } = new();
 }
-
-LabContainer lab = new LabContainer
-{
-    Tests = new List<MedicalTest>
-    {
-        new BloodTest { TestId = "BT-001", Date = "2024-03-15", Hemoglobin = 135.0, Glucose = 5.1 },
-        new EcgRecord { TestId = "EC-001", Date = "2024-03-15", HeartRate = 72, Rhythm = "Синусовий" }
-    }
-};
-
-XmlSerializer xs = new XmlSerializer(typeof(LabContainer));
-using StringWriter sw = new StringWriter();
-xs.Serialize(sw, lab);
-string xml = sw.ToString();
-Console.WriteLine(xml);
-
-// Roundtrip — читаємо назад
-using StringReader sr = new StringReader(xml);
-LabContainer? loaded = (LabContainer?)xs.Deserialize(sr);
-Console.WriteLine($"\nЗавантажено {loaded?.Tests.Count.ToString()} тестів:");
-foreach (MedicalTest t in loaded?.Tests ?? new())
-    Console.WriteLine($"  [{t.GetType().Name}] {t.TestId} — {t.Date}");
 ```
 
 `[XmlInclude]` обов'язковий, якщо ви серіалізуєте колекцію базового типу і очікуєте отримати правильні похідні типи після десеріалізації. Серіалізатор додає `xsi:type="BloodTest"` у XML, і при зворотному читанні відновлює правильний тип.
@@ -359,6 +361,39 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
+
+WardRoundProtocol protocol = new WardRoundProtocol
+{
+    Date      = DateTime.Now.ToString("yyyy-MM-dd"),
+    Physician = "Коваленко О.В.",
+    Patients  = new List<WardPatient>
+    {
+        new("PT-1001", "Петренко І.О.", "Терапія",     "Стан покращився, t=36.8", "задовільний"),
+        new("PT-1002", "Бойко О.П.",    "Кардіологія", "ЕКГ в нормі, АТ 125/80",  "стабільний"),
+        new("PT-1003", "Мороз В.І.",    "Терапія",     "Скарги на слабкість",      "спостереження"),
+    }
+};
+
+XmlSerializer xs = new XmlSerializer(typeof(WardRoundProtocol));
+string path = Path.Combine(Path.GetTempPath(), "ward_round.xml");
+
+// Серіалізація у файл
+using (FileStream fs = File.Create(path))
+    xs.Serialize(fs, protocol);
+
+Console.WriteLine($"Збережено ({new FileInfo(path).Length.ToString()} байт):");
+Console.WriteLine(File.ReadAllText(path));
+
+// Десеріалізація з файлу
+using FileStream fsr = File.OpenRead(path);
+WardRoundProtocol? loaded = (WardRoundProtocol?)xs.Deserialize(fsr);
+
+Console.WriteLine($"\nПротокол від {loaded?.Date}, лікар: {loaded?.Physician}");
+Console.WriteLine($"Пацієнтів: {loaded?.Patients.Count.ToString()}");
+foreach (WardPatient p in loaded?.Patients ?? new())
+    Console.WriteLine($"  [{p.Id}] {p.Name} — {p.Status}");
+
+File.Delete(path);
 
 [XmlRoot("wardRound")]
 public class WardRoundProtocol
@@ -399,39 +434,6 @@ public class WardPatient
         Id = id; Name = name; Ward = ward; Notes = notes; Status = status;
     }
 }
-
-WardRoundProtocol protocol = new WardRoundProtocol
-{
-    Date      = DateTime.Now.ToString("yyyy-MM-dd"),
-    Physician = "Коваленко О.В.",
-    Patients  = new List<WardPatient>
-    {
-        new("PT-1001", "Петренко І.О.", "Терапія",     "Стан покращився, t=36.8", "задовільний"),
-        new("PT-1002", "Бойко О.П.",    "Кардіологія", "ЕКГ в нормі, АТ 125/80",  "стабільний"),
-        new("PT-1003", "Мороз В.І.",    "Терапія",     "Скарги на слабкість",      "спостереження"),
-    }
-};
-
-XmlSerializer xs = new XmlSerializer(typeof(WardRoundProtocol));
-string path = Path.Combine(Path.GetTempPath(), "ward_round.xml");
-
-// Серіалізація у файл
-using (FileStream fs = File.Create(path))
-    xs.Serialize(fs, protocol);
-
-Console.WriteLine($"Збережено ({new FileInfo(path).Length.ToString()} байт):");
-Console.WriteLine(File.ReadAllText(path));
-
-// Десеріалізація з файлу
-using FileStream fsr = File.OpenRead(path);
-WardRoundProtocol? loaded = (WardRoundProtocol?)xs.Deserialize(fsr);
-
-Console.WriteLine($"\nПротокол від {loaded?.Date}, лікар: {loaded?.Physician}");
-Console.WriteLine($"Пацієнтів: {loaded?.Patients.Count.ToString()}");
-foreach (WardPatient p in loaded?.Patients ?? new())
-    Console.WriteLine($"  [{p.Id}] {p.Name} — {p.Status}");
-
-File.Delete(path);
 ```
 
 ![XmlSerializer — порівняння з JsonSerializer за підходом](_assets/19-05/xmlserializer-vs-json.png)

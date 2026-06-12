@@ -136,21 +136,6 @@ void RegisterPatient(object? param)
 using System;
 using System.Threading;
 
-// Клас-обгортка для передачі кількох значень у потік
-class PatientTask
-{
-    public string Name     { get; }
-    public string Ward     { get; }
-    public int    Priority { get; }
-
-    public PatientTask(string name, string ward, int priority)
-    {
-        Name     = name;
-        Ward     = ward;
-        Priority = priority;
-    }
-}
-
 Thread t1 = new Thread(ProcessAdmission);
 Thread t2 = new Thread(ProcessAdmission);
 
@@ -170,6 +155,21 @@ void ProcessAdmission(object? param)
     Console.WriteLine($"[{Thread.CurrentThread.Name}] Прийом: {task.Name} → {task.Ward} (пріоритет {task.Priority.ToString()})");
     Thread.Sleep(200);
     Console.WriteLine($"[{Thread.CurrentThread.Name}] Завершено: {task.Name} оформлено до відділення '{task.Ward}'");
+}
+
+// Клас-обгортка для передачі кількох значень у потік
+class PatientTask
+{
+    public string Name     { get; }
+    public string Ward     { get; }
+    public int    Priority { get; }
+
+    public PatientTask(string name, string ward, int priority)
+    {
+        Name     = name;
+        Ward     = ward;
+        Priority = priority;
+    }
 }
 ```
 
@@ -223,23 +223,6 @@ Console.WriteLine("Всіх пацієнтів оброблено");
 using System;
 using System.Threading;
 
-// Завдання для обробки в окремому потоці
-class LabOrder
-{
-    public int    OrderId    { get; }
-    public string PatientName { get; }
-    public string TestType   { get; }
-    public int    ProcessMs  { get; } // час обробки у мс
-
-    public LabOrder(int id, string name, string test, int ms)
-    {
-        OrderId     = id;
-        PatientName = name;
-        TestType    = test;
-        ProcessMs   = ms;
-    }
-}
-
 LabOrder[] orders =
 {
     new LabOrder(1, "Коваль М.В.",    "Загальний аналіз крові",   300),
@@ -269,6 +252,23 @@ void ProcessLabOrder(LabOrder order)
     Console.WriteLine($"[{Thread.CurrentThread.Name}] Початок: {order.PatientName} — {order.TestType}");
     Thread.Sleep(order.ProcessMs);
     Console.WriteLine($"[{Thread.CurrentThread.Name}] Готово:  {order.PatientName} — {order.TestType} ({order.ProcessMs.ToString()} мс)");
+}
+
+// Завдання для обробки в окремому потоці
+class LabOrder
+{
+    public int    OrderId    { get; }
+    public string PatientName { get; }
+    public string TestType   { get; }
+    public int    ProcessMs  { get; } // час обробки у мс
+
+    public LabOrder(int id, string name, string test, int ms)
+    {
+        OrderId     = id;
+        PatientName = name;
+        TestType    = test;
+        ProcessMs   = ms;
+    }
 }
 ```
 

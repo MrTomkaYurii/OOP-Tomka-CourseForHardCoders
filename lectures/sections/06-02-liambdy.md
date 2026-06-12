@@ -146,9 +146,9 @@ delegate string BloodPressureHandler(int systolic, int diastolic);
 ```csharp run
 using System;
 
-var logAlert = () => Console.WriteLine("[LOG] Сигнал тривоги");
-var notifyDoc = () => Console.WriteLine("[DR] Виклик лікаря");
-var sendSMS = () => Console.WriteLine("[SMS] Повідомлення відправлено");
+AlertChain logAlert = () => Console.WriteLine("[LOG] Сигнал тривоги");
+AlertChain notifyDoc = () => Console.WriteLine("[DR] Виклик лікаря");
+AlertChain sendSMS = () => Console.WriteLine("[SMS] Повідомлення відправлено");
 
 AlertChain alert = logAlert;
 alert += notifyDoc;

@@ -318,9 +318,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 
-record ExamResult(string TestName, double Value, string Unit, string Status, string ReferenceRange);
-record PatientExam(int PatientId, string PatientName, DateTime ExamDate, List<ExamResult> Results);
-
 string BuildExamXml(PatientExam exam)
 {
     XmlDocument doc = new XmlDocument();
@@ -385,6 +382,9 @@ string path = Path.Combine(Path.GetTempPath(), "exam_result.xml");
 File.WriteAllText(path, resultXml, System.Text.Encoding.UTF8);
 Console.WriteLine($"\nФайл: {new FileInfo(path).Length.ToString()} байт");
 File.Delete(path);
+
+record ExamResult(string TestName, double Value, string Unit, string Status, string ReferenceRange);
+record PatientExam(int PatientId, string PatientName, DateTime ExamDate, List<ExamResult> Results);
 ```
 
 ![Методи XmlDocument по категоріях](_assets/19-02/xmldocument-api.png)

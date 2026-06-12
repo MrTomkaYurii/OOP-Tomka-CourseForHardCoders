@@ -19,6 +19,12 @@ source: "../_migration/source-chunks/37-kovariantnist-ta-kontravariantnist-deleh
 ```csharp run
 using System;
 
+// просто перевіряємо ієрархію
+Notification n = new EmailNotification("Результати аналізів готові");
+n.Print();
+n = new SmsNotification("Прийом завтра о 10:00");
+n.Print();
+
 class Notification
 {
     public string Text { get; }
@@ -37,12 +43,6 @@ class SmsNotification : Notification
     public SmsNotification(string text) : base(text) { }
     public override void Print() => Console.WriteLine($"SMS: {Text}");
 }
-
-// просто перевіряємо ієрархію
-Notification n = new EmailNotification("Результати аналізів готові");
-n.Print();
-n = new SmsNotification("Прийом завтра о 10:00");
-n.Print();
 ```
 
 Клас `Notification` — базовий для всіх типів сповіщень. `EmailNotification` і `SmsNotification` — похідні класи, кожен з яких перевизначає метод `Print`.
@@ -53,6 +53,15 @@ n.Print();
 
 ```csharp run
 using System;
+
+// делегат повертає базовий тип Notification
+// метод повертає похідний тип EmailNotification — коваріантність
+NotificationBuilder builder = CreateEmail;
+
+Notification result = builder("Аналізи пацієнта Петренка готові");
+result.Print(); // Email: ...
+
+EmailNotification CreateEmail(string text) => new EmailNotification(text);
 
 class Notification
 {
@@ -68,14 +77,6 @@ class EmailNotification : Notification
 
 // делегат повертає базовий тип Notification
 delegate Notification NotificationBuilder(string text);
-
-// метод повертає похідний тип EmailNotification — коваріантність
-NotificationBuilder builder = CreateEmail;
-
-Notification result = builder("Аналізи пацієнта Петренка готові");
-result.Print(); // Email: ...
-
-EmailNotification CreateEmail(string text) => new EmailNotification(text);
 ```
 
 Компілятор дозволяє це, бо будь-який об'єкт `EmailNotification` є водночас об'єктом `Notification` — відносини «є» (is-a). Якщо делегат очікує `Notification`, метод, що повертає `EmailNotification`, завжди задовольняє цю вимогу.
@@ -86,6 +87,12 @@ EmailNotification CreateEmail(string text) => new EmailNotification(text);
 
 ```csharp run
 using System;
+
+// метод приймає базовий тип Notification — контраваріантність
+EmailReceiver receiver = ProcessNotification;
+receiver(new EmailNotification("Прийом лікаря підтверджено"));
+
+void ProcessNotification(Notification n) => n.Print();
 
 class Notification
 {
@@ -101,12 +108,6 @@ class EmailNotification : Notification
 
 // делегат приймає похідний тип EmailNotification
 delegate void EmailReceiver(EmailNotification notification);
-
-// метод приймає базовий тип Notification — контраваріантність
-EmailReceiver receiver = ProcessNotification;
-receiver(new EmailNotification("Прийом лікаря підтверджено"));
-
-void ProcessNotification(Notification n) => n.Print();
 ```
 
 На перший погляд це може здатися суперечливим: делегат оголошує `EmailNotification`, а метод приймає `Notification`. Але логіка правильна: при виклику `receiver(...)` ми завжди передаємо `EmailNotification`. Будь-який `EmailNotification` є `Notification`, тому метод `ProcessNotification(Notification n)` коректно обробить його. Метод з ширшим типом параметра — більш гнучкий, і все, що він може зробити з `Notification`, він зможе зробити і з `EmailNotification`.
@@ -124,6 +125,15 @@ void ProcessNotification(Notification n) => n.Print();
 ```csharp run
 using System;
 
+// повертає EmailNotification — більш конкретний тип
+NotificationBuilder<EmailNotification> emailBuilder = text => new EmailNotification(text);
+
+// завдяки out — можна присвоїти делегату з базовим типом
+NotificationBuilder<Notification> generalBuilder = emailBuilder; // коваріантність
+
+Notification n = generalBuilder("Результати МРТ");
+n.Print(); // Email: Результати МРТ
+
 class Notification
 {
     public string Text { get; }
@@ -137,15 +147,6 @@ class EmailNotification : Notification
 }
 
 delegate T NotificationBuilder<out T>(string text);
-
-// повертає EmailNotification — більш конкретний тип
-NotificationBuilder<EmailNotification> emailBuilder = text => new EmailNotification(text);
-
-// завдяки out — можна присвоїти делегату з базовим типом
-NotificationBuilder<Notification> generalBuilder = emailBuilder; // коваріантність
-
-Notification n = generalBuilder("Результати МРТ");
-n.Print(); // Email: Результати МРТ
 ```
 
 Без `out` компілятор заборонив би таке присвоєння, навіть попри те, що `EmailNotification` є `Notification`.
@@ -156,6 +157,16 @@ n.Print(); // Email: Результати МРТ
 
 ```csharp run
 using System;
+
+// приймає базовий тип Notification
+NotificationReceiver<Notification> generalReceiver = n => n.Print();
+
+// завдяки in — можна присвоїти делегату з похідним типом
+NotificationReceiver<EmailNotification> emailReceiver = generalReceiver; // контраваріантність
+
+generalReceiver(new Notification("Загальне повідомлення"));     // Сповіщення: ...
+generalReceiver(new EmailNotification("Результати аналізів"));  // Email: ...
+emailReceiver(new EmailNotification("Прийом підтверджено"));    // Email: ...
 
 class Notification
 {
@@ -170,16 +181,6 @@ class EmailNotification : Notification
 }
 
 delegate void NotificationReceiver<in T>(T notification);
-
-// приймає базовий тип Notification
-NotificationReceiver<Notification> generalReceiver = n => n.Print();
-
-// завдяки in — можна присвоїти делегату з похідним типом
-NotificationReceiver<EmailNotification> emailReceiver = generalReceiver; // контраваріантність
-
-generalReceiver(new Notification("Загальне повідомлення"));     // Сповіщення: ...
-generalReceiver(new EmailNotification("Результати аналізів"));  // Email: ...
-emailReceiver(new EmailNotification("Прийом підтверджено"));    // Email: ...
 ```
 
 Як і у випадку з узагальненими інтерфейсами: параметр коваріантного типу (`out`) застосовується лише до типу, що повертається, а параметр контраваріантного типу (`in`) — лише до параметрів делегата.
@@ -190,6 +191,17 @@ emailReceiver(new EmailNotification("Прийом підтверджено"));  
 
 ```csharp run
 using System;
+
+// конвертер: з будь-якого Notification створює EmailNotification
+NotificationConverter<Notification, EmailNotification> toEmail =
+    n => new EmailNotification($"[Email] {n.Text}");
+
+// контраваріантність по M: SmsNotification → Notification (ширший тип)
+// коваріантність по E:     EmailNotification → Notification (ширший тип)
+NotificationConverter<SmsNotification, Notification> converter = toEmail;
+
+Notification result = converter(new SmsNotification("Аналіз крові"));
+result.Print(); // Email: [Email] Аналіз крові
 
 class Notification
 {
@@ -210,17 +222,6 @@ class SmsNotification : Notification
 
 // конвертер: приймає тип M, повертає тип E
 delegate E NotificationConverter<in M, out E>(M source);
-
-// конвертер: з будь-якого Notification створює EmailNotification
-NotificationConverter<Notification, EmailNotification> toEmail =
-    n => new EmailNotification($"[Email] {n.Text}");
-
-// контраваріантність по M: SmsNotification → Notification (ширший тип)
-// коваріантність по E:     EmailNotification → Notification (ширший тип)
-NotificationConverter<SmsNotification, Notification> converter = toEmail;
-
-Notification result = converter(new SmsNotification("Аналіз крові"));
-result.Print(); // Email: [Email] Аналіз крові
 ```
 
 Тут делегат `converter` очікує: взяти `SmsNotification` і повернути `Notification`. Ми присвоїли йому `toEmail`, який бере будь-який `Notification` і повертає `EmailNotification`. Контраваріантність по `M` означає: `SmsNotification` → `Notification` (параметр стає ширшим). Коваріантність по `E` означає: `EmailNotification` → `Notification` (тип повернення стає ширшим). Обидві заміни безпечні, і компілятор це перевіряє статично.

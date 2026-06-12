@@ -171,6 +171,25 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+var test = new LabTest
+{
+    Name   = "Глюкоза",
+    Value  = 5.4,
+    Unit   = "ммоль/л",
+    Normal = new NormalRange(3.9, 6.1)
+};
+
+var opts = new JsonSerializerOptions { WriteIndented = true };
+string json = JsonSerializer.Serialize(test, opts);
+Console.WriteLine("JSON з кастомним конвертером:");
+Console.WriteLine(json);
+
+// Десеріалізація — конвертер відпрацьовує автоматично
+LabTest? loaded = JsonSerializer.Deserialize<LabTest>(json, opts);
+Console.WriteLine($"\nВідновлено: {loaded?.Name} = {loaded?.Value.ToString()} {loaded?.Unit}");
+Console.WriteLine($"Норма: {loaded?.Normal}");
+Console.WriteLine($"Статус: {(loaded?.Value >= loaded?.Normal.Min && loaded?.Value <= loaded?.Normal.Max ? "норма" : "відхилення")}");
+
 // Кастомний тип — діапазон нормальних значень показника
 struct NormalRange
 {
@@ -209,25 +228,6 @@ class LabTest
     [JsonConverter(typeof(NormalRangeConverter))]   // атрибут на конкретному полі
     public NormalRange Normal  { get; set; }
 }
-
-var test = new LabTest
-{
-    Name   = "Глюкоза",
-    Value  = 5.4,
-    Unit   = "ммоль/л",
-    Normal = new NormalRange(3.9, 6.1)
-};
-
-var opts = new JsonSerializerOptions { WriteIndented = true };
-string json = JsonSerializer.Serialize(test, opts);
-Console.WriteLine("JSON з кастомним конвертером:");
-Console.WriteLine(json);
-
-// Десеріалізація — конвертер відпрацьовує автоматично
-LabTest? loaded = JsonSerializer.Deserialize<LabTest>(json, opts);
-Console.WriteLine($"\nВідновлено: {loaded?.Name} = {loaded?.Value.ToString()} {loaded?.Unit}");
-Console.WriteLine($"Норма: {loaded?.Normal}");
-Console.WriteLine($"Статус: {(loaded?.Value >= loaded?.Normal.Min && loaded?.Value <= loaded?.Normal.Max ? "норма" : "відхилення")}");
 ```
 
 Конвертер можна зареєструвати **глобально** через `options.Converters.Add(new NormalRangeConverter())` замість атрибута на кожному полі — тоді він спрацює для всіх властивостей цього типу в усій програмі.
@@ -238,8 +238,36 @@ Console.WriteLine($"Статус: {(loaded?.Value >= loaded?.Normal.Min && loade
 
 ```csharp run
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
+// Список різних підтипів
+var results = new List<MedicalResult>
+{
+    new BloodTest   { PatientId=1001, Glucose=5.1, Hemoglobin=135.0 },
+    new EcgRecord   { PatientId=1001, HeartRate=72, Rhythm="синусовий" },
+    new ImagingData { PatientId=1002, Modality="УЗД", BodyPart="черевна порожнина" },
+};
+
+var opts = new JsonSerializerOptions { WriteIndented = true };
+string json = JsonSerializer.Serialize(results, opts);
+Console.WriteLine("Поліморфний JSON:");
+Console.WriteLine(json);
+
+// Десеріалізація відновлює правильний підтип
+var loaded = JsonSerializer.Deserialize<List<MedicalResult>>(json, opts)!;
+foreach (MedicalResult r in loaded)
+{
+    string info = r switch
+    {
+        BloodTest   b => $"Кров: глюкоза={b.Glucose.ToString()}",
+        EcgRecord   e => $"ЕКГ: пульс={e.HeartRate.ToString()}, ритм={e.Rhythm}",
+        ImagingData i => $"Знімок: {i.Modality} ({i.BodyPart})",
+        _             => "невідомий тип"
+    };
+    Console.WriteLine($"  [{r.GetType().Name}] пацієнт {r.PatientId.ToString()}: {info}");
+}
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
 [JsonDerivedType(typeof(BloodTest),   typeDiscriminator: "blood")]
@@ -268,33 +296,6 @@ class ImagingData : MedicalResult
     public string Modality   { get; set; } = ""; // МРТ, КТ, УЗД
     public string BodyPart   { get; set; } = "";
 }
-
-// Список різних підтипів
-var results = new List<MedicalResult>
-{
-    new BloodTest   { PatientId=1001, Glucose=5.1, Hemoglobin=135.0 },
-    new EcgRecord   { PatientId=1001, HeartRate=72, Rhythm="синусовий" },
-    new ImagingData { PatientId=1002, Modality="УЗД", BodyPart="черевна порожнина" },
-};
-
-var opts = new JsonSerializerOptions { WriteIndented = true };
-string json = JsonSerializer.Serialize(results, opts);
-Console.WriteLine("Поліморфний JSON:");
-Console.WriteLine(json);
-
-// Десеріалізація відновлює правильний підтип
-var loaded = JsonSerializer.Deserialize<List<MedicalResult>>(json, opts)!;
-foreach (MedicalResult r in loaded)
-{
-    string info = r switch
-    {
-        BloodTest   b => $"Кров: глюкоза={b.Glucose.ToString()}",
-        EcgRecord   e => $"ЕКГ: пульс={e.HeartRate.ToString()}, ритм={e.Rhythm}",
-        ImagingData i => $"Знімок: {i.Modality} ({i.BodyPart})",
-        _             => "невідомий тип"
-    };
-    Console.WriteLine($"  [{r.GetType().Name}] пацієнт {r.PatientId.ToString()}: {info}");
-}
 ```
 
 `$type` — дискримінатор типу, який `JsonSerializer` автоматично додає при записі і читає при десеріалізації. Ім'я поля (`TypeDiscriminatorPropertyName`) можна задати довільним — часто використовують `"type"`, `"kind"`, `"$type"`.
@@ -308,14 +309,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-
-class PatientRecord
-{
-    public int      Id        { get; set; }
-    public string   Name      { get; set; } = "";
-    public string   Diagnosis { get; set; } = "";
-    public DateTime AdmittedAt { get; set; }
-}
 
 string filePath = Path.Combine(Path.GetTempPath(), "patients_async.json");
 
@@ -344,6 +337,14 @@ await using (FileStream fs = File.OpenRead(filePath))
 }
 
 File.Delete(filePath);
+
+class PatientRecord
+{
+    public int      Id        { get; set; }
+    public string   Name      { get; set; } = "";
+    public string   Diagnosis { get; set; } = "";
+    public DateTime AdmittedAt { get; set; }
+}
 ```
 
 `SerializeAsync` / `DeserializeAsync` — особливо важливі у ASP.NET Core: при відповіді на HTTP-запит серіалізація відбувається напряму у `HttpResponse.Body`-потік без буферизації всього JSON у пам'яті. Для консольних застосунків або Desktop різниця мінімальна, але для веб-сервісів під навантаженням — суттєва.

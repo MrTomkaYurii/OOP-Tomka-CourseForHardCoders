@@ -18,6 +18,10 @@ source: "../_combined/41-yavna-realizatsiia-interfeisiv.md"
 ```csharp run
 using System;
 
+// доступ ТІЛЬКИ через змінну інтерфейсу
+IDiagnosable p = new Patient("Марія Коваль");
+p.RunDiagnostics();
+
 class Patient : IDiagnosable
 {
     public string Name { get; }
@@ -27,10 +31,6 @@ class Patient : IDiagnosable
     void IDiagnosable.RunDiagnostics()
         => Console.WriteLine($"[IDiagnosable] Діагностика пацієнта {Name}");
 }
-
-// доступ ТІЛЬКИ через змінну інтерфейсу
-IDiagnosable p = new Patient("Марія Коваль");
-p.RunDiagnostics();
 
 interface IDiagnosable
 {
@@ -89,6 +89,10 @@ interface IDiagnosable
 using System;
 
 // без явної реалізації — один спільний метод
+Patient p = new Patient("Василь Мороз");
+((IDiagnosable)p).RunProcedure();  // загальна процедура
+((ITreatment)p).RunProcedure();    // загальна процедура — той самий метод
+
 class Patient : IDiagnosable, ITreatment
 {
     public string Name { get; }
@@ -98,10 +102,6 @@ class Patient : IDiagnosable, ITreatment
         => Console.WriteLine($"{Name}: загальна процедура (однакова для обох інтерфейсів)");
 }
 
-Patient p = new Patient("Василь Мороз");
-((IDiagnosable)p).RunProcedure();  // загальна процедура
-((ITreatment)p).RunProcedure();    // загальна процедура — той самий метод
-
 interface IDiagnosable { void RunProcedure(); }
 interface ITreatment   { void RunProcedure(); }
 ```
@@ -110,6 +110,10 @@ interface ITreatment   { void RunProcedure(); }
 
 ```csharp run
 using System;
+
+Patient p = new Patient("Тетяна Руденко");
+((IDiagnosable)p).RunProcedure();
+((ITreatment)p).RunProcedure();
 
 class Patient : IDiagnosable, ITreatment
 {
@@ -122,10 +126,6 @@ class Patient : IDiagnosable, ITreatment
     void ITreatment.RunProcedure()
         => Console.WriteLine($"{Name}: лікувальна процедура — ін'єкція, крапельниця");
 }
-
-Patient p = new Patient("Тетяна Руденко");
-((IDiagnosable)p).RunProcedure();
-((ITreatment)p).RunProcedure();
 
 interface IDiagnosable { void RunProcedure(); }
 interface ITreatment   { void RunProcedure(); }
@@ -191,6 +191,11 @@ class Patient : IMonitorable
 ```csharp run
 using System;
 
+IDiagnosable r1 = new ClinicalRecord("Олег Бойко");
+IDiagnosable r2 = new LabRecord("Марина Шевченко");
+r1.RunDiagnostics();
+r2.RunDiagnostics();
+
 interface IDiagnosable
 {
     void RunDiagnostics();
@@ -218,17 +223,15 @@ class LabRecord : MedicalRecord
     public override void RunDiagnostics()
         => Console.WriteLine($"{PatientName}: лабораторна діагностика — кров, сеча, біопсія");
 }
-
-IDiagnosable r1 = new ClinicalRecord("Олег Бойко");
-IDiagnosable r2 = new LabRecord("Марина Шевченко");
-r1.RunDiagnostics();
-r2.RunDiagnostics();
 ```
 
 Інша важлива ситуація: похідний клас може «успадкувати» реалізацію інтерфейсу від базового класу, навіть якщо сам базовий клас не оголошував реалізацію інтерфейсу явно. Якщо у базовому класі є публічний метод з відповідною сигнатурою, і похідний клас оголошує реалізацію інтерфейсу — компілятор автоматично прив'яже існуючий метод:
 
 ```csharp run
 using System;
+
+IDiagnosable sr = new SpecialRecord();
+sr.RunDiagnostics(); // викликається метод з BaseRecord
 
 interface IDiagnosable
 {
@@ -244,10 +247,6 @@ class BaseRecord
 
 // HeroRecord успадковує метод і реалізує IDiagnosable через нього
 class SpecialRecord : BaseRecord, IDiagnosable { }
-
-IDiagnosable sr = new SpecialRecord();
-sr.RunDiagnostics(); // викликається метод з BaseRecord
-
 ```
 
 Якщо клас одночасно успадковує клас і реалізує інтерфейс, ім'я базового класу завжди вказується першим, а інтерфейси — після нього:
@@ -267,6 +266,14 @@ class SpecialRecord : BaseRecord, IDiagnosable, ITreatment { }
 ```csharp run
 using System;
 
+BaseRecord  r1 = new SpecialRecord();
+IDiagnosable r2 = new SpecialRecord();
+SpecialRecord r3 = new SpecialRecord();
+
+r1.RunDiagnostics(); // SpecialRecord — поліморфізм
+r2.RunDiagnostics(); // SpecialRecord — поліморфізм
+r3.RunDiagnostics(); // SpecialRecord
+
 interface IDiagnosable { void RunDiagnostics(); }
 
 class BaseRecord : IDiagnosable
@@ -280,14 +287,6 @@ class SpecialRecord : BaseRecord
     public override void RunDiagnostics()
         => Console.WriteLine("SpecialRecord: розширена діагностика");
 }
-
-BaseRecord  r1 = new SpecialRecord();
-IDiagnosable r2 = new SpecialRecord();
-SpecialRecord r3 = new SpecialRecord();
-
-r1.RunDiagnostics(); // SpecialRecord — поліморфізм
-r2.RunDiagnostics(); // SpecialRecord — поліморфізм
-r3.RunDiagnostics(); // SpecialRecord
 ```
 
 ### Варіант 2 — приховування через `new`
@@ -296,6 +295,14 @@ r3.RunDiagnostics(); // SpecialRecord
 
 ```csharp run
 using System;
+
+BaseRecord   r1 = new SpecialRecord();
+IDiagnosable r2 = new SpecialRecord();
+SpecialRecord r3 = new SpecialRecord();
+
+r1.RunDiagnostics(); // BaseRecord — раннє зв'язування
+r2.RunDiagnostics(); // BaseRecord — інтерфейс реалізований у BaseRecord
+r3.RunDiagnostics(); // SpecialRecord — прямий тип
 
 interface IDiagnosable { void RunDiagnostics(); }
 
@@ -310,14 +317,6 @@ class SpecialRecord : BaseRecord
     public new void RunDiagnostics()
         => Console.WriteLine("SpecialRecord: спеціальна діагностика");
 }
-
-BaseRecord   r1 = new SpecialRecord();
-IDiagnosable r2 = new SpecialRecord();
-SpecialRecord r3 = new SpecialRecord();
-
-r1.RunDiagnostics(); // BaseRecord — раннє зв'язування
-r2.RunDiagnostics(); // BaseRecord — інтерфейс реалізований у BaseRecord
-r3.RunDiagnostics(); // SpecialRecord — прямий тип
 ```
 
 ### Варіант 3 — повторна реалізація інтерфейсу разом із `new`
@@ -326,6 +325,14 @@ r3.RunDiagnostics(); // SpecialRecord — прямий тип
 
 ```csharp run
 using System;
+
+BaseRecord   r1 = new SpecialRecord();
+IDiagnosable r2 = new SpecialRecord();
+SpecialRecord r3 = new SpecialRecord();
+
+r1.RunDiagnostics(); // BaseRecord — раннє зв'язування за типом змінної
+r2.RunDiagnostics(); // SpecialRecord — інтерфейс тепер прив'язаний до SpecialRecord
+r3.RunDiagnostics(); // SpecialRecord
 
 interface IDiagnosable { void RunDiagnostics(); }
 
@@ -341,14 +348,6 @@ class SpecialRecord : BaseRecord, IDiagnosable
     public new void RunDiagnostics()
         => Console.WriteLine("SpecialRecord: спеціальна діагностика");
 }
-
-BaseRecord   r1 = new SpecialRecord();
-IDiagnosable r2 = new SpecialRecord();
-SpecialRecord r3 = new SpecialRecord();
-
-r1.RunDiagnostics(); // BaseRecord — раннє зв'язування за типом змінної
-r2.RunDiagnostics(); // SpecialRecord — інтерфейс тепер прив'язаний до SpecialRecord
-r3.RunDiagnostics(); // SpecialRecord
 ```
 
 ### Варіант 4 — явна реалізація інтерфейсу в похідному класі
@@ -357,6 +356,14 @@ r3.RunDiagnostics(); // SpecialRecord
 
 ```csharp run
 using System;
+
+BaseRecord   r1 = new SpecialRecord();
+IDiagnosable r2 = new SpecialRecord();
+SpecialRecord r3 = new SpecialRecord();
+
+r1.RunDiagnostics(); // BaseRecord — раннє зв'язування
+r2.RunDiagnostics(); // явна IDiagnosable — найвищий пріоритет
+r3.RunDiagnostics(); // SpecialRecord — новий public метод
 
 interface IDiagnosable { void RunDiagnostics(); }
 
@@ -375,14 +382,6 @@ class SpecialRecord : BaseRecord, IDiagnosable
     void IDiagnosable.RunDiagnostics()
         => Console.WriteLine("SpecialRecord (явна IDiagnosable): протокол діагностики");
 }
-
-BaseRecord   r1 = new SpecialRecord();
-IDiagnosable r2 = new SpecialRecord();
-SpecialRecord r3 = new SpecialRecord();
-
-r1.RunDiagnostics(); // BaseRecord — раннє зв'язування
-r2.RunDiagnostics(); // явна IDiagnosable — найвищий пріоритет
-r3.RunDiagnostics(); // SpecialRecord — новий public метод
 ```
 
 ![4 варіанти зміни реалізації інтерфейсу у похідному класі](_assets/07-03/override-variants.png)

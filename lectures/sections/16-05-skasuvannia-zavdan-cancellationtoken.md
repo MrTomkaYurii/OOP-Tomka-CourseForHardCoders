@@ -74,6 +74,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 CancellationTokenSource cts = new CancellationTokenSource();
+CancellationToken token = cts.Token;
 
 Task dataExport = Task.Run(() =>
 {
@@ -88,9 +89,7 @@ Task dataExport = Task.Run(() =>
     }
 
     Console.WriteLine("[Експорт] Експорт завершено повністю");
-}, cts.Token);
-
-CancellationToken token = cts.Token;
+}, token);
 
 Thread.Sleep(450); // скасовуємо після ~4 пакетів
 Console.WriteLine("[Main] Скасовую експорт (адміністратор зупинив)...");

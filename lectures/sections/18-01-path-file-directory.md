@@ -296,6 +296,7 @@ File.Delete(path);
 ```csharp run
 using System;
 using System.IO;
+using System.Linq;
 
 // Структура архіву: MedArchive/{рік}/{місяць}/{пацієнт}.txt
 string archiveRoot = Path.Combine(Path.GetTempPath(), "MedArchive");

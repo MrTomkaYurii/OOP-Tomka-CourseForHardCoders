@@ -174,6 +174,21 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+Task<LabResult> labTask = Task.Run(() =>
+{
+    Console.WriteLine("[Лабораторія] Виконую аналіз крові Коваль М.В...");
+    Thread.Sleep(400);
+    return new LabResult("Коваль М.В.", glucose: 5.8, hemoglobin: 138.0);
+});
+
+LabResult result = labTask.Result; // блокуємось до завершення
+
+Console.WriteLine($"\n=== Результат аналізу ===");
+Console.WriteLine($"Пацієнт:    {result.PatientName}");
+Console.WriteLine($"Глюкоза:    {result.Glucose.ToString("F1")} ммоль/л");
+Console.WriteLine($"Гемоглобін: {result.Hemoglobin.ToString("F0")} г/л");
+Console.WriteLine($"Висновок:   {result.Status}");
+
 class LabResult
 {
     public string PatientName { get; }
@@ -189,21 +204,6 @@ class LabResult
         Status      = glucose > 6.1 ? "Глюкоза підвищена" : hemoglobin < 120 ? "Гемоглобін знижений" : "Норма";
     }
 }
-
-Task<LabResult> labTask = Task.Run(() =>
-{
-    Console.WriteLine("[Лабораторія] Виконую аналіз крові Коваль М.В...");
-    Thread.Sleep(400);
-    return new LabResult("Коваль М.В.", glucose: 5.8, hemoglobin: 138.0);
-});
-
-LabResult result = labTask.Result; // блокуємось до завершення
-
-Console.WriteLine($"\n=== Результат аналізу ===");
-Console.WriteLine($"Пацієнт:    {result.PatientName}");
-Console.WriteLine($"Глюкоза:    {result.Glucose.ToString("F1")} ммоль/л");
-Console.WriteLine($"Гемоглобін: {result.Hemoglobin.ToString("F0")} г/л");
-Console.WriteLine($"Висновок:   {result.Status}");
 ```
 
 ### Кілька Task\<T\> з WaitAll

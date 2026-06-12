@@ -104,6 +104,10 @@ public interface IDiagnosable
 ```csharp run
 using System;
 
+IDiagnosable p = new Patient("Марія Коваль");
+p.RunDiagnostics();
+p.LogDiagnostics();
+
 interface IDiagnosable
 {
     void RunDiagnostics();
@@ -122,16 +126,16 @@ class Patient : IDiagnosable
         Console.WriteLine($"Діагностика пацієнта {Name}");
     // LogDiagnostics не перевизначаємо — використовується default
 }
-
-IDiagnosable p = new Patient("Марія Коваль");
-p.RunDiagnostics();
-p.LogDiagnostics();
 ```
 
 З реалізацією властивостей за замовчуванням в інтерфейсах ситуація складніша: оскільки інтерфейси не можуть визначати нестатичні змінні, властивість інтерфейсу не може маніпулювати станом екземпляра. Тим не менш реалізацію за замовчуванням для властивості визначити можна — наприклад, для властивості тільки для читання, що повертає фіксоване значення:
 
 ```csharp run
 using System;
+
+IDiagnosable sample = new LabSample("LAB-2024-001");
+sample.RunDiagnostics();
+Console.WriteLine($"Рівень тяжкості за замовчуванням: {sample.DefaultSeverity.ToString()}");
 
 interface IDiagnosable
 {
@@ -146,10 +150,6 @@ class LabSample : IDiagnosable
     public LabSample(string id) => SampleId = id;
     // RunDiagnostics і DefaultSeverity — використовуємо default
 }
-
-IDiagnosable sample = new LabSample("LAB-2024-001");
-sample.RunDiagnostics();
-Console.WriteLine($"Рівень тяжкості за замовчуванням: {sample.DefaultSeverity.ToString()}");
 ```
 
 Варто зазначити: якщо інтерфейс має приватні методи або властивості (з модифікатором `private`), вони обов'язково повинні мати реалізацію за замовчуванням — адже до них не може звернутися реалізуючий клас. Те саме стосується статичних методів, які теж мають бути реалізовані в самому інтерфейсі:

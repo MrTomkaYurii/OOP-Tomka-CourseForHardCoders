@@ -290,6 +290,27 @@ public interface IComparer<in T>
 
 ```csharp run
 using System;
+using System.Collections.Generic;
+
+Patient[] patients =
+{
+    new Patient("Шевченко", 34),
+    new Patient("Іваненко", 52),
+    new Patient("Бойко",    28),
+    new Patient("Ковальчук",41),
+};
+
+Array.Sort(patients, new PatientAgeComparer());
+Console.WriteLine("За віком:");
+foreach (Patient p in patients)
+    Console.WriteLine($"  {p.ToString()}");
+
+Console.WriteLine();
+
+Array.Sort(patients, new PatientNameComparer());
+Console.WriteLine("За прізвищем:");
+foreach (Patient p in patients)
+    Console.WriteLine($"  {p.ToString()}");
 
 class Patient
 {
@@ -324,32 +345,6 @@ class PatientNameComparer : IComparer<Patient>
         if (x is null || y is null)
             throw new ArgumentException("Некоректне значення параметра");
         return x.LastName.CompareTo(y.LastName);
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        Patient[] patients =
-        {
-            new Patient("Шевченко", 34),
-            new Patient("Іваненко", 52),
-            new Patient("Бойко",    28),
-            new Patient("Ковальчук",41),
-        };
-
-        Array.Sort(patients, new PatientAgeComparer());
-        Console.WriteLine("За віком:");
-        foreach (Patient p in patients)
-            Console.WriteLine($"  {p.ToString()}");
-
-        Console.WriteLine();
-
-        Array.Sort(patients, new PatientNameComparer());
-        Console.WriteLine("За прізвищем:");
-        foreach (Patient p in patients)
-            Console.WriteLine($"  {p.ToString()}");
     }
 }
 ```

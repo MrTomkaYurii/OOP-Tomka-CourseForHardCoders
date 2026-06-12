@@ -72,6 +72,7 @@ Console.WriteLine(doc.ToString());
 ```csharp run
 using System;
 using System.IO;
+using System.Linq;
 using System.Xml.Linq;
 
 string path = Path.Combine(Path.GetTempPath(), "clinic_xdoc.xml");
@@ -109,6 +110,7 @@ File.Delete(path);
 
 ```csharp run
 using System;
+using System.Linq;
 using System.Xml.Linq;
 
 XDocument doc = XDocument.Parse("""
@@ -300,8 +302,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-record LabResult(int PatientId, string Name, string Test, double Value, string Unit, string Status);
-
 var results = new List<LabResult>
 {
     new(1001, "Петренко І.О.", "Гемоглобін",  135.0, "г/л",     "норма"),
@@ -340,6 +340,8 @@ Console.WriteLine(report.ToString());
 int abnormal = report.Descendants("result")
     .Count(r => r.Attribute("status")?.Value != "норма");
 Console.WriteLine($"\nВідхилень від норми: {abnormal.ToString()} з {results.Count.ToString()}");
+
+record LabResult(int PatientId, string Name, string Test, double Value, string Unit, string Status);
 ```
 
 ![LINQ to XML — схема запитів через Descendants та Elements](_assets/19-03/linq-to-xml-queries.png)

@@ -45,6 +45,15 @@ SOLID — це акронім із п'яти принципів об'єктно-
 using System;
 using System.Collections.Generic;
 
+// ─── Використання — виглядає зручно, але... ──────────────────────
+var clinic = new ClinicManager();
+clinic.AddDoctor("Петренко І.О.");
+clinic.AddPatient("Бойко Олена");
+clinic.BookAppointment("Бойко Олена", "Петренко І.О.", DateTime.Now.AddHours(2));
+Console.WriteLine(clinic.GenerateReport());
+Console.WriteLine($"Рахунок: {clinic.CalculateBilling("Бойко Олена").ToString()} грн");
+clinic.SaveToFile("clinic.dat");
+
 // ─── God Class — еволюція без принципів ───────────────────────────
 // Спочатку клас здавався невеличким. З кожним тижнем до нього
 // «дочіплювали» нову відповідальність, бо «тут вже є доступ до даних».
@@ -98,15 +107,6 @@ class ClinicManager  // 800+ рядків у реальному проекті
         return _appointments.FindAll(a => a.StartsWith(patient)).Count * 500m;
     }
 }
-
-// ─── Використання — виглядає зручно, але... ──────────────────────
-var clinic = new ClinicManager();
-clinic.AddDoctor("Петренко І.О.");
-clinic.AddPatient("Бойко Олена");
-clinic.BookAppointment("Бойко Олена", "Петренко І.О.", DateTime.Now.AddHours(2));
-Console.WriteLine(clinic.GenerateReport());
-Console.WriteLine($"Рахунок: {clinic.CalculateBilling("Бойко Олена").ToString()} грн");
-clinic.SaveToFile("clinic.dat");
 ```
 
 Цей клас **технічно працює**. Але подивимося, що відбувається, коли вимоги змінюються:
@@ -129,6 +129,19 @@ clinic.SaveToFile("clinic.dat");
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+
+var sys = new TightClinicSystem();
+sys.Book("Мороз Василь", "Петренко І.О.");
+sys.Book("Бойко Олена", "Коваленко М.А.");
+sys.ExportReport();
+Console.WriteLine($"Лікар Петренко: {sys.CountByDoctor("Петренко І.О.").ToString()} записів");
+Console.WriteLine($"Мороз активний: {sys.HasActiveAppointment("Мороз Василь").ToString()}");
+
+// Тепер змінимо формат рядка на "DD.MM.YYYY;PATIENT;DOCTOR;STATUS"
+// → треба виправити Book, CountByDoctor, ExportReport, HasActiveAppointment
+// → чотири місця, і це лише в одному класі!
+Console.WriteLine("\n[Проблема] Зміна формату = 4 місця для редагування у цьому класі");
+Console.WriteLine("           У реальному проекті таких місць можуть бути десятки");
 
 // Спрощена модель щільно зв'язаної системи
 // де кожен компонент знає про внутрішній формат інших
@@ -181,19 +194,6 @@ class TightClinicSystem
         return false;
     }
 }
-
-var sys = new TightClinicSystem();
-sys.Book("Мороз Василь", "Петренко І.О.");
-sys.Book("Бойко Олена", "Коваленко М.А.");
-sys.ExportReport();
-Console.WriteLine($"Лікар Петренко: {sys.CountByDoctor("Петренко І.О.").ToString()} записів");
-Console.WriteLine($"Мороз активний: {sys.HasActiveAppointment("Мороз Василь").ToString()}");
-
-// Тепер змінимо формат рядка на "DD.MM.YYYY;PATIENT;DOCTOR;STATUS"
-// → треба виправити Book, CountByDoctor, ExportReport, HasActiveAppointment
-// → чотири місця, і це лише в одному класі!
-Console.WriteLine("\n[Проблема] Зміна формату = 4 місця для редагування у цьому класі");
-Console.WriteLine("           У реальному проекті таких місць можуть бути десятки");
 ```
 
 Це і є **жорсткість**: зміна одного рішення (формату рядка) потребує пошуку і виправлення всіх місць, де це рішення «вшите». У великих кодових базах розробники часто не знають про всі такі місця — звідси й **крихкість**: щось ламається там, де не очікували.

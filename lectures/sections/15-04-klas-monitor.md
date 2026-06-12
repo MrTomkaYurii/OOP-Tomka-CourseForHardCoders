@@ -71,6 +71,45 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
+LabQueue queue = new LabQueue();
+
+// Лаборант — споживач (запускаємо першим, він чекатиме на зразки)
+Thread labWorker = new Thread(() =>
+{
+    Console.WriteLine("[Лаборант] Готовий до роботи, очікую зразки...");
+    while (true)
+    {
+        string? sample = queue.TakeSample();
+        if (sample == null) break; // черга закрита і порожня — виходимо
+
+        Console.WriteLine($"[Лаборант] Обробляю: '{sample}'");
+        Thread.Sleep(150); // час аналізу
+        Console.WriteLine($"[Лаборант] Аналіз '{sample}' завершено");
+    }
+    Console.WriteLine("[Лаборант] Робочий день завершено — всі зразки оброблено");
+});
+labWorker.Name = "LabWorker";
+labWorker.Start();
+
+// Медсестра — виробник
+Thread nurse = new Thread(() =>
+{
+    string[] samples = { "Кров-Коваль", "Сеча-Петренко", "Кров-Бойко", "Мокрота-Мороз", "Кров-Сидоренко" };
+    foreach (string sample in samples)
+    {
+        Thread.Sleep(100); // час між надходженнями зразків
+        queue.AddSample(sample);
+    }
+    Console.WriteLine("[Медсестра] Всі зразки здано до лабораторії");
+    queue.StopAccepting(); // сигналізуємо, що нових зразків не буде
+});
+nurse.Name = "Nurse";
+nurse.Start();
+
+nurse.Join();
+labWorker.Join();
+Console.WriteLine("\n=== Лабораторія закрита ===");
+
 // Черга лабораторних зразків — спільний ресурс
 class LabQueue
 {
@@ -118,45 +157,6 @@ class LabQueue
         }
     }
 }
-
-LabQueue queue = new LabQueue();
-
-// Лаборант — споживач (запускаємо першим, він чекатиме на зразки)
-Thread labWorker = new Thread(() =>
-{
-    Console.WriteLine("[Лаборант] Готовий до роботи, очікую зразки...");
-    while (true)
-    {
-        string? sample = queue.TakeSample();
-        if (sample == null) break; // черга закрита і порожня — виходимо
-
-        Console.WriteLine($"[Лаборант] Обробляю: '{sample}'");
-        Thread.Sleep(150); // час аналізу
-        Console.WriteLine($"[Лаборант] Аналіз '{sample}' завершено");
-    }
-    Console.WriteLine("[Лаборант] Робочий день завершено — всі зразки оброблено");
-});
-labWorker.Name = "LabWorker";
-labWorker.Start();
-
-// Медсестра — виробник
-Thread nurse = new Thread(() =>
-{
-    string[] samples = { "Кров-Коваль", "Сеча-Петренко", "Кров-Бойко", "Мокрота-Мороз", "Кров-Сидоренко" };
-    foreach (string sample in samples)
-    {
-        Thread.Sleep(100); // час між надходженнями зразків
-        queue.AddSample(sample);
-    }
-    Console.WriteLine("[Медсестра] Всі зразки здано до лабораторії");
-    queue.StopAccepting(); // сигналізуємо, що нових зразків не буде
-});
-nurse.Name = "Nurse";
-nurse.Start();
-
-nurse.Join();
-labWorker.Join();
-Console.WriteLine("\n=== Лабораторія закрита ===");
 ```
 
 Зверніть на конструкцію `while (_samples.Count == 0 && _accepting) { Monitor.Wait(_lock); }`. Умова перевіряється у **циклі**, а не в `if` — це критично важливо. `Pulse` не гарантує, що після пробудження умова дійсно виконана: можливе так зване «хибне пробудження» (spurious wakeup), або інший потік міг встигнути забрати зразок до того, як поточний захопив замок. Тому завжди перевіряємо умову заново після `Wait`.
@@ -169,6 +169,41 @@ Console.WriteLine("\n=== Лабораторія закрита ===");
 using System;
 using System.Collections.Generic;
 using System.Threading;
+
+MultiWorkerQueue queue = new MultiWorkerQueue();
+
+// Два лаборанти-споживачі
+void RunWorker(string name)
+{
+    while (true)
+    {
+        string? item = queue.Consume(name);
+        if (item == null) break;
+        Thread.Sleep(200);
+        Console.WriteLine($"[{name}] Аналіз '{item}' завершено");
+    }
+    Console.WriteLine($"[{name}] Зміна завершена");
+}
+
+Thread w1 = new Thread(() => RunWorker("Лаборант-1")) { Name = "Worker1" };
+Thread w2 = new Thread(() => RunWorker("Лаборант-2")) { Name = "Worker2" };
+
+w1.Start();
+w2.Start();
+
+// Виробник
+Thread.Sleep(50);
+string[] batch = { "Зразок-А", "Зразок-Б", "Зразок-В", "Зразок-Г", "Зразок-Д", "Зразок-Е" };
+foreach (string s in batch)
+{
+    queue.Produce(s);
+    Thread.Sleep(80);
+}
+queue.Stop();
+
+w1.Join();
+w2.Join();
+Console.WriteLine("Всі аналізи завершено");
 
 class MultiWorkerQueue
 {
@@ -211,41 +246,6 @@ class MultiWorkerQueue
         }
     }
 }
-
-MultiWorkerQueue queue = new MultiWorkerQueue();
-
-// Два лаборанти-споживачі
-void RunWorker(string name)
-{
-    while (true)
-    {
-        string? item = queue.Consume(name);
-        if (item == null) break;
-        Thread.Sleep(200);
-        Console.WriteLine($"[{name}] Аналіз '{item}' завершено");
-    }
-    Console.WriteLine($"[{name}] Зміна завершена");
-}
-
-Thread w1 = new Thread(() => RunWorker("Лаборант-1")) { Name = "Worker1" };
-Thread w2 = new Thread(() => RunWorker("Лаборант-2")) { Name = "Worker2" };
-
-w1.Start();
-w2.Start();
-
-// Виробник
-Thread.Sleep(50);
-string[] batch = { "Зразок-А", "Зразок-Б", "Зразок-В", "Зразок-Г", "Зразок-Д", "Зразок-Е" };
-foreach (string s in batch)
-{
-    queue.Produce(s);
-    Thread.Sleep(80);
-}
-queue.Stop();
-
-w1.Join();
-w2.Join();
-Console.WriteLine("Всі аналізи завершено");
 ```
 
 ## Monitor.TryEnter — спроба без блокування

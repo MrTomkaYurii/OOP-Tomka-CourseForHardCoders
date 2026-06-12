@@ -470,6 +470,16 @@ public void Spend(int amount)
 ```csharp run
 using System;
 
+// Створюємо пацієнта зі страховим рахунком
+Patient patient = new Patient(500);
+// Передаємо обробник — консольний вивід
+patient.RegisterHandler(PrintMessage);
+// Двічі намагаємось списати кошти
+patient.Spend(200);
+patient.Spend(400);
+
+void PrintMessage(string message) => Console.WriteLine(message);
+
 // Оголошуємо делегат — тип для обробника подій
 public delegate void PatientHandler(string message);
 
@@ -503,16 +513,6 @@ public class Patient
         }
     }
 }
-
-// Створюємо пацієнта зі страховим рахунком
-Patient patient = new Patient(500);
-// Передаємо обробник — консольний вивід
-patient.RegisterHandler(PrintMessage);
-// Двічі намагаємось списати кошти
-patient.Spend(200);
-patient.Spend(400);
-
-void PrintMessage(string message) => Console.WriteLine(message);
 ```
 
 Для делегування дії тут визначено делегат `PatientHandler`. Цей делегат відповідає будь-яким методам, які мають тип `void` та приймають параметр типу `string`:
@@ -540,6 +540,26 @@ public void RegisterHandler(PatientHandler handler)
 
 ```csharp run
 using System;
+
+Patient patient = new Patient(500);
+
+// Реєструємо два обробники
+patient.RegisterHandler(PrintSimpleMessage);
+patient.RegisterHandler(PrintHighlightedMessage);
+
+patient.Spend(200);
+patient.Spend(400);
+
+// Видаляємо другий обробник
+patient.UnregisterHandler(PrintHighlightedMessage);
+// Тепер спрацьовує лише перший
+patient.Spend(100);
+
+void PrintSimpleMessage(string message) => Console.WriteLine(message);
+void PrintHighlightedMessage(string message)
+{
+    Console.WriteLine($"*** {message} ***");
+}
 
 public delegate void PatientHandler(string message);
 
@@ -576,26 +596,6 @@ public class Patient
             _onSpend?.Invoke($"Недостатньо коштів. Баланс: {_balance.ToString()} грн.");
         }
     }
-}
-
-Patient patient = new Patient(500);
-
-// Реєструємо два обробники
-patient.RegisterHandler(PrintSimpleMessage);
-patient.RegisterHandler(PrintHighlightedMessage);
-
-patient.Spend(200);
-patient.Spend(400);
-
-// Видаляємо другий обробник
-patient.UnregisterHandler(PrintHighlightedMessage);
-// Тепер спрацьовує лише перший
-patient.Spend(100);
-
-void PrintSimpleMessage(string message) => Console.WriteLine(message);
-void PrintHighlightedMessage(string message)
-{
-    Console.WriteLine($"*** {message} ***");
 }
 ```
 

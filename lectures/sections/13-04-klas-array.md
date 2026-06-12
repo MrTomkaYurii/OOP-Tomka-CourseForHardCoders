@@ -197,15 +197,6 @@ Array.Clear(data, 1, 3);
 ```csharp run
 using System;
 
-struct Patient
-{
-    public string Id;
-    public string Name;
-    public int    Age;
-    public double Bmi;
-    public string Icd;
-}
-
 var patients = new Patient[]
 {
     new Patient { Id="P001", Name="Петренко Іван",   Age=67, Bmi=27.3, Icd="I10.9" },
@@ -240,11 +231,18 @@ Console.WriteLine($"Є ожиріння (ІМТ≥30): {hasObesity}");
 Console.WriteLine($"Усі повнолітні:       {allAdults}");
 
 Console.WriteLine("\n=== Find + FindIndex ===");
-var oldest = Array.Find(patients, p => p.Age == Array.FindIndex(patients, x => x.Age >= 70) >= 0
-    ? patients[Array.FindIndex(patients, x => x.Age >= 70)].Age : -1);
 var firstSenior = Array.Find(patients, p => p.Age >= 65);
 int seniorIdx   = Array.FindIndex(patients, p => p.Age >= 65);
 Console.WriteLine($"Перший пацієнт 65+: {firstSenior.Name} (індекс {seniorIdx})");
+
+struct Patient
+{
+    public string Id;
+    public string Name;
+    public int    Age;
+    public double Bmi;
+    public string Icd;
+}
 ```
 
 ## Копіювання, Fill та IndexOf — runnable приклад

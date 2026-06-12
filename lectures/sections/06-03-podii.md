@@ -76,6 +76,12 @@ Notify?.Invoke("Сталося списання");
 ```csharp run
 using System;
 
+Patient p = new Patient("Іван Петренко", 500);
+// обробник ще не встановлено — виклики події не дають ефекту
+p.AddFunds(100);
+p.Spend(200);
+Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
+
 class Patient
 {
     public delegate void PatientHandler(string message);
@@ -105,12 +111,6 @@ class Patient
         }
     }
 }
-
-Patient p = new Patient("Іван Петренко", 500);
-// обробник ще не встановлено — виклики події не дають ефекту
-p.AddFunds(100);
-p.Spend(200);
-Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
 ```
 
 Поки жоден обробник не зареєстрований, виклики `Notify?.Invoke(...)` нічого не роблять — подія `null`.
@@ -121,6 +121,18 @@ Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
 
 ```csharp run
 using System;
+
+Patient p = new Patient("Марія Коваль", 500);
+p.Notify += DisplayMessage;         // підписуємось на подію
+
+p.AddFunds(200);
+Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
+p.Spend(300);
+Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
+p.Spend(600);
+Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
+
+void DisplayMessage(string message) => Console.WriteLine(message);
 
 class Patient
 {
@@ -147,18 +159,6 @@ class Patient
         }
     }
 }
-
-Patient p = new Patient("Марія Коваль", 500);
-p.Notify += DisplayMessage;         // підписуємось на подію
-
-p.AddFunds(200);
-Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
-p.Spend(300);
-Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
-p.Spend(600);
-Console.WriteLine($"Баланс: {p.Balance.ToString()} грн.");
-
-void DisplayMessage(string message) => Console.WriteLine(message);
 ```
 
 Метод `DisplayMessage` відповідає делегату `PatientHandler` — приймає `string`, нічого не повертає. При виклику `Notify?.Invoke(...)` тепер буде виконуватися цей метод. Клас `Patient` нічого не знає про `Console.WriteLine` — він лише надсилає повідомлення через подію. Зовнішній код вирішує, що з ним робити.
@@ -171,6 +171,24 @@ void DisplayMessage(string message) => Console.WriteLine(message);
 
 ```csharp run
 using System;
+
+Patient p = new Patient("Олег Бойко", 800);
+
+p.Notify += DisplayMessage;         // реєструємо перший обробник
+p.Notify += DisplayWarningMessage;  // реєструємо другий
+
+p.AddFunds(100);                    // спрацюють обидва
+Console.WriteLine("---");
+p.Notify -= DisplayWarningMessage;  // видаляємо другий
+p.Spend(300);                       // спрацює лише перший
+
+void DisplayMessage(string message) => Console.WriteLine(message);
+void DisplayWarningMessage(string message)
+{
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine($"[!] {message}");
+    Console.ResetColor();
+}
 
 class Patient
 {
@@ -197,30 +215,23 @@ class Patient
         }
     }
 }
-
-Patient p = new Patient("Олег Бойко", 800);
-
-p.Notify += DisplayMessage;         // реєструємо перший обробник
-p.Notify += DisplayWarningMessage;  // реєструємо другий
-
-p.AddFunds(100);                    // спрацюють обидва
-Console.WriteLine("---");
-p.Notify -= DisplayWarningMessage;  // видаляємо другий
-p.Spend(300);                       // спрацює лише перший
-
-void DisplayMessage(string message) => Console.WriteLine(message);
-void DisplayWarningMessage(string message)
-{
-    Console.ForegroundColor = ConsoleColor.Yellow;
-    Console.WriteLine($"[!] {message}");
-    Console.ResetColor();
-}
 ```
 
 Як обробники можна використовувати не лише іменовані методи, а й анонімні методи та лямбда-вирази:
 
 ```csharp run
 using System;
+
+Patient p = new Patient("Тетяна Руденко", 500);
+
+// обробник через делегат
+p.Notify += new Patient.PatientHandler(msg => Console.WriteLine($"[ДЕЛЕГАТ] {msg}"));
+// обробник через анонімний метод
+p.Notify += delegate(string msg) { Console.WriteLine($"[АНОНІМНИЙ] {msg}"); };
+// обробник через лямбду
+p.Notify += msg => Console.WriteLine($"[ЛЯМБДА] {msg}");
+
+p.Spend(200);
 
 class Patient
 {
@@ -235,17 +246,6 @@ class Patient
         else Notify?.Invoke($"Недостатньо коштів. Баланс: {Balance.ToString()} грн.");
     }
 }
-
-Patient p = new Patient("Тетяна Руденко", 500);
-
-// обробник через делегат
-p.Notify += new Patient.PatientHandler(msg => Console.WriteLine($"[ДЕЛЕГАТ] {msg}"));
-// обробник через анонімний метод
-p.Notify += delegate(string msg) { Console.WriteLine($"[АНОНІМНИЙ] {msg}"); };
-// обробник через лямбду
-p.Notify += msg => Console.WriteLine($"[ЛЯМБДА] {msg}");
-
-p.Spend(200);
 ```
 
 ## Управління обробниками (аксесори add/remove)
@@ -254,6 +254,15 @@ p.Spend(200);
 
 ```csharp run
 using System;
+
+Patient p = new Patient("Василь Мороз", 600);
+
+p.Notify += DisplayMessage;
+p.Spend(100);
+p.Notify -= DisplayMessage;
+p.Spend(50);
+
+void DisplayMessage(string message) => Console.WriteLine(message);
 
 class Patient
 {
@@ -292,15 +301,6 @@ class Patient
         }
     }
 }
-
-Patient p = new Patient("Василь Мороз", 600);
-
-p.Notify += DisplayMessage;
-p.Spend(100);
-p.Notify -= DisplayMessage;
-p.Spend(50);
-
-void DisplayMessage(string message) => Console.WriteLine(message);
 ```
 
 Визначення події тепер розбивається на дві частини. Спочатку оголошується приватна змінна делегата `_notify`, якою клас викликає обробники зсередини. Потім визначаються аксесори: `add` виконується при операції `+=`, а `remove` — при `-=`. Усередині аксесора обробник, що додається або видаляється, доступний через ключове слово `value`. Зовнішній код працює з `Notify` (публічна подія), але реальний список обробників зберігається у `_notify`.
@@ -313,6 +313,21 @@ void DisplayMessage(string message) => Console.WriteLine(message);
 
 ```csharp run
 using System;
+
+Patient p = new Patient("Надія Литвин", 700);
+p.Notify += DisplayTransactionInfo;
+
+p.AddFunds(150);
+p.Spend(400);
+p.Spend(600);
+
+void DisplayTransactionInfo(Patient sender, PatientEventArgs e)
+{
+    Console.WriteLine($"Пацієнт: {sender.Name}");
+    Console.WriteLine($"Операція: {e.Message}");
+    Console.WriteLine($"Сума: {e.Amount.ToString()} грн. | Поточний баланс: {sender.Balance.ToString()} грн.");
+    Console.WriteLine("---");
+}
 
 class PatientEventArgs
 {
@@ -353,21 +368,6 @@ class Patient
             Notify?.Invoke(this, new PatientEventArgs("Недостатньо коштів на страховому рахунку", amount));
         }
     }
-}
-
-Patient p = new Patient("Надія Литвин", 700);
-p.Notify += DisplayTransactionInfo;
-
-p.AddFunds(150);
-p.Spend(400);
-p.Spend(600);
-
-void DisplayTransactionInfo(Patient sender, PatientEventArgs e)
-{
-    Console.WriteLine($"Пацієнт: {sender.Name}");
-    Console.WriteLine($"Операція: {e.Message}");
-    Console.WriteLine($"Сума: {e.Amount.ToString()} грн. | Поточний баланс: {sender.Balance.ToString()} грн.");
-    Console.WriteLine("---");
 }
 ```
 

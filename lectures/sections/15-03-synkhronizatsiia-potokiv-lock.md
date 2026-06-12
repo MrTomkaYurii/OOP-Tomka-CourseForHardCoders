@@ -105,33 +105,6 @@ Console.WriteLine($"Різниця:   {(5000 - queueCount).ToString()} — ре�
 using System;
 using System.Threading;
 
-// Розклад лікаря — спільний ресурс для кількох операторів
-class AppointmentScheduler
-{
-    private int _appointmentsToday = 0;
-    private readonly int _maxPerDay = 20;
-    private readonly object _lock = new object();
-
-    // Повертає true, якщо запис вдався
-    public bool TryBook(string operatorName, string patientName)
-    {
-        lock (_lock) // тільки один оператор одночасно може модифікувати розклад
-        {
-            if (_appointmentsToday >= _maxPerDay)
-            {
-                Console.WriteLine($"[{operatorName}] Відмова: {patientName} — розклад повний ({_maxPerDay.ToString()}/{_maxPerDay.ToString()})");
-                return false;
-            }
-
-            _appointmentsToday++;
-            Console.WriteLine($"[{operatorName}] Записано: {patientName} — прийом #{_appointmentsToday.ToString()}");
-            return true;
-        }
-    }
-
-    public int Total => _appointmentsToday;
-}
-
 AppointmentScheduler scheduler = new AppointmentScheduler();
 
 // Три оператори паралельно намагаються записати пацієнтів
@@ -164,6 +137,33 @@ foreach (Thread t in operators) t.Start();
 foreach (Thread t in operators) t.Join();
 
 Console.WriteLine($"\nПідсумок: записано {scheduler.Total.ToString()} пацієнтів із 20 доступних");
+
+// Розклад лікаря — спільний ресурс для кількох операторів
+class AppointmentScheduler
+{
+    private int _appointmentsToday = 0;
+    private readonly int _maxPerDay = 20;
+    private readonly object _lock = new object();
+
+    // Повертає true, якщо запис вдався
+    public bool TryBook(string operatorName, string patientName)
+    {
+        lock (_lock) // тільки один оператор одночасно може модифікувати розклад
+        {
+            if (_appointmentsToday >= _maxPerDay)
+            {
+                Console.WriteLine($"[{operatorName}] Відмова: {patientName} — розклад повний ({_maxPerDay.ToString()}/{_maxPerDay.ToString()})");
+                return false;
+            }
+
+            _appointmentsToday++;
+            Console.WriteLine($"[{operatorName}] Записано: {patientName} — прийом #{_appointmentsToday.ToString()}");
+            return true;
+        }
+    }
+
+    public int Total => _appointmentsToday;
+}
 ```
 
 Завдяки `lock` лічильник `_appointmentsToday` ніколи не перевищить `_maxPerDay`, і не виникне ситуації, коли два оператори «одночасно» запишуть 21-го пацієнта. Кожна перевірка-та-запис відбувається атомарно — без можливості втручання іншого потоку між читанням і записом.

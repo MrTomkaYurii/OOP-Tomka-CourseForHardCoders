@@ -324,9 +324,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-// Структура запису лабораторного аналізу
-record LabResult(string PatientId, string TestName, double Value, string Unit, string Status);
-
 // CSV-файл з результатами аналізів
 string csvPath = Path.Combine(Path.GetTempPath(), "lab_results.csv");
 using (StreamWriter sw = new StreamWriter(csvPath, false, Encoding.UTF8))
@@ -380,6 +377,9 @@ foreach (LabResult r in results)
         Console.WriteLine($"  {r.PatientId}: {r.TestName} = {r.Value.ToString()} {r.Unit} [{r.Status}]");
 
 File.Delete(csvPath);
+
+// Структура запису лабораторного аналізу
+record LabResult(string PatientId, string TestName, double Value, string Unit, string Status);
 ```
 
 ![Кодування символів у текстових потоках](_assets/18-04/encoding-comparison.png)

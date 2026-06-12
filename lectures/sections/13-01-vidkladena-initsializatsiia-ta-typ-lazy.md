@@ -157,6 +157,21 @@ Lazy<Service> s2 = new Lazy<Service>(
 ```csharp run
 using System;
 
+var p1 = new PatientRecord("Петренко Іван", "I10.9");
+var p2 = new PatientRecord("Коваль Марія",  "J45.0");
+
+Console.WriteLine("=== Списку пацієнтів ===");
+Console.WriteLine($"{p1.Name} | {p1.IcdCode} | Анамнез завантажено: {p1.IsHistoryLoaded}");
+Console.WriteLine($"{p2.Name} | {p2.IcdCode} | Анамнез завантажено: {p2.IsHistoryLoaded}");
+
+Console.WriteLine("\n=== Лікар відкриває картку Петренка ===");
+foreach (var item in p1.History)
+    Console.WriteLine($"  • {item}");
+
+Console.WriteLine($"\nПетренко: IsHistoryLoaded = {p1.IsHistoryLoaded}");
+Console.WriteLine($"Коваль:   IsHistoryLoaded = {p2.IsHistoryLoaded}");
+Console.WriteLine("(Анамнез Коваль так і не завантажено — економія ресурсів)");
+
 class PatientRecord
 {
     public string Name { get; }
@@ -186,21 +201,6 @@ class PatientRecord
     public bool IsHistoryLoaded => _history.IsValueCreated;
     public string[] History => _history.Value; // тригер
 }
-
-var p1 = new PatientRecord("Петренко Іван", "I10.9");
-var p2 = new PatientRecord("Коваль Марія",  "J45.0");
-
-Console.WriteLine("=== Списку пацієнтів ===");
-Console.WriteLine($"{p1.Name} | {p1.IcdCode} | Анамнез завантажено: {p1.IsHistoryLoaded}");
-Console.WriteLine($"{p2.Name} | {p2.IcdCode} | Анамнез завантажено: {p2.IsHistoryLoaded}");
-
-Console.WriteLine("\n=== Лікар відкриває картку Петренка ===");
-foreach (var item in p1.History)
-    Console.WriteLine($"  • {item}");
-
-Console.WriteLine($"\nПетренко: IsHistoryLoaded = {p1.IsHistoryLoaded}");
-Console.WriteLine($"Коваль:   IsHistoryLoaded = {p2.IsHistoryLoaded}");
-Console.WriteLine("(Анамнез Коваль так і не завантажено — економія ресурсів)");
 ```
 
 ## Сервіс нормативів — runnable приклад
@@ -210,6 +210,26 @@ Console.WriteLine("(Анамнез Коваль так і не завантаж�
 ```csharp run
 using System;
 using System.Collections.Generic;
+
+Console.WriteLine("=== Лабораторні показники — Петренко Іван ===");
+Console.WriteLine($"IsValueCreated перед першим зверненням: (перевіряємо через Check)");
+Console.WriteLine();
+
+var results = new[]
+{
+    ("glucose",      7.3),
+    ("hemoglobin",   135.0),
+    ("leukocytes",   11.5),
+    ("cholesterol",  4.8),
+    ("erythrocytes", 4.2),
+};
+
+foreach (var (test, val) in results)
+{
+    var (ok, msg) = LabNormService.Check(test, val);
+    string mark = ok ? "✓" : "!";
+    Console.WriteLine($"  [{mark}] {test,-14}: {msg}");
+}
 
 class LabNormService
 {
@@ -238,25 +258,5 @@ class LabNormService
         string status = ok ? "НОРМА" : (value < norm.Min ? "НИЖЧЕ НОРМИ" : "ВИЩЕ НОРМИ");
         return (ok, $"{value:F2} {norm.Unit} [{norm.Min}–{norm.Max}] → {status}");
     }
-}
-
-Console.WriteLine("=== Лабораторні показники — Петренко Іван ===");
-Console.WriteLine($"IsValueCreated перед першим зверненням: (перевіряємо через Check)");
-Console.WriteLine();
-
-var results = new[]
-{
-    ("glucose",      7.3),
-    ("hemoglobin",   135.0),
-    ("leukocytes",   11.5),
-    ("cholesterol",  4.8),
-    ("erythrocytes", 4.2),
-};
-
-foreach (var (test, val) in results)
-{
-    var (ok, msg) = LabNormService.Check(test, val);
-    string mark = ok ? "✓" : "!";
-    Console.WriteLine($"  [{mark}] {test,-14}: {msg}");
 }
 ```

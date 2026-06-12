@@ -231,6 +231,14 @@ Console.WriteLine($"\nРезультати: {p1}, {p2}, {p3}");
 using System;
 using System.Threading.Tasks;
 
+// Використання
+IPatientRepository repo = new FakeRepository();
+string name = await repo.GetNameAsync("PT-001");
+Console.WriteLine($"Отримано: {name}");
+
+await repo.SaveAsync("PT-001", "дані");
+Console.WriteLine("[Main] Операції завершено");
+
 // Інтерфейс репозиторію
 interface IPatientRepository
 {
@@ -266,14 +274,6 @@ class FakeRepository : IPatientRepository
         return Task.CompletedTask; // Task, що вже завершений
     }
 }
-
-// Використання
-IPatientRepository repo = new FakeRepository();
-string name = await repo.GetNameAsync("PT-001");
-Console.WriteLine($"Отримано: {name}");
-
-await repo.SaveAsync("PT-001", "дані");
-Console.WriteLine("[Main] Операції завершено");
 ```
 
 `Task.FromResult<T>(value)` створює Task, що вже завершений зі значенням — без жодних алокацій стейт-машини. `Task.CompletedTask` — синглтон-Task для `Task`-методів без значення, що не вимагає реальної асинхронності. Обидва широко використовуються при реалізації інтерфейсів, заглушок і тест-дублерів.

@@ -293,8 +293,6 @@ using System.IO;
 using System.Text;
 using System.Xml;
 
-record Patient(int Id, string Name, string Ward, string[] Diagnoses, double Glucose, int Pulse);
-
 var patients = new List<Patient>
 {
     new(1001, "Петренко І.О.", "Терапія",     new[]{"J06.9","I10"},    5.1, 72),
@@ -352,6 +350,8 @@ using (XmlWriter w = XmlWriter.Create(path, settings))
 Console.WriteLine(File.ReadAllText(path, Encoding.UTF8));
 Console.WriteLine($"Файл: {new FileInfo(path).Length.ToString()} байт");
 File.Delete(path);
+
+record Patient(int Id, string Name, string Ward, string[] Diagnoses, double Glucose, int Pulse);
 ```
 
 ## XmlReader + XmlWriter: трансформація великих файлів

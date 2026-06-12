@@ -274,6 +274,32 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using CancellationTokenSource cts = new CancellationTokenSource(500);
+
+try
+{
+    await ProcessWardPatientsAsync("Терапія", cts.Token);
+}
+catch (OperationCanceledException)
+{
+    Console.WriteLine("[Main] Обробку зупинено за тайм-аутом");
+}
+
+// Сервісний рівень: обробка потоку
+async Task ProcessWardPatientsAsync(string ward, CancellationToken ct)
+{
+    var repo = new PatientRepository();
+    int count = 0;
+
+    await foreach (string patient in repo.GetPatientsStreamAsync(ward, ct))
+    {
+        count++;
+        Console.WriteLine($"  [{count.ToString()}] Оброблено: {patient}");
+    }
+
+    Console.WriteLine($"[Service] Відділення {ward}: оброблено {count.ToString()} пацієнтів");
+}
+
 // Симуляція репозиторію з підтримкою стрімінгу
 class PatientRepository
 {
@@ -299,32 +325,6 @@ class PatientRepository
 
         Console.WriteLine("[Repo] Курсор БД закрито");
     }
-}
-
-// Сервісний рівень: обробка потоку
-async Task ProcessWardPatientsAsync(string ward, CancellationToken ct)
-{
-    var repo = new PatientRepository();
-    int count = 0;
-
-    await foreach (string patient in repo.GetPatientsStreamAsync(ward, ct))
-    {
-        count++;
-        Console.WriteLine($"  [{count.ToString()}] Оброблено: {patient}");
-    }
-
-    Console.WriteLine($"[Service] Відділення {ward}: оброблено {count.ToString()} пацієнтів");
-}
-
-using CancellationTokenSource cts = new CancellationTokenSource(500);
-
-try
-{
-    await ProcessWardPatientsAsync("Терапія", cts.Token);
-}
-catch (OperationCanceledException)
-{
-    Console.WriteLine("[Main] Обробку зупинено за тайм-аутом");
 }
 ```
 

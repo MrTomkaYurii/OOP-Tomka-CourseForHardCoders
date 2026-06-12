@@ -33,6 +33,11 @@ interface IDiagnosable
 ```csharp run
 using System;
 
+Patient p      = new Patient("Марія Коваль");
+LabSample s    = new LabSample("LAB-2024-099");
+p.RunDiagnostics();
+s.RunDiagnostics();
+
 // реалізація інтерфейсу в класі
 class Patient : IDiagnosable
 {
@@ -52,11 +57,6 @@ struct LabSample : IDiagnosable
     public void RunDiagnostics()
         => Console.WriteLine($"Аналіз зразка {SampleId} виконано");
 }
-
-Patient p      = new Patient("Марія Коваль");
-LabSample s    = new LabSample("LAB-2024-099");
-p.RunDiagnostics();
-s.RunDiagnostics();
 
 interface IDiagnosable
 {
@@ -302,8 +302,8 @@ if (asPat != null)
     Console.WriteLine($"Через as: {asPat.Name}");
 
 // явне приведення — кине InvalidCastException якщо тип не відповідає
-Patient explicit = (Patient)diag;
-Console.WriteLine($"Явне: {explicit.Name}");
+Patient castPat = (Patient)diag;
+Console.WriteLine($"Явне: {castPat.Name}");
 
 interface IDiagnosable
 {
