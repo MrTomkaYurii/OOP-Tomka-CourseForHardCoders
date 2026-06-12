@@ -7,5 +7,16 @@
   <assembly fullname="System.Private.CoreLib">
     <type fullname="System.Reflection.MethodBase" preserve="all"/>
     <type fullname="System.Reflection.MethodInfo" preserve="all"/>
+    <type fullname="System.Threading.Thread" preserve="all"/>
+    <type fullname="System.Threading.ThreadStart" preserve="all"/>
+    <type fullname="System.Threading.ParameterizedThreadStart" preserve="all"/>
+    <type fullname="System.Threading.Monitor" preserve="all"/>
+    <type fullname="System.Threading.Mutex" preserve="all"/>
+    <type fullname="System.Threading.Semaphore" preserve="all"/>
+    <type fullname="System.Threading.SemaphoreSlim" preserve="all"/>
+    <type fullname="System.Threading.ManualResetEvent" preserve="all"/>
+    <type fullname="System.Threading.AutoResetEvent" preserve="all"/>
+    <type fullname="System.Threading.Interlocked" preserve="all"/>
+    <type fullname="System.Threading.EventWaitHandle" preserve="all"/>
   </assembly>
 </linker>

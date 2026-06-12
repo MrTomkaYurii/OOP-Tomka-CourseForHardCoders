@@ -17,6 +17,20 @@
             Завантаження C# runner…
         </div>
     </div>
+    <script>
+      // Реєструємо Service Worker для COOP/COEP заголовків (потрібно для WasmEnableThreads)
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/runner/coi-serviceworker.js").then(
+          () => {
+            // Якщо SW щойно встановлено — перезавантажуємо щоб заголовки набули чинності
+            if (!navigator.serviceWorker.controller) {
+              window.location.reload();
+            }
+          },
+          (err) => console.warn("ServiceWorker registration failed:", err)
+        );
+      }
+    </script>
     <script src="js/runner.js?v=13"></script>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>

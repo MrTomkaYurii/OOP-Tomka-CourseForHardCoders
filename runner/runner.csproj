@@ -7,6 +7,9 @@
     <!-- Вимикаємо стиснення щоб DLL файли були доступні через HTTP для Roslyn -->
     <BlazorEnableCompression>false</BlazorEnableCompression>
     <WasmStripILAfterAOT>false</WasmStripILAfterAOT>
+    <WasmEnableThreads>true</WasmEnableThreads>
+    <!-- Підтримка System.Threading.Thread у WASM через SharedArrayBuffer -->
+    <WasmEnableThreads>true</WasmEnableThreads>
   </PropertyGroup>
 
   <ItemGroup>
