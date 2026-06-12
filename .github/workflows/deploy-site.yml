@@ -36,6 +36,7 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Setup GitHub Pages
+        id: pages
         uses: actions/configure-pages@v5
 
       # ── Astro site ────────────────────────────────────────────
@@ -53,13 +54,9 @@ jobs:
       - name: Determine runner base path
         id: base
         run: |
-          REPO="${{ github.event.repository.name }}"
-          OWNER="${{ github.repository_owner }}"
-          if [ "$REPO" = "${OWNER}.github.io" ]; then
-            echo "path=/runner/" >> $GITHUB_OUTPUT
-          else
-            echo "path=/${REPO}/runner/" >> $GITHUB_OUTPUT
-          fi
+          BASE="${{ steps.pages.outputs.base_path }}"
+          BASE="${BASE%/}"
+          echo "path=${BASE}/runner/" >> $GITHUB_OUTPUT
 
       - name: Set runner base href
         run: |
