@@ -17,21 +17,39 @@
             Завантаження C# runner…
         </div>
     </div>
-    <script>
-      // Реєструємо Service Worker для COOP/COEP заголовків (потрібно для WasmEnableThreads)
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/runner/coi-serviceworker.js").then(
-          () => {
-            // Якщо SW щойно встановлено — перезавантажуємо щоб заголовки набули чинності
-            if (!navigator.serviceWorker.controller) {
-              window.location.reload();
-            }
-          },
-          (err) => console.warn("ServiceWorker registration failed:", err)
-        );
-      }
-    </script>
     <script src="js/runner.js?v=13"></script>
-    <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+      // Динамічно завантажуємо Blazor лише тоді, коли crossOriginIsolated = true.
+      // Це потрібно для WasmEnableThreads: Blazor падає при старті якщо SharedArrayBuffer недоступний.
+      //
+      // Логіка:
+      //   crossOriginIsolated = true  → COOP/COEP вже активні (SW працює) → вантажимо Blazor
+      //   crossOriginIsolated = false → встановлюємо SW, перезавантажуємо сторінку (Blazor НЕ вантажимо)
+      //   SW недоступний             → вантажимо Blazor без threading як fallback
+      (function () {
+        function loadBlazor() {
+          var s = document.createElement('script');
+          s.src = '_framework/blazor.webassembly.js';
+          document.body.appendChild(s);
+        }
+
+        if (window.crossOriginIsolated) {
+          // Вже ізольовано — можна запускати Blazor з threading
+          loadBlazor();
+        } else if ('serviceWorker' in navigator) {
+          // Не ізольовано: встановлюємо SW і перезавантажуємо
+          // Blazor не вантажимо — він упаде без SharedArrayBuffer
+          navigator.serviceWorker.register('coi-serviceworker.js').then(function () {
+            window.location.reload();
+          }).catch(function () {
+            // SW не вдалося встановити — вантажимо Blazor як є (без threading)
+            loadBlazor();
+          });
+        } else {
+          // Браузер не підтримує SW (приватний режим Firefox тощо) — fallback
+          loadBlazor();
+        }
+      })();
+    </script>
 </body>
 </html>
