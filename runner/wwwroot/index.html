@@ -37,10 +37,17 @@
           // Вже ізольовано — можна запускати Blazor з threading
           loadBlazor();
         } else if ('serviceWorker' in navigator) {
-          // Не ізольовано: встановлюємо SW і перезавантажуємо
-          // Blazor не вантажимо — він упаде без SharedArrayBuffer
+          // Не ізольовано: встановлюємо SW і перезавантажуємо один раз.
+          // Blazor не вантажимо — він упаде без SharedArrayBuffer.
           navigator.serviceWorker.register('coi-serviceworker.js').then(function () {
-            window.location.reload();
+            if (!navigator.serviceWorker.controller) {
+              // SW щойно зареєстровано і ще не контролює сторінку → потрібен reload
+              window.location.reload();
+            } else {
+              // SW вже активний і контролює, але crossOriginIsolated ще false.
+              // Повторний reload нічого не дасть — вантажимо як fallback.
+              loadBlazor();
+            }
           }).catch(function () {
             // SW не вдалося встановити — вантажимо Blazor як є (без threading)
             loadBlazor();
