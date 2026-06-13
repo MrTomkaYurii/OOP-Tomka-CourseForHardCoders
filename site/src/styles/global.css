@@ -514,6 +514,32 @@ pre {
   color: var(--ink);
 }
 
+.footer-divider {
+  color: var(--muted);
+}
+
+.share-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--muted);
+  transition: color 120ms, background 120ms;
+}
+
+.share-btn:hover {
+  color: var(--accent);
+  background: var(--panel-2);
+}
+
 .datetime-line {
   display: flex;
   min-height: 42px;
