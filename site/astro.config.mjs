@@ -83,7 +83,7 @@ const basePath = process.env.BASE_PATH;
 
 export default defineConfig({
   output: "static",
-  site: repositoryOwner ? `https://${repositoryOwner}.github.io` : "http://localhost:4321",
+  site: "https://tomka.space",
   base: basePath ?? (isGitHubActions && repositoryName && !isUserPagesRepository ? `/${repositoryName}` : "/"),
   vite: {
     plugins: [blazorRunnerDevPlugin(), lectureAssetsDevPlugin()],

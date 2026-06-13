@@ -1,0 +1,59 @@
+---
+import AppShell from "@/components/AppShell.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { sitePath } from "@/utils/paths";
+---
+
+<SiteLayout title="404 — Сторінку не знайдено">
+  <AppShell>
+    <section class="not-found">
+      <p class="not-found-code">404</p>
+      <h1>Сторінку не знайдено</h1>
+      <p>Схоже, цієї сторінки не існує або вона була переміщена.</p>
+      <div class="not-found-actions">
+        <a class="button primary" href={sitePath("/")}>На головну</a>
+        <a class="button" href={sitePath("/lectures/")}>Лекції</a>
+        <a class="button" href={sitePath("/labs/")}>Лабораторні</a>
+      </div>
+    </section>
+  </AppShell>
+</SiteLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px;
+    gap: 16px;
+  }
+
+  .not-found-code {
+    font-size: 96px;
+    font-weight: 850;
+    line-height: 1;
+    color: var(--accent);
+    margin: 0;
+    letter-spacing: -4px;
+  }
+
+  .not-found h1 {
+    font-size: 28px;
+    margin: 0;
+  }
+
+  .not-found > p:not(.not-found-code) {
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .not-found-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 16px;
+  }
+</style>
