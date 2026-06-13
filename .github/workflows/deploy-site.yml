@@ -48,6 +48,7 @@ jobs:
         working-directory: site
         env:
           ASTRO_TELEMETRY_DISABLED: "1"
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: npm run build
 
       # ── Blazor WASM runner ────────────────────────────────────
