@@ -24,19 +24,18 @@ import { sitePath } from "@/utils/paths";
             <p class="eyebrow">{step.module}</p>
             <h2>{step.title}</h2>
             <p>{step.menu}</p>
-            <div class="evolution-columns">
-              <div>
-                <h3>Файли та модулі</h3>
-                <ul>
-                  {step.files.map((file) => <li><code>{file}</code></li>)}
-                </ul>
-              </div>
-              <div>
-                <h3>Поняття</h3>
-                <ul class="tag-list">
-                  {step.concepts.map((concept) => <li>{concept}</li>)}
-                </ul>
-              </div>
+            <div>
+              <h3>Поняття</h3>
+              <ul class="tag-list">
+                {step.concepts.map((concept) => <li>{concept}</li>)}
+              </ul>
+              <p class="real-world">{step.realWorld}</p>
+            </div>
+            <div>
+              <h3>Файли та модулі</h3>
+              <ul>
+                {step.files.map((file) => <li><code>{file}</code></li>)}
+              </ul>
             </div>
           </div>
         </a>

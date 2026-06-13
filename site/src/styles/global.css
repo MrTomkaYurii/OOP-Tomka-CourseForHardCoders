@@ -1541,20 +1541,17 @@ pre {
   color: var(--muted);
 }
 
-.evolution-columns {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
+.evolution-main > div {
   margin-top: 18px;
 }
 
-.evolution-columns h3 {
+.evolution-main > div h3 {
   margin: 0 0 10px;
   font-size: 14px;
   text-transform: uppercase;
 }
 
-.evolution-columns ul {
+.evolution-main > div ul {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1563,7 +1560,7 @@ pre {
   list-style: none;
 }
 
-.evolution-columns li {
+.evolution-main > div li {
   padding: 7px 9px;
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -1572,8 +1569,16 @@ pre {
   font-size: 13px;
 }
 
-.evolution-columns code {
+.evolution-main > div code {
   color: var(--accent);
+}
+
+.real-world {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.5;
 }
 
 .timeline {
@@ -1817,8 +1822,7 @@ pre {
   }
 
   .lab-pager,
-  .evolution-card,
-  .evolution-columns {
+  .evolution-card {
     grid-template-columns: 1fr;
   }
 
