@@ -4,10 +4,64 @@ export type EvolutionStep = {
   title: string;
   module: string;
   menu: string;
+  phase: string;
   files: string[];
   concepts: string[];
   realWorld: string;
+  stats: { files: number; types: number };
 };
+
+export type Phase = {
+  id: string;
+  label: string;
+  title: string;
+  subtitle: string;
+};
+
+export const phases: Phase[] = [
+  {
+    id: "sandbox",
+    label: "Фаза 1",
+    title: "Перший код",
+    subtitle: "Ізольовані задачі без доменної моделі. Базовий синтаксис, масиви, алгоритми.",
+  },
+  {
+    id: "model",
+    label: "Фаза 2",
+    title: "Доменна модель",
+    subtitle: "Проєкт народжується. Класи, типи, інкапсуляція — фундамент системи клініки.",
+  },
+  {
+    id: "oop",
+    label: "Фаза 3",
+    title: "ООП-механіки",
+    subtitle: "Ієрархії, контракти, поліморфізм. Система починає розрізняти типи сутностей.",
+  },
+  {
+    id: "patterns",
+    label: "Фаза 4",
+    title: "Колекції та події",
+    subtitle: "Generics, рефлексія, файли, події — проєкт набуває виробничих звичок .NET.",
+  },
+  {
+    id: "queries",
+    label: "Фаза 5",
+    title: "Запити та функції",
+    subtitle: "LINQ і функціональний стиль перетворюють дані на звіти та аналітику.",
+  },
+  {
+    id: "infra",
+    label: "Фаза 6",
+    title: "UI та база даних",
+    subtitle: "Справжній TUI-інтерфейс і SQL-база. Система стає повноцінним застосунком.",
+  },
+  {
+    id: "arch",
+    label: "Фаза 7",
+    title: "Архітектура",
+    subtitle: "Async/await і SOLID+DI — фінальний рівень: код, готовий до production.",
+  },
+];
 
 export const evolutionSteps: EvolutionStep[] = [
   {
@@ -16,9 +70,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Основи C#",
     module: "Sandbox",
     menu: "Окремий консольний проєкт",
-    files: ["sandbox/intro/Task1.cs ... Task8.cs", "sandbox/intro/Program.cs"],
+    phase: "sandbox",
+    files: ["sandbox/intro/Task1.cs … Task8.cs", "sandbox/intro/Program.cs"],
     concepts: ["базові типи", "умови", "цикли", "static методи", "Console I/O"],
     realWorld: "Фундамент будь-якої програми — від мобільного застосунку до хмарного мікросервісу. Без цих конструкцій не існує жодного production-коду.",
+    stats: { files: 9, types: 0 },
   },
   {
     lab: 2,
@@ -26,9 +82,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Масиви",
     module: "Sandbox",
     menu: "Окремий консольний проєкт",
-    files: ["sandbox/arrays/Task1.cs ... Task8.cs", "sandbox/arrays/Program.cs"],
+    phase: "sandbox",
+    files: ["sandbox/arrays/Task1.cs … Task8.cs", "sandbox/arrays/Program.cs"],
     concepts: ["T[]", "T[,]", "T[][]", "пошук", "сортування", "2D розклад"],
     realWorld: "Матриці пікселів у графіці, звукові буфери, таблиці Excel — все це масиви. Алгоритми пошуку і сортування лежать в основі кожної бази даних і пошукового рушія.",
+    stats: { files: 18, types: 0 },
   },
   {
     lab: 3,
@@ -36,9 +94,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Класи",
     module: "Catalog",
     menu: "Пацієнти, лікарі, записи, звіт",
+    phase: "model",
     files: ["Patient.cs", "Doctor.cs", "Appointment.cs", "PatientManager.cs", "DoctorManager.cs", "AppointmentManager.cs", "Clinic.cs"],
     concepts: ["class", "constructor", "properties", "ToString()", "масив об'єктів"],
     realWorld: "Patient, Doctor, Appointment — ті самі сутності, що живуть у реальних медичних системах (OpenEMR, медичний модуль SAP). Клас — будівельний блок будь-якого OOP-застосунку.",
+    stats: { files: 25, types: 6 },
   },
   {
     lab: 4,
@@ -46,9 +106,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Члени класу",
     module: "Core types",
     menu: "Типи крові, спеціальності, статистика, розклад",
+    phase: "model",
     files: ["Enums/BloodType.cs", "Enums/Speciality.cs", "Enums/AppointmentStatus.cs", "Models/WorkSchedule.cs", "Utils/ClinicFormatter.cs"],
     concepts: ["enum", "struct", "static class", "indexer", "overloading", "out параметр"],
     realWorld: "enum OrderStatus є в кожному інтернет-магазині, struct DateTime і struct Vector3 — в .NET і Unity. Індексатори використовуються в Dictionary<K,V> і колекціях стандартної бібліотеки.",
+    stats: { files: 30, types: 10 },
   },
   {
     lab: 5,
@@ -56,9 +118,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Інкапсуляція",
     module: "Patients+",
     menu: "Валідація і зрозумілі помилки замість падіння",
+    phase: "model",
     files: ["Utils/ClinicValidator.cs", "GrowablePatientManager.cs", "Models/*", "Managers/*"],
     concepts: ["private поля", "явні сеттери", "throw", "try/catch", "namespace"],
-    realWorld: "Кожна форма на сайті та кожен API-endpoint валідує вхідні дані саме так. Явна валідація у сеттерах гарантує, що системаніколи не збережє некоректний стан.",
+    realWorld: "Кожна форма на сайті та кожен API-endpoint валідує вхідні дані саме так. Явна валідація у сеттерах гарантує, що система ніколи не збереже некоректний стан.",
+    stats: { files: 35, types: 14 },
   },
   {
     lab: 6,
@@ -66,9 +130,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Наслідування",
     module: "MedicalRecords",
     menu: "Медична картка",
+    phase: "oop",
     files: ["Models/MedicalRecord.cs", "Models/Diagnosis.cs", "Models/LabResult.cs", "Models/Prescription.cs", "Managers/MedicalRecordManager.cs"],
     concepts: ["abstract class", "virtual", "override", "base()", "is/as"],
     realWorld: "Payment → CashPayment/CardPayment у банківських системах, Document → Invoice/Contract у ERP, Event → ClickEvent/KeyEvent у UI-фреймворках. Abstract class — шаблон для будь-якої ієрархії сутностей.",
+    stats: { files: 40, types: 18 },
   },
   {
     lab: 7,
@@ -76,9 +142,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Інтерфейси",
     module: "Billing",
     menu: "Рахунки",
+    phase: "oop",
     files: ["Interfaces/IPayable.cs", "Interfaces/ICancellable.cs", "Interfaces/ISchedulable.cs", "Managers/BillingManager.cs"],
     concepts: ["interface", "кілька інтерфейсів", "контракти поведінки"],
     realWorld: "IPayable реалізується по-різному для готівки і картки, але система виставляє рахунок однаково — саме так працюють платіжні шлюзи (Stripe, LiqPay, WayForPay).",
+    stats: { files: 44, types: 22 },
   },
   {
     lab: 8,
@@ -86,9 +154,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Поліморфізм",
     module: "Appointments+",
     menu: "Внутрішні типи прийомів",
+    phase: "oop",
     files: ["Models/RegularAppointment.cs", "Models/UrgentAppointment.cs", "Models/SpecialistAppointment.cs"],
     concepts: ["polymorphism", "override", "sealed", "new method hiding"],
     realWorld: "У WPF і WinForms кожен Button, TextBox, ListView є Control — система малює їх через один цикл. В ASP.NET Controller — базовий клас, ваш UserController поліморфно обробляє HTTP-запити.",
+    stats: { files: 47, types: 25 },
   },
   {
     lab: 9,
@@ -96,9 +166,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Generics",
     module: "Waiting",
     menu: "Черга очікування",
+    phase: "patterns",
     files: ["Models/WaitingQueue.cs", "Interfaces/IIdentifiable.cs", "Managers/Repository.cs"],
     concepts: ["List<T>", "Queue<T>", "generic class", "where T : interface"],
     realWorld: "Repository<T> — стандартний патерн доступу до даних у Entity Framework і Dapper: один клас замість окремого коду для кожної сутності. List<T> є в кожному .NET-застосунку.",
+    stats: { files: 50, types: 28 },
   },
   {
     lab: 10,
@@ -106,9 +178,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Ітератори та компаратори",
     module: "Analytics",
     menu: "Аналітика",
+    phase: "patterns",
     files: ["Models/DoctorStats.cs", "Models/PatientStats.cs", "Comparators/*", "Managers/AnalyticsManager.cs"],
     concepts: ["IComparable<T>", "IComparer<T>", "IEnumerable<T>", "yield return"],
     realWorld: "yield return дозволяє читати мільйони рядків з БД без завантаження у пам'ять — саме так Entity Framework стрімить результати. IEnumerable<T> — основа LINQ і всіх колекцій .NET.",
+    stats: { files: 55, types: 32 },
   },
   {
     lab: 11,
@@ -116,17 +190,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Reflection & Attributes",
     module: "Treatment plans",
     menu: "Плани лікування, автогенерація форм",
-    files: [
-      "Attributes/RequiredFieldAttribute.cs",
-      "Attributes/MaxLengthAttribute.cs",
-      "Attributes/ValidRangeAttribute.cs",
-      "Utils/ModelValidator.cs",
-      "Utils/FormBuilder.cs",
-      "Models/TreatmentPlan.cs",
-      "Managers/TreatmentPlanManager.cs",
-    ],
+    phase: "patterns",
+    files: ["Attributes/RequiredFieldAttribute.cs", "Attributes/MaxLengthAttribute.cs", "Attributes/ValidRangeAttribute.cs", "Utils/ModelValidator.cs", "Utils/FormBuilder.cs", "Models/TreatmentPlan.cs", "Managers/TreatmentPlanManager.cs"],
     concepts: ["Attribute", "AttributeUsage", "Reflection", "Type.GetProperties()", "PropertyInfo", "GetCustomAttributes()"],
     realWorld: "[Required], [MaxLength], [Route] в ASP.NET MVC читаються через рефлексію автоматично. Entity Framework, Newtonsoft.Json і Swagger генерують поведінку з атрибутів — без рядка вашого коду.",
+    stats: { files: 62, types: 38 },
   },
   {
     lab: 12,
@@ -134,14 +202,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "File I/O",
     module: "Persistence",
     menu: "Журнал, імпорт, експорт, сесія",
-    files: [
-      "Utils/ClinicLogger.cs",
-      "Utils/CsvExporter.cs",
-      "Utils/CsvImporter.cs",
-      "Utils/SessionManager.cs",
-    ],
+    phase: "patterns",
+    files: ["Utils/ClinicLogger.cs", "Utils/CsvExporter.cs", "Utils/CsvImporter.cs", "Utils/SessionManager.cs"],
     concepts: ["File.WriteAllText", "StreamWriter", "StreamReader", "File.AppendAllText", "CSV parsing", "try/catch з файлами"],
     realWorld: "Кожна CRM і ERP-система має модуль імпорту/експорту CSV і текстові логи. Імпорт прайс-листів, вивантаження звітів у Excel, ротація лог-файлів — щоденна реальність backend-розробника.",
+    stats: { files: 66, types: 40 },
   },
   {
     lab: 13,
@@ -149,15 +214,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Events & Delegates",
     module: "Automation",
     menu: "Автоматичні реакції системи",
-    files: [
-      "Events/AppointmentEvents.cs",
-      "Events/PatientEvents.cs",
-      "Events/BillingEvents.cs",
-      "Utils/PatientPassportWriter.cs",
-      "Utils/SessionEventTracker.cs",
-    ],
+    phase: "patterns",
+    files: ["Events/AppointmentEvents.cs", "Events/PatientEvents.cs", "Events/BillingEvents.cs", "Utils/PatientPassportWriter.cs", "Utils/SessionEventTracker.cs"],
     concepts: ["delegate", "event", "EventHandler<T>", "EventArgs", "subscriber pattern", "+= / -="],
     realWorld: "Паттерн event/delegate — основа WPF, WinForms і SignalR. У веб-застосунках події — це WebSocket-повідомлення реального часу: чати, біржові котирування, медичний моніторинг.",
+    stats: { files: 71, types: 44 },
   },
   {
     lab: 14,
@@ -165,9 +226,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "LINQ",
     module: "Reports",
     menu: "Звіти по спеціальностях, топ, місячна виручка",
+    phase: "queries",
     files: ["Models/SpecialityReport.cs", "Managers/ReportManager.cs"],
     concepts: ["LINQ", "Where", "Select", "GroupBy", "OrderBy", "First/FirstOrDefault", "Sum/Average", "Any/All", "Join"],
     realWorld: "В Entity Framework запити Where, GroupBy, Join транслюються з LINQ у SQL автоматично. Те, що ви пишете тут, генерує реальні SQL-запити до PostgreSQL або MS SQL Server.",
+    stats: { files: 73, types: 46 },
   },
   {
     lab: 15,
@@ -175,16 +238,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Functional C#",
     module: "Filters",
     menu: "Фільтри, процесор, пайплайн",
-    files: [
-      "Extensions/AppointmentExtensions.cs",
-      "Extensions/DoctorExtensions.cs",
-      "Extensions/PatientExtensions.cs",
-      "Managers/AppointmentFilter.cs",
-      "Managers/AppointmentPipeline.cs",
-      "Managers/AppointmentProcessor.cs",
-    ],
+    phase: "queries",
+    files: ["Extensions/AppointmentExtensions.cs", "Extensions/DoctorExtensions.cs", "Extensions/PatientExtensions.cs", "Managers/AppointmentFilter.cs", "Managers/AppointmentPipeline.cs", "Managers/AppointmentProcessor.cs"],
     concepts: ["Func<T>", "Action<T>", "Predicate<T>", "замикання", "методи розширення", "pipeline pattern", "Aggregate"],
     realWorld: "Middleware pipeline в ASP.NET Core, LINQ-ланцюги, RxNET — все це функціональна композиція у production. Методи розширення — стандарт написання виразного та читабельного C# коду.",
+    stats: { files: 79, types: 50 },
   },
   {
     lab: 16,
@@ -192,9 +250,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Console UI",
     module: "Console UI",
     menu: "Повноцінний TUI: таблиці, дерево, BarChart",
+    phase: "infra",
     files: ["UI/ClinicRenderer.cs"],
     concepts: ["Spectre.Console", "Table", "Panel", "Tree", "SelectionPrompt", "BarChart", "Markup"],
     realWorld: "Spectre.Console використовується у реальних CLI-інструментах: dotnet CLI, Azure CLI, GitHub CLI. Навичка будувати TUI необхідна при розробці DevOps-скриптів і адміністративних утиліт.",
+    stats: { files: 80, types: 51 },
   },
   {
     lab: 17,
@@ -202,9 +262,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "EF Core: основи",
     module: "EF Core",
     menu: "Підключення SQLite бази даних",
+    phase: "infra",
     files: ["Data/ClinicDbContext.cs", "Data/DbSeeder.cs"],
     concepts: ["DbContext", "DbSet<T>", "Code-First", "migrations", "OnModelCreating", "HasKey", "seeding"],
     realWorld: "DbContext і Code-First migrations — стандарт у .NET enterprise. Більшість стартапів і корпоративних систем використовують EF Core для роботи з PostgreSQL або SQL Server без написання SQL вручну.",
+    stats: { files: 82, types: 53 },
   },
   {
     lab: 18,
@@ -212,9 +274,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "EF Core: зв'язки",
     module: "EF Core",
     menu: "Зв'язки між таблицями, Include",
+    phase: "infra",
     files: ["Data/ClinicRepository.cs"],
     concepts: ["navigation properties", "Include", "ThenInclude", "HasOne", "HasMany", "WithMany", "FK", "TPH"],
     realWorld: "Правильне завантаження зв'язків через Include — ключова різниця між запитом за 5 мс і зависанням сторінки на 10 секунд. Проблема N+1 запитів — одна з найчастіших причин деградації production-систем.",
+    stats: { files: 83, types: 54 },
   },
   {
     lab: 19,
@@ -222,9 +286,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "EF Core: Advanced",
     module: "EF Core",
     menu: "TPH, Owned Entity, оптимістична конкуренція",
+    phase: "infra",
     files: ["Models/EmergencyContact.cs"],
     concepts: ["OwnsOne", "TPH discriminator", "RowVersion", "IsRowVersion", "оптимістична конкуренція", "DbUpdateConcurrencyException"],
     realWorld: "RowVersion використовують банки і медичні системи, щоб два лікарі не перезаписали одночасно одного пацієнта. Оптимістична конкуренція — стандарт у будь-якій системі з одночасним доступом до даних.",
+    stats: { files: 84, types: 55 },
   },
   {
     lab: 20,
@@ -232,9 +298,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "EF Core: запити",
     module: "EF Core",
     menu: "IQueryable, пагінація, проекції, soft delete",
+    phase: "infra",
     files: ["Data/ClinicQueryService.cs", "Models/PatientSummaryDto.cs", "Models/AppointmentSummaryDto.cs"],
     concepts: ["IQueryable<T>", "AsNoTracking", "Skip/Take", "Select projection", "DTO", "HasQueryFilter", "soft delete", "IsDeleted"],
     realWorld: "Кожен адмін-портал на .NET використовує пагінацію (Skip/Take) і проекції (Select DTO), щоб не тягнути зайві дані з БД. Soft delete — стандарт у regulated-системах, де дані не можна фізично видаляти.",
+    stats: { files: 86, types: 57 },
   },
   {
     lab: 21,
@@ -242,9 +310,11 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "Async / Await",
     module: "Async",
     menu: "Асинхронне меню, дашборд, HTTP клієнт",
+    phase: "arch",
     files: ["Data/AsyncClinicService.cs", "Data/ClinicHttpClient.cs", "Models/ClinicDashboard.cs"],
     concepts: ["async/await", "Task<T>", "Task.WhenAll", "Task.WhenAny", "CancellationToken", "IProgress<T>", "ConfigureAwait(false)", "Parallel.ForEachAsync"],
     realWorld: "ASP.NET Core обробляє тисячі запитів одночасно завдяки async. Без нього кожен HTTP-запит блокував би потік — сервер впав би під навантаженням уже при перших сотнях користувачів.",
+    stats: { files: 89, types: 60 },
   },
   {
     lab: 22,
@@ -252,16 +322,13 @@ export const evolutionSteps: EvolutionStep[] = [
     title: "SOLID + DI",
     module: "Architecture",
     menu: "SOLID демо, DI-контейнер, патерни",
-    files: [
-      "Models/ClinicConfig.cs",
-      "Strategies/ICostStrategy.cs",
-      "Strategies/RegularCostStrategy.cs",
-      "Services/IPatientService.cs",
-      "Services/PatientService.cs",
-      "Services/LoggingPatientService.cs",
-      "Infrastructure/ServiceContainer.cs",
-    ],
+    phase: "arch",
+    files: ["Models/ClinicConfig.cs", "Strategies/ICostStrategy.cs", "Strategies/RegularCostStrategy.cs", "Services/IPatientService.cs", "Services/PatientService.cs", "Services/LoggingPatientService.cs", "Infrastructure/ServiceContainer.cs"],
     concepts: ["SRP", "OCP", "LSP", "ISP", "DIP", "Strategy pattern", "Decorator pattern", "IServiceCollection", "AddSingleton/Scoped/Transient", "primary constructor"],
     realWorld: "DI-контейнер і SOLID — архітектурна основа ASP.NET Core: кожен сервіс реєструється через AddScoped/Singleton і вводиться через конструктор. Це стандарт, який ви побачите в першому ж production-.NET репозиторії.",
+    stats: { files: 96, types: 66 },
   },
 ];
+
+export const MAX_FILES = 96;
+export const MAX_TYPES = 66;

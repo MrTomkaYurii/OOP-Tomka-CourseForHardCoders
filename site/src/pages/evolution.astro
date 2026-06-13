@@ -1,8 +1,13 @@
 ---
 import AppShell from "@/components/AppShell.astro";
 import SiteLayout from "@/layouts/SiteLayout.astro";
-import { evolutionSteps } from "@/data/evolution";
+import { evolutionSteps, phases, MAX_FILES, MAX_TYPES } from "@/data/evolution";
 import { sitePath } from "@/utils/paths";
+
+const stepsByPhase = phases.map((phase) => ({
+  phase,
+  steps: evolutionSteps.filter((s) => s.phase === phase.id),
+}));
 ---
 
 <SiteLayout title="Еволюція проєкту | OOP C# Course">
@@ -10,36 +15,78 @@ import { sitePath } from "@/utils/paths";
     <section class="page-title">
       <p class="eyebrow">Clinic App</p>
       <h1>Еволюція проєкту</h1>
-      <p>Концепція введення основних понять та їх синхронізація із файлами та модулями в розрізі лабораторного заняття.</p>
+      <p>22 лабораторні заняття — один проєкт, що росте від перших рядків до production-архітектури.</p>
     </section>
 
-    <section class="evolution-list">
-      {evolutionSteps.map((step) => (
-        <a class="evolution-card" href={sitePath(`/labs/${step.slug}/`)}>
-          <div class="evolution-index">
-            <span>Lab</span>
-            <strong>{String(step.lab).padStart(2, "0")}</strong>
-          </div>
-          <div class="evolution-main">
-            <p class="eyebrow">{step.module}</p>
-            <h2>{step.title}</h2>
-            <p>{step.menu}</p>
+    <div class="evolution-list">
+      {stepsByPhase.map(({ phase, steps }) => (
+        <Fragment>
+          <div class="phase-header">
+            <span class="phase-label">{phase.label}</span>
             <div>
-              <h3>Поняття</h3>
-              <ul class="tag-list">
-                {step.concepts.map((concept) => <li>{concept}</li>)}
-              </ul>
-              <p class="real-world">{step.realWorld}</p>
-            </div>
-            <div>
-              <h3>Файли та модулі</h3>
-              <ul>
-                {step.files.map((file) => <li><code>{file}</code></li>)}
-              </ul>
+              <h2>{phase.title}</h2>
+              <p>{phase.subtitle}</p>
             </div>
           </div>
-        </a>
+          {steps.map((step) => {
+            const filesW = Math.round((step.stats.files / MAX_FILES) * 100);
+            const typesW = Math.round((step.stats.types / MAX_TYPES) * 100);
+            return (
+              <a class="evolution-card" href={sitePath(`/labs/${step.slug}/`)}>
+                <div class="evolution-index">
+                  <span>Lab</span>
+                  <strong>{String(step.lab).padStart(2, "0")}</strong>
+                </div>
+                <div class="evolution-main">
+                  <p class="eyebrow">{step.module}</p>
+                  <h2>{step.title}</h2>
+                  <p>{step.menu}</p>
+                  <div class="evolution-concepts">
+                    <h3>Поняття</h3>
+                    <ul class="tag-list">
+                      {step.concepts.map((c) => <li>{c}</li>)}
+                    </ul>
+                    <p class="real-world">{step.realWorld}</p>
+                  </div>
+                  <div class="evolution-bottom">
+                    <div class="evolution-files">
+                      <h3>Нові файли</h3>
+                      <ul class="diff-list">
+                        {step.files.map((f) => (
+                          <li>
+                            <span class="diff-plus">+</span>
+                            <code>{f}</code>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div class="evolution-stats">
+                      <div class="stat-row">
+                        <div class="stat-label">
+                          <span>Файлів у проєкті</span>
+                          <strong>{step.stats.files}</strong>
+                        </div>
+                        <div class="stat-bar">
+                          <div class="stat-fill" style={`width:${filesW}%`}></div>
+                        </div>
+                      </div>
+                      <div class="stat-row">
+                        <div class="stat-label">
+                          <span>Типів C#</span>
+                          <strong>{step.stats.types}</strong>
+                        </div>
+                        <div class="stat-bar">
+                          <div class="stat-fill stat-fill-types" style={`width:${typesW}%`}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </Fragment>
       ))}
-    </section>
+    </div>
   </AppShell>
 </SiteLayout>
