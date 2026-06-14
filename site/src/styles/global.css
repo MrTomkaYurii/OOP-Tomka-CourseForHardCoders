@@ -1843,6 +1843,17 @@ pre {
 
 /* ── Neon accents ────────────────────────────────────────────────────────── */
 
+@keyframes neon-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(118, 199, 173, 0.5), 0 0 3px rgba(118, 199, 173, 0.7); }
+  50%       { box-shadow: 0 0 22px rgba(118, 199, 173, 0.85), 0 0 8px rgba(118, 199, 173, 1), 0 0 40px rgba(118, 199, 173, 0.3); }
+}
+
+@keyframes neon-stripe-scan {
+  0%   { opacity: 0.7; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
 /* Neon top stripe — тільки темна тема */
 [data-theme="dark"] body::before {
   content: "";
@@ -1850,25 +1861,31 @@ pre {
   top: 0;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 3px;
   z-index: 200;
   background: linear-gradient(
     90deg,
-    transparent 5%,
-    var(--accent) 30%,
-    rgba(170, 230, 215, 0.9) 50%,
-    var(--accent) 70%,
-    transparent 95%
+    transparent 0%,
+    rgba(118, 199, 173, 0.4) 15%,
+    var(--accent) 35%,
+    #a8f0de 50%,
+    var(--accent) 65%,
+    rgba(118, 199, 173, 0.4) 85%,
+    transparent 100%
   );
-  box-shadow: 0 0 14px rgba(118, 199, 173, 0.7);
+  box-shadow: 0 0 18px rgba(118, 199, 173, 0.8), 0 0 6px rgba(170, 240, 220, 0.6);
+  animation: neon-stripe-scan 3s ease-in-out infinite;
 }
 
-/* Brand mark glow — завжди */
+/* Brand mark — пульсуючий неон */
 .brand-mark {
   box-shadow: var(--glow-badge);
-  transition:
-    box-shadow 240ms ease,
-    background 160ms ease;
+  transition: box-shadow 240ms ease;
+}
+
+[data-theme="dark"] .brand-mark {
+  animation: neon-pulse 2.8s ease-in-out infinite;
+  border-color: rgba(118, 199, 173, 0.6);
 }
 
 /* Active top-nav link */
@@ -1902,27 +1919,28 @@ pre {
   box-shadow: var(--glow-badge);
 }
 
-/* Time badge glow */
-.datetime-line time {
-  box-shadow: var(--glow-badge);
+/* Time badge — неон */
+[data-theme="dark"] .datetime-line time {
+  box-shadow: 0 0 10px rgba(118, 199, 173, 0.5);
+  border-color: rgba(118, 199, 173, 0.4);
 }
 
 /* Code blocks ambient glow — тільки темна тема */
 [data-theme="dark"] .markdown-body pre {
   box-shadow:
-    0 0 30px rgba(118, 199, 173, 0.07),
-    inset 0 0 0 1px rgba(118, 199, 173, 0.06);
+    0 0 30px rgba(118, 199, 173, 0.08),
+    inset 0 0 0 1px rgba(118, 199, 173, 0.08);
 }
 
-/* Hero ambient glow — тільки темна тема */
+/* Hero ambient glow + text-shadow — тільки темна тема */
 [data-theme="dark"] .hero-copy,
 [data-theme="dark"] .lab-hero {
-  box-shadow: 0 0 48px rgba(118, 199, 173, 0.09), var(--shadow);
+  box-shadow: 0 0 60px rgba(118, 199, 173, 0.12), var(--shadow);
 }
 
 [data-theme="dark"] .hero h1,
 [data-theme="dark"] .lab-hero h1 {
-  text-shadow: 0 0 32px rgba(118, 199, 173, 0.2);
+  text-shadow: 0 0 40px rgba(118, 199, 173, 0.28), 0 0 12px rgba(118, 199, 173, 0.15);
 }
 
 @media (max-width: 1100px) {
