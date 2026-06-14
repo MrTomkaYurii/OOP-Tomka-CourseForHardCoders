@@ -17,6 +17,8 @@
   --hover-bg: #edf2ef;
   --code-inline-bg: #edf2ef;
   --quote-bg: #f0f4f2;
+  --glow-card: 0 0 0 1px rgba(47, 125, 104, 0.22), 0 8px 28px rgba(47, 125, 104, 0.13);
+  --glow-badge: 0 0 8px rgba(47, 125, 104, 0.28);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -41,6 +43,8 @@
   --hover-bg: #242d29;
   --code-inline-bg: #22302b;
   --quote-bg: #1d2925;
+  --glow-card: 0 0 0 1px rgba(118, 199, 173, 0.38), 0 8px 32px rgba(118, 199, 173, 0.18);
+  --glow-badge: 0 0 14px rgba(118, 199, 173, 0.55), 0 0 4px rgba(118, 199, 173, 0.75);
 }
 
 * {
@@ -1835,6 +1839,90 @@ pre {
   color: var(--muted);
   font-style: normal;
   line-height: 1.45;
+}
+
+/* ── Neon accents ────────────────────────────────────────────────────────── */
+
+/* Neon top stripe — тільки темна тема */
+[data-theme="dark"] body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 200;
+  background: linear-gradient(
+    90deg,
+    transparent 5%,
+    var(--accent) 30%,
+    rgba(170, 230, 215, 0.9) 50%,
+    var(--accent) 70%,
+    transparent 95%
+  );
+  box-shadow: 0 0 14px rgba(118, 199, 173, 0.7);
+}
+
+/* Brand mark glow — завжди */
+.brand-mark {
+  box-shadow: var(--glow-badge);
+  transition:
+    box-shadow 240ms ease,
+    background 160ms ease;
+}
+
+/* Active top-nav link */
+.nav-link.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Cards — neon border + glow on hover */
+.lab-card:hover,
+.lecture-card:hover,
+.lecture-mini:hover,
+.lecture-search-card:hover,
+.evolution-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--glow-card);
+}
+
+.pager-card:hover {
+  box-shadow: var(--glow-card);
+}
+
+.timeline-row:hover {
+  border-color: var(--accent);
+  box-shadow: var(--glow-card);
+}
+
+/* Active sidebar badge glow */
+.lecture-nav-link.active span {
+  box-shadow: var(--glow-badge);
+}
+
+/* Time badge glow */
+.datetime-line time {
+  box-shadow: var(--glow-badge);
+}
+
+/* Code blocks ambient glow — тільки темна тема */
+[data-theme="dark"] .markdown-body pre {
+  box-shadow:
+    0 0 30px rgba(118, 199, 173, 0.07),
+    inset 0 0 0 1px rgba(118, 199, 173, 0.06);
+}
+
+/* Hero ambient glow — тільки темна тема */
+[data-theme="dark"] .hero-copy,
+[data-theme="dark"] .lab-hero {
+  box-shadow: 0 0 48px rgba(118, 199, 173, 0.09), var(--shadow);
+}
+
+[data-theme="dark"] .hero h1,
+[data-theme="dark"] .lab-hero h1 {
+  text-shadow: 0 0 32px rgba(118, 199, 173, 0.2);
 }
 
 @media (max-width: 1100px) {

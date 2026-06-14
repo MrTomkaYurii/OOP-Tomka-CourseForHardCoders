@@ -78,6 +78,12 @@ public class CSharpRunner
                 sb.Append("\n[Браузер] System.Threading.Thread не підтримується у браузері (WebAssembly однопоточний).\nВідкрий цей приклад у dotnetfiddle.net — там працює повноцінний .NET.");
                 return new RunResult(false, sb.ToString());
             }
+            else if (inner is MissingMethodException)
+            {
+                sb.Append($"\n[{inner.GetType().Name}] {inner.Message}");
+                sb.Append("\n\n[Браузер] Цей API недоступний у WebAssembly runner.\nВідкрий цей приклад у dotnetfiddle.net — там працює повноцінний .NET.");
+                return new RunResult(false, sb.ToString());
+            }
             sb.Append($"\n[{inner.GetType().Name}] {inner.Message}");
             return new RunResult(false, sb.ToString());
         }
