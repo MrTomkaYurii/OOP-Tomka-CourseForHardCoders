@@ -243,3 +243,109 @@ switch (staff)
 ```
 
 Компілятор попереджає про недосяжні case, але відповідальність за правильний порядок — на програмісті.
+
+## Антипатерн: ланцюг if-else з is та явним cast
+
+До появи pattern matching стандартним способом перевірки типу була комбінація `is` для перевірки і явного cast `(Тип)значення` для доступу до членів. Цей підхід досі зустрічається у старому коді та є антипатерном у сучасному C#:
+
+```csharp
+// АНТИПАТЕРН — стара форма: тип перевіряється двічі, потім cast вручну
+void ProcessStaff(MedicalStaff s)
+{
+    if (s is Doctor)
+    {
+        Doctor doc = (Doctor)s;              // тип дублюється: is Doctor і (Doctor)
+        Console.WriteLine(doc.Specialty);
+    }
+    else if (s is Nurse)
+    {
+        Nurse nurse = (Nurse)s;
+        Console.WriteLine(nurse.Ward);
+    }
+    else if (s is Administrator)
+    {
+        Administrator admin = (Administrator)s;
+        Console.WriteLine(admin.Department);
+    }
+}
+```
+
+Цей стиль має три проблеми. По-перше, **дублювання типу**: перевірка `is Doctor` і наступний `(Doctor)s` — це дві операції над одним і тим самим фактом. По-друге, **крихкість при рефакторингу**: якщо хтось змінить перевірку `is Doctor` на `is Surgeon`, але забуде оновити cast — отримає `InvalidCastException` у runtime. По-третє, **відсутність вичерпності**: якщо до ієрархії додати новий тип `Paramedic`, компілятор не попередить, що він не оброблений у жодній гілці — виконання мовчки пройде мимо.
+
+Стара форма через `as + null-check` трохи краща (немає подвійного cast), але все одно потребує двох кроків і не дає binding у вужчій області видимості:
+
+```csharp
+// as + null-check: один cast, але binding поза блоком if
+Doctor? doc = s as Doctor;
+if (doc != null)
+    Console.WriteLine(doc.Specialty);
+
+// doc досі видимий тут — хоч може бути null
+```
+
+**Правильний підхід** — switch expression із type pattern. Одна операція перевіряє тип і прив'язує змінну; вираз повертає значення; exhaustiveness перевіряється компілятором через `_`:
+
+```csharp run
+using System;
+
+MedicalStaff[] staff =
+{
+    new Doctor("Петренко О.", "Кардіологія"),
+    new Doctor("Мельник Т.", "Неврологія") { IsOnLeave = true },
+    new Nurse("Іванова М.", "Кардіологія"),
+    new Administrator("Бойко Р.", "Реєстратура"),
+};
+
+foreach (var person in staff)
+    Console.WriteLine(Describe(person));
+
+// switch expression: тип + властивість в одному місці, повертає рядок
+string Describe(MedicalStaff s) => s switch
+{
+    Doctor { IsOnLeave: true } doc
+        => $"Лікар {doc.Name} ({doc.Specialty}) — у відпустці",
+    Doctor doc
+        => $"Лікар {doc.Name} ({doc.Specialty}) — на зміні",
+    Nurse nurse
+        => $"Медсестра {nurse.Name}, відділення {nurse.Ward}",
+    Administrator admin
+        => $"Адміністратор {admin.Name}, {admin.Department}",
+    null
+        => "(порожнє посилання)",
+    _
+        => $"Невідома роль: {s.GetType().Name}"
+};
+
+class MedicalStaff
+{
+    public string Name { get; }
+    public MedicalStaff(string name) => Name = name;
+}
+class Doctor : MedicalStaff
+{
+    public string Specialty { get; }
+    public bool IsOnLeave { get; init; }
+    public Doctor(string name, string specialty) : base(name) => Specialty = specialty;
+}
+class Nurse : MedicalStaff
+{
+    public string Ward { get; }
+    public Nurse(string name, string ward) : base(name) => Ward = ward;
+}
+class Administrator : MedicalStaff
+{
+    public string Department { get; }
+    public Administrator(string name, string dept) : base(name) => Department = dept;
+}
+```
+
+Switch expression перевіряє тип і прив'язує змінну **в одній операції** (`Doctor doc`) — жодного зайвого cast, жодного дублювання. Вбудований property pattern (`{ IsOnLeave: true }`) дозволяє уточнити умову без окремого `if`. Гілка `_` — запасний варіант для нових типів: IDE одразу підказує додати `case Paramedic`, щойно такий клас з'явиться у ієрархії.
+
+| | Старий if-else + cast | Switch expression |
+|---|---|---|
+| Кількість операцій для перевірки типу | 2 (`is` + явний cast) | 1 (type pattern) |
+| Ризик `InvalidCastException` | Є при неузгодженому рефакторингу | Відсутній |
+| Прив'язка змінної | Окрема оголошення після блоку `if` | Вбудована (`Doctor doc`) |
+| Перевірка властивостей | Окремий вкладений `if` | Вбудований property pattern |
+| Повертає значення | Ні — лише виконує дії | Так — вираз, можна присвоїти |
+| Контроль нових типів | Мовчазний пропуск | IDE пропонує додати case |

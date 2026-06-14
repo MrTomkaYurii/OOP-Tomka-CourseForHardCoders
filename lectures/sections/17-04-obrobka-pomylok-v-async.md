@@ -340,3 +340,91 @@ Console.WriteLine($"Отримано: {data}");
 ```
 
 Загальне правило: **async вниз по стеку до кінця**. Якщо один метод async — всі методи, що його викликають, теж мають бути async. Змішування синхронного і асинхронного коду через `.Result` є джерелом найважчих для діагностики дедлоків.
+
+## ConfigureAwait(false) та SynchronizationContext
+
+Щоб зрозуміти `ConfigureAwait(false)`, потрібно спочатку зрозуміти **SynchronizationContext**. Це механізм, що дозволяє продовженню (continuation) після `await` повернутися до «правильного» потоку:
+
+- У **WinForms/WPF**: після `await` виконання продовжується у **потоці UI** — щоб можна було оновити елементи форми
+- У **ASP.NET Classic**: після `await` виконання повертається до **того самого HTTP-потоку**
+- У **ASP.NET Core** і **консольних** застосунках: SynchronizationContext відсутній, `await` продовжується у довільному ThreadPool-потоці
+
+Саме через SynchronizationContext і виникає класичний дедлок з `.Result`:
+
+```
+1. Потік UI (або HTTP-потік) викликає GetDataAsync().Result
+2. GetDataAsync() всередині робить await Task.Delay(100)
+3. Task.Delay завершується — continuation чекає захоплення потоку UI
+4. Але потік UI заблокований на .Result!
+5. Дедлок: потік UI чекає Task, Task чекає потік UI
+```
+
+`ConfigureAwait(false)` каже `await`: «не намагайся повертатись на той самий SynchronizationContext — продовжуй у ThreadPool-потоці». Це ламає дедлок і підвищує продуктивність у бібліотечному коді:
+
+```csharp run
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+async Task<string> LibraryMethodAsync()
+{
+    // ConfigureAwait(false): після await продовжуємо в ThreadPool, не на UI-потоці
+    await Task.Delay(100).ConfigureAwait(false);
+    
+    // Ця частина виконується в ThreadPool — НЕ чіпати UI-елементи тут!
+    Console.WriteLine($"[Library] Потік: {Thread.CurrentThread.ManagedThreadId} (ThreadPool)");
+    
+    return "результат";
+}
+
+async Task AppMethodAsync()
+{
+    // У застосунку: await БЕЗ ConfigureAwait(false) — повертаємось на UI-потік
+    // (у консолі SynchronizationContext == null, тому різниці немає)
+    string result = await LibraryMethodAsync();
+    
+    Console.WriteLine($"[App] Потік: {Thread.CurrentThread.ManagedThreadId}");
+    Console.WriteLine($"[App] Результат: {result}");
+}
+
+Console.WriteLine($"[Main] Стартовий потік: {Thread.CurrentThread.ManagedThreadId}");
+await AppMethodAsync();
+```
+
+**Правило використання `ConfigureAwait(false)`:**
+
+| Де | Рекомендація |
+|----|-------------|
+| **Бібліотечний код** (NuGet-пакети, спільні сервіси) | **Завжди** `ConfigureAwait(false)` — бібліотека не знає, де її використають |
+| **Код застосунку** (UI, контролери) | **Без** `ConfigureAwait(false)` — потрібно оновлювати UI або залишатись у контексті HTTP-запиту |
+| **ASP.NET Core** | Можна не турбуватись — SynchronizationContext відсутній, `ConfigureAwait(false)` нічого не змінює |
+
+```csharp run
+using System;
+using System.Threading.Tasks;
+
+// Бібліотечний метод — ConfigureAwait(false) скрізь
+async Task<byte[]> ReadMedicalFileAsync(string path)
+{
+    // Симуляція читання файлу
+    await Task.Delay(50).ConfigureAwait(false);
+    await Task.Delay(30).ConfigureAwait(false);
+    
+    // Повертаємо результат — caller сам вирішить, що з ним робити
+    byte[] fakeData = { 0x50, 0x44, 0x46 }; // "PDF" header
+    Console.WriteLine("[Lib] Файл зчитано");
+    return fakeData;
+}
+
+// Код застосунку — await без ConfigureAwait(false)
+async Task HandlePatientDocumentAsync(string patientId)
+{
+    Console.WriteLine($"[App] Читаю документ для {patientId}...");
+    
+    byte[] content = await ReadMedicalFileAsync($"/records/{patientId}.pdf");
+    
+    // Тут ми в правильному контексті — можна оновити UI або зберегти в БД
+    Console.WriteLine($"[App] Документ отримано, розмір: {content.Length} байт");
+}
+
+await HandlePatientDocumentAsync("PT-1001");

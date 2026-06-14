@@ -374,3 +374,138 @@ class Patient
 Делегат `PatientHandler` тепер приймає два параметри: перший — об'єкт `Patient`, що є джерелом події (відправник), другий — `PatientEventArgs` із деталями операції. Перший параметр `this` передає посилання на сам об'єкт `Patient`, тому обробник може звернутися до будь-якого стану пацієнта — наприклад, прочитати поточний баланс. Другий параметр містить повідомлення і суму операції.
 
 Такий патерн — `(sender, eventArgs)` — є стандартним у .NET і використовується у бібліотечних подіях: `Button.Click`, `Timer.Elapsed`, `HttpClient` — усі вони слідують цій же конвенції. У реальних проектах `PatientEventArgs` зазвичай успадковують від `System.EventArgs`, а делегат замінюють вбудованим `EventHandler<T>`, що буде розглянуто пізніше.
+
+## Антипатерн: витік пам'яті через незвільнені підписки
+
+Підписка на подію через `+=` створює посилання від **видавця** (publisher) до **підписника** (subscriber). Якщо видавець — довготривалий об'єкт (наприклад, статичний клас або синглтон), а підписник — об'єкт із коротким циклом життя, сміттєзбирач (GC) **не зможе видалити** підписника, доки він залишається в списку обробників події.
+
+Це — **витік пам'яті через події**: об'єкти, які мали б зібратися GC, залишаються живими через приховане посилання з події.
+
+```csharp run
+using System;
+
+// Видавець — довгоживучий (симулюємо статичним полем)
+var hospitalSystem = new HospitalMonitor();
+
+Console.WriteLine("=== Реєструємо 3 монітори пацієнтів ===");
+for (int i = 1; i <= 3; i++)
+{
+    var monitor = new PatientMonitor($"Monitor-{i}");
+    monitor.Subscribe(hospitalSystem);
+    // monitor виходить зі scope — але GC НЕ збере його!
+}
+
+GC.Collect();
+GC.WaitForPendingFinalizers();
+
+Console.WriteLine($"\nПісля GC.Collect() — живих підписників: {hospitalSystem.SubscriberCount}");
+Console.WriteLine("(Очікували 0, але всі 3 залишились — витік пам'яті!)");
+
+Console.WriteLine("\n=== Сигнал тривоги — усі підписники ще реагують ===");
+hospitalSystem.RaiseAlert("Критичний показник у палаті 5");
+
+// Клас без відписки — витік пам'яті
+class PatientMonitor
+{
+    public string Name { get; }
+    public PatientMonitor(string name) { Name = name; Console.WriteLine($"[{name}] Створено"); }
+    
+    public void Subscribe(HospitalMonitor monitor) =>
+        monitor.AlertRaised += OnAlert; // підписуємось, але ніколи не відписуємось!
+    
+    void OnAlert(string message) =>
+        Console.WriteLine($"  [{Name}] Отримав сигнал: {message}");
+    
+    ~PatientMonitor() => Console.WriteLine($"[{Name}] Фіналізовано (GC зібрав)");
+}
+
+class HospitalMonitor
+{
+    private event Action<string>? _alertRaised;
+    
+    public event Action<string> AlertRaised
+    {
+        add    { _alertRaised += value; }
+        remove { _alertRaised -= value; }
+    }
+    
+    public int SubscriberCount =>
+        _alertRaised?.GetInvocationList().Length ?? 0;
+    
+    public void RaiseAlert(string message) => _alertRaised?.Invoke(message);
+}
+```
+
+```csharp run
+using System;
+
+// Правильний патерн: завжди відписуватися або реалізовувати IDisposable
+var hospitalSystem = new HospitalMonitor();
+
+Console.WriteLine("=== Правильно: відписка через IDisposable ===");
+var monitor1 = new PatientMonitorSafe("Monitor-1", hospitalSystem);
+var monitor2 = new PatientMonitorSafe("Monitor-2", hospitalSystem);
+
+Console.WriteLine($"Підписників: {hospitalSystem.SubscriberCount}"); // 2
+
+hospitalSystem.RaiseAlert("Тест");
+
+monitor1.Dispose(); // відписка
+Console.WriteLine($"\nПісля monitor1.Dispose(): {hospitalSystem.SubscriberCount} підписник");
+
+monitor2.Dispose();
+Console.WriteLine($"Після monitor2.Dispose(): {hospitalSystem.SubscriberCount} підписників");
+
+GC.Collect();
+GC.WaitForPendingFinalizers();
+Console.WriteLine("GC не має що збирати — об'єкти коректно звільнені");
+
+// Правильний клас: реалізує IDisposable для відписки
+class PatientMonitorSafe : IDisposable
+{
+    private readonly HospitalMonitor _source;
+    public string Name { get; }
+    
+    public PatientMonitorSafe(string name, HospitalMonitor source)
+    {
+        Name = name;
+        _source = source;
+        _source.AlertRaised += OnAlert; // підписуємось
+        Console.WriteLine($"[{name}] Підписано");
+    }
+    
+    void OnAlert(string message) =>
+        Console.WriteLine($"  [{Name}] Сигнал: {message}");
+    
+    public void Dispose()
+    {
+        _source.AlertRaised -= OnAlert; // ОБОВ'ЯЗКОВО відписуємось
+        Console.WriteLine($"[{Name}] Відписано");
+    }
+    
+    ~PatientMonitorSafe() => Console.WriteLine($"[{Name}] GC зібрав");
+}
+
+class HospitalMonitor
+{
+    private event Action<string>? _alertRaised;
+    public event Action<string> AlertRaised
+    {
+        add    { _alertRaised += value; }
+        remove { _alertRaised -= value; }
+    }
+    public int SubscriberCount => _alertRaised?.GetInvocationList().Length ?? 0;
+    public void RaiseAlert(string message) => _alertRaised?.Invoke(message);
+}
+```
+
+**Правила безпечної роботи з подіями:**
+
+| Сценарій | Рекомендація |
+|----------|-------------|
+| Підписник живе стільки ж, скільки видавець | Відписка необов'язкова, але бажана для ясності |
+| Підписник має коротший цикл життя | Реалізуйте `IDisposable`, відписуйтесь у `Dispose()` |
+| Підписка через лямбду | Збережіть лямбду у поле, щоб можна було передати в `-=` |
+| Відписатися від усіх одразу | У класі-видавці зробіть метод `ClearSubscriptions()` |
+
+Правило просте: **кожному `+=` має відповідати `-=`** у відповідному місці (Dispose, Close, деструктор або явна очистка).

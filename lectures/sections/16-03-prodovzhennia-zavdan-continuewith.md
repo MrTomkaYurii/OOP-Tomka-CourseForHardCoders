@@ -229,3 +229,95 @@ Console.WriteLine("[Main] Ланцюг обробки завершено");
 ```
 
 Такий підхід дозволяє будувати надійні ланцюги з розгалуженням на успішний і помилковий шляхи, не вдаючись до вкладених `try/catch` всередині кожного кроку.
+
+## TaskCompletionSource — Task під ручним керуванням
+
+`Task.Run()` і `new Task(...)` створюють завдання, що виконують певний делегат у ThreadPool. Але іноді потрібен `Task`, що завершується **не через виконання делегата**, а в момент, коли ми самі вирішуємо. Наприклад:
+
+- Потрібно обернути callback-based API в async-стиль
+- Потрібно «сигналізувати» між частинами системи через Task
+- Потрібно створити Task, що чекає зовнішньої події (таймер, WebSocket-повідомлення, результат від іншого сервісу)
+
+Для цього існує `TaskCompletionSource<T>` (або `TaskCompletionSource` без типового параметру для `Task`):
+
+```csharp
+var tcs = new TaskCompletionSource<string>();
+
+Task<string> task = tcs.Task; // Task, що "ще не завершений"
+
+// Пізніше, в будь-якому місці:
+tcs.SetResult("значення");    // Task завершується успішно
+tcs.SetException(ex);         // Task завершується з помилкою
+tcs.SetCanceled();            // Task скасовується
+```
+
+```csharp run
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+// Симуляція: очікуємо результат аналізу з лабораторії
+// Лабораторія "дзвонить" нам через callback — ми хочемо перетворити це на Task
+
+TaskCompletionSource<string> analysisResult = new TaskCompletionSource<string>();
+
+// Симулюємо "фонову лабораторну систему", що надсилає результат через 300 мс
+Thread labSystem = new Thread(() =>
+{
+    Thread.Sleep(300);
+    Console.WriteLine("[Лабораторія] Аналіз завершено, надсилаю результат...");
+    
+    // "Сигналізуємо" очікуючому завданню
+    analysisResult.SetResult("Гемоглобін: 128 г/л — норма, Глюкоза: 5.4 ммоль/л — норма");
+});
+labSystem.IsBackground = true;
+labSystem.Start();
+
+// Головний потік чекає результат через Task — не через Thread.Join або callback
+Console.WriteLine("[Лікар] Замовив аналіз, чекаю результату...");
+string result = await analysisResult.Task; // блокує асинхронно, а не синхронно
+Console.WriteLine($"[Лікар] Результат отримано: {result}");
+```
+
+```csharp run
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+// TaskCompletionSource з обробкою помилок
+TaskCompletionSource<byte[]> imageLoad = new TaskCompletionSource<byte[]>();
+
+Thread medicalImaging = new Thread(() =>
+{
+    Thread.Sleep(200);
+    
+    bool networkError = true; // симуляція помилки
+    if (networkError)
+    {
+        imageLoad.SetException(
+            new TimeoutException("Сервер DICOM-зображень не відповідає (timeout 200ms)"));
+    }
+    else
+    {
+        imageLoad.SetResult(new byte[] { 0xFF, 0xD8, 0xFF }); // JPEG header
+    }
+});
+medicalImaging.IsBackground = true;
+medicalImaging.Start();
+
+Console.WriteLine("[PACS] Запитую рентгенівський знімок...");
+try
+{
+    byte[] image = await imageLoad.Task;
+    Console.WriteLine($"[PACS] Зображення отримано: {image.Length} байт");
+}
+catch (TimeoutException ex)
+{
+    Console.WriteLine($"[PACS] Помилка: {ex.Message}");
+    Console.WriteLine("[PACS] Призначено повторний запит через 5 хв");
+}
+```
+
+`TaskCompletionSource` є «мостом» між callback/event-моделлю і сучасним async/await. Якщо ви отримали API зі старою моделлю (`BeginXxx/EndXxx`, `EventHandler`, callbacks) — `TaskCompletionSource` перетворює її у `Task`, який можна `await`-ити.
+
+Важливо: після виклику `SetResult`, `SetException` або `SetCanceled` стан Task зафіксований — повторний виклик кине `InvalidOperationException`. Для «одноразового сигналу» є зручна альтернатива `TrySetResult`/`TrySetException`/`TrySetCanceled`, що повертають `bool` замість кидання винятку.

@@ -288,3 +288,135 @@ lock (lockB) { lock (lockA) { /* ... */ } } // ← DEADLOCK
 ```
 
 Основне правило запобігання дедлоку: **завжди захоплюйте кілька замків в одному й тому самому порядку** у всіх потоках. Якщо усі потоки завжди блокують A перед B — дедлок неможливий. Проектування системи синхронізації так, щоб замки захоплювались в єдиному передбаченому порядку, є важливим аспектом архітектури паралельних систем.
+
+## Клас Interlocked — атомарні операції без lock
+
+Для простих операцій над числами (збільшення, зменшення, додавання, обмін) використання `lock` є надмірним — воно дорожче через захоплення та звільнення монітора. Клас `System.Threading.Interlocked` надає **атомарні** методи, що виконуються процесором як одна неподільна операція без захоплення замку:
+
+| Метод | Опис |
+|-------|------|
+| `Interlocked.Increment(ref n)` | Атомарний `n++` |
+| `Interlocked.Decrement(ref n)` | Атомарний `n--` |
+| `Interlocked.Add(ref n, value)` | Атомарний `n += value` |
+| `Interlocked.Exchange(ref n, value)` | Атомарний `n = value`, повертає старе |
+| `Interlocked.CompareExchange(ref n, value, comparand)` | Якщо `n == comparand`, то `n = value` |
+
+```csharp run
+using System;
+using System.Threading;
+
+// Лічильник записів пацієнтів — атомарні операції без lock
+int appointmentCount = 0;
+int cancelledCount   = 0;
+
+Thread[] receptionists = new Thread[4];
+for (int i = 0; i < 4; i++)
+{
+    receptionists[i] = new Thread(() =>
+    {
+        for (int j = 0; j < 250; j++)
+        {
+            Interlocked.Increment(ref appointmentCount); // атомарний ++
+            
+            if (j % 10 == 0) // кожен десятий скасовуємо
+                Interlocked.Increment(ref cancelledCount);
+        }
+    });
+}
+
+foreach (Thread t in receptionists) t.Start();
+foreach (Thread t in receptionists) t.Join();
+
+int active = appointmentCount - cancelledCount;
+Console.WriteLine($"Всього записів:    {appointmentCount}");   // завжди 1000
+Console.WriteLine($"Скасовано:         {cancelledCount}");     // завжди 100
+Console.WriteLine($"Активних записів:  {active}");             // завжди 900
+```
+
+`Interlocked.CompareExchange` — атомарна операція «порівняй і встанови» (CAS, Compare-And-Swap). Вона встановлює нове значення тільки якщо поточне дорівнює очікуваному. Це основа для lock-free алгоритмів:
+
+```csharp run
+using System;
+using System.Threading;
+
+int _status = 0; // 0 = вільно, 1 = зайнято
+
+bool TryAcquire()
+{
+    // Атомарно: якщо _status == 0, встановити 1, повернути старе значення
+    int previous = Interlocked.CompareExchange(ref _status, 1, 0);
+    return previous == 0; // true якщо вдалось захопити (було 0)
+}
+
+void Release()
+{
+    Interlocked.Exchange(ref _status, 0); // атомарно скинути в 0
+}
+
+// Симуляція захоплення ресурсу (наприклад, апарату УЗД)
+Thread[] technicians = new Thread[3];
+for (int i = 0; i < 3; i++)
+{
+    int num = i + 1;
+    technicians[i] = new Thread(() =>
+    {
+        if (TryAcquire())
+        {
+            Console.WriteLine($"Технік-{num}: УЗД-апарат захоплено, обстежую...");
+            Thread.Sleep(100);
+            Release();
+            Console.WriteLine($"Технік-{num}: звільнив апарат");
+        }
+        else
+        {
+            Console.WriteLine($"Технік-{num}: апарат зайнятий, спробую пізніше");
+        }
+    });
+}
+
+foreach (Thread t in technicians) t.Start();
+foreach (Thread t in technicians) t.Join();
+```
+
+Використовуйте `Interlocked` замість `lock` для **одиночних операцій над числовими змінними** — це швидше і не може призвести до дедлоку. Для складніших операцій (перевірка + зміна кількох змінних) все одно потрібен `lock`.
+
+## volatile — видимість змін між потоками
+
+Сучасні процесори та компілятори можуть **кешувати** значення змінних у регістрах або переставляти порядок операцій для оптимізації. Для однопоточного коду це безпечно, але в багатопоточному може призвести до того, що один потік не бачить зміни, зроблені іншим.
+
+Ключове слово `volatile` повідомляє компілятору і JIT: **завжди читати/писати цю змінну безпосередньо з/до пам'яті**, без кешування у регістрах. Це гарантує **видимість** змін між потоками:
+
+```csharp run
+using System;
+using System.Threading;
+
+volatile bool _isRunning = true; // volatile гарантує видимість між потоками
+
+Thread monitor = new Thread(() =>
+{
+    Console.WriteLine("[Monitor] Старт моніторингу пацієнта...");
+    int ticks = 0;
+    while (_isRunning) // без volatile: компілятор міг би кешувати _isRunning = true назавжди
+    {
+        ticks++;
+        Thread.Sleep(50);
+    }
+    Console.WriteLine($"[Monitor] Зупинено після {ticks} тіків моніторингу");
+});
+
+monitor.Start();
+Thread.Sleep(300);
+
+Console.WriteLine("[Main] Зупиняємо моніторинг...");
+_isRunning = false; // volatile гарантує, що Monitor-потік побачить зміну
+monitor.Join();
+Console.WriteLine("[Main] Моніторинг завершено");
+```
+
+`volatile` гарантує лише **видимість** — що зміна, зроблена одним потоком, буде прочитана іншим. Але не гарантує **атомарності**: `volatile int x; x++;` все ще є небезпечним, бо `++` — три кроки (читання, збільшення, запис). Для атомарних операцій над числами використовуйте `Interlocked`.
+
+| Засіб | Гарантує | Вартість | Підходить для |
+|-------|----------|----------|---------------|
+| `volatile` | Видимість | Мінімальна | Прапорці `bool`, статуси — прості поля |
+| `Interlocked` | Атомарність + видимість | Низька | Лічильники, стани — одиночні числові операції |
+| `lock` | Атомарність + видимість + взаємне виключення | Помірна | Складні операції над кількома полями |

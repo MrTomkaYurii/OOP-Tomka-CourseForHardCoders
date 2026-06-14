@@ -15,6 +15,52 @@ source: "../_combined/80-klas-convert.md"
 
 ![Клас Convert — перетворення типів](_assets/13-03/convert-overview.png)
 
+## Parse та TryParse
+
+Найпростіший шлях перетворити рядок на примітивний тип — методи `Parse()` та `TryParse()`, які визначені безпосередньо на кожному числовому типі.
+
+`Parse()` приймає рядок і повертає значення потрібного типу. Якщо рядок не відповідає очікуваному формату, кидається `FormatException`:
+
+```csharp run
+using System;
+
+int    age    = int.Parse("67");
+double weight = double.Parse("82.5");
+bool   active = bool.Parse("True");
+
+Console.WriteLine($"Вік: {age}, Вага: {weight}, Активний: {active}");
+```
+
+Важливий нюанс: парсинг дробових чисел залежить від поточної культури. На машинах з українською/польською локаллю `double.Parse("82.5")` може кинути виняток, бо очікується кома. Щоб гарантувати крапку як роздільник — використовуйте `CultureInfo.InvariantCulture`:
+
+```csharp run
+using System;
+using System.Globalization;
+
+double weight1 = double.Parse("82.5", CultureInfo.InvariantCulture); // завжди крапка
+double weight2 = double.Parse("82,5", new NumberFormatInfo { NumberDecimalSeparator = "," });
+
+Console.WriteLine($"{weight1}  {weight2}");
+```
+
+`TryParse()` — безпечна альтернатива, що не кидає виняток: повертає `true` якщо перетворення пройшло успішно, `false` інакше. Значення записується в `out`-параметр:
+
+```csharp run
+using System;
+
+string[] inputs = { "67", "abc", "3.14", "" };
+
+foreach (string s in inputs)
+{
+    if (int.TryParse(s, out int value))
+        Console.WriteLine($"'{s}' -> {value}");
+    else
+        Console.WriteLine($"'{s}' -> не вдалось розпарсити");
+}
+```
+
+Правило вибору: якщо рядок надходить від користувача або з ненадійного джерела — використовуйте `TryParse`. Якщо рядок гарантовано правильного формату (з власної БД, відомого API) — `Parse`. `Convert.ToXxx` підходить для перетворень між числовими типами та булевими значеннями, а не тільки для рядків.
+
 ## Cast vs Convert: в чому різниця
 
 Щоб зрозуміти призначення `Convert`, важливо спочатку побачити, чим він відрізняється від оператора явного приведення типу `(T)`.

@@ -252,3 +252,59 @@ sb.Replace("{NAME}", "Петренко І.С.");
 sb.Replace("{DATE}", "12.06.2026 о 10:00");
 Console.WriteLine(sb.ToString());
 ```
+
+## Вимірювання різниці — Stopwatch
+
+Теоретичне співвідношення O(N²) проти O(N) добре підтверджується на практиці. Нижче — вимірювання часу побудови рядка з 5 000 фрагментів двома способами: конкатенацією через `+` і через `StringBuilder`:
+
+```csharp run
+using System;
+using System.Diagnostics;
+using System.Text;
+
+const int N = 5_000;
+const string fragment = "Пацієнт:Петренко|";
+
+// --- Метод 1: конкатенація через += (O(N²) алокацій) ---
+var sw1 = Stopwatch.StartNew();
+string result1 = "";
+for (int i = 0; i < N; i++)
+    result1 += fragment;
+sw1.Stop();
+
+// --- Метод 2: StringBuilder (O(N) — амортизована O(1) вставка) ---
+var sw2 = Stopwatch.StartNew();
+var sb = new StringBuilder(N * fragment.Length); // виділяємо одразу
+for (int i = 0; i < N; i++)
+    sb.Append(fragment);
+string result2 = sb.ToString();
+sw2.Stop();
+
+Console.WriteLine($"N = {N} фрагментів по {fragment.Length} символів");
+Console.WriteLine($"string +=      : {sw1.ElapsedMilliseconds,6} мс  (довжина {result1.Length})");
+Console.WriteLine($"StringBuilder  : {sw2.ElapsedMilliseconds,6} мс  (довжина {result2.Length})");
+Console.WriteLine($"Прискорення    : ~{(double)sw1.ElapsedMilliseconds / Math.Max(1, sw2.ElapsedMilliseconds):F0}×");
+```
+
+На типовій машині при N=5 000 конкатенація через `+=` займає сотні мілісекунд, тоді як `StringBuilder` — менше 1 мс. Різниця стає ще помітнішою при N=50 000 і вище, оскільки складність конкатенації зростає квадратично — кожна нова ітерація копіює весь попередній вміст рядка.
+
+Важливо розуміти **виняток**: компілятор C# оптимізує конкатенацію через `+` **поза циклом**, коли всі операнди відомі на етапі компіляції або кількість операндів мала і фіксована. Вираз `a + b + c + d` компілятор перетворює на один виклик `string.Concat(a, b, c, d)` — без проміжних алокацій. Ця оптимізація не поширюється на цикли і на `+=` у загальному випадку:
+
+```csharp run
+using System;
+
+// Компілятор сам застосує string.Concat — StringBuilder тут зайвий і надлишковий
+string name    = "Петренко Іван";
+string code    = "I10.9";
+string section = "кардіологія";
+
+// Один виклик Concat, нуль зайвих алокацій — компілятор вирішив це за нас
+string card = name + " | " + code + " | " + section;
+Console.WriteLine(card);
+
+// Інтерполяція компілюється у DefaultInterpolatedStringHandler (net6+) — теж ефективно
+string card2 = $"{name} | {code} | {section}";
+Console.WriteLine(card2);
+```
+
+Практичне правило: якщо рядок будується у **циклі** або з **невідомої наперед кількості частин** — `StringBuilder`. Якщо кількість операндів фіксована і мала (умовно до 10) — `string +` або `$"..."` є повністю прийнятним і читабельнішим варіантом. Не треба замінювати кожен `+` на `StringBuilder` заради «продуктивності» — це надмірна оптимізація, яка ускладнює код без реальної вигоди.

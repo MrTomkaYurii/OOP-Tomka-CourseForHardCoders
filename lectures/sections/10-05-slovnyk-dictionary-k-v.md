@@ -328,3 +328,85 @@ class PatientRegistry
 - Порядок елементів важливий і ключова операція — перебір.
 - Немає унікального ідентифікатора для елементів.
 - Колекція мала (< ~20 елементів) — різниця O(1) vs O(n) несуттєва.
+
+## HashSet\<T\> — множина унікальних елементів
+
+`HashSet<T>` — «словник без значень». Він зберігає **лише унікальні елементи**, гарантує O(1) для додавання, видалення і пошуку, але на відміну від `Dictionary` не зберігає пар ключ-значення — тільки самі елементи.
+
+Ключові властивості `HashSet<T>`:
+- **Не допускає дублікатів**: повторне `Add(element)` ігнорується (повертає `false`)
+- **Немає гарантій порядку**: елементи перебираються у довільному порядку
+- **О(1) для Contains**: значно швидший за `List<T>.Contains` для великих колекцій
+- **Операції теорії множин**: `UnionWith`, `IntersectWith`, `ExceptWith`
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+// Реєстр унікальних діагностичних кодів (ICD-10) у відділенні
+var diagnosisCodes = new HashSet<string>();
+
+// Додавання — дублікати ігноруються
+bool added1 = diagnosisCodes.Add("I10.9");   // Гіпертонія — додано
+bool added2 = diagnosisCodes.Add("J45.0");   // Астма — додано
+bool added3 = diagnosisCodes.Add("E11.9");   // Діабет — додано
+bool added4 = diagnosisCodes.Add("I10.9");   // Гіпертонія — ВЖЕ Є, повертає false
+
+Console.WriteLine($"Унікальних кодів: {diagnosisCodes.Count}"); // 3, не 4
+Console.WriteLine($"Додано 4-й (дублікат): {added4}"); // False
+
+// О(1) пошук
+bool hasHypertension = diagnosisCodes.Contains("I10.9"); // true
+bool hasCancer       = diagnosisCodes.Contains("C34.1"); // false
+Console.WriteLine($"Є гіпертонія (I10.9): {hasHypertension}");
+Console.WriteLine($"Є рак легень (C34.1): {hasCancer}");
+
+// Видалення
+diagnosisCodes.Remove("J45.0");
+Console.WriteLine($"Після видалення астми: {diagnosisCodes.Count} кодів");
+```
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+// Операції теорії множин — корисні для порівняння груп пацієнтів
+var cardioPatients   = new HashSet<string> { "P001", "P002", "P003", "P004" };
+var diabeticPatients = new HashSet<string> { "P003", "P004", "P005", "P006" };
+
+// Перетин: пацієнти з обома захворюваннями
+var both = new HashSet<string>(cardioPatients);
+both.IntersectWith(diabeticPatients);
+Console.WriteLine("Кардіо + Діабет: " + string.Join(", ", both)); // P003, P004
+
+// Об'єднання: всі пацієнти хоча б з одним захворюванням
+var either = new HashSet<string>(cardioPatients);
+either.UnionWith(diabeticPatients);
+Console.WriteLine("Кардіо або Діабет: " + string.Join(", ", either)); // P001-P006
+
+// Різниця: тільки кардіо пацієнти (без діабетиків)
+var onlyCardio = new HashSet<string>(cardioPatients);
+onlyCardio.ExceptWith(diabeticPatients);
+Console.WriteLine("Тільки кардіо: " + string.Join(", ", onlyCardio)); // P001, P002
+
+// IsSubsetOf: чи всі кардіо-пацієнти входять до загальної групи?
+bool isSubset = cardioPatients.IsSubsetOf(either);
+Console.WriteLine($"Кардіо ⊆ Об'єднання: {isSubset}"); // True
+
+// Видалення дублікатів зі списку
+var rawList = new List<string> { "I10.9", "J45.0", "I10.9", "E11.9", "J45.0" };
+var uniqueCodes = new HashSet<string>(rawList); // автоматично лише унікальні
+Console.WriteLine($"\nRaw: {rawList.Count} кодів → Unique: {uniqueCodes.Count} кодів");
+Console.WriteLine(string.Join(", ", uniqueCodes));
+```
+
+| Операція | `List<T>` | `HashSet<T>` |
+|----------|-----------|--------------|
+| `Add` | O(1) (amortized) | O(1) — дублікати ігноруються |
+| `Contains` | O(n) | **O(1)** |
+| `Remove` | O(n) | O(1) |
+| Порядок | Зберігається | Не гарантується |
+| Дублікати | Дозволені | Заборонені |
+| Теорія множин | Ні | `UnionWith`, `IntersectWith`, `ExceptWith` |
+
+**Використовуйте `HashSet<T>` коли:** потрібна колекція без дублікатів, або потрібна швидка перевірка `Contains` для великих наборів даних, або потрібні операції над множинами. **Використовуйте `List<T>` коли:** важливий порядок або допустимі дублікати.

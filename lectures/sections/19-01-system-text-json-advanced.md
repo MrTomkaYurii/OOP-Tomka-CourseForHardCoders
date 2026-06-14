@@ -414,3 +414,129 @@ foreach (var (source, items) in summary)
 ```
 
 ![Кастомний JsonConverter\<T\> — схема роботи](_assets/19-01/custom-converter.png)
+
+## JSON Source Generators — серіалізація без рефлексії
+
+Стандартний `JsonSerializer` використовує **рефлексію** (reflection) під час виконання: він динамічно аналізує типи, знаходить властивості та генерує відповідний код. Це зручно, але має три недоліки:
+- **Продуктивність**: рефлексія повільніша за статично сгенерований код
+- **NativeAOT / trimming**: рефлексія несумісна з AOT-компіляцією та агресивним видаленням невикористаного коду
+- **Розмір застосунку**: рефлексивний код не trimmed компілятором
+
+**JSON Source Generators** (.NET 6+) вирішують усе це: ви оголошуєте `JsonSerializerContext` — і компілятор генерує весь серіалізаційний код на **етапі компіляції**, без рефлексії під час виконання.
+
+```csharp run
+using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+// Налаштовуємо Source Generator для наших типів
+[JsonSerializable(typeof(PatientRecord))]
+[JsonSerializable(typeof(DiagnosisEntry))]
+[JsonSourceGenerationOptions(
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+partial class MedicalJsonContext : JsonSerializerContext { }
+
+// Використання: замість JsonSerializer.Serialize(obj) →
+//                         JsonSerializer.Serialize(obj, context.TypeName)
+
+var record = new PatientRecord
+{
+    PatientId = "PT-1001",
+    FullName  = "Петренко Іван Олексійович",
+    Age       = 67,
+    Diagnoses = new[]
+    {
+        new DiagnosisEntry { Code = "I10.9", Description = "Гіпертонія" },
+        new DiagnosisEntry { Code = "E11.9", Description = "Цукровий діабет 2 типу" },
+    }
+};
+
+// Серіалізація через Source Generator (без рефлексії!)
+string json = JsonSerializer.Serialize(record, MedicalJsonContext.Default.PatientRecord);
+Console.WriteLine("=== Source Generator: Serialize ===");
+Console.WriteLine(json);
+
+// Десеріалізація
+PatientRecord? parsed = JsonSerializer.Deserialize(json, MedicalJsonContext.Default.PatientRecord);
+Console.WriteLine($"\n=== Parsed back ===");
+Console.WriteLine($"ID: {parsed?.PatientId}, Вік: {parsed?.Age}");
+Console.WriteLine($"Діагнозів: {parsed?.Diagnoses?.Length ?? 0}");
+
+class PatientRecord
+{
+    public string  PatientId { get; set; } = "";
+    public string  FullName  { get; set; } = "";
+    public int     Age       { get; set; }
+    public DiagnosisEntry[]? Diagnoses { get; set; }
+}
+
+class DiagnosisEntry
+{
+    public string Code        { get; set; } = "";
+    public string Description { get; set; } = "";
+}
+```
+
+Синтаксис `MedicalJsonContext.Default.PatientRecord` — це сгенерований `JsonTypeInfo<PatientRecord>`, який передається замість опцій. Компілятор знаходить атрибут `[JsonSerializable(typeof(PatientRecord))]` і генерує весь необхідний код у часткому класі `MedicalJsonContext`.
+
+| Режим | Продуктивність | NativeAOT | Зручність |
+|-------|--------------|-----------|----------|
+| Reflection (за замовчуванням) | Помірна | ✗ | ★★★★★ |
+| Source Generators | **Швидший** (~2–3x) | ✓ | ★★★★ |
+
+Для нових проектів на .NET 7+ та особливо для AOT-сценаріїв (мобільні застосунки, мікросервіси з швидким стартом) рекомендується Source Generators.
+
+## Антипатерн: небезпечна десеріалізація
+
+**Не десеріалізуйте довільний JSON без валідації типу і вмісту.** Декілька прикладів небезпечних паттернів:
+
+```csharp run
+using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+// === НЕБЕЗПЕЧНО: масовий запис через JsonInclude ===
+// JsonInclude відкриває ВСІ поля для серіалізації/десеріалізації,
+// включно з внутрішніми (IsAdmin, PasswordHash тощо)
+
+class DangerousUser
+{
+    public string Name { get; set; } = "";
+    
+    [JsonInclude]
+    public bool IsAdmin { get; set; } = false; // ← зловмисник може передати "isAdmin": true!
+    
+    [JsonInclude]  
+    public string PasswordHash { get; set; } = ""; // ← витік хешу паролю
+}
+
+string maliciousJson = """{"name":"Петренко","isAdmin":true,"passwordHash":"evil_hash"}""";
+var user = JsonSerializer.Deserialize<DangerousUser>(maliciousJson)!;
+Console.WriteLine($"Ім'я: {user.Name}, IsAdmin: {user.IsAdmin}"); // IsAdmin = true — КРИТИЧНА УРАЗЛИВІСТЬ!
+
+// === ПРАВИЛЬНО: використовуйте окремі DTO для вхідних/вихідних даних ===
+class CreatePatientRequest
+{
+    public string FullName { get; init; } = "";
+    public int    Age      { get; init; }
+    // IsAdmin, internal flags — НЕМА у вхідному DTO
+}
+
+class PatientResponse
+{
+    public string PatientId { get; init; } = "";
+    public string FullName  { get; init; } = "";
+    // PasswordHash, internal fields — НЕМА у вихідному DTO
+}
+
+string safeJson = """{"fullName":"Коваль Марія","age":45,"isAdmin":true}""";
+var request = JsonSerializer.Deserialize<CreatePatientRequest>(safeJson)!;
+Console.WriteLine($"\nБезпечно: {request.FullName}, {request.Age}р. (IsAdmin ігнорується)");
+```
+
+Правила безпечної десеріалізації:
+- **Окремі DTO** для вхідних і вихідних даних — `Request` не містить полів безпеки, `Response` не містить внутрішніх полів
+- **`[JsonIgnore]`** для полів, що ніколи не мають надходити від клієнта
+- **Валідація після десеріалізації**: перевіряйте діапазони значень, обов'язкові поля, допустимі enum-значення
+- **`MaxDepth`** у `JsonSerializerOptions` обмежує глибину вкладеності (захист від атак через переповнення стека)

@@ -327,3 +327,89 @@ void Compare<T>(T a, T b) where T : class, IComparable<T>, IEquatable<T> { }
 // Помилка — не можна одночасно class і struct:
 // void Wrong<T>() where T : class, struct { }
 ```
+
+## Обмеження notnull та unmanaged (C# 8+)
+
+Починаючи з C# 8 з'явилися два додаткових обмеження.
+
+**`where T : notnull`** — T не може бути nullable reference type (`string?`, `Patient?`) або `Nullable<T>` (`int?`, `double?`). Це корисно в nullable-aware context, де компілятор відстежує nullable-анотації:
+
+```csharp run
+using System;
+
+// T : notnull — компілятор не дозволить передати nullable-тип
+Cache<string> cache = new();
+cache.Set("key1", "Петренко Іван");
+cache.Set("key2", "Коваль Марія");
+
+Console.WriteLine(cache.Get("key1") ?? "(відсутньо)");
+Console.WriteLine(cache.Get("key3") ?? "(відсутньо)");
+
+// cache.Set("key4", null);  // попередження/помилка: string? не відповідає notnull
+
+class Cache<T> where T : notnull
+{
+    private readonly System.Collections.Generic.Dictionary<string, T> _store = new();
+
+    public void Set(string key, T value) => _store[key] = value;
+
+    public T? Get(string key) =>
+        _store.TryGetValue(key, out T? val) ? val : default;
+}
+```
+
+**`where T : unmanaged`** — T є blittable value type: примітивний тип (`int`, `double`, `bool`, `char`) або структура, яка складається виключно з таких типів (без полів-посилань). Це обмеження дозволяє використовувати unsafe-операції (`sizeof(T)`, поінтер `T*`, `Span<T>` зі стек-алокацією), що важливо при роботі з бінарними протоколами та медичним обладнанням (DICOM, HL7 Binary):
+
+```csharp run
+using System;
+using System.Runtime.InteropServices;
+
+// Бінарна структура вимірювання — без посилань, blittable
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+struct VitalMeasurement
+{
+    public ushort PatientId;   // 2 байти
+    public float  Systolic;    // 4 байти
+    public float  Diastolic;   // 4 байти
+    public float  HeartRate;   // 4 байти
+}
+
+// T : unmanaged — можна отримати розмір і серіалізувати без рефлексії
+BinarySerializer<VitalMeasurement> serializer = new();
+VitalMeasurement m = new() { PatientId = 101, Systolic = 140f, Diastolic = 90f, HeartRate = 78f };
+byte[] bytes = serializer.ToBytes(m);
+
+Console.WriteLine($"Розмір структури: {Marshal.SizeOf<VitalMeasurement>()} байт");
+Console.WriteLine($"Байтів серіалізовано: {bytes.Length}");
+VitalMeasurement m2 = serializer.FromBytes(bytes);
+Console.WriteLine($"Відновлено: пацієнт #{m2.PatientId}, АТ {m2.Systolic}/{m2.Diastolic}, ЧСС {m2.HeartRate}");
+
+class BinarySerializer<T> where T : unmanaged
+{
+    public unsafe byte[] ToBytes(T value)
+    {
+        byte[] result = new byte[sizeof(T)];
+        fixed (byte* ptr = result)
+            *(T*)ptr = value;
+        return result;
+    }
+
+    public unsafe T FromBytes(byte[] data)
+    {
+        fixed (byte* ptr = data)
+            return *(T*)ptr;
+    }
+}
+```
+
+## Зведена таблиця обмежень
+
+| Обмеження | Що дозволяє T | Типовий сценарій |
+|-----------|--------------|-----------------|
+| `where T : ClassName` | T — цей клас або похідний | Доступ до членів базового класу |
+| `where T : IInterface` | T реалізує інтерфейс | Виклик методів контракту |
+| `where T : class` | Reference type (клас, рядок) | Можна порівнювати з `null` |
+| `where T : struct` | Value type (struct, int…) | T ніколи не `null` |
+| `where T : notnull` | Не nullable (C# 8+) | Nullable-safe контейнери |
+| `where T : unmanaged` | Blittable value type (C# 7.3+) | Unsafe-операції, бінарна серіалізація |
+| `where T : new()` | Публічний конструктор без параметрів | `new T()` всередині узагальненого класу |

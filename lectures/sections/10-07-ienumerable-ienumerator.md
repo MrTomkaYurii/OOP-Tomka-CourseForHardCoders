@@ -184,3 +184,80 @@ class RangeEnumerator : IEnumerator<int>
 | Потрібні індексація та `Count` | Використовуйте `IList<T>` або `List<T>` |
 
 Параметр методу типу `IEnumerable<T>` замість `List<T>` — хороша практика: метод прийматиме масив, `List<T>`, `Queue<T>` та будь-яку іншу послідовність без змін.
+
+## Відкладене виконання (deferred execution)
+
+Одна з найважливіших і найбільш неочікуваних особливостей `IEnumerable<T>` — **відкладене виконання**. Метод із `yield return` (або LINQ-запит, що повертає `IEnumerable<T>`) **не виконується** в момент виклику — він виконується лише тоді, коли результат фактично перебирається (у `foreach`, при виклику `.ToList()`, `.First()` тощо).
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+IEnumerable<string> GetCriticalPatients()
+{
+    Console.WriteLine("[Generator] Початок обходу пацієнтів...");
+    
+    string[] patients = { "Петренко І.", "Коваль М.", "Сидоренко О.", "Мельник Г." };
+    bool[]   critical = { false, true, false, true };
+    
+    for (int i = 0; i < patients.Length; i++)
+    {
+        Console.WriteLine($"[Generator] Перевіряю: {patients[i]}");
+        if (critical[i])
+            yield return patients[i]; // виконання «призупиняється» тут
+    }
+    
+    Console.WriteLine("[Generator] Кінець обходу");
+}
+
+// Виклик методу — код ще НЕ виконується!
+Console.WriteLine("Викликаю GetCriticalPatients()...");
+IEnumerable<string> sequence = GetCriticalPatients();
+Console.WriteLine("GetCriticalPatients() повернув IEnumerable. [Generator] ЩЕ НЕ ЗАПУЩЕНИЙ!");
+
+Console.WriteLine("\nПочинаємо foreach:");
+foreach (string patient in sequence) // ось тепер генератор запускається
+    Console.WriteLine($"  Критичний: {patient}");
+```
+
+Генератор запускається тільки при першому `MoveNext()`. Після кожного `yield return` виконання **призупиняється** і повернеться до генератора лише при наступному `MoveNext()`.
+
+### Багаторазове виконання — «подвійна пастка»
+
+Оскільки кожен `foreach` викликає `GetEnumerator()` знову, генератор виконується **з нуля** при кожному переборі:
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+int callCount = 0;
+
+IEnumerable<int> ExpensiveQuery()
+{
+    callCount++;
+    Console.WriteLine($"[Запит #{callCount}] Відправляю запит до БД...");
+    yield return 101; // Петренко
+    yield return 205; // Коваль
+    Console.WriteLine($"[Запит #{callCount}] Результати отримано");
+}
+
+var results = ExpensiveQuery(); // нічого ще не відбулось
+
+Console.WriteLine("=== Перший прохід (foreach) ===");
+foreach (var id in results)
+    Console.WriteLine($"  Пацієнт ID: {id}");
+
+Console.WriteLine("\n=== Другий прохід (foreach знову) ===");
+foreach (var id in results) // ПОВТОРНИЙ ЗАПИТ ДО БД!
+    Console.WriteLine($"  Пацієнт ID: {id}");
+
+Console.WriteLine($"\nЗапитів виконано: {callCount} (замість 1!)");
+Console.WriteLine("\n=== Правильно: матеріалізуємо один раз через ToList() ===");
+callCount = 0;
+var cached = ExpensiveQuery().ToList(); // один запит, всі дані в пам'яті
+foreach (var id in cached) Console.WriteLine($"  {id}");
+foreach (var id in cached) Console.WriteLine($"  {id}"); // перебір List — нові запити не йдуть
+Console.WriteLine($"Запитів: {callCount}"); // 1
+```
+
+Правило: якщо `IEnumerable<T>` потребує дорогої операції (запит до БД, HTTP-запит, читання файлу) — матеріалізуйте результат через **`.ToList()` або `.ToArray()`** перед повторним використанням. Якщо послідовність велика і потрібна лише для одного проходу — залиште `IEnumerable<T>` для економії пам'яті.

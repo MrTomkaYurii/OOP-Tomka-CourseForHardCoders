@@ -97,6 +97,142 @@ public interface IDiagnosable
 
 У реальних проектах публічні інтерфейси розміщують в окремій збірці-контракті, яку підключають і клієнтський код, і реалізація. Це дозволяє змінювати реалізацію, не змінюючи публічний контракт.
 
+## Антипатерн: «Бог-інтерфейс» — надмірно широкий контракт
+
+Найпоширеніша помилка при проектуванні інтерфейсів — об'єднати в одному інтерфейсі надто багато непов'язаних між собою обов'язків. Такий інтерфейс називають **«Бог-інтерфейс»** (God Interface): він «знає все» і «вміє все», але саме через це стає антипатерном.
+
+Розглянемо типовий приклад. Розробник вирішив описати всі можливі дії над пацієнтом в одному інтерфейсі:
+
+```csharp
+// АНТИПАТЕРН: надто широкий контракт в одному інтерфейсі
+interface IPatient
+{
+    // діагностика
+    void RunDiagnostics();
+    string GetDiagnosisCode();
+    // лікування
+    void PrescribeMedication(string med);
+    void AssignToWard(string ward);
+    // адміністрування
+    void Register();
+    void Discharge();
+    void GenerateBill();
+    // сповіщення
+    void SendReminder(string message);
+    void NotifyEmergencyContact();
+}
+```
+
+Проблема виникає, коли цей інтерфейс намагаються реалізувати різні класи. Амбулаторний пацієнт не госпіталізується і не потребує `AssignToWard`, але **зобов'язаний** реалізувати цей метод — адже він є частиною контракту. Єдине, що може зробити розробник, — кинути виняток, перетворюючи помилку проектування на помилку часу виконання:
+
+```csharp
+class OutpatientRecord : IPatient
+{
+    public void RunDiagnostics() { /* ... */ }
+    public string GetDiagnosisCode() => "J00";
+    public void PrescribeMedication(string med) { /* ... */ }
+
+    // Змушені реалізовувати методи, що не стосуються амбулаторного пацієнта:
+    public void AssignToWard(string ward)
+        => throw new NotSupportedException("Амбулаторний пацієнт не госпіталізується!");
+    public void NotifyEmergencyContact()
+        => throw new NotSupportedException("Не реалізовано для амбулаторних!");
+
+    public void Register() { /* ... */ }
+    public void Discharge() { /* ... */ }
+    public void GenerateBill() { /* ... */ }
+    public void SendReminder(string message) { /* ... */ }
+}
+```
+
+`NotSupportedException` у реалізації інтерфейсного методу — чіткий сигнал порушення **принципу розділення інтерфейсів** (ISP — Interface Segregation Principle, детально у розділі 20): клієнти не повинні залежати від методів, які вони не використовують. Компілятор C# не може захистити від помилки, яку можна виявити лише у runtime.
+
+**Рішення** — розбити «Бог-інтерфейс» на вузькоспеціалізовані інтерфейси. Техніка успадкування інтерфейсів (розділ 7.4) дозволяє зібрати потрібний набір обов'язків без дублювання:
+
+```csharp run
+using System;
+
+// Кожен інтерфейс — одна відповідальність
+interface IDiagnosable
+{
+    void RunDiagnostics();
+    string GetDiagnosisCode();
+}
+
+interface ITreatable
+{
+    void PrescribeMedication(string med);
+    void AssignToWard(string ward);
+}
+
+interface IAdministrable
+{
+    void Register();
+    void Discharge();
+    void GenerateBill();
+}
+
+interface INotifiable
+{
+    void SendReminder(string message);
+    void NotifyEmergencyContact();
+}
+
+// Стаціонарний пацієнт потребує всіх ролей
+class InpatientRecord : IDiagnosable, ITreatable, IAdministrable, INotifiable
+{
+    public string Name { get; }
+    public InpatientRecord(string name) => Name = name;
+
+    public void RunDiagnostics()          => Console.WriteLine($"{Name}: МРТ, ЕКГ");
+    public string GetDiagnosisCode()      => "I10.9";
+    public void PrescribeMedication(string med) => Console.WriteLine($"{Name}: призначено {med}");
+    public void AssignToWard(string ward) => Console.WriteLine($"{Name}: переведено → {ward}");
+    public void Register()                => Console.WriteLine($"{Name}: госпіталізовано");
+    public void Discharge()               => Console.WriteLine($"{Name}: виписано");
+    public void GenerateBill()            => Console.WriteLine($"{Name}: рахунок сформовано");
+    public void SendReminder(string msg)  => Console.WriteLine($"{Name}: нагадування — {msg}");
+    public void NotifyEmergencyContact()  => Console.WriteLine($"{Name}: повідомлено родичів");
+}
+
+// Амбулаторний пацієнт — тільки потрібні ролі; компілятор не дасть викликати AssignToWard
+class OutpatientRecord : IDiagnosable, IAdministrable
+{
+    public string Name { get; }
+    public OutpatientRecord(string name) => Name = name;
+
+    public void RunDiagnostics()     => Console.WriteLine($"{Name}: аналізи крові");
+    public string GetDiagnosisCode() => "J00";
+    public void Register()           => Console.WriteLine($"{Name}: записано на прийом");
+    public void Discharge()          => Console.WriteLine($"{Name}: консультацію завершено");
+    public void GenerateBill()       => Console.WriteLine($"{Name}: рахунок — 350 грн");
+}
+
+var inpatient  = new InpatientRecord("Петренко Іван");
+var outpatient = new OutpatientRecord("Коваль Марія");
+
+Console.WriteLine("=== Стаціонар ===");
+inpatient.RunDiagnostics();
+inpatient.AssignToWard("кардіологія");
+inpatient.GenerateBill();
+inpatient.NotifyEmergencyContact();
+
+Console.WriteLine("\n=== Амбулаторія ===");
+outpatient.RunDiagnostics();
+outpatient.GenerateBill();
+// outpatient.AssignToWard(...) — помилка компіляції: OutpatientRecord не реалізує ITreatable
+```
+
+Тепер `OutpatientRecord` реалізує лише ті інтерфейси, що дійсно стосуються амбулаторного пацієнта. Помилка виявляється на **етапі компіляції**, а не у runtime. Кожен інтерфейс можна підмінити окремим тест-заглушенням (mock), не зачіпаючи інших.
+
+| | Бог-інтерфейс | Вузькі інтерфейси |
+|---|---|---|
+| Відповідальність | Один клас знає і вміє все | Кожен інтерфейс — одна здібність |
+| Непотрібні методи | Клас реалізує методи, що не стосуються його | Клас реалізує лише релевантні інтерфейси |
+| Де виявляється помилка | `NotSupportedException` у runtime | Помилка компіляції |
+| Тестування | Великий mock із багатьма методами | Мінімальний mock із потрібними методами |
+| Вплив змін | Зміна будь-якого методу зачіпає всіх реалізаторів | Зміна вузького інтерфейсу зачіпає лише залежних від нього |
+
 ## Реалізація за замовчуванням
 
 Починаючи з C# 8.0, інтерфейси підтримують реалізацію методів і властивостей за замовчуванням. Це означає, що в інтерфейсі можна визначити повноцінний метод із тілом, як у звичайному класі. Такий метод буде автоматично доступний усім класам, що реалізують інтерфейс, — якщо клас не перевизначить його, буде використана реалізація інтерфейсу. Це зручно для поступового розширення вже опублікованих інтерфейсів без порушення зворотної сумісності: новий метод можна додати з реалізацією за замовчуванням, і всі вже існуючі реалізатори продовжать компілюватись без змін.

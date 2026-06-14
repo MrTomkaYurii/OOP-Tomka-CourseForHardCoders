@@ -429,3 +429,68 @@ services.AddSingleton<IPatientRepository, CustomPatientRepository>();
 ## Підсумок
 
 `IServiceCollection` — це не просто список об'єктів. Це **специфікація** того, як система будується. Розділення реєстрації (`IServiceCollection`) і розпізнавання (`IServiceProvider`) — принципово важливе архітектурне рішення: воно гарантує, що склад системи визначається один раз на старті, а не довільно змінюється під час роботи. Це робить додаток передбачуваним, тестованим і правильно сконструйованим.
+
+## Антипатерн: Service Locator
+
+**Service Locator** — це патерн, де клас отримує залежності не через конструктор, а **самостійно запитуючи їх у контейнера** (`IServiceProvider`) всередині своїх методів. Це антипатерн, що руйнує всі переваги DI.
+
+```csharp
+// ПОГАНО: Service Locator — AppointmentService тягне IServiceProvider і сам витягує залежності
+class AppointmentService
+{
+    private readonly IServiceProvider _sp; // зберігаємо контейнер!
+    
+    public AppointmentService(IServiceProvider sp) => _sp = sp;
+    
+    public void Book(string patientId, string doctorId)
+    {
+        // Залежності прихованi — видно тільки зсередини методу
+        var repo     = _sp.GetRequiredService<IPatientRepository>(); // ← Service Locator
+        var schedule = _sp.GetRequiredService<IDoctorSchedule>();    // ← Service Locator
+        var logger   = _sp.GetRequiredService<ILogger>();            // ← Service Locator
+        
+        // ... логіка
+    }
+}
+
+// ПРАВИЛЬНО: явні залежності через конструктор (Dependency Injection)
+class AppointmentServiceCorrect
+{
+    private readonly IPatientRepository _repo;
+    private readonly IDoctorSchedule    _schedule;
+    private readonly ILogger            _logger;
+    
+    // Усі залежності видно у публічному API класу
+    public AppointmentServiceCorrect(
+        IPatientRepository repo,
+        IDoctorSchedule    schedule,
+        ILogger            logger)
+    {
+        _repo     = repo;
+        _schedule = schedule;
+        _logger   = logger;
+    }
+    
+    public void Book(string patientId, string doctorId)
+    {
+        _logger.Log($"Записую {patientId} до {doctorId}");
+        // ...
+    }
+}
+```
+
+Чому Service Locator — антипатерн:
+
+| Проблема | Service Locator | DI через конструктор |
+|----------|----------------|---------------------|
+| Залежності | Приховані в методах | **Явні** в конструкторі |
+| Тестування | Потрібен реальний або складний mock `IServiceProvider` | **Достатньо mock-ів** конкретних інтерфейсів |
+| Помилки | Виникають в рантаймі (`GetRequiredService` кидає) | Виявляються **при старті** (якщо `ValidateOnBuild = true`) |
+| Принцип | Порушує DIP — клас знає про контейнер | Відповідає DIP — клас знає лише свої абстракції |
+
+**Коли `IServiceProvider` все ж доречний:**
+- У `Program.cs`/`Startup.cs` при конфігурації — це root composition root, де контейнер і повинен бути присутній
+- У `IServiceScopeFactory.CreateScope()` у фонових сервісах (Singleton, що потребує Scoped-сервісів)
+- У middleware або factory-методах, де тип сервісу визначається динамічно
+
+У всіх інших місцях — **ін'єктуйте через конструктор**, а не через `IServiceProvider`.

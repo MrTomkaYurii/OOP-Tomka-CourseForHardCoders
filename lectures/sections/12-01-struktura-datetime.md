@@ -44,6 +44,68 @@ DateTime unsp  = new DateTime(2026, 6, 11); // Kind = Unspecified
 
 **Чому це критично в медичних системах:** якщо лікарня або телемедичний сервіс працює в кількох часових поясах, зберігання `DateTime.Now` (Local) у базі даних призводить до помилок при агрегації даних. Правило: **завжди зберігати у БД UTC** (`DateTime.UtcNow`), а конвертацію у локальний час виконувати на рівні UI.
 
+## UTC vs Local: практична пастка та конвертація
+
+Порушення правила «зберігати UTC, відображати локальний час» призводить до важко діагностованих помилок:
+
+```csharp run
+using System;
+
+// === ПРОБЛЕМА: зберігаємо Local, порівнюємо неправильно ===
+Console.WriteLine("=== Антипатерн: змішування Local і Utc ===");
+
+DateTime localAdmission = DateTime.Now;          // Kind = Local
+DateTime utcAuditLog    = DateTime.UtcNow;       // Kind = Utc
+
+// Ці два значення в один момент відрізняються на offset часового поясу!
+Console.WriteLine($"Local: {localAdmission:HH:mm:ss}  Kind={localAdmission.Kind}");
+Console.WriteLine($"Utc:   {utcAuditLog:HH:mm:ss}  Kind={utcAuditLog.Kind}");
+
+// Порівняння Local з Utc дає НЕПРАВИЛЬНИЙ результат:
+bool wrongComparison = localAdmission > utcAuditLog; // на UTC+2/UTC+3 буде true!
+Console.WriteLine($"\nlocalAdmission > utcAuditLog = {wrongComparison}  ← НЕПРАВИЛЬНО");
+Console.WriteLine("(DateTime порівнює тіки без урахування Kind)");
+
+// === ПРАВИЛЬНО: завжди одна «мова» — UTC ===
+Console.WriteLine("\n=== Правильно: конвертація та порівняння в UTC ===");
+
+DateTime utcAdmission = DateTime.UtcNow;  // зберігаємо в БД UTC
+DateTime utcEvent     = DateTime.UtcNow.AddMinutes(5);
+
+bool correctComparison = utcAdmission < utcEvent; // true — правильно
+Console.WriteLine($"utcAdmission < utcEvent = {correctComparison}  ← ПРАВИЛЬНО");
+
+// Конвертація UTC -> Local для відображення в UI
+DateTime displayTime = utcAdmission.ToLocalTime();
+Console.WriteLine($"\nДля відображення в UI: {displayTime:dd.MM.yyyy HH:mm:ss} (local)");
+Console.WriteLine($"Зберігаємо в БД:       {utcAdmission:dd.MM.yyyy HH:mm:ss} (utc)");
+```
+
+Методи конвертації:
+
+| Метод | Що робить |
+|-------|-----------|
+| `.ToUniversalTime()` | Local → UTC (або Unspecified → UTC припускаючи Local) |
+| `.ToLocalTime()` | UTC → Local |
+| `DateTime.SpecifyKind(dt, kind)` | Перепозначити Kind без зміни значення |
+
+```csharp run
+using System;
+
+// SpecifyKind: якщо з БД прийшов DateTime без Kind (Unspecified),
+// але ми знаємо, що це UTC:
+DateTime fromDb = new DateTime(2026, 6, 11, 7, 30, 0); // Kind = Unspecified
+Console.WriteLine($"З БД (Unspecified): {fromDb.Kind}");
+
+DateTime asUtc = DateTime.SpecifyKind(fromDb, DateTimeKind.Utc);
+Console.WriteLine($"Після SpecifyKind:  {asUtc.Kind}");
+
+DateTime localForDisplay = asUtc.ToLocalTime();
+Console.WriteLine($"Для UI (Local):     {localForDisplay:HH:mm} ({localForDisplay.Kind})");
+```
+
+Правило для медичних систем: **все, що стосується аудиту, журналів, зберігання у БД, API** — тільки UTC. **Відображення у UI або при звітуванні** — конвертувати у Local прямо перед виводом.
+
 ## Конструктори DateTime
 
 ```csharp
