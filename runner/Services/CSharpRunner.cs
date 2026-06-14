@@ -78,10 +78,20 @@ public class CSharpRunner
                 sb.Append("\n[Браузер] System.Threading.Thread не підтримується у браузері (WebAssembly однопоточний).\nВідкрий цей приклад у dotnetfiddle.net — там працює повноцінний .NET.");
                 return new RunResult(false, sb.ToString());
             }
-            else if (inner is MissingMethodException)
+            else if (inner is MissingMethodException mme)
             {
                 sb.Append($"\n[{inner.GetType().Name}] {inner.Message}");
-                sb.Append("\n\n[Браузер] Цей API недоступний у WebAssembly runner.\nВідкрий цей приклад у dotnetfiddle.net — там працює повноцінний .NET.");
+                var msg = mme.Message;
+                if (msg.Contains("ToUpper") || msg.Contains("ToLower") ||
+                    msg.Contains("ToTitle") || msg.Contains("Compare") ||
+                    msg.Contains("String.Normalize") || msg.Contains("CultureInfo"))
+                {
+                    sb.Append("\n\n[Браузер] Runner працює з інваріантною культурою (Invariant Globalization Mode).\nЗамість ToUpper() використовуй ToUpperInvariant(), замість ToLower() — ToLowerInvariant().");
+                }
+                else
+                {
+                    sb.Append("\n\n[Браузер] Цей API недоступний у WebAssembly runner.\nВідкрий цей приклад у dotnetfiddle.net — там працює повноцінний .NET.");
+                }
                 return new RunResult(false, sb.ToString());
             }
             sb.Append($"\n[{inner.GetType().Name}] {inner.Message}");
