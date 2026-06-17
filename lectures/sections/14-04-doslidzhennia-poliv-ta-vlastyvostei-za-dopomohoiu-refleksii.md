@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 14
 chapterTitle: "Розділ 14. Рефлексія"
 section: 4
@@ -265,7 +265,7 @@ public class PatientRecord
 
 ---
 
-## Приклад 2 — ObjectCloner\<T\>: deep copy через FieldInfo
+## Приклад 2 — ObjectCloner<T>: deep copy через FieldInfo
 
 ```csharp
 using System;

@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 19
 chapterTitle: "Розділ 19. Серіалізація та десеріалізація. JSON та XML"
 section: 1
@@ -162,7 +162,7 @@ Console.WriteLine($"\nРозмір: {ms.Length.ToString()} байт");
 
 `Utf8JsonWriter` застосовується у бібліотеках і фреймворках, де продуктивність критична — наприклад, ASP.NET Core використовує його внутрішньо для серіалізації HTTP-відповідей. Для звичайного застосунку достатньо `JsonSerializer`.
 
-## Кастомні конвертери: JsonConverter\<T\>
+## Кастомні конвертери: JsonConverter<T>
 
 Стандартна серіалізація не завжди підходить для специфічних типів. `JsonConverter<T>` дозволяє повністю контролювати, як конкретний тип читається з JSON і записується в JSON:
 
@@ -413,7 +413,7 @@ foreach (var (source, items) in summary)
 }
 ```
 
-![Кастомний JsonConverter\<T\> — схема роботи](_assets/19-01/custom-converter.png)
+![Кастомний JsonConverter<T> — схема роботи](_assets/19-01/custom-converter.png)
 
 ## JSON Source Generators — серіалізація без рефлексії
 

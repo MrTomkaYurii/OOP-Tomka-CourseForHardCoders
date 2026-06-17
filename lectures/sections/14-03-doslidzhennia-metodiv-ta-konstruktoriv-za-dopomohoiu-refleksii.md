@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 14
 chapterTitle: "Розділ 14. Рефлексія"
 section: 3
@@ -346,7 +346,7 @@ public class PatientRecord
 
 ---
 
-## Приклад 2 — MethodDispatcher\<T\>: кешування та CreateDelegate
+## Приклад 2 — MethodDispatcher<T>: кешування та CreateDelegate
 
 ```csharp
 using System;

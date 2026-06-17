@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 10
 chapterTitle: "Розділ 10. Колекції"
 section: 6
@@ -7,7 +7,7 @@ title: "Клас ObservableCollection<T>"
 source: "../_combined/67-klas-observablecollection.md"
 ---
 
-## 10.6. Клас ObservableCollection\<T\>
+## 10.6. Клас ObservableCollection<T>
 
 `List<T>`, `Queue<T>`, `Dictionary<K,V>` — всі ці колекції ефективно зберігають і організовують дані. Але жодна з них **не повідомляє** зовнішній код про те, що щось змінилось. Якщо хтось додав пацієнта до списку — UI-компонент, що відображає цей список, нічого про це не знатиме і не перемалює себе.
 
@@ -188,13 +188,13 @@ class Patient
 }
 ```
 
-## Коли ObservableCollection\<T\>?
+## Коли ObservableCollection<T>?
 
 | Ситуація | Рекомендація |
 |----------|-------------|
 | WPF / MAUI / Xamarin прив'язка до UI | **ObservableCollection** — обов'язково |
 | Потрібно реагувати на зміни ззовні | **ObservableCollection** + `CollectionChanged` |
-| Звичайне зберігання і перебір даних | **List\<T\>** — легший overhead |
-| Великі батч-операції без UI | **List\<T\>** — немає зайвих подій |
+| Звичайне зберігання і перебір даних | **List<T>** — легший overhead |
+| Великі батч-операції без UI | **List<T>** — немає зайвих подій |
 
 `ObservableCollection<T>` генерує подію на **кожну** окрему зміну. Якщо потрібно додати 10 000 елементів — краще створити `List<T>`, наповнити його, а потім передати в конструктор `ObservableCollection<T>(list)`, щоб уникнути 10 000 подій.

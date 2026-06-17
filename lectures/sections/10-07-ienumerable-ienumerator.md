@@ -1,4 +1,4 @@
----
+﻿---
 chapter: 10
 chapterTitle: "Розділ 10. Колекції"
 section: 7
@@ -7,7 +7,7 @@ title: "Інтерфейси IEnumerable<T> та IEnumerator<T>"
 source: "../_combined/68-ienumerable-ienumerator.md"
 ---
 
-## 10.7. Інтерфейси IEnumerable\<T\> та IEnumerator\<T\>
+## 10.7. Інтерфейси IEnumerable<T> та IEnumerator<T>
 
 Щоразу, коли ви пишете `foreach (var p in ward)`, C# виконує певний контракт — звертається до колекції через стандартизовані інтерфейси. Цей контракт описується двома інтерфейсами: `IEnumerable<T>` і `IEnumerator<T>`.
 
@@ -42,7 +42,7 @@ finally
 
 ![IEnumerable<T> та IEnumerator<T> — як працює foreach](_assets/10-07/ienumerable-foreach-decomposition.png)
 
-## Інтерфейс IEnumerable\<T\>
+## Інтерфейс IEnumerable<T>
 
 ```csharp
 public interface IEnumerable<out T> : IEnumerable
@@ -55,7 +55,7 @@ public interface IEnumerable<out T> : IEnumerable
 
 Реалізують: `List<T>`, `T[]`, `Queue<T>`, `Stack<T>`, `Dictionary<K,V>`, `ObservableCollection<T>`, `LinkedList<T>` та будь-який власний клас, якому ви додасте цей інтерфейс.
 
-## Інтерфейс IEnumerator\<T\>
+## Інтерфейс IEnumerator<T>
 
 ```csharp
 public interface IEnumerator<out T> : IDisposable, IEnumerator
@@ -69,7 +69,7 @@ public interface IEnumerator<out T> : IDisposable, IEnumerator
 
 `IEnumerator<T>` — сам перелічувач. Він зберігає **поточну позицію** всередині колекції. Кожен виклик `MoveNext()` зсуває позицію на один крок і повертає `true`, поки є елементи; коли елементи вичерпані — повертає `false` і цикл `while` завершується.
 
-## Власний IEnumerable\<T\> — runnable приклад
+## Власний IEnumerable<T> — runnable приклад
 
 Щоб власний клас підтримував `foreach`, достатньо реалізувати `IEnumerable<T>`. Нижче — клас `Ward` (відділення), який перебирає тільки критичних пацієнтів:
 
@@ -118,7 +118,7 @@ class Ward : IEnumerable<Patient>
 
 Зверніть увагу: всередині `GetEnumerator()` використовується `yield return` (детально — розділ 10.8). Це найпростіший спосіб реалізувати власний перелічувач без написання окремого класу.
 
-## Явна реалізація IEnumerator\<T\> — runnable приклад
+## Явна реалізація IEnumerator<T> — runnable приклад
 
 Для повного розуміння механізму — клас `RangeEnumerator`, який перебирає числа від `from` до `to` без зберігання їх у пам'яті:
 
@@ -174,7 +174,7 @@ class RangeEnumerator : IEnumerator<int>
 
 Цей приклад показує, що `IEnumerator<T>` — звичайний клас зі станом (`_current`). `MoveNext()` зсуває стан; `Current` повертає поточне значення. `foreach` просто викликає їх у потрібному порядку.
 
-## Коли реалізувати IEnumerable\<T\>?
+## Коли реалізувати IEnumerable<T>?
 
 | Сценарій | Рішення |
 |----------|---------|
