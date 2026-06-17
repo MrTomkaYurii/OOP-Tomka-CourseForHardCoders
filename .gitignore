@@ -46,3 +46,10 @@ site/.env
 site/.env.*
 site/dev-server*.log
 site/public/runner/
+
+# DOCX export tool
+tools/docx-export/node_modules/
+output/lectures/node_modules/
+
+# Generated output files
+output/lectures/*.docx

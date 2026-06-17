@@ -1,0 +1,13 @@
+{
+  "name": "md-to-docx",
+  "version": "1.0.0",
+  "description": "Markdown lecture sections → A5 Word document",
+  "main": "md-to-docx.js",
+  "scripts": {
+    "ch01": "node md-to-docx.js \"../../lectures/sections/01-*.md\" -o \"../../output/lectures/chapter-01.docx\"",
+    "ch02": "node md-to-docx.js \"../../lectures/sections/02-*.md\" -o \"../../output/lectures/chapter-02.docx\""
+  },
+  "dependencies": {
+    "docx": "^9.5.0"
+  }
+}
