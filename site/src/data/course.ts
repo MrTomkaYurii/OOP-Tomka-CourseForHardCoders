@@ -37,12 +37,14 @@ export type Lecture = {
   excerpt: string;
   html: string;
   headings: Array<Heading>;
+  isQuestions?: boolean;
 };
 
 const root = path.resolve(process.cwd(), "..");
 const labsDir = path.join(root, "labs");
 const lecturesDir = path.join(root, "lectures");
 const lectureSectionsDir = path.join(lecturesDir, "sections");
+const lectureQuestionsDir = path.join(lecturesDir, "questions");
 const lectureSummariesPath = path.join(lectureSectionsDir, "summaries.json");
 const base = import.meta.env.BASE_URL;
 
@@ -513,42 +515,54 @@ export function getLectures(): Promise<Lecture[]> {
 
     const summaries = getLectureSummaries();
 
-    const entries = readdirSync(lectureSectionsDir, { withFileTypes: true })
+    const sectionEntries = readdirSync(lectureSectionsDir, { withFileTypes: true })
       .filter((entry) => entry.isFile() && /^\d{2}-.+\.md$/.test(entry.name))
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    const lectures = await Promise.all(
-      entries.map(async (entry) => {
-        const sourcePath = path.join(lectureSectionsDir, entry.name);
-        const rawMarkdown = readFileSync(sourcePath, "utf-8");
-        const { data, body: markdown } = parseFrontmatter(rawMarkdown);
-        const chapter = Number(data.chapter ?? entry.name.slice(0, 2));
-        const section = Number(data.section ?? entry.name.slice(3, 5));
-        const numberLabel = data.number ?? `${chapter}.${section}`;
-        const slug = entry.name.replace(/\.md$/, "");
-        const title = data.title ?? markdown.match(/^##\s+(.+)$/m)?.[1]?.trim() ?? `Лекція ${numberLabel}`;
-        const chapterTitle = data.chapterTitle ?? lectureChapterTitle(chapter);
-        const rendered = await renderMarkdown(markdown, { assetPrefix: siteAssetPath("/_assets") });
-        const summary = summaries[slug];
+    const questionEntries = existsSync(lectureQuestionsDir)
+      ? readdirSync(lectureQuestionsDir, { withFileTypes: true })
+          .filter((entry) => entry.isFile() && /^\d{2}-questions\.md$/.test(entry.name))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      : [];
 
-        return {
-          slug,
-          number: chapter * 100 + section,
-          title,
-          chapter,
-          chapterTitle,
-          sections: [],
-          section,
-          numberLabel,
-          sourcePath,
-          excerpt: summary ?? stripMarkdown(markdown).slice(0, 210),
-          headings: rendered.headings,
-          html: rendered.html,
-        };
-      }),
-    );
+    const processEntry = async (name: string, dir: string, isQ: boolean) => {
+      const sourcePath = path.join(dir, name);
+      const rawMarkdown = readFileSync(sourcePath, "utf-8");
+      const { data, body: markdown } = parseFrontmatter(rawMarkdown);
+      const chapter = Number(data.chapter ?? name.slice(0, 2));
+      const section = isQ ? 99 : Number(data.section ?? name.slice(3, 5));
+      const numberLabel = isQ ? `${chapter}.Q` : (data.number ?? `${chapter}.${section}`);
+      const slug = name.replace(/\.md$/, "");
+      const title = isQ
+        ? `Питання для самоконтролю`
+        : (data.title ?? markdown.match(/^##\s+(.+)$/m)?.[1]?.trim() ?? `Лекція ${numberLabel}`);
+      const chapterTitle = data.chapterTitle ?? lectureChapterTitle(chapter);
+      const rendered = await renderMarkdown(markdown, { assetPrefix: siteAssetPath("/_assets") });
+      const summary = summaries[slug];
 
-    return lectures.sort((a, b) => a.chapter - b.chapter || Number(a.numberLabel.split(".")[1]) - Number(b.numberLabel.split(".")[1]));
+      return {
+        slug,
+        number: chapter * 100 + section,
+        title,
+        chapter,
+        chapterTitle,
+        sections: [],
+        section,
+        numberLabel,
+        sourcePath,
+        excerpt: summary ?? stripMarkdown(markdown).slice(0, 210),
+        headings: rendered.headings,
+        html: rendered.html,
+        isQuestions: isQ,
+      };
+    };
+
+    const lectures = await Promise.all([
+      ...sectionEntries.map((e) => processEntry(e.name, lectureSectionsDir, false)),
+      ...questionEntries.map((e) => processEntry(e.name, lectureQuestionsDir, true)),
+    ]);
+
+    return lectures.sort((a, b) => a.chapter - b.chapter || a.section - b.section);
   })();
 
   return _lecturesCache;

@@ -18,7 +18,7 @@ const JSZip = require('jszip');
 const { parseMd }                       = require('./lib/parser');
 const { render }                        = require('./lib/renderer');
 const { paragraphStyles, defaultStyle } = require('./lib/styles');
-const { numberingConfig }               = require('./lib/numbering');
+const { buildNumberingConfig }          = require('./lib/numbering');
 const { C, SZ, PAGE }                   = require('./lib/constants');
 
 // ── Простий glob (замість залежності) ─────────────────────────────────────────
@@ -140,12 +140,14 @@ async function main() {
     const { meta, blocks } = parseMd(content);
 
     // Ідентифікуємо главу: з frontmatter або з імені файлу (перші 2 символи)
+    const isQuestions = meta.type === 'self-assessment';
     const chKey   = meta.chapter ? String(meta.chapter) : path.basename(file).slice(0, 2);
     const chTitle = opts.title && currentChapter === null
       ? opts.title
       : (meta.chapterTitle || meta.title || `Розділ ${chKey}`);
 
-    if (chKey !== currentChapter) {
+    // Для файлів питань — не вставляємо chapter-блок (H1 всередині файлу є роздільником)
+    if (!isQuestions && chKey !== currentChapter) {
       currentChapter = chKey;
       allBlocks.push({ type: 'chapter', title: chTitle });
     }
@@ -163,7 +165,7 @@ async function main() {
       paragraphStyles: paragraphStyles,
     },
     numbering: {
-      config: numberingConfig,
+      config: buildNumberingConfig(50),
     },
     sections: [{
       properties: {

@@ -60,6 +60,7 @@ function bodyPara(text, opts = {}) {
 // ── Основна функція ───────────────────────────────────────────────────────────
 function render(blocks, assetsBase) {
   let inSummary   = false;
+  let numbersIdx  = 0;   // індекс поточного слота нумерованого списку
   const elems = [];
 
   for (const block of blocks) {
@@ -71,12 +72,25 @@ function render(blocks, assetsBase) {
 
     switch (block.type) {
 
-      // ── chapter: синтетичний блок, який генерує md-to-docx.js ──────────────
-      case 'chapter': {
+      // ── h1: заголовок блоку питань ("# Питання для самоконтролю...") ────────
+      case 'h1': {
+        numbersIdx++;   // новий розділ питань — окрема нумерація
         elems.push(new Paragraph({
           style:    'ChapterTitle',
-          children: toRuns(block.title, { bold: true, size: SZ.CHAPTER, color: C.NAVY }),
-          border:   { bottom: bdr(BD.CHAPTER_W, C.ACCENT) },
+          children: toRuns(block.text, { bold: true, size: SZ.CHAPTER, color: C.ACCENT }),
+          border:   { bottom: bdr(BD.CHAPTER_W, C.MID_BLUE) },
+        }));
+        break;
+      }
+
+      // ── chapter: синтетичний блок, який генерує md-to-docx.js ──────────────
+      case 'chapter': {
+        numbersIdx++;   // новий розділ лекції — окрема нумерація
+        elems.push(new Paragraph({
+          style:          'ChapterTitle',
+          children:       toRuns(block.title, { bold: true, size: SZ.CHAPTER, color: C.NAVY }),
+          border:         { bottom: bdr(BD.CHAPTER_W, C.ACCENT) },
+          pageBreakBefore: true,
         }));
         if (block.intro) {
           elems.push(new Paragraph({
@@ -276,7 +290,7 @@ function render(blocks, assetsBase) {
         for (const item of block.items) {
           elems.push(new Paragraph({
             style:     'ListNumber',
-            numbering: { reference: 'numbers', level: 0 },
+            numbering: { reference: `numbers-${numbersIdx}`, level: 0 },
             children:  toRuns(item),
           }));
         }

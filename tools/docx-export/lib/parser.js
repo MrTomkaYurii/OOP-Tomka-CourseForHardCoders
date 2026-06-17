@@ -80,12 +80,18 @@ function parseMd(content) {
     const ln = lines[i];
     if (!ln || !ln.trim()) { i++; if (!lastWasHead) lastWasHead = false; continue; }
 
-    // ── Code fence ────────────────────────────────────────────────────────────
-    if (ln.startsWith('```')) {
-      const lang = ln.slice(3).trim().toLowerCase();
+    // ── Code fence (підтримує відступні ``` всередині списків) ───────────────
+    if (ln.trimStart().startsWith('```')) {
+      const indent  = ln.length - ln.trimStart().length;
+      const lang    = ln.trimStart().slice(3).trim().toLowerCase();
+      const pfx     = ' '.repeat(indent);
       i++;
       const codeLines = [];
-      while (i < lines.length && !lines[i].startsWith('```')) { codeLines.push(lines[i]); i++; }
+      while (i < lines.length && !lines[i].trimStart().startsWith('```')) {
+        const cl = lines[i];
+        codeLines.push(indent > 0 && cl.startsWith(pfx) ? cl.slice(indent) : cl);
+        i++;
+      }
       i++; // skip closing ```
       blocks.push({ type: 'code', lang, lines: codeLines });
       lastWasHead = false;
@@ -107,6 +113,12 @@ function parseMd(content) {
     }
 
     // ── Headings ──────────────────────────────────────────────────────────────
+    const h1m = ln.match(/^# (.+)/);
+    if (h1m) {
+      blocks.push({ type: 'h1', text: h1m[1].trim() });
+      i++; lastWasHead = true; continue;
+    }
+
     const h2m = ln.match(/^## (.+)/);
     if (h2m) {
       const text = h2m[1].trim();
