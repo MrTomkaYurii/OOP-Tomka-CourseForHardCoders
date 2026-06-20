@@ -8,9 +8,13 @@ const repositoryOwner = process.env.GITHUB_REPOSITORY_OWNER;
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 const isUserPagesRepository = repositoryName === `${repositoryOwner}.github.io`;
 
-// Lecture images live in lectures/_assets/_docx (outside site/)
+// Lecture images live in lectures/_assets (outside site/)
 const lectureAssetsDir = resolve(fileURLToPath(import.meta.url), "../../lectures/_assets");
 const urlPrefix = "/_assets";
+
+// Git-workshop images live in git-workshop/_assets (outside site/)
+const workshopAssetsDir = resolve(fileURLToPath(import.meta.url), "../../git-workshop/_assets");
+const workshopUrlPrefix = "/git-workshop";
 
 const MIME = {
   ".png": "image/png",
@@ -63,16 +67,39 @@ function lectureAssetsDevPlugin() {
   };
 }
 
-/** Astro integration: copy lectures/_assets into dist/ after build */
+/** Vite plugin: serve git-workshop/_assets during dev server */
+function workshopAssetsDevPlugin() {
+  return {
+    name: "workshop-assets-dev",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.split("?")[0] ?? "";
+        if (!url.startsWith(workshopUrlPrefix + "/")) return next();
+        const filePath = join(workshopAssetsDir, url.slice(workshopUrlPrefix.length));
+        if (!existsSync(filePath) || !statSync(filePath).isFile()) return next();
+        res.setHeader("Content-Type", MIME[extname(filePath)] ?? "application/octet-stream");
+        res.setHeader("Content-Length", statSync(filePath).size);
+        createReadStream(filePath).pipe(res);
+      });
+    },
+  };
+}
+
+/** Astro integration: copy lectures/_assets and git-workshop/_assets into dist/ after build */
 function copyLectureAssetsOnBuild() {
   return {
     name: "copy-lecture-assets",
     hooks: {
       "astro:build:done": ({ dir }) => {
-        const dest = join(fileURLToPath(dir), "_assets");
+        const lectDest = join(fileURLToPath(dir), "_assets");
         if (existsSync(lectureAssetsDir)) {
-          mkdirSync(dest, { recursive: true });
-          cpSync(lectureAssetsDir, dest, { recursive: true });
+          mkdirSync(lectDest, { recursive: true });
+          cpSync(lectureAssetsDir, lectDest, { recursive: true });
+        }
+        const wsDest = join(fileURLToPath(dir), "git-workshop");
+        if (existsSync(workshopAssetsDir)) {
+          mkdirSync(wsDest, { recursive: true });
+          cpSync(workshopAssetsDir, wsDest, { recursive: true });
         }
       },
     },
@@ -86,7 +113,7 @@ export default defineConfig({
   site: "https://tomka.space",
   base: basePath ?? (isGitHubActions && repositoryName && !isUserPagesRepository ? `/${repositoryName}` : "/"),
   vite: {
-    plugins: [blazorRunnerDevPlugin(), lectureAssetsDevPlugin()],
+    plugins: [blazorRunnerDevPlugin(), lectureAssetsDevPlugin(), workshopAssetsDevPlugin()],
   },
   integrations: [copyLectureAssetsOnBuild()],
 });

@@ -1,0 +1,114 @@
+---
+import AppShell from "@/components/AppShell.astro";
+import SiteLayout from "@/layouts/SiteLayout.astro";
+import { renderMarkdown } from "@/data/course";
+import { sitePath } from "@/utils/paths";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = resolve(fileURLToPath(import.meta.url), "../../../..");
+const markdown = readFileSync(resolve(root, "git-workshop/workshop.md"), "utf-8");
+const assetPrefix = sitePath("/git-workshop");
+const { html, headings } = await renderMarkdown(markdown, { assetPrefix });
+
+type Heading = { depth: number; text: string; slug: string };
+const tocGroups = headings.reduce<Array<{ parent: Heading; children: Heading[] }>>(
+  (groups, heading) => {
+    if (heading.depth === 2) {
+      groups.push({ parent: heading, children: [] });
+      return groups;
+    }
+    if (heading.depth === 3 && groups.length > 0) {
+      groups[groups.length - 1].children.push(heading);
+    }
+    return groups;
+  },
+  [],
+);
+---
+
+<SiteLayout title="Git Воркшоп | OOP C# Course">
+  <AppShell>
+    <article class="lab-layout">
+      <header class="lab-hero">
+        <div>
+          <p class="eyebrow">Перед Lab-01</p>
+          <h1>Git &amp; GitHub: Практичний воркшоп</h1>
+          <p>Клонування, гілки, коміти, push — все що потрібно для 22 лабораторних</p>
+        </div>
+        <aside class="lab-facts">
+          <div><span>Рівень</span><strong>Початковий</strong></div>
+          <div><span>Охоплення</span><strong>Lab-01 → Lab-22</strong></div>
+          <div><span>Формат</span><strong>Кроки + діаграми</strong></div>
+          <div><span>Попередні знання</span><strong>Не потрібні</strong></div>
+        </aside>
+      </header>
+
+      <input class="drawer-toggle right-toggle" type="checkbox" id="lab-toc-toggle" aria-hidden="true" />
+      <label class="toc-fab" for="lab-toc-toggle" aria-label="Відкрити зміст">
+        <span></span><span></span><span></span>
+      </label>
+      <label class="toc-backdrop" for="lab-toc-toggle" aria-label="Закрити зміст"></label>
+
+      <div class="reader-grid">
+        <div class="markdown-body" set:html={html} />
+        <aside class="toc">
+          <div class="drawer-head toc-drawer-head">
+            <span>Зміст воркшопу</span>
+            <label class="close-button" for="lab-toc-toggle" aria-label="Закрити зміст">×</label>
+          </div>
+          <p>На сторінці</p>
+          {tocGroups.map((group, index) => (
+            group.children.length > 0 ? (
+              <details class="toc-group" open={index < 3}>
+                <summary>
+                  <a data-toc-link href={`#${group.parent.slug}`}>{group.parent.text}</a>
+                </summary>
+                <div>
+                  {group.children.map((h) => (
+                    <a data-toc-link href={`#${h.slug}`}>{h.text}</a>
+                  ))}
+                </div>
+              </details>
+            ) : (
+              <a data-toc-link class="toc-link" href={`#${group.parent.slug}`}>{group.parent.text}</a>
+            )
+          ))}
+        </aside>
+      </div>
+
+      <nav class="lab-pager" aria-label="Далі">
+        <span></span>
+        <a class="pager-card next" href={sitePath("/labs/lab-01-intro/")}>
+          <span>Перша лаба</span>
+          <strong>Lab 01: Основи C#</strong>
+        </a>
+      </nav>
+    </article>
+
+    <script>
+      const headingNodes = [...document.querySelectorAll<HTMLElement>(".markdown-body h2[id], .markdown-body h3[id]")];
+      const tocLinks = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")];
+      const linkById = new Map(tocLinks.map((link) => [decodeURIComponent(link.hash.slice(1)), link]));
+
+      function activateTocLink(id: string) {
+        tocLinks.forEach((link) => link.classList.toggle("active", decodeURIComponent(link.hash.slice(1)) === id));
+        linkById.get(id)?.closest("details")?.setAttribute("open", "");
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((e) => e.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+          if (visible?.target.id) activateTocLink(visible.target.id);
+        },
+        { rootMargin: "-18% 0px -70% 0px", threshold: 0.01 },
+      );
+
+      headingNodes.forEach((h) => observer.observe(h));
+      if (headingNodes[0]?.id) activateTocLink(headingNodes[0].id);
+    </script>
+  </AppShell>
+</SiteLayout>

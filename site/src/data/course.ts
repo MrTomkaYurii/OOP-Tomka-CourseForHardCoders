@@ -413,7 +413,7 @@ function collectHeadings(markdown: string, minDepth = 2) {
   }));
 }
 
-async function renderMarkdown(markdown: string, options: { assetPrefix?: string } = {}) {
+export async function renderMarkdown(markdown: string, options: { assetPrefix?: string } = {}) {
   const highlighter = await getHighlighter();
   const supportedLangs = highlighter.getLoadedLanguages();
 

@@ -62,6 +62,7 @@ const lectureGroups = lectures.reduce<Array<{ title: string; items: Array<{ href
       <a class:list={["nav-link", currentPath === "/" && "active"]} href={sitePath("/")}>Огляд курсу</a>
       <a class:list={["nav-link", currentPath.startsWith("/lectures/") && "active"]} href={sitePath("/lectures/")}>Лекції</a>
       <a class:list={["nav-link", currentPath === "/labs/" && "active"]} href={sitePath("/labs/")}>Лабораторні</a>
+      <a class:list={["nav-link", currentPath === "/git-workshop/" && "active"]} href={sitePath("/git-workshop/")}>Git Воркшоп</a>
       <a class:list={["nav-link", currentPath === "/roadmap/" && "active"]} href={sitePath("/roadmap/")}>Карта розвитку</a>
       <a class:list={["nav-link", currentPath === "/evolution/" && "active"]} href={sitePath("/evolution/")}>Еволюція проєкту</a>
     </nav>
