@@ -10,6 +10,15 @@
 
 ---
 
+## Гілка
+
+```bash
+git checkout main
+git checkout -b Lab-19
+```
+
+---
+
 ## Ключові концепції
 
 ### TPH для абстрактної ієрархії
@@ -100,6 +109,11 @@ public Patient? Patient { get; set; }  // navigation
 - Чому EF Core може використовувати `protected` конструктор? Він же не `public`.
 - Чи потрібен parameterless ctor для підкласів, якщо базовий `protected MedicalRecord()` вже є?
 
+```bash
+git add src/Models/MedicalRecord.cs
+git commit -m "Lab19 Task01: add MedicalRecord hierarchy with EF Core compatibility"
+```
+
 ---
 
 ### Завдання 2. Fluent API для MedicalRecord TPH
@@ -151,6 +165,11 @@ modelBuilder.Entity<Diagnosis>(entity => {
 - Що означає `HasDiscriminator` для абстрактного базового класу? Чи потрібно `HasValue<MedicalRecord>("Base")`?
 - Чому всі поля підтипів в одній таблиці є nullable?
 
+```bash
+git add src/Data/ClinicDbContext.cs src/Migrations/
+git commit -m "Lab19 Task02: configure Fluent API for MedicalRecord TPH and add migration"
+```
+
 ---
 
 ### Завдання 3. Owned Entity: EmergencyContact
@@ -200,6 +219,11 @@ modelBuilder.Entity<Patient>().OwnsOne(p => p.EmergencyContact, ec =>
 **Ключові питання:**
 - Чи можна зробити `OwnsMany` (колекцію Owned Entity)? Що EF робить з таблицею?
 - Що відбудеться якщо встановити `patient.EmergencyContact = null` і зберегти?
+
+```bash
+git add src/Models/Patient.cs src/Models/EmergencyContact.cs src/Data/ClinicDbContext.cs
+git commit -m "Lab19 Task03: add EmergencyContact as Owned Entity for Patient"
+```
 
 ---
 
@@ -252,6 +276,11 @@ modelBuilder.Entity<Patient>()
 - Коли використовувати RowVersion, а коли — `[ConcurrencyCheck]` на окремому полі?
 - Що зробити у `catch (DbUpdateConcurrencyException)`? Перезавантажити дані чи інформувати користувача?
 
+```bash
+git add src/Models/Patient.cs src/Data/DbSeeder.cs src/Migrations/
+git commit -m "Lab19 Task04: add RowVersion concurrency token and extend DbSeeder"
+```
+
 ---
 
 ## Рефлексійні питання
@@ -267,3 +296,16 @@ modelBuilder.Entity<Patient>()
 5. **Soft delete.** Замість видалення запису — встановити `IsDeleted = true`. Як це реалізувати в EF Core так, щоб всі запити автоматично фільтрували видалені записи?
 
 6. **Validation in setters vs DB constraints.** Setter `DiagnosisCode` валідує не-порожній рядок. А в БД — nullable column. Хто відповідає за якість даних — C# код чи схема БД? Або обоє?
+
+---
+
+## Статус гілки
+
+Після завершення всіх завдань — злити в `main`:
+
+```bash
+git checkout main
+git merge --no-ff Lab-19 -m "Merge Lab-19: EF Core Advanced"
+```
+
+> Наступна лаба: `git checkout -b Lab-20`

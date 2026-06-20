@@ -15,7 +15,7 @@
 ```bash
 git checkout main
 git pull
-git checkout -b feature/polymorphism
+git checkout -b Lab-08
 ```
 
 ---
@@ -86,7 +86,7 @@ public class RegularAppointment : Appointment
 
 ```bash
 git add src/Models/Appointment.cs src/Models/RegularAppointment.cs
-git commit -m "Lab08 Task1: make GetCost() and GetDescription() virtual, add RegularAppointment"
+git commit -m "Lab08 Task01: make GetCost() and GetDescription() virtual, add RegularAppointment"
 ```
 
 ---
@@ -185,7 +185,7 @@ for (int i = 0; i < appointments.Length; i++)
 
 ```bash
 git add src/Models/UrgentAppointment.cs src/Models/SpecialistAppointment.cs
-git commit -m "Lab08 Task2: add UrgentAppointment and SpecialistAppointment"
+git commit -m "Lab08 Task02: add UrgentAppointment and SpecialistAppointment"
 ```
 
 ---
@@ -248,7 +248,7 @@ Console.WriteLine("GetPriority   (new):       " + urgentRef.GetPriority());    /
 
 ```bash
 git add src/Managers/AppointmentManager.cs src/Program.cs
-git commit -m "Lab08 Task3: BookUrgent/BookSpecialist, update seed data, demonstrate new vs override"
+git commit -m "Lab08 Task03: BookUrgent/BookSpecialist, update seed data, demonstrate new vs override"
 ```
 
 ---
@@ -328,7 +328,7 @@ static void AppointmentsByTypeMenu(Clinic clinic)
 
 ```bash
 git add src/Managers/AppointmentManager.cs src/Program.cs
-git commit -m "Lab08 Task4: GetUrgent/GetSpecialist/GetRegular, AppointmentsByTypeMenu, show type in list"
+git commit -m "Lab08 Task04: GetUrgent/GetSpecialist/GetRegular, AppointmentsByTypeMenu, show type in list"
 ```
 
 ---
@@ -383,7 +383,7 @@ public class UrgentAppointment : Appointment
 
 ```bash
 git add -A
-git commit -m "Lab08 Task4: explore sealed limitations, implement discount modifier approach"
+git commit -m "Lab08 Task04: explore sealed limitations, implement discount modifier approach"
 ```
 
 ---
@@ -429,8 +429,8 @@ dotnet run
 
 ```bash
 git checkout main
-git merge --no-ff feature/polymorphism -m "Merge feature/polymorphism: Lab08 Polymorphism"
+git merge --no-ff Lab-08 -m "Merge Lab-08: Polymorphism"
 git push
 ```
 
-> Наступна лаба: `git checkout -b feature/generics` — `Repository<T>`, `WaitingQueue<T>`, `where T :`.
+> Наступна лаба: `git checkout -b Lab-09`

@@ -21,6 +21,15 @@ var doctors  = await context.Doctors.ToListAsync();   // потік ВІЛЬНИ
 
 ---
 
+## Гілка
+
+```bash
+git checkout main
+git checkout -b Lab-21
+```
+
+---
+
 ## Ключові концепції
 
 ### async / await — основи
@@ -207,6 +216,11 @@ public static async Task SeedAsync(ClinicDbContext context, CancellationToken ct
 - `async Task` vs `async void` — яка різниця при виключенні всередині?
 - `CancellationToken ct = default` — що означає `default` для структури `CancellationToken`?
 
+```bash
+git add src/Data/DbSeeder.cs Program.cs
+git commit -m "Lab21 Task01: convert SeedAsync to async Task and use await in Program.cs"
+```
+
 ---
 
 ### Завдання 2. AsyncClinicService — базові async методи EF Core
@@ -236,6 +250,11 @@ GetUpcomingAppointmentsAsync(ct)            → Task<List<Appointment>>
 **Ключові питання:**
 - Якщо `async Task<T>` метод не містить жодного `await` — що видасть компілятор?
 - Різниця між `Task.Result` і `await task` — коли перший варіант небезпечний?
+
+```bash
+git add src/Services/AsyncClinicService.cs
+git commit -m "Lab21 Task02: add AsyncClinicService with async EF Core methods"
+```
 
 ---
 
@@ -290,6 +309,11 @@ await service.SearchPatientsAsync("...", cts.Token);  // кине OperationCance
 - `Interlocked.Increment` vs `count++` в паралельному коді — яка різниця?
 - `Task.WhenAll` vs `Task.WhenAny` — коли використовувати кожен?
 
+```bash
+git add src/Services/AsyncClinicService.cs Program.cs
+git commit -m "Lab21 Task03: add Task.WhenAll, Parallel.ForEachAsync and CancellationToken support"
+```
+
 ---
 
 ### Завдання 4. AggregateException та обробка помилок паралельних задач
@@ -325,6 +349,11 @@ catch (Exception ex) { /* тільки перша InnerException */ }
 - Чому `await Task.WhenAll(...)` розгортає `AggregateException` до першої `InnerException`?
 - `TaskContinuationOptions.OnlyOnFaulted` vs `OnlyOnRanToCompletion` — де кожен корисний?
 - Якщо скасувати задачу — вона `IsFaulted` чи `IsCanceled`?
+
+```bash
+git add src/Services/AsyncClinicService.cs Program.cs
+git commit -m "Lab21 Task04: add AggregateException handling for parallel async tasks"
+```
 
 ---
 
@@ -362,6 +391,11 @@ await service.BulkProcessAppointmentsAsync(AppointmentStatus.Completed, progress
 - Навіщо `IProgress<T>` замість прямого `Console.WriteLine` всередині методу?
 - `Progress<T>` маршалює `Report()` на UI-потік — що це означає в WinForms? У консольному застосунку?
 - Як зупинити `BulkProcessAppointmentsAsync` після 50% без `CancellationToken`?
+
+```bash
+git add src/Services/AsyncClinicService.cs Program.cs
+git commit -m "Lab21 Task05: add BulkProcessAppointmentsAsync with IProgress<T> reporting"
+```
 
 ---
 
@@ -415,6 +449,11 @@ private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSecond
 - `using` для `HttpClient` — чому це антипатерн незважаючи на `IDisposable`?
 - `GetFromJsonAsync<T>` повертає `null` при 204 No Content — що ще може призвести до `null`?
 
+```bash
+git add src/Services/DrugInfoService.cs Program.cs
+git commit -m "Lab21 Task06: add DrugInfoService with HttpClient async JSON fetch"
+```
+
 ---
 
 ## Рефлексійні питання
@@ -440,3 +479,16 @@ private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSecond
 
 6. **`HttpClient` socket exhaustion.**
    Якщо 1000 разів за секунду створювати `new HttpClient()` та одразу Dispose — що відбудеться на рівні ОС? Як `IHttpClientFactory` (ASP.NET Core) вирішує цю проблему?
+
+---
+
+## Статус гілки
+
+Після завершення всіх завдань — злити в `main`:
+
+```bash
+git checkout main
+git merge --no-ff Lab-21 -m "Merge Lab-21: Async/Await"
+```
+
+> Наступна лаба: `git checkout -b Lab-22`

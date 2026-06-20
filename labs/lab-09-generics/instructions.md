@@ -15,7 +15,7 @@
 ```bash
 git checkout main
 git pull
-git checkout -b feature/generics
+git checkout -b Lab-09
 ```
 
 ---
@@ -66,7 +66,7 @@ git checkout -b feature/generics
 
 ```bash
 git add src/Managers/PatientManager.cs
-git commit -m "Lab09 Task1: replace Patient[] array with List<Patient> in PatientManager"
+git commit -m "Lab09 Task01: replace Patient[] array with List<Patient> in PatientManager"
 ```
 
 ---
@@ -122,7 +122,7 @@ q.Enqueue("A"); q.Enqueue("B"); q.Enqueue("C");
 
 ```bash
 git add src/Models/WaitingQueue.cs
-git commit -m "Lab09 Task2: add generic WaitingQueue<T> over Queue<T>"
+git commit -m "Lab09 Task02: add generic WaitingQueue<T> over Queue<T>"
 ```
 
 ---
@@ -173,7 +173,7 @@ public WaitingQueue<Patient> WaitingRoom { get; }
 
 ```bash
 git add src/Clinic.cs src/Program.cs
-git commit -m "Lab09 Task3: add WaitingRoom to Clinic, add menu item 6 Черга очікування"
+git commit -m "Lab09 Task03: add WaitingRoom to Clinic, add menu item 6 Черга очікування"
 ```
 
 ---
@@ -240,7 +240,7 @@ Repository<Patient> repo = new Repository<Patient>();
 
 ```bash
 git add src/Interfaces/IIdentifiable.cs src/Managers/Repository.cs src/Models/Patient.cs src/Models/Doctor.cs src/Models/Appointment.cs
-git commit -m "Lab09 Task4: add IIdentifiable, Repository<T> where T : IIdentifiable"
+git commit -m "Lab09 Task04: add IIdentifiable, Repository<T> where T : IIdentifiable"
 ```
 
 ---
@@ -277,8 +277,8 @@ dotnet run
 
 ```bash
 git checkout main
-git merge --no-ff feature/generics -m "Merge feature/generics: Lab09 Generics — List<T>, WaitingQueue<T>, Repository<T>"
+git merge --no-ff Lab-09 -m "Merge Lab-09: Generics"
 git push
 ```
 
-> Наступна лаба: `git checkout -b feature/iterators` — `IEnumerable<T>`, `yield return`, `IComparable<T>`.
+> Наступна лаба: `git checkout -b Lab-10`

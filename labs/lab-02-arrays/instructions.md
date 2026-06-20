@@ -4,7 +4,7 @@
 Навчитися працювати з одновимірними, двовимірними, рваними та тривимірними масивами в C#.
 
 ## Контекст
-Це **пісочниця** — окремий мінімальний проєкт, який **не зливається в `main`**. Після цієї лаби стартує основний проєкт (Лаба 03).
+Це окремий мінімальний проєкт для відпрацювання масивів. Після цієї лаби стартує основний проєкт (Лаба 03).
 
 ---
 
@@ -12,7 +12,7 @@
 
 ```bash
 git checkout main
-git checkout -b sandbox/arrays
+git checkout -b Lab-02
 ```
 
 ---
@@ -95,7 +95,7 @@ Task1.Run();   // → Task2.Run() → Task3.Run() → ...
 
 ```bash
 git add sandbox/arrays/Task1.cs sandbox/arrays/Program.cs
-git commit -m "Lab02 Task1: basic 1D array stats"
+git commit -m "Lab02 Task01: basic 1D array stats"
 ```
 
 ---
@@ -150,7 +150,7 @@ git commit -m "Lab02 Task1: basic 1D array stats"
 
 ```bash
 git add sandbox/arrays/Task2.cs sandbox/arrays/Program.cs
-git commit -m "Lab02 Task2: bubble sort on 1D array"
+git commit -m "Lab02 Task02: bubble sort on 1D array"
 ```
 
 ---
@@ -227,7 +227,7 @@ git commit -m "Lab02 Task2: bubble sort on 1D array"
 
 ```bash
 git add sandbox/arrays/Task3.cs sandbox/arrays/Program.cs
-git commit -m "Lab02 Task3: weekly schedule with named fixed array"
+git commit -m "Lab02 Task03: weekly schedule with named fixed array"
 ```
 
 ---
@@ -305,7 +305,7 @@ git commit -m "Lab02 Task3: weekly schedule with named fixed array"
 
 ```bash
 git add sandbox/arrays/Task4.cs sandbox/arrays/Program.cs
-git commit -m "Lab02 Task4: 2D rectangular array with row/column sums"
+git commit -m "Lab02 Task04: 2D rectangular array with row/column sums"
 ```
 
 ---
@@ -380,7 +380,7 @@ git commit -m "Lab02 Task4: 2D rectangular array with row/column sums"
 
 ```bash
 git add sandbox/arrays/Task5.cs sandbox/arrays/Program.cs
-git commit -m "Lab02 Task5: square matrix diagonal analysis"
+git commit -m "Lab02 Task05: square matrix diagonal analysis"
 ```
 
 ---
@@ -469,7 +469,7 @@ git commit -m "Lab02 Task5: square matrix diagonal analysis"
 
 ```bash
 git add sandbox/arrays/Task6.cs sandbox/arrays/Program.cs
-git commit -m "Lab02 Task6: jagged array with per-row stats"
+git commit -m "Lab02 Task06: jagged array with per-row stats"
 ```
 
 ---
@@ -532,7 +532,7 @@ git commit -m "Lab02 Task6: jagged array with per-row stats"
 
 ```bash
 git add sandbox/arrays/Task7.cs sandbox/arrays/Program.cs
-git commit -m "Lab02 Task7: parallel arrays sorted by value"
+git commit -m "Lab02 Task07: parallel arrays sorted by value"
 ```
 
 ---
@@ -631,7 +631,7 @@ git commit -m "Lab02 Task7: parallel arrays sorted by value"
 
 ```bash
 git add sandbox/arrays/Task8.cs sandbox/arrays/Program.cs
-git commit -m "Lab02 Task8: 3D array analysis with per-department stats"
+git commit -m "Lab02 Task08: 3D array analysis with per-department stats"
 ```
 
 ---
@@ -659,9 +659,11 @@ dotnet run
 
 ## Статус гілки
 
-Ця гілка **не зливається в `main`**. Після завершення:
+Після завершення всіх завдань — злити в `main`:
 
 ```bash
 git checkout main
-# наступна лаба: git checkout -b feature/patient-class
+git merge --no-ff Lab-02 -m "Merge Lab-02: Arrays"
 ```
+
+> Наступна лаба: `git checkout -b Lab-03`

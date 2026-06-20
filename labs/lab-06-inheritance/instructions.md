@@ -16,10 +16,8 @@
 
 ```bash
 git checkout main
-git checkout -b feature/inheritance
+git checkout -b Lab-06
 ```
-
-> Гілка **зливається в `main`** після завершення всіх завдань.
 
 ---
 
@@ -129,7 +127,7 @@ Console.WriteLine(record.GetRecordType()); // "Діагноз" — виклик 
 
 ```bash
 git add src/Models/MedicalRecord.cs src/Models/Diagnosis.cs
-git commit -m "Lab06 Task1: add abstract MedicalRecord base class and Diagnosis subclass"
+git commit -m "Lab06 Task01: add abstract MedicalRecord base class and Diagnosis subclass"
 ```
 
 ---
@@ -222,7 +220,7 @@ for (int i = 0; i < records.Length; i++)
 
 ```bash
 git add src/Models/LabResult.cs src/Models/Prescription.cs src/Managers/MedicalRecordManager.cs
-git commit -m "Lab06 Task2: add LabResult, Prescription subclasses and MedicalRecordManager"
+git commit -m "Lab06 Task02: add LabResult, Prescription subclasses and MedicalRecordManager"
 ```
 
 ---
@@ -335,7 +333,7 @@ manager.DisplayPatientSummary(1);
 
 ```bash
 git add src/Managers/MedicalRecordManager.cs
-git commit -m "Lab06 Task3: add type-filtered queries using is/as pattern matching"
+git commit -m "Lab06 Task03: add type-filtered queries using is/as pattern matching"
 ```
 
 ---
@@ -427,7 +425,7 @@ for (int i = 0; i < records.Length; i++)
 
 ```bash
 git add src/Clinic.cs src/Program.cs
-git commit -m "Lab06 Task4: integrate MedicalRecords into Clinic and Program menu"
+git commit -m "Lab06 Task04: integrate MedicalRecords into Clinic and Program menu"
 ```
 
 ---
@@ -474,7 +472,7 @@ dotnet run
 
 ```bash
 git checkout main
-git merge --no-ff feature/inheritance -m "Merge feature/inheritance: Lab06 Inheritance"
+git merge --no-ff Lab-06 -m "Merge Lab-06: Inheritance"
 ```
 
-> Наступна лаба: `git checkout -b feature/polymorphism` — `new` keyword, `sealed`, `base.Method()`.
+> Наступна лаба: `git checkout -b Lab-07`

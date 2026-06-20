@@ -5,7 +5,7 @@
 
 ## Контекст
 
-Попередні лаби були **пісочницями** — окремими мінімальними проєктами для відпрацювання синтаксису. З цієї лаби починається **основний проєкт** `src/ClinicApp`, який буде рости протягом усіх 21 лаб.
+Попередні лаби були окремими мінімальними проєктами для відпрацювання синтаксису. З цієї лаби починається **основний проєкт** `src/ClinicApp`, який буде рости протягом усіх 21 лаб.
 
 Станом на початок цієї лаби:
 - `sandbox/intro/` — базовий синтаксис C# (Лаба 01)
@@ -20,10 +20,8 @@
 
 ```bash
 git checkout main
-git checkout -b feature/catalog
+git checkout -b Lab-03
 ```
-
-> Гілка `feature/catalog` **зливається в `main`** після завершення всіх завдань.
 
 ---
 
@@ -63,7 +61,7 @@ git commit -m "Lab03: create src/ClinicApp console project"
 
 ## Як виконувати завдання
 
-На відміну від пісочниць, тут **не потрібно** файлів `Task1.cs`, `Task2.cs`. Кожне завдання додає новий файл із класом до **одного спільного проєкту**. Клас зразу використовується у спільному `Program.cs`.
+На відміну від Лаб 01–02, тут **не потрібно** файлів `Task1.cs`, `Task2.cs`. Кожне завдання додає новий файл із класом до **одного спільного проєкту**. Клас зразу використовується у спільному `Program.cs`.
 
 Структура після завершення всіх завдань:
 
@@ -167,7 +165,7 @@ public class Patient { ... }
 
 ```bash
 git add src/Patient.cs src/Program.cs
-git commit -m "Lab03 Task1: add Patient class with 3 constructors and computed properties"
+git commit -m "Lab03 Task01: add Patient class with 3 constructors and computed properties"
 ```
 
 ---
@@ -246,7 +244,7 @@ git commit -m "Lab03 Task1: add Patient class with 3 constructors and computed p
 
 ```bash
 git add src/Doctor.cs src/Program.cs
-git commit -m "Lab03 Task2: add Doctor class with int work hours and availability check"
+git commit -m "Lab03 Task02: add Doctor class with int work hours and availability check"
 ```
 
 ---
@@ -323,7 +321,7 @@ git commit -m "Lab03 Task2: add Doctor class with int work hours and availabilit
 
 ```bash
 git add src/PatientManager.cs src/Program.cs
-git commit -m "Lab03 Task3: add PatientManager with array storage, CRUD and stats"
+git commit -m "Lab03 Task03: add PatientManager with array storage, CRUD and stats"
 ```
 
 ---
@@ -396,7 +394,7 @@ git commit -m "Lab03 Task3: add PatientManager with array storage, CRUD and stat
 
 ```bash
 git add src/DoctorManager.cs src/Program.cs
-git commit -m "Lab03 Task4: add DoctorManager with speciality search and stats"
+git commit -m "Lab03 Task04: add DoctorManager with speciality search and stats"
 ```
 
 ---
@@ -482,7 +480,7 @@ git commit -m "Lab03 Task4: add DoctorManager with speciality search and stats"
 
 ```bash
 git add src/Appointment.cs src/Program.cs
-git commit -m "Lab03 Task5: add Appointment class with status state machine"
+git commit -m "Lab03 Task05: add Appointment class with status state machine"
 ```
 
 ---
@@ -584,7 +582,7 @@ git commit -m "Lab03 Task5: add Appointment class with status state machine"
 
 ```bash
 git add src/AppointmentManager.cs src/Program.cs
-git commit -m "Lab03 Task6: add AppointmentManager with constructor injection and name lookup"
+git commit -m "Lab03 Task06: add AppointmentManager with constructor injection and name lookup"
 ```
 
 ---
@@ -668,7 +666,7 @@ git commit -m "Lab03 Task6: add AppointmentManager with constructor injection an
 
 ```bash
 git add src/Clinic.cs src/Program.cs
-git commit -m "Lab03 Task7: add Clinic orchestrator with schedule and report"
+git commit -m "Lab03 Task07: add Clinic orchestrator with schedule and report"
 ```
 
 ---
@@ -750,7 +748,7 @@ git commit -m "Lab03 Task7: add Clinic orchestrator with schedule and report"
 
 ```bash
 git add src/GrowablePatientManager.cs src/Program.cs
-git commit -m "Lab03 Task8: implement growable array manager to understand List<T> internals"
+git commit -m "Lab03 Task08: implement growable array manager to understand List<T> internals"
 ```
 
 ---
@@ -790,11 +788,11 @@ dotnet run
 
 ## Статус гілки
 
-Ця гілка **зливається в `main`**. Після завершення всіх завдань:
+Після завершення всіх завдань — злити в `main`:
 
 ```bash
 git checkout main
-git merge feature/catalog
+git merge --no-ff Lab-03 -m "Merge Lab-03: Defining Classes"
 ```
 
-> Наступна лаба: `git checkout -b feature/abstraction` — абстрактні класи та enum.
+> Наступна лаба: `git checkout -b Lab-04`

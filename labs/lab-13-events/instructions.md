@@ -6,8 +6,9 @@
 
 ## Гілка
 
-```
-feature/events
+```bash
+git checkout main
+git checkout -b Lab-13
 ```
 
 ---

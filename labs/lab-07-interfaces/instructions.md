@@ -13,7 +13,7 @@
 ```bash
 git checkout main
 git pull
-git checkout -b feature/interfaces
+git checkout -b Lab-07
 ```
 
 ---
@@ -78,7 +78,7 @@ public Appointment[] GetAll() { ... }
 
 ```bash
 git add src/Interfaces/IPayable.cs src/Models/Appointment.cs src/Managers/AppointmentManager.cs
-git commit -m "Lab07 Task1: add IPayable, implement in Appointment, add AppointmentManager.GetAll()"
+git commit -m "Lab07 Task01: add IPayable, implement in Appointment, add AppointmentManager.GetAll()"
 ```
 
 ---
@@ -134,7 +134,7 @@ public class Appointment : IPayable, ICancellable
 
 ```bash
 git add src/Interfaces/ICancellable.cs src/Models/Appointment.cs
-git commit -m "Lab07 Task2: add ICancellable, implement in Appointment"
+git commit -m "Lab07 Task02: add ICancellable, implement in Appointment"
 ```
 
 ---
@@ -199,7 +199,7 @@ public class Doctor : ISchedulable
 
 ```bash
 git add src/Interfaces/ISchedulable.cs src/Models/Doctor.cs src/Managers/BillingManager.cs
-git commit -m "Lab07 Task3: add ISchedulable, implement in Doctor, add BillingManager"
+git commit -m "Lab07 Task03: add ISchedulable, implement in Doctor, add BillingManager"
 ```
 
 ---
@@ -247,7 +247,7 @@ Billing = new BillingManager(Appointments);
 
 ```bash
 git add src/Clinic.cs src/Program.cs
-git commit -m "Lab07 Task4: integrate BillingManager into Clinic, add BillingMenu and menu descriptions"
+git commit -m "Lab07 Task04: integrate BillingManager into Clinic, add BillingMenu and menu descriptions"
 ```
 
 ---
@@ -288,8 +288,8 @@ dotnet run
 
 ```bash
 git checkout main
-git merge --no-ff feature/interfaces -m "Merge feature/interfaces: Lab07 Interfaces"
+git merge --no-ff Lab-07 -m "Merge Lab-07: Interfaces"
 git push
 ```
 
-> Наступна лаба: `git checkout -b feature/polymorphism` — `RegularAppointment`, `UrgentAppointment`, `new` keyword, `sealed`.
+> Наступна лаба: `git checkout -b Lab-08`

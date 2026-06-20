@@ -19,7 +19,7 @@
 ```bash
 git checkout main
 git pull
-git checkout -b feature/iterators
+git checkout -b Lab-10
 ```
 
 ---
@@ -77,7 +77,7 @@ git checkout -b feature/iterators
 
 ```bash
 git add src/Models/DoctorStats.cs
-git commit -m "Lab10 Task1: add DoctorStats with IComparable<DoctorStats> by appointment count"
+git commit -m "Lab10 Task01: add DoctorStats with IComparable<DoctorStats> by appointment count"
 ```
 
 ---
@@ -121,7 +121,7 @@ git commit -m "Lab10 Task1: add DoctorStats with IComparable<DoctorStats> by app
 
 ```bash
 git add src/Models/PatientStats.cs
-git commit -m "Lab10 Task2: add PatientStats with IComparable<PatientStats> by visit count"
+git commit -m "Lab10 Task02: add PatientStats with IComparable<PatientStats> by visit count"
 ```
 
 ---
@@ -177,7 +177,7 @@ git commit -m "Lab10 Task2: add PatientStats with IComparable<PatientStats> by v
 
 ```bash
 git add src/Comparators/
-git commit -m "Lab10 Task3: add IComparer<T> comparators for DoctorStats and PatientStats"
+git commit -m "Lab10 Task03: add IComparer<T> comparators for DoctorStats and PatientStats"
 ```
 
 ---
@@ -248,7 +248,7 @@ AnalyticsManager(AppointmentManager appointments, DoctorManager doctors, Patient
 
 ```bash
 git add src/Managers/AnalyticsManager.cs src/Clinic.cs
-git commit -m "Lab10 Task4: add AnalyticsManager with yield return for IEnumerable<DoctorStats/PatientStats>"
+git commit -m "Lab10 Task04: add AnalyticsManager with yield return for IEnumerable<DoctorStats/PatientStats>"
 ```
 
 ---
@@ -308,7 +308,7 @@ git commit -m "Lab10 Task4: add AnalyticsManager with yield return for IEnumerab
 
 ```bash
 git add src/Program.cs
-git commit -m "Lab10 Task5: add Analytics menu item 8 with sort options for doctors and patients"
+git commit -m "Lab10 Task05: add Analytics menu item 8 with sort options for doctors and patients"
 ```
 
 ---
@@ -345,8 +345,8 @@ dotnet run
 
 ```bash
 git checkout main
-git merge --no-ff feature/iterators -m "Merge feature/iterators: Lab10 — DoctorStats, PatientStats, IComparable, IComparer, AnalyticsManager"
+git merge --no-ff Lab-10 -m "Merge Lab-10: Iterators & Comparators"
 git push
 ```
 
-> Наступна лаба: `git checkout -b feature/reflection` — атрибути і рефлексія.
+> Наступна лаба: `git checkout -b Lab-11`

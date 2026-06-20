@@ -4,7 +4,7 @@
 Навчитися працювати з базовими конструкціями C#: типи даних, умовні оператори, цикли та методи.
 
 ## Контекст
-Це **пісочниця** — окремий мінімальний проєкт, який **не зливається в `main`**. Методи з Задачі 8 стануть методами класів у Лабі 03.
+Це окремий мінімальний проєкт для відпрацювання базового синтаксису C#. Методи з Задачі 8 стануть методами класів у Лабі 03.
 
 ---
 
@@ -36,10 +36,8 @@ git commit -m "Initial commit: add .gitignore"
 
 ```bash
 git checkout main
-git checkout -b sandbox/intro
+git checkout -b Lab-01
 ```
-
-> Гілка `sandbox/intro` **ніколи не зливається в `main`**.
 
 ---
 
@@ -117,7 +115,7 @@ Task1.Run();   // → Task2.Run() → Task3.Run() → ...
 
 ```bash
 git add sandbox/intro/Task1.cs sandbox/intro/Program.cs
-git commit -m "Lab01 Task1: calculate BMI from weight and height"
+git commit -m "Lab01 Task01: calculate BMI from weight and height"
 ```
 
 ---
@@ -165,7 +163,7 @@ git commit -m "Lab01 Task1: calculate BMI from weight and height"
 
 ```bash
 git add sandbox/intro/Task2.cs sandbox/intro/Program.cs
-git commit -m "Lab01 Task2: calculate visit cost with discount"
+git commit -m "Lab01 Task02: calculate visit cost with discount"
 ```
 
 ---
@@ -215,7 +213,7 @@ git commit -m "Lab01 Task2: calculate visit cost with discount"
 
 ```bash
 git add sandbox/intro/Task3.cs sandbox/intro/Program.cs
-git commit -m "Lab01 Task3: determine age and patient category with if/else"
+git commit -m "Lab01 Task03: determine age and patient category with if/else"
 ```
 
 ---
@@ -268,7 +266,7 @@ git commit -m "Lab01 Task3: determine age and patient category with if/else"
 
 ```bash
 git add sandbox/intro/Task4.cs sandbox/intro/Program.cs
-git commit -m "Lab01 Task4: classify blood pressure with compound conditions"
+git commit -m "Lab01 Task04: classify blood pressure with compound conditions"
 ```
 
 ---
@@ -335,7 +333,7 @@ git commit -m "Lab01 Task4: classify blood pressure with compound conditions"
 
 ```bash
 git add sandbox/intro/Task5.cs sandbox/intro/Program.cs
-git commit -m "Lab01 Task5: print clinic schedule using switch expression"
+git commit -m "Lab01 Task05: print clinic schedule using switch expression"
 ```
 
 ---
@@ -404,7 +402,7 @@ git commit -m "Lab01 Task5: print clinic schedule using switch expression"
 
 ```bash
 git add sandbox/intro/Task6.cs sandbox/intro/Program.cs
-git commit -m "Lab01 Task6: analyze card number with modulo operator"
+git commit -m "Lab01 Task06: analyze card number with modulo operator"
 ```
 
 ---
@@ -481,7 +479,7 @@ git commit -m "Lab01 Task6: analyze card number with modulo operator"
 
 ```bash
 git add sandbox/intro/Task7.cs sandbox/intro/Program.cs
-git commit -m "Lab01 Task7: calculate visit statistics using for/foreach/while"
+git commit -m "Lab01 Task07: calculate visit statistics using for/foreach/while"
 ```
 
 ---
@@ -582,7 +580,7 @@ static string GetPressureStatus(int systolic, int diastolic)
 
 ```bash
 git add sandbox/intro/Task8.cs sandbox/intro/Program.cs
-git commit -m "Lab01 Task8: extract calculation logic into methods"
+git commit -m "Lab01 Task08: extract calculation logic into methods"
 ```
 
 ---
@@ -610,9 +608,11 @@ dotnet run
 
 ## Статус гілки
 
-Ця гілка **не зливається в `main`**. Після завершення:
+Після завершення всіх завдань — злити в `main`:
 
 ```bash
 git checkout main
-# наступна лаба: git checkout -b sandbox/arrays
+git merge --no-ff Lab-01 -m "Merge Lab-01: Intro to C#"
 ```
+
+> Наступна лаба: `git checkout -b Lab-02`

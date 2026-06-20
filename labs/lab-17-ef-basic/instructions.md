@@ -19,6 +19,15 @@
 
 ---
 
+## Гілка
+
+```bash
+git checkout main
+git checkout -b Lab-17
+```
+
+---
+
 ## Ключові концепції
 
 ### DbContext
@@ -105,6 +114,11 @@ Server=(localdb)\mssqllocaldb;Database=ClinicApp;Trusted_Connection=True;TrustSe
 
 LocalDB — вбудований SQL Server для розробки. Не потребує окремого встановлення сервера; автоматично запускається при першому підключенні.
 
+```bash
+git add src/ClinicApp.csproj src/Data/ClinicDbContext.cs
+git commit -m "Lab17 Task01: add EF Core packages and ClinicDbContext"
+```
+
 ---
 
 ### Завдання 2. Fluent API для Patient
@@ -146,6 +160,11 @@ modelBuilder.Entity<Patient>(entity =>
 - Навіщо явно вказувати `HasKey`, якщо EF і так знаходить `Id` за іменем?
 - Що відбувається з `_nextId` статичним лічильником при завантаженні об'єктів з БД?
 
+```bash
+git add src/Data/ClinicDbContext.cs src/Models/Patient.cs
+git commit -m "Lab17 Task02: configure Fluent API mapping for Patient entity"
+```
+
 ---
 
 ### Завдання 3. Fluent API для Doctor (Value Conversion)
@@ -181,6 +200,11 @@ entity.Property(d => d.Schedule).HasConversion(converter)...
 **Ключові питання:**
 - У чому різниця між expression tree і `Func<>` делегатом?
 - Чи можна замість рядка "8-17" зберігати два окремі стовпці? Як би виглядала конфігурація?
+
+```bash
+git add src/Data/ClinicDbContext.cs src/Models/Doctor.cs
+git commit -m "Lab17 Task03: configure Fluent API for Doctor with WorkSchedule value conversion"
+```
 
 ---
 
@@ -228,6 +252,11 @@ DbSeeder.Seed(context);
 - Навіщо `using var context = ...`? Що відбудеться якщо не dispose контекст?
 - Чому краще використовувати `Any()` замість `Count() == 0` для перевірки?
 
+```bash
+git add src/Data/DbSeeder.cs src/Migrations/
+git commit -m "Lab17 Task04: add DbSeeder and run InitialCreate migration"
+```
+
 ---
 
 ## Рефлексійні питання
@@ -243,3 +272,16 @@ DbSeeder.Seed(context);
 5. **Міграція як версія схеми.** Міграція — це як Git для структури БД. Що буде, якщо один розробник застосує міграцію `AddAppointments`, а інший ще ні — і обидва намагаються запустити додаток з однієї БД?
 
 6. **`using var context`.** Чому `DbContext` реалізує `IDisposable`? Що відбувається під час `Dispose()` — чи зберігаються незбережені зміни?
+
+---
+
+## Статус гілки
+
+Після завершення всіх завдань — злити в `main`:
+
+```bash
+git checkout main
+git merge --no-ff Lab-17 -m "Merge Lab-17: EF Core Basics"
+```
+
+> Наступна лаба: `git checkout -b Lab-18`

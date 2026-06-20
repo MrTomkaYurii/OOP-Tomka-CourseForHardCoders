@@ -13,7 +13,7 @@
 ```bash
 git checkout main
 git pull
-git checkout -b feature/reflection
+git checkout -b Lab-11
 ```
 
 ---
@@ -86,7 +86,7 @@ public sealed class MinValueAttribute : Attribute
 
 ```bash
 git add src/Attributes/
-git commit -m "Lab11 Task1: add RequiredAttribute, MaxLengthAttribute, MinValueAttribute"
+git commit -m "Lab11 Task01: add RequiredAttribute, MaxLengthAttribute, MinValueAttribute"
 ```
 
 ---
@@ -154,7 +154,7 @@ public class TreatmentPlan
 
 ```bash
 git add src/Enums/TreatmentStatus.cs src/Models/TreatmentPlan.cs
-git commit -m "Lab11 Task2: add TreatmentStatus enum and TreatmentPlan model with attributes"
+git commit -m "Lab11 Task02: add TreatmentStatus enum and TreatmentPlan model with attributes"
 ```
 
 ---
@@ -243,7 +243,7 @@ public static void PrintInfo(Type type)
 
 ```bash
 git add src/Utils/ValidationResult.cs src/Utils/ModelValidator.cs
-git commit -m "Lab11 Task3: add ValidationResult and ModelValidator with reflection"
+git commit -m "Lab11 Task03: add ValidationResult and ModelValidator with reflection"
 ```
 
 ---
@@ -323,7 +323,7 @@ public static class FormBuilder
 
 ```bash
 git add src/Managers/TreatmentPlanManager.cs src/Utils/FormBuilder.cs
-git commit -m "Lab11 Task4: add TreatmentPlanManager and generic FormBuilder"
+git commit -m "Lab11 Task04: add TreatmentPlanManager and generic FormBuilder"
 ```
 
 ---
@@ -383,7 +383,7 @@ TreatmentPlans = new TreatmentPlanManager();
 
 ```bash
 git add src/Clinic.cs src/Program.cs
-git commit -m "Lab11 Task5: integrate TreatmentPlanManager, add TreatmentPlansMenu"
+git commit -m "Lab11 Task05: integrate TreatmentPlanManager, add TreatmentPlansMenu"
 ```
 
 ---
@@ -423,8 +423,8 @@ dotnet run
 
 ```bash
 git checkout main
-git merge --no-ff feature/reflection -m "Merge feature/reflection: Lab11 Reflection & Attributes"
+git merge --no-ff Lab-11 -m "Merge Lab-11: Reflection & Attributes"
 git push
 ```
 
-> Наступна лаба: `git checkout -b feature/linq` — LINQ: `Where`, `Select`, `OrderBy`, `GroupBy`, `First/FirstOrDefault`, `Sum/Average`, `Any/All`.
+> Наступна лаба: `git checkout -b Lab-12`

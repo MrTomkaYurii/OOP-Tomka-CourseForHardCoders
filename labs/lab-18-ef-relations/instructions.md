@@ -13,6 +13,15 @@
 
 ---
 
+## Гілка
+
+```bash
+git checkout main
+git checkout -b Lab-18
+```
+
+---
+
 ## Ключові концепції
 
 ### Navigation Properties
@@ -125,6 +134,11 @@ EF Core при завантаженні об'єкта з БД:
 - Навіщо `ICollection<T>` а не просто `List<T>` або `T[]`?
 - Чому `private set` достатньо для EF Core, хоча setter "закритий"?
 
+```bash
+git add src/Models/ src/Models/Appointment.cs
+git commit -m "Lab18 Task01: add navigation properties and EF Core compatibility fixes"
+```
+
 ---
 
 ### Завдання 2. Fluent API для One-to-Many
@@ -166,6 +180,11 @@ modelBuilder.Entity<UrgentAppointment>()
 - Чому не можна два `OnDelete(Cascade)` в одній таблиці при SQL Server?
 - Що означає `HasValue<RegularAppointment>("Regular")` — де "Regular" зберігається?
 
+```bash
+git add src/Data/ClinicDbContext.cs
+git commit -m "Lab18 Task02: configure one-to-many Fluent API and TPH for Appointment hierarchy"
+```
+
 ---
 
 ### Завдання 3. Міграція та DbSeeder з Appointments
@@ -205,6 +224,11 @@ dotnet ef database update
 - Чому `context.Patients.ToList()` а не `context.Patients` безпосередньо для отримання Ids?
 - Що станеться, якщо SeedAppointments викликати до SeedDoctors?
 
+```bash
+git add src/Data/DbSeeder.cs src/Migrations/
+git commit -m "Lab18 Task03: add migration for Appointments with relations and extend DbSeeder"
+```
+
 ---
 
 ### Завдання 4. ClinicRepository — запити з .Include()
@@ -240,6 +264,11 @@ Change Tracker EF Core зберігає копію кожного заванта
 - Чи можна зробити `.Include().ThenInclude()` — навіщо це?
 - У чому різниця між `AsNoTracking()` і відключенням Change Tracker взагалі?
 
+```bash
+git add src/Data/ClinicRepository.cs
+git commit -m "Lab18 Task04: add ClinicRepository with Eager Loading queries"
+```
+
 ---
 
 ## Рефлексійні питання
@@ -255,3 +284,16 @@ Change Tracker EF Core зберігає копію кожного заванта
 5. **Include depth.** Чи можна зробити `.Include(p => p.Appointments).ThenInclude(a => a.Doctor)`? Що це дасть? Чи є небезпека?
 
 6. **Repository pattern.** `ClinicRepository` агрегує складні запити. Але це збільшує кількість файлів. Чи варто тримати прості запити (`context.Patients.ToList()`) прямо в Program.cs, а складні — в Repository?
+
+---
+
+## Статус гілки
+
+Після завершення всіх завдань — злити в `main`:
+
+```bash
+git checkout main
+git merge --no-ff Lab-18 -m "Merge Lab-18: EF Core Relations"
+```
+
+> Наступна лаба: `git checkout -b Lab-19`

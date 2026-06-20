@@ -13,7 +13,7 @@
 ```bash
 git checkout main
 git pull
-git checkout -b feature/files
+git checkout -b Lab-12
 ```
 
 ---
@@ -81,7 +81,7 @@ public class ClinicLogger
 
 ```bash
 git add src/Utils/ClinicLogger.cs src/Clinic.cs src/Program.cs
-git commit -m "Lab12 Task1: add ClinicLogger with AppendAllText and GetLastLines"
+git commit -m "Lab12 Task01: add ClinicLogger with AppendAllText and GetLastLines"
 ```
 
 ---
@@ -151,7 +151,7 @@ public class ClinicExporter
 
 ```bash
 git add src/Utils/ClinicExporter.cs src/Clinic.cs src/Program.cs
-git commit -m "Lab12 Task2: add ClinicExporter with StreamWriter, Path.Combine, Directory.CreateDirectory"
+git commit -m "Lab12 Task02: add ClinicExporter with StreamWriter, Path.Combine, Directory.CreateDirectory"
 ```
 
 ---
@@ -263,7 +263,7 @@ public class CsvImporter
 
 ```bash
 git add src/Utils/ImportResult.cs src/Utils/CsvImporter.cs src/Clinic.cs src/Program.cs
-git commit -m "Lab12 Task3: add ImportResult and CsvImporter with per-line error handling"
+git commit -m "Lab12 Task03: add ImportResult and CsvImporter with per-line error handling"
 ```
 
 ---
@@ -379,7 +379,7 @@ if (Console.ReadLine()?.Trim().ToLower() == "y")
 
 ```bash
 git add src/Utils/SessionManager.cs src/Clinic.cs src/Program.cs
-git commit -m "Lab12 Task4: add SessionManager, save/load session on exit/start"
+git commit -m "Lab12 Task04: add SessionManager, save/load session on exit/start"
 ```
 
 ---
@@ -420,8 +420,8 @@ dotnet run
 
 ```bash
 git checkout main
-git merge --no-ff feature/files -m "Merge feature/files: Lab12 File I/O"
+git merge --no-ff Lab-12 -m "Merge Lab-12: File I/O"
 git push
 ```
 
-> Наступна лаба: `git checkout -b feature/events` — `delegate`, `event`, `EventHandler<T>`, обробники що пишуть у вже знайомий `ClinicLogger`.
+> Наступна лаба: `git checkout -b Lab-13`

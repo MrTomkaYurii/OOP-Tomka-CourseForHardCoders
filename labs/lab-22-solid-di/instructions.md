@@ -25,6 +25,15 @@ public Clinic(string name)
 
 ---
 
+## Гілка
+
+```bash
+git checkout main
+git checkout -b Lab-22
+```
+
+---
+
 ## Ключові концепції
 
 ### S — Single Responsibility Principle
@@ -221,6 +230,11 @@ public record ClinicConfig(string Name, string Address = "", DateTime? Founded =
 - Скільки причин змінитись у вашій поточній `Clinic.cs`?
 - Де проходить межа між "це одна відповідальність" і "це дві"?
 
+```bash
+git add src/Models/ClinicConfig.cs src/Services/Clinic.cs
+git commit -m "Lab22 Task01: extract ClinicConfig as SRP value record"
+```
+
 ---
 
 ### Завдання 2. O — Open/Closed: ICostStrategy
@@ -249,6 +263,11 @@ public static (decimal Regular, decimal WithStrategy) CompareCost(Appointment a,
 **Ключові питання:**
 - Чому `ICostStrategy?` (nullable) а не обов'язковий параметр конструктора?
 - `_costStrategy?.Calculate(a) ?? a.GetCost()` — що відбудеться якщо стратегія не встановлена?
+
+```bash
+git add src/Strategies/ src/Services/AppointmentProcessor.cs
+git commit -m "Lab22 Task02: add ICostStrategy and OCP-compliant cost strategy implementations"
+```
 
 ---
 
@@ -290,6 +309,11 @@ static async Task PrintPatientCount(IPatientService service)
 **Ключові питання:**
 - В чому різниця між ISP і звичайним розбиттям на кілька класів?
 - Чому primary constructor зручніший для DIP ніж звичайний constructor?
+
+```bash
+git add src/Abstractions/ src/Services/PatientService.cs src/Services/AppointmentService.cs
+git commit -m "Lab22 Task03: split interfaces ISP and introduce DIP with primary constructors"
+```
 
 ---
 
@@ -352,6 +376,11 @@ Console.WriteLine(ReferenceEquals(svc1, svc2)); // false — Scoped, різні 
 - Що відбудеться якщо зареєструвати `ClinicDbContext` як Singleton?
 - Навіщо `provider.CreateScope()` в консольному застосунку?
 
+```bash
+git add src/Services/LoggingPatientService.cs Program.cs
+git commit -m "Lab22 Task05: register services in DI container with Decorator pattern"
+```
+
 ---
 
 ### Завдання 6. GetRequiredService vs GetService + L: Liskov
@@ -392,6 +421,11 @@ ProcessAppointment(new SpecialistAppointment(...)); // ✅
 - Де в нашому проєкті можна замінити `PatientService` на `LoggingPatientService` — без зміни коду що їх використовує?
 - `GetRequiredService` vs `ActivatorUtilities.CreateInstance` — коли потрібен другий варіант?
 
+```bash
+git add Program.cs
+git commit -m "Lab22 Task06: verify Liskov substitution via GetRequiredService and polymorphism"
+```
+
 ---
 
 ## Рефлексійні питання
@@ -407,3 +441,16 @@ ProcessAppointment(new SpecialistAppointment(...)); // ✅
 5. **OCP і кількість файлів.** OCP зменшує ризик регресій але збільшує кількість файлів (`RegularCostStrategy`, `UrgentCostStrategy`, `DiscountCostStrategy`...). Як знайти баланс? Коли варто відмовитись від стратегій і залишити простий if/switch?
 
 6. **ISP в реальних проєктах.** ASP.NET Core's `ILogger<T>` — великий чи маленький інтерфейс? Чи порушує він ISP? Порівняйте з нашим `IPatientService`.
+
+---
+
+## Статус гілки
+
+Після завершення всіх завдань — злити в `main`:
+
+```bash
+git checkout main
+git merge --no-ff Lab-22 -m "Merge Lab-22: SOLID and Dependency Injection"
+```
+
+> Це остання лаба курсу. Вітаємо!

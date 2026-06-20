@@ -16,10 +16,8 @@
 
 ```bash
 git checkout main
-git checkout -b feature/class-members
+git checkout -b Lab-04
 ```
-
-> Гілка **зливається в `main`** після завершення всіх завдань.
 
 ---
 
@@ -93,7 +91,7 @@ if (Status == AppointmentStatus.Scheduled) ...
 ```bash
 git add src/AppointmentStatus.cs src/BloodType.cs src/Speciality.cs
 git add src/Appointment.cs src/Patient.cs src/Doctor.cs
-git commit -m "Lab04 Task1: add enums for status, blood type and speciality"
+git commit -m "Lab04 Task01: add enums for status, blood type and speciality"
 ```
 
 ---
@@ -183,7 +181,7 @@ WorkSchedule copy = morning;
 
 ```bash
 git add src/WorkSchedule.cs src/Doctor.cs src/Program.cs
-git commit -m "Lab04 Task2: add WorkSchedule struct, replace int hours in Doctor"
+git commit -m "Lab04 Task02: add WorkSchedule struct, replace int hours in Doctor"
 ```
 
 ---
@@ -283,7 +281,7 @@ Doctor second = clinic.Doctors[1];
 git add src/ClinicFormatter.cs
 git add src/Patient.cs src/Doctor.cs
 git add src/PatientManager.cs src/DoctorManager.cs src/AppointmentManager.cs
-git commit -m "Lab04 Task3: add ClinicFormatter static class and indexers on managers"
+git commit -m "Lab04 Task03: add ClinicFormatter static class and indexers on managers"
 ```
 
 ---
@@ -375,7 +373,7 @@ Console.WriteLine(name);  // не знайдено
 
 ```bash
 git add src/PatientManager.cs src/DoctorManager.cs src/AppointmentManager.cs src/Program.cs
-git commit -m "Lab04 Task4: add method overloads, TryFindById with out, FindByBloodType"
+git commit -m "Lab04 Task04: add method overloads, TryFindById with out, FindByBloodType"
 ```
 
 ---
@@ -412,11 +410,13 @@ dotnet run
 
 ---
 
-## Злиття
+## Статус гілки
+
+Після завершення всіх завдань — злити в `main`:
 
 ```bash
 git checkout main
-git merge --no-ff feature/class-members -m "Merge feature/class-members: Lab04 Class Members"
+git merge --no-ff Lab-04 -m "Merge Lab-04: Class Members"
 ```
 
-> Наступна лаба: `git checkout -b feature/encapsulation` — інкапсуляція, приватні поля, валідація.
+> Наступна лаба: `git checkout -b Lab-05`

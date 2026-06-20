@@ -13,6 +13,15 @@
 
 ---
 
+## Гілка
+
+```bash
+git checkout main
+git checkout -b Lab-20
+```
+
+---
+
 ## Ключові концепції
 
 ### IQueryable&lt;T&gt; — відкладене виконання
@@ -135,6 +144,11 @@ var seniors = queryService.QueryPatients()
 - Коли саме `IQueryable` перетворюється на `IEnumerable` (перестає бути описом і стає даними)?
 - Чому `.AsNoTracking()` важливий для read-only запитів у ClinicQueryService?
 
+```bash
+git add src/Data/ClinicQueryService.cs
+git commit -m "Lab20 Task01: add ClinicQueryService with IQueryable deferred execution"
+```
+
 ---
 
 ### Завдання 2. Пагінація
@@ -165,6 +179,11 @@ if (status.HasValue)
 **Ключові питання:**
 - Чому `query.Count()` після умов — правильно, а `query.ToList().Count` — ні?
 - Що означає "без ORDER BY результат непередбачуваний"? Чи не завжди записи в тому ж порядку?
+
+```bash
+git add src/Data/ClinicQueryService.cs src/Models/PagedResult.cs
+git commit -m "Lab20 Task02: add pagination with Skip/Take and PagedResult wrapper"
+```
 
 ---
 
@@ -202,6 +221,11 @@ context.Patients.Select(p => new PatientSummaryDto(
 **Ключові питання:**
 - Чим `record` відрізняється від `class` у C#?
 - Що буде якщо написати `.Select(p => new { p.Id, p.FirstName })` — анонімний тип vs DTO?
+
+```bash
+git add src/Models/Dtos/ src/Data/ClinicQueryService.cs
+git commit -m "Lab20 Task03: add DTO projections to reduce over-fetching"
+```
 
 ---
 
@@ -245,6 +269,11 @@ EF видасть попередження: "Patient з QueryFilter є required 
 - Як відновити м'яко-видаленого пацієнта (set IsDeleted = false)?
 - Чи потрібна міграція при додаванні `HasQueryFilter` або тільки при зміні схеми?
 
+```bash
+git add src/Models/Patient.cs src/Data/ClinicDbContext.cs src/Migrations/
+git commit -m "Lab20 Task04: add Soft Delete with IsDeleted flag and Global Query Filter"
+```
+
 ---
 
 ## Рефлексійні питання
@@ -269,3 +298,16 @@ var result = context.Patients
     .ToList();
 ```
 Чому цей код правильно компілюється, але є проблемою продуктивності?
+
+---
+
+## Статус гілки
+
+Після завершення всіх завдань — злити в `main`:
+
+```bash
+git checkout main
+git merge --no-ff Lab-20 -m "Merge Lab-20: EF Core Queries"
+```
+
+> Наступна лаба: `git checkout -b Lab-21`

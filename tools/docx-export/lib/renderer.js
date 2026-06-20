@@ -60,7 +60,8 @@ function bodyPara(text, opts = {}) {
 // ── Основна функція ───────────────────────────────────────────────────────────
 function render(blocks, assetsBase) {
   let inSummary   = false;
-  let numbersIdx  = 0;   // індекс поточного слота нумерованого списку
+  let inQuestions = false;  // true між h1 і наступним chapter
+  let numbersIdx  = 0;      // індекс поточного слота нумерованого списку
   const elems = [];
 
   for (const block of blocks) {
@@ -74,18 +75,20 @@ function render(blocks, assetsBase) {
 
       // ── h1: заголовок блоку питань ("# Питання для самоконтролю...") ────────
       case 'h1': {
-        numbersIdx++;   // новий розділ питань — окрема нумерація
+        numbersIdx++;
+        inQuestions = true;
         elems.push(new Paragraph({
-          style:    'ChapterTitle',
-          children: toRuns(block.text, { bold: true, size: SZ.CHAPTER, color: C.ACCENT }),
-          border:   { bottom: bdr(BD.CHAPTER_W, C.MID_BLUE) },
+          style:    'SectionTitle',
+          children: toRuns(block.text, { bold: true, size: SZ.SECTION, color: C.DARK_BLUE }),
+          border:   { bottom: { style: BorderStyle.DOTTED, size: BD.SECTION_W, color: 'D0D8E8' } },
         }));
         break;
       }
 
       // ── chapter: синтетичний блок, який генерує md-to-docx.js ──────────────
       case 'chapter': {
-        numbersIdx++;   // новий розділ лекції — окрема нумерація
+        numbersIdx++;
+        inQuestions = false;
         elems.push(new Paragraph({
           style:          'ChapterTitle',
           children:       toRuns(block.title, { bold: true, size: SZ.CHAPTER, color: C.NAVY }),
@@ -104,11 +107,20 @@ function render(blocks, assetsBase) {
       // ── section: "1.1. Роль платформи" ────────────────────────────────────
       case 'section': {
         inSummary = false;
-        elems.push(new Paragraph({
-          style:    'SectionTitle',
-          children: toRuns(block.text, { bold: true, size: SZ.SECTION, color: C.DARK_BLUE }),
-          border:   { bottom: { style: BorderStyle.DOTTED, size: BD.SECTION_W, color: 'D0D8E8' } },
-        }));
+        if (inQuestions) {
+          // Всередині блоку питань — просто жирний абзац, без стильного заголовка
+          elems.push(new Paragraph({
+            style:    'BodyTextFirst',
+            children: toRuns(block.text, { bold: true, size: SZ.BODY, color: C.BODY }),
+            spacing:  { before: SP.SUBHEAD_BEF, after: SP.SUBHEAD_AFT },
+          }));
+        } else {
+          elems.push(new Paragraph({
+            style:    'SectionTitle',
+            children: toRuns(block.text, { bold: true, size: SZ.SECTION, color: C.DARK_BLUE }),
+            border:   { bottom: { style: BorderStyle.DOTTED, size: BD.SECTION_W, color: 'D0D8E8' } },
+          }));
+        }
         break;
       }
 

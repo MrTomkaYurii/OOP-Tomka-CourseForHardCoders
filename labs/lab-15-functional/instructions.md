@@ -6,8 +6,9 @@
 
 ## Гілка
 
-```
-feature/functional
+```bash
+git checkout main
+git checkout -b Lab-15
 ```
 
 ---

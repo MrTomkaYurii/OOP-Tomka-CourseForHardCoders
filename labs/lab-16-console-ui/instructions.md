@@ -6,8 +6,9 @@
 
 ## Гілка
 
-```
-feature/console-ui
+```bash
+git checkout main
+git checkout -b Lab-16
 ```
 
 ---

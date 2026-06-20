@@ -6,8 +6,9 @@
 
 ## Гілка
 
-```
-feature/linq
+```bash
+git checkout main
+git checkout -b Lab-14
 ```
 
 ---

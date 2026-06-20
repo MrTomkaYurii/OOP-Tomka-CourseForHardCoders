@@ -21,10 +21,8 @@
 
 ```bash
 git checkout main
-git checkout -b feature/encapsulation
+git checkout -b Lab-05
 ```
-
-> Гілка **зливається в `main`** після завершення всіх завдань.
 
 ---
 
@@ -131,7 +129,7 @@ src/
 git add src/Models/ src/Enums/ src/Managers/ src/Utils/
 git add src/Clinic.cs src/Program.cs src/GrowablePatientManager.cs
 git rm src/Patient.cs src/Doctor.cs ...   # старі файли
-git commit -m "Lab05 Task1: reorganize files into subfolders with sub-namespaces"
+git commit -m "Lab05 Task01: reorganize files into subfolders with sub-namespaces"
 ```
 
 ---
@@ -211,7 +209,7 @@ public string FirstName
 
 ```bash
 git add src/Models/Patient.cs src/Models/Doctor.cs src/Models/Appointment.cs
-git commit -m "Lab05 Task2: add private backing fields to Patient, Doctor, Appointment"
+git commit -m "Lab05 Task02: add private backing fields to Patient, Doctor, Appointment"
 ```
 
 ---
@@ -310,7 +308,7 @@ Patient p = new Patient("", "Петренко", new DateTime(1990, 1, 1), BloodT
 
 ```bash
 git add src/Models/Patient.cs src/Models/Doctor.cs src/Models/Appointment.cs src/Models/WorkSchedule.cs
-git commit -m "Lab05 Task3: add validation with throw in property setters"
+git commit -m "Lab05 Task03: add validation with throw in property setters"
 ```
 
 ---
@@ -433,7 +431,7 @@ catch (ArgumentException e)
 git add src/Utils/ClinicValidator.cs
 git add src/Models/Patient.cs src/Models/Doctor.cs src/Models/Appointment.cs src/Models/WorkSchedule.cs
 git add src/Program.cs
-git commit -m "Lab05 Task4: add ClinicValidator, refactor setters, add try/catch in Program"
+git commit -m "Lab05 Task04: add ClinicValidator, refactor setters, add try/catch in Program"
 ```
 
 ---
@@ -504,7 +502,7 @@ bool ok2 = Regex.IsMatch("050abc4567", @"^\d{10}$"); // false
 
 ```bash
 git add src/Utils/ClinicValidator.cs
-git commit -m "Lab05 Task5 (optional): replace phone loop with Regex, add email validation"
+git commit -m "Lab05 Task05 (optional): replace phone loop with Regex, add email validation"
 ```
 
 ---
@@ -547,7 +545,7 @@ dotnet run
 
 ```bash
 git checkout main
-git merge --no-ff feature/encapsulation -m "Merge feature/encapsulation: Lab05 Encapsulation"
+git merge --no-ff Lab-05 -m "Merge Lab-05: Encapsulation"
 ```
 
-> Наступна лаба: `git checkout -b feature/inheritance` — наслідування та поліморфізм.
+> Наступна лаба: `git checkout -b Lab-06`
