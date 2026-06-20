@@ -52,4 +52,4 @@ tools/docx-export/node_modules/
 output/lectures/node_modules/
 
 # Generated output files
-output/lectures/*.docx
+output/
