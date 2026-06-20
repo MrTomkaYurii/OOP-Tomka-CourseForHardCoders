@@ -30,6 +30,34 @@ Git розбиває твою роботу на **чотири зони**. Зр�
 
 Важливо: `git add` не зберігає зміни назавжди — він лише переміщує їх до Staging. Тільки `git commit` фіксує знімок назавжди в локальному репо.
 
+### Навіщо потрібна Staging Area?
+
+Уявімо: ти сидів над Task02 і за день змінив 7 файлів. Більшість стосується Task02, але паралельно підправив якийсь баг у Task01 в іншому файлі. Без Staging Area лишається два варіанти: або всі 7 файлів в один коміт (каша в історії — незрозуміло що де), або взагалі нічого не комітити.
+
+Staging Area вирішує це: ти вибираєш **саме ті файли** які стосуються поточного завдання, комітиш їх — і лише потім беришся за наступне.
+
+```bash
+# Day1: змінив і Doctor.cs, і DoctorService.cs, і щось підправив у Patient.cs
+# Хочемо три окремих логічних коміти:
+
+git add src/Models/Doctor.cs
+git commit -m "Lab03 Task02: add Doctor class"
+
+git add src/Services/DoctorService.cs
+git commit -m "Lab03 Task02: implement DoctorService"
+
+git add src/Models/Patient.cs
+git commit -m "Lab03 Task01: fix null check in Patient"
+```
+
+Три логічних одиниці — три коміти — чиста зрозуміла історія. Так виглядає `git log`:
+
+```
+a1b2c3d Lab03 Task01: fix null check in Patient
+3d4e5f6 Lab03 Task02: implement DoctorService
+7g8h9i0 Lab03 Task02: add Doctor class
+```
+
 ### Крок 1. Встановлення Git
 
 Завантаж з [git-scm.com](https://git-scm.com/downloads) та встанови (всі налаштування за замовчуванням).
@@ -72,6 +100,63 @@ git status
 # On branch main
 # nothing to commit, working tree clean
 ```
+
+### Крок 3а. `.gitignore` — що не потрібно комітити
+
+Коли ти відкриєш проєкт у Visual Studio і зіберш його — з'явиться купа тимчасових файлів:
+
+```
+src/bin/Debug/net8.0/MyApp.exe
+src/bin/Debug/net8.0/MyApp.dll
+src/obj/Debug/net8.0/MyApp.pdb
+.vs/MyApp/v17/.suo
+...
+```
+
+Їх **не можна комітити**: вони великі (MB), генеруються автоматично, залежать від твоєї машини. Якщо їх закомітити — репо розпухне, а колеги отримають чужі бінарники.
+
+Для цього існує файл `.gitignore` — список патернів які Git повністю ігнорує.
+
+Репо курсу вже містить `.gitignore`. Перевір:
+
+```bash
+cat .gitignore
+# або відкрий у редакторі
+```
+
+Якщо `.gitignore` відсутній або неповний — створи/допиши в корені репо:
+
+```gitignore
+# C# / .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.userprefs
+.idea/
+*.DotSettings.user
+
+# Операційна система
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Конфіденційні дані
+*.env
+appsettings.Development.json
+secrets.json
+```
+
+Перевір що `.gitignore` працює — після цих рядків `git status` не повинен показувати `bin/` або `obj/`:
+
+```bash
+# Збери проєкт, потім:
+git status
+# Ти маєш бачити лише свої .cs файли, а не сотні bin/obj файлів
+```
+
+> Якщо `bin/` все одно з'являється — файл `.gitignore` або не в тому місці, або вже заком'ічено відповідні папки. В такому разі: `git rm -r --cached bin/ obj/` і потім `git add .gitignore`.
 
 ---
 
@@ -124,15 +209,68 @@ git branch
 
 Зірочка показує поточну гілку.
 
-### Крок 5. Перевірка стану
+### Крок 5. Читати вивід `git status`
 
-```bash
-git status
-# On branch Lab-01
-# nothing to commit, working tree clean
+`git status` — команда яку ти будеш запускати десятки разів. Важливо розуміти що вона показує.
+
+**Стан після `git checkout -b Lab-01` (ще нічого не змінено):**
+
+```
+On branch Lab-01
+nothing to commit, working tree clean
 ```
 
-Тепер усі зміни які ти будеш робити — потраплять в гілку `Lab-01`, а не в `main`.
+**Після того як створив новий файл `src/Program.cs`:**
+
+```
+On branch Lab-01
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        src/Program.cs
+
+nothing added to commit but untracked files present
+```
+
+`Untracked` = Git бачить файл але ще не відстежує його. `git add` починає відстеження.
+
+**Після того як змінив вже існуючий файл:**
+
+```
+On branch Lab-01
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+        modified:   src/Models/Patient.cs
+
+Untracked files:
+        src/Program.cs
+```
+
+Два сигнали:
+- `modified` — файл вже був у репо, і ти його змінив
+- `Untracked` — новий файл якого ще не було
+
+**Після `git add src/`:**
+
+```
+On branch Lab-01
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        new file:   src/Program.cs
+        modified:   src/Models/Patient.cs
+```
+
+`Changes to be committed` = файли в Staging Area, готові до коміту. Якщо помітив помилку — `git restore --staged <file>` повертає файл зі Staging назад.
+
+**Після `git commit`:**
+
+```
+On branch Lab-01
+nothing to commit, working tree clean
+```
+
+Чисто — можна братись за наступне завдання.
+
+Усі зміни які ти робиш — потрапляють в гілку `Lab-01`, а не в `main`.
 
 ---
 
@@ -167,19 +305,58 @@ Lab17 Task03: configure Fluent API for Doctor with WorkSchedule
 
 ### Крок 6. Коміт після кожного завдання
 
+Повний цикл виглядає так. Після виконання завдання:
+
+**6.1 — Переглянь що змінилось**
+
 ```bash
-# Подивись що змінилось
 git status
-git diff
-
-# Додай файли до staging
-git add src/
-
-# Зафіксуй
-git commit -m "Lab01 Task01: add Hello World console output"
+# Changes not staged for commit:
+#         modified:   src/Program.cs
+# Untracked files:
+#         src/Models/Patient.cs
 ```
 
-Переглянь результат:
+Якщо хочеш побачити конкретні зміни (рядки):
+
+```bash
+git diff
+# --- a/src/Program.cs
+# +++ b/src/Program.cs
+# @@ -1,3 +1,6 @@
+# +Console.WriteLine("Hello, World!");
+```
+
+Рядки з `+` — додані, з `-` — видалені. `git diff` показує тільки нестейджені зміни. Для перегляду того що вже в Staging: `git diff --cached`.
+
+**6.2 — Добав до Staging**
+
+```bash
+git add src/
+# або конкретний файл:
+git add src/Program.cs
+```
+
+Перевір що потрапило в Staging:
+
+```bash
+git status
+# Changes to be committed:
+#         modified:   src/Program.cs
+#         new file:   src/Models/Patient.cs
+```
+
+**6.3 — Зафіксуй**
+
+```bash
+git commit -m "Lab01 Task01: add Hello World console output"
+# [Lab-01 3a4b5c6] Lab01 Task01: add Hello World console output
+#  2 files changed, 8 insertions(+)
+```
+
+Git підтвердить: SHA коміту (`3a4b5c6`), назву гілки, скільки файлів і рядків змінилось.
+
+**6.4 — Переглянь результат**
 
 ```bash
 git log --oneline
@@ -187,7 +364,13 @@ git log --oneline
 # a1b2c3d Initial commit
 ```
 
-Роби так після **кожного завдання** — один `git commit` на одне завдання.
+Після кожного наступного завдання — повторюй цей цикл:
+
+```
+виконав завдання → git status → git diff → git add → git commit → далі
+```
+
+Один `git commit` на одне завдання. Не більше, не менше.
 
 ### Крок 7. Завершення лаби — злиття в main
 
@@ -302,6 +485,109 @@ git branch -r
 
 ---
 
+## Частина 6. Аутентифікація GitHub
+
+Перший `git push` часто дивує студентів — Git запитує логін або взагалі відхиляє з'єднання. Причина: GitHub вже кілька років **не приймає звичайний пароль** через командний рядок. Потрібна або Token-автентифікація, або SSH.
+
+### Варіант A — HTTPS + Git Credential Manager (рекомендовано на Windows)
+
+Git for Windows встановлює **Git Credential Manager (GCM)** автоматично. При першому `git push` відкриється вікно браузера з GitHub — просто авторизуйся там.
+
+```bash
+git push origin main
+# Відкриється браузер → GitHub → "Authorize Git Credential Manager"
+# Після підтвердження — пуш пройде
+# Наступні pushи — без запиту (токен кешується)
+```
+
+Якщо браузер не відкрився і Git запитує пароль у терміналі — пароль **не підійде**. Потрібен Personal Access Token:
+
+1. GitHub → верхній правий куток → **Settings**
+2. Лівий сайдбар → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+3. **Generate new token** → вибери scopes: `repo` (повний доступ до репо)
+4. Скопіюй токен — він показується **тільки один раз**
+5. Вставляй його як пароль коли Git запитує
+
+```bash
+git push origin main
+# Username: your-github-username
+# Password: ghp_xxxxxxxxxxxx   ← вставляєш токен, не пароль
+```
+
+### Варіант B — SSH ключ (зручніше на Linux / macOS)
+
+SSH-ключ — це пара файлів: приватний (тільки у тебе) і публічний (на GitHub). Після налаштування — ніяких запитів пароля ніколи.
+
+**Крок 1 — Згенерувати ключ:**
+
+```bash
+ssh-keygen -t ed25519 -C "your-email@gmail.com"
+# Enter file in which to save the key: (натисни Enter — default location)
+# Enter passphrase: (можна залишити порожнім для зручності)
+```
+
+Ключ збережеться в `~/.ssh/id_ed25519` (приватний) і `~/.ssh/id_ed25519.pub` (публічний).
+
+**Крок 2 — Додати публічний ключ на GitHub:**
+
+```bash
+# Скопіюй вміст публічного ключа:
+cat ~/.ssh/id_ed25519.pub
+# ssh-ed25519 AAAA... your-email@gmail.com
+```
+
+GitHub → **Settings** → **SSH and GPG keys** → **New SSH key** → вставляєш вміст файлу.
+
+**Крок 3 — Перевір з'єднання:**
+
+```bash
+ssh -T git@github.com
+# Hi username! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+**Крок 4 — Клонуй репо через SSH URL (замість HTTPS):**
+
+```bash
+git clone git@github.com:<викладач>/OOP-Tomka-CourseForHardCoders.git
+```
+
+Якщо вже клонував через HTTPS — зміни remote:
+
+```bash
+git remote set-url origin git@github.com:<викладач>/OOP-Tomka-CourseForHardCoders.git
+```
+
+### Перевірка remote URL
+
+```bash
+git remote -v
+# origin  https://github.com/...   (HTTPS варіант)
+# origin  git@github.com:...       (SSH варіант)
+```
+
+---
+
+## Частина 7. GitHub у браузері
+
+Після `git push` — перейди в браузер на сторінку репозиторію.
+
+**Перегляд гілок:**
+`https://github.com/<user>/<repo>/branches` — список усіх гілок. Видно чи запушилась `Lab-01`.
+
+**Перегляд комітів конкретної гілки:**
+Натисни на назву гілки → вкладка **Commits** → бачиш усі коміти з повідомленнями, датами, SHA.
+
+**Порівняти гілку з main:**
+На сторінці гілки → кнопка **Compare** → видно які файли і рядки змінились порівняно з `main`.
+
+**Переглянути конкретний коміт:**
+Натисни на SHA або повідомлення будь-якого коміту → бачиш diff: які рядки додані (зелені), які видалені (червоні).
+
+**Перевірити структуру файлів:**
+Вкладка **Code** → можна навігувати по папках, відкривати файли, бачити їх стан на будь-якій гілці через dropdown зліва.
+
+---
+
 ## Типові помилки
 
 ### 1. Коміт потрапив у `main` замість `Lab-01`
@@ -397,6 +683,13 @@ git push origin main
 | `git restore <file>` | Відмінити зміни у файлі (Working Dir) |
 | `git restore --staged <file>` | Прибрати файл зі staging |
 | `git reset --soft HEAD~1` | Відмінити останній коміт (зміни лишаються) |
+| `git diff` | Зміни в Working Directory (ще не staged) |
+| `git diff --cached` | Зміни в Staging Area (вже додані, ще не закомічені) |
+| `git show <SHA>` | Деталі конкретного коміту (diff + metadata) |
+| `git commit --amend -m "..."` | Змінити повідомлення останнього коміту (до push!) |
+| `git rm -r --cached <dir>` | Прибрати директорію з відстеження (після .gitignore) |
+| `git remote -v` | Показати URL remote-репозиторіїв |
+| `git remote set-url origin <url>` | Змінити URL remote (HTTPS ↔ SSH) |
 
 ---
 
