@@ -16,6 +16,17 @@ const PAGE = {
   get CW() { return this.A5_W - this.M_INN - this.M_OUT; }, // 6122 — ширина контенту
 };
 
+// ── Геометрія A4 (для лабораторних — практичні методички) ───────────────────
+const PAGE_A4 = {
+  W:      11906,  // 210 мм
+  H:      16838,  // 297 мм
+  M_TOP:  1418,   // 25 мм — верх
+  M_BOT:  1418,   // 25 мм — низ
+  M_LEFT: 1701,   // 30 мм — ліве (палітурна сторона)
+  M_RIGHT:1134,   // 20 мм — праве
+  get CW() { return this.W - this.M_LEFT - this.M_RIGHT; }, // 9071 — ширина контенту (160 мм)
+};
+
 // ── Кольори (hex без #, для Word XML) ─────────────────────────────────────────
 const C = {
   // Заголовки
@@ -133,4 +144,4 @@ const CODE_LABELS = {
   '':           '',      // без мітки
 };
 
-module.exports = { PAGE, C, SZ, IND, LS, SP, BD, IMG, CODE_LABELS };
+module.exports = { PAGE, PAGE_A4, C, SZ, IND, LS, SP, BD, IMG, CODE_LABELS };

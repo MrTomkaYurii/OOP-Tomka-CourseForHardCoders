@@ -17,35 +17,43 @@ const bdr = (size, color) => ({ style: BorderStyle.SINGLE, size, color });
 const nil = ()             => ({ style: BorderStyle.NIL });
 
 // ── Inline-токени → TextRun[] ─────────────────────────────────────────────────
-function toRuns(text, base = {}) {
-  const tokens = parseInline(text);
+function tokensToRuns(tokens, base) {
   const defaults = { font: 'Times New Roman', size: SZ.BODY, color: C.BODY };
-
-  return tokens.map(tok => {
+  const out = [];
+  for (const tok of tokens) {
     const merged = { ...defaults, ...base };
     switch (tok.type) {
       case 'text':
-        return new TextRun({ text: tok.text, ...merged });
+        out.push(new TextRun({ text: tok.text, ...merged })); break;
       case 'bold':
-        return new TextRun({ text: tok.text, ...merged, bold: true });
+        out.push(...(tok.children ? tokensToRuns(tok.children, { ...base, bold: true })
+                                  : [new TextRun({ text: tok.text, ...merged, bold: true })])); break;
       case 'italic':
-        return new TextRun({ text: tok.text, ...merged, italics: true });
+        out.push(...(tok.children ? tokensToRuns(tok.children, { ...base, italics: true })
+                                  : [new TextRun({ text: tok.text, ...merged, italics: true })])); break;
       case 'bolditalic':
-        return new TextRun({ text: tok.text, ...merged, bold: true, italics: true });
+        out.push(...(tok.children ? tokensToRuns(tok.children, { ...base, bold: true, italics: true })
+                                  : [new TextRun({ text: tok.text, ...merged, bold: true, italics: true })])); break;
       case 'code':
-        return new TextRun({
+        out.push(new TextRun({
           text:    tok.text,
           font:    'Consolas',
           size:    SZ.TABLE,   // 9pt — inline-код трохи менший за тіло
           color:   C.CODE_TEXT,
+          bold:    base.bold || undefined,
           shading: { type: ShadingType.CLEAR, color: 'auto', fill: C.INLINE_BG },
-        });
+        })); break;
       case 'link':
-        return new TextRun({ text: tok.text, ...merged, color: C.ACCENT });
+        out.push(new TextRun({ text: tok.text, ...merged, color: C.ACCENT })); break;
       default:
-        return new TextRun({ text: tok.text || '', ...merged });
+        out.push(new TextRun({ text: tok.text || '', ...merged }));
     }
-  }).filter(Boolean);
+  }
+  return out.filter(Boolean);
+}
+
+function toRuns(text, base = {}) {
+  return tokensToRuns(parseInline(text), base);
 }
 
 // ── Побудова одного абзацу тіла ───────────────────────────────────────────────
@@ -57,11 +65,19 @@ function bodyPara(text, opts = {}) {
   });
 }
 
+// ── Рендер вкладених блоків елемента списку (lab-режим) ───────────────────────
+function renderChildren(children, assetsBase, opts) {
+  if (!children || !children.length) return [];
+  return render(children, assetsBase, opts);
+}
+
 // ── Основна функція ───────────────────────────────────────────────────────────
-function render(blocks, assetsBase) {
+function render(blocks, assetsBase, opts = {}) {
+  const lab = !!opts.lab;
   let inSummary   = false;
   let inQuestions = false;  // true між h1 і наступним chapter
   let numbersIdx  = 0;      // індекс поточного слота нумерованого списку
+  let numSeq      = 0;      // lab: свіжий слот нумерації на кожен список
   const elems = [];
 
   for (const block of blocks) {
@@ -73,8 +89,17 @@ function render(blocks, assetsBase) {
 
     switch (block.type) {
 
-      // ── h1: заголовок блоку питань ("# Питання для самоконтролю...") ────────
+      // ── h1: у lab-режимі — назва лабораторної (як ChapterTitle без розриву) ─
+      //        у лекціях — заголовок блоку питань ("# Питання для самоконтролю")
       case 'h1': {
+        if (lab) {
+          elems.push(new Paragraph({
+            style:    'ChapterTitle',
+            children: toRuns(block.text, { bold: true, size: SZ.CHAPTER, color: C.NAVY }),
+            border:   { bottom: bdr(BD.CHAPTER_W, C.ACCENT) },
+          }));
+          break;
+        }
         numbersIdx++;
         inQuestions = true;
         elems.push(new Paragraph({
@@ -161,6 +186,13 @@ function render(blocks, assetsBase) {
             shading:  { type: ShadingType.CLEAR, color: 'auto', fill: C.SUMM_BG },
             border:   { left: bdr(BD.ACCENT_W, C.ACCENT) },
           }));
+        } else if (lab) {
+          // Лабораторні — технічний документ: без абзацного відступу, з відбивкою
+          elems.push(new Paragraph({
+            style:    'BodyTextFirst',
+            children: toRuns(block.text),
+            spacing:  { line: LS.BODY, before: 0, after: SP.SUBHEAD_AFT },
+          }));
         } else {
           elems.push(bodyPara(block.text, { first: block.firstAfterHead }));
         }
@@ -235,18 +267,24 @@ function render(blocks, assetsBase) {
         const cellBorder = bdr(BD.TABLE_INN, C.TBL_BORDER);
         const allBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
 
+        // Широкі таблиці — дрібніший шрифт і вужчі поля клітинок
+        const wide   = nc >= 6;
+        const szBody = wide ? SZ.CODE  : SZ.TABLE;
+        const szHead = wide ? SZ.TABLE : SZ.TABLE_H;
+        const cellMx = wide ? 60       : 110;
+
         const mkCell = (text, ci, fill, isHead = false) =>
           new TableCell({
             width:   { size: colW[ci] ?? base, type: WidthType.DXA },
             shading: { type: ShadingType.CLEAR, color: 'auto', fill },
             borders: allBorders,
-            margins: { top: 80, bottom: 80, left: 110, right: 110 },
+            margins: { top: 80, bottom: 80, left: cellMx, right: cellMx },
             children: [new Paragraph({
               alignment: AlignmentType.LEFT,
               spacing:   { before: 0, after: 0 },
               children:  toRuns(text || '', isHead
-                ? { bold: true, color: C.WHITE, size: SZ.TABLE_H }
-                : { size: SZ.TABLE }),
+                ? { bold: true, color: C.WHITE, size: szHead }
+                : { size: szBody }),
             })],
           });
 
@@ -259,9 +297,11 @@ function render(blocks, assetsBase) {
         const rows = [
           new TableRow({
             tableHeader: true,
+            cantSplit:   true,
             children: padRow(headerRow).map((c, ci) => mkCell(c, ci, C.TBL_HEADER, true)),
           }),
           ...dataRows.map((row, ri) => new TableRow({
+            cantSplit: true,
             children: padRow(row).map((c, ci) =>
               mkCell(c, ci, ri % 2 === 0 ? C.TBL_ODD : C.TBL_EVEN)),
           })),
@@ -280,31 +320,39 @@ function render(blocks, assetsBase) {
       // ── bullets ────────────────────────────────────────────────────────────
       case 'bullets': {
         for (const item of block.items) {
+          let text       = typeof item === 'string' ? item : item.text;
+          const children = typeof item === 'string' ? null : item.children;
+          // GitHub task-list: "- [ ] …" / "- [x] …"
+          text = text.replace(/^\[[xX]\]\s+/, '☑ ').replace(/^\[\s?\]\s+/, '☐ ');
           const para = new Paragraph({
             style:     inSummary ? 'SummaryText' : 'ListBullet',
             numbering: { reference: 'bullets', level: 0 },
-            children:  toRuns(item),
+            children:  toRuns(text),
           });
           if (inSummary) {
-            // Summary-списки теж мають фон і рамку
             Object.assign(para, {
               shading: { type: ShadingType.CLEAR, color: 'auto', fill: C.SUMM_BG },
               border:  { left: bdr(BD.ACCENT_W, C.ACCENT) },
             });
           }
           elems.push(para);
+          elems.push(...renderChildren(children, assetsBase, opts));
         }
         break;
       }
 
       // ── numbered ───────────────────────────────────────────────────────────
       case 'numbered': {
+        const ref = lab ? `numbers-${++numSeq}` : `numbers-${numbersIdx}`;
         for (const item of block.items) {
+          const text     = typeof item === 'string' ? item : item.text;
+          const children = typeof item === 'string' ? null : item.children;
           elems.push(new Paragraph({
             style:     'ListNumber',
-            numbering: { reference: `numbers-${numbersIdx}`, level: 0 },
-            children:  toRuns(item),
+            numbering: { reference: ref, level: 0 },
+            children:  toRuns(text),
           }));
+          elems.push(...renderChildren(children, assetsBase, opts));
         }
         break;
       }
