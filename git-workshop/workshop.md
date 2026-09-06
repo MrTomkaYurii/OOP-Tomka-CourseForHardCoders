@@ -7,11 +7,15 @@
 
 Після цього воркшопу ти вмієш:
 
-- Клонувати репозиторій і орієнтуватись у його структурі
+- Створити власний репозиторій курсу і під'єднати його до GitHub
 - Створювати гілку для кожної лаби та правильно її називати
 - Робити коміти з правильним форматом повідомлення
 - Зливати лабу в `main` і переходити до наступної
 - Пушити роботу на GitHub
+
+> **Репозиторій курсу викладача** (`OOP-Tomka-CourseForHardCoders`) — це
+> **довідник**: еталонний код, лекції, ці інструкції. Ти його не форкаєш і не
+> працюєш у ньому — ти будуєш **свій** проєкт зі своїм доменом.
 
 ---
 
@@ -37,25 +41,21 @@ Git розбиває твою роботу на **чотири зони**. Зр�
 Staging Area вирішує це: ти вибираєш **саме ті файли** які стосуються поточного завдання, комітиш їх — і лише потім беришся за наступне.
 
 ```bash
-# Day1: змінив і Doctor.cs, і DoctorService.cs, і щось підправив у Patient.cs
-# Хочемо три окремих логічних коміти:
+# За день змінив кілька файлів у ClinicApp/ по різних завданнях.
+# Хочемо окремі коміти на кожне завдання:
 
-git add src/Models/Doctor.cs
-git commit -m "Lab03 Task02: add Doctor class"
+git add ClinicApp/Doctor.cs ClinicApp/Program.cs
+git commit -m "Lab03 Task02"
 
-git add src/Services/DoctorService.cs
-git commit -m "Lab03 Task02: implement DoctorService"
-
-git add src/Models/Patient.cs
-git commit -m "Lab03 Task01: fix null check in Patient"
+git add ClinicApp/Patient.cs
+git commit -m "Lab03 Task01"
 ```
 
-Три логічних одиниці — три коміти — чиста зрозуміла історія. Так виглядає `git log`:
+Кожне завдання — свій коміт — чиста зрозуміла історія. Так виглядає `git log`:
 
 ```
-a1b2c3d Lab03 Task01: fix null check in Patient
-3d4e5f6 Lab03 Task02: implement DoctorService
-7g8h9i0 Lab03 Task02: add Doctor class
+3d4e5f6 Lab03 Task02
+7g8h9i0 Lab03 Task01
 ```
 
 ### Крок 1. Встановлення Git
@@ -86,45 +86,36 @@ git config --list
 # user.email=ivan.petrenko@gmail.com
 ```
 
-### Крок 3. Клонування репозиторію курсу
+### Крок 3. Створення власного репозиторію
+
+Свій проєкт курсу починається з порожньої теки:
 
 ```bash
-git clone https://github.com/<викладач>/OOP-Tomka-CourseForHardCoders.git
-cd OOP-Tomka-CourseForHardCoders
+mkdir oop-course
+cd oop-course
+git init
+git branch -m main
 ```
 
-`git clone` — це **одноразова** операція. Вона завантажує весь репозиторій разом з повною історією комітів. Після цього у тебе є локальна копія з якою можна працювати без інтернету.
-
-```bash
-git status
-# On branch main
-# nothing to commit, working tree clean
-```
+`git init` створює локальний репозиторій (теку `.git/`). Далі ми під'єднаємо його
+до GitHub (Крок 3б).
 
 ### Крок 3а. `.gitignore` — що не потрібно комітити
 
 Коли ти відкриєш проєкт у Visual Studio і зіберш його — з'явиться купа тимчасових файлів:
 
 ```
-src/bin/Debug/net8.0/MyApp.exe
-src/bin/Debug/net8.0/MyApp.dll
-src/obj/Debug/net8.0/MyApp.pdb
-.vs/MyApp/v17/.suo
+ClinicApp/bin/Debug/net8.0/ClinicApp.exe
+ClinicApp/bin/Debug/net8.0/ClinicApp.dll
+ClinicApp/obj/Debug/net8.0/ClinicApp.pdb
+.vs/oop-course/v17/.suo
 ...
 ```
 
 Їх **не можна комітити**: вони великі (MB), генеруються автоматично, залежать від твоєї машини. Якщо їх закомітити — репо розпухне, а колеги отримають чужі бінарники.
 
 Для цього існує файл `.gitignore` — список патернів які Git повністю ігнорує.
-
-Репо курсу вже містить `.gitignore`. Перевір:
-
-```bash
-cat .gitignore
-# або відкрий у редакторі
-```
-
-Якщо `.gitignore` відсутній або неповний — створи/допиши в корені репо:
+Створи його в корені `oop-course/`:
 
 ```gitignore
 # C# / .NET
@@ -158,6 +149,24 @@ git status
 
 > Якщо `bin/` все одно з'являється — файл `.gitignore` або не в тому місці, або вже заком'ічено відповідні папки. В такому разі: `git rm -r --cached bin/ obj/` і потім `git add .gitignore`.
 
+### Крок 3б. Перший коміт і GitHub
+
+```bash
+git add .gitignore
+git commit -m "chore: initial commit with .gitignore"
+```
+
+Створи **порожній** репозиторій на GitHub (без README, без .gitignore — щоб не
+було конфлікту), назви його `oop-course`, і під'єднай:
+
+```bash
+git remote add origin https://github.com/<ваш-логін>/oop-course.git
+git push -u origin main
+```
+
+Якщо push просить пароль — GitHub давно не приймає пароль акаунта. Потрібен
+Personal Access Token або SSH-ключ — див. **Частина 6** нижче.
+
 ---
 
 ## Частина 2. Що таке коміт і гілка
@@ -182,8 +191,8 @@ git status
 Гілка — це файл із 41 байтом: SHA коміту на який вона вказує. Створити гілку дешево і безпечно — файли не копіюються.
 
 ```
-main     → a3f82c1  (вказує на "Initial commit")
-Lab-01   → 3a4b5c6  (вказує на "Lab01 Task03: Doctor")
+main     → a3f82c1  (вказує на "chore: initial commit")
+Lab-01   → 3a4b5c6  (вказує на "Lab01 Task03")
 HEAD     → Lab-01   (вказує на поточну гілку)
 ```
 
@@ -220,43 +229,43 @@ On branch Lab-01
 nothing to commit, working tree clean
 ```
 
-**Після того як створив новий файл `src/Program.cs`:**
+**Після того як створив новий файл `Lab01/Task2.cs`:**
 
 ```
 On branch Lab-01
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
-        src/Program.cs
+        Lab01/Task2.cs
 
 nothing added to commit but untracked files present
 ```
 
 `Untracked` = Git бачить файл але ще не відстежує його. `git add` починає відстеження.
 
-**Після того як змінив вже існуючий файл:**
+**Після того як змінив вже існуючий файл** (`Task1.Run()` → `Task2.Run()` у `Program.cs`):
 
 ```
 On branch Lab-01
 Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
-        modified:   src/Models/Patient.cs
+        modified:   Lab01/Program.cs
 
 Untracked files:
-        src/Program.cs
+        Lab01/Task2.cs
 ```
 
 Два сигнали:
 - `modified` — файл вже був у репо, і ти його змінив
 - `Untracked` — новий файл якого ще не було
 
-**Після `git add src/`:**
+**Після `git add Lab01/`:**
 
 ```
 On branch Lab-01
 Changes to be committed:
   (use "git restore --staged <file>..." to unstage)
-        new file:   src/Program.cs
-        modified:   src/Models/Patient.cs
+        new file:   Lab01/Task2.cs
+        modified:   Lab01/Program.cs
 ```
 
 `Changes to be committed` = файли в Staging Area, готові до коміту. Якщо помітив помилку — `git restore --staged <file>` повертає файл зі Staging назад.
@@ -282,26 +291,26 @@ nothing to commit, working tree clean
 
 Як видно з графа: `main` — стабільна лінія. Кожна лаба — окрема гілка яка відходить від `main`, набирає коміти (по одному на завдання) і зливається назад. Після злиття одразу стартує наступна лаба.
 
+> **Виняток — Лаби 01 і 02.** Це окремі проєкти-тренажери (`Lab01/`, `Lab02/`).
+> Їхні гілки ти **пушиш на GitHub, але в `main` НЕ зливаєш**. Реальне дерево
+> `main` починає рости з Лаби 03 (проєкт `ClinicApp/`).
+
 ### Формат коміту
 
-Усі коміти в курсі дотримуються одного шаблону:
+Усі коміти в курсі — за одним шаблоном:
 
 ```
-Lab01 Task01: коротко що зроблено
+LabXX TaskYY
 ```
 
-- `Lab01` — номер лаби (без дефіса, дві цифри)
-- `Task01` — номер завдання (дві цифри)
-- `: ` — двокрапка і пробіл
-- Далі — дієслово + що: `add Patient class`, `implement GetCost`, `fix null check`
+- `LabXX` — номер лаби, дві цифри, без дефіса
+- пробіл
+- `TaskYY` — номер завдання, дві цифри
+- **без опису** — номер лаби й завдання достатньо, деталі видно з `git diff`
 
-**Приклади:**
+**Приклади:** `Lab01 Task01`, `Lab03 Task02`, `Lab17 Task03`.
 
-```
-Lab01 Task01: add Hello World console output
-Lab03 Task02: add Patient class with properties
-Lab17 Task03: configure Fluent API for Doctor with WorkSchedule
-```
+Коміт створення проєкту (не завдання) — `Lab03: project`.
 
 ### Крок 6. Коміт після кожного завдання
 
@@ -312,19 +321,19 @@ Lab17 Task03: configure Fluent API for Doctor with WorkSchedule
 ```bash
 git status
 # Changes not staged for commit:
-#         modified:   src/Program.cs
+#         modified:   ClinicApp/Program.cs
 # Untracked files:
-#         src/Models/Patient.cs
+#         ClinicApp/Patient.cs
 ```
 
 Якщо хочеш побачити конкретні зміни (рядки):
 
 ```bash
 git diff
-# --- a/src/Program.cs
-# +++ b/src/Program.cs
+# --- a/ClinicApp/Program.cs
+# +++ b/ClinicApp/Program.cs
 # @@ -1,3 +1,6 @@
-# +Console.WriteLine("Hello, World!");
+# +clinic.Patients.Add(new Patient("Іван", "Петренко"));
 ```
 
 Рядки з `+` — додані, з `-` — видалені. `git diff` показує тільки нестейджені зміни. Для перегляду того що вже в Staging: `git diff --cached`.
@@ -332,9 +341,9 @@ git diff
 **6.2 — Добав до Staging**
 
 ```bash
-git add src/
-# або конкретний файл:
-git add src/Program.cs
+git add ClinicApp/
+# або конкретні файли:
+git add ClinicApp/Patient.cs ClinicApp/Program.cs
 ```
 
 Перевір що потрапило в Staging:
@@ -342,16 +351,16 @@ git add src/Program.cs
 ```bash
 git status
 # Changes to be committed:
-#         modified:   src/Program.cs
-#         new file:   src/Models/Patient.cs
+#         modified:   ClinicApp/Program.cs
+#         new file:   ClinicApp/Patient.cs
 ```
 
 **6.3 — Зафіксуй**
 
 ```bash
-git commit -m "Lab01 Task01: add Hello World console output"
-# [Lab-01 3a4b5c6] Lab01 Task01: add Hello World console output
-#  2 files changed, 8 insertions(+)
+git commit -m "Lab03 Task01"
+# [Lab-03 3a4b5c6] Lab03 Task01
+#  2 files changed, 60 insertions(+)
 ```
 
 Git підтвердить: SHA коміту (`3a4b5c6`), назву гілки, скільки файлів і рядків змінилось.
@@ -360,8 +369,8 @@ Git підтвердить: SHA коміту (`3a4b5c6`), назву гілки,
 
 ```bash
 git log --oneline
-# 3a4b5c6 Lab01 Task01: add Hello World console output
-# a1b2c3d Initial commit
+# 3a4b5c6 Lab03 Task01
+# a1b2c3d Lab03: project
 ```
 
 Після кожного наступного завдання — повторюй цей цикл:
@@ -372,16 +381,21 @@ git log --oneline
 
 Один `git commit` на одне завдання. Не більше, не менше.
 
-### Крок 7. Завершення лаби — злиття в main
+### Крок 7. Завершення лаби
 
-Виконав усі завдання? Зливай в `main`:
+**Лаби 01 і 02** — просто запуш гілку, без злиття:
 
 ```bash
-# Перейди на main
-git checkout main
+git push -u origin Lab-01
+```
 
-# Злий гілку Lab-01 (--no-ff зберігає топологію гілки в графі)
-git merge --no-ff Lab-01 -m "Merge Lab-01: Intro to C#"
+**Лаби 03 і далі** — запуш гілку і злий у `main`:
+
+```bash
+git push -u origin Lab-03
+git checkout main
+git merge --no-ff Lab-03 -m "Merge Lab-03: Defining Classes"
+git push
 ```
 
 Прапор `--no-ff` (no fast-forward) важливий: він створює явний merge-коміт навіть якщо злиття можна зробити лінійно. Завдяки цьому в `git log --graph` видно де починалась і де закінчилась кожна лаба.
@@ -390,37 +404,39 @@ git merge --no-ff Lab-01 -m "Merge Lab-01: Intro to C#"
 
 ```bash
 git log --oneline --graph --all
-# *   c8d9e0f Merge Lab-01: Intro to C#
+# *   c8d9e0f Merge Lab-03: Defining Classes
 # |\
-# | * 3a4b5c6 Lab01 Task03: add Doctor class
-# | * 2b3c4d5 Lab01 Task02: add Patient class
-# | * 1a2b3c4 Lab01 Task01: add Hello World
+# | * 3a4b5c6 Lab03 Task03
+# | * 2b3c4d5 Lab03 Task02
+# | * 1a2b3c4 Lab03 Task01
+# | * 0f1e2d3 Lab03: project
 # |/
-# * a1b2c3d Initial commit
+# * a1b2c3d chore: initial commit with .gitignore
 ```
 
 ### Крок 8. Перехід до наступної лаби
 
-Відразу після злиття:
+Відразу після завершення:
 
 ```bash
-git checkout -b Lab-02
+git checkout main
+git checkout -b Lab-04
 ```
 
-Готово — Lab-02 стартує з чистого `main`.
+Готово — нова гілка стартує з поточного `main`.
 
 ---
 
 ## Частина 4. Merge vs Rebase
 
-Під час роботи над лабою може виникнути ситуація: `main` пішов вперед (наприклад, викладач запушив нові файли) поки ти виконував завдання. Потрібно синхронізуватись.
+Під час роботи над лабою може виникнути ситуація: `main` пішов вперед (наприклад, ти злив попередню лабу з іншого комп'ютера) поки ти виконував завдання. Потрібно синхронізуватись.
 
 ![Merge vs Rebase](_assets/merge-vs-rebase.png)
 
 ### git merge main — зберігає топологію
 
 ```bash
-git checkout Lab-01
+git checkout Lab-03
 git merge main
 ```
 
@@ -429,7 +445,7 @@ git merge main
 ### git rebase main — переписує поверх
 
 ```bash
-git checkout Lab-01
+git checkout Lab-03
 git rebase main
 ```
 
@@ -442,12 +458,14 @@ Git "від'єднує" твої коміти `E` і `F`, застосовує �
 
 ### Для курсу
 
-У більшості випадків rebase не знадобиться — ти єдиний хто працює у своєму форку. Якщо викладач оновив репо — просто:
+У більшості випадків rebase не знадобиться — ти єдиний хто працює у своєму
+репозиторії. `git merge main` знадобиться хіба що коли ти працюєш з двох
+комп'ютерів і `main` пішов уперед:
 
 ```bash
 git checkout main
-git pull origin main
-git checkout Lab-01
+git pull
+git checkout Lab-03
 git merge main   # або git rebase main — на свій розсуд
 ```
 
@@ -455,24 +473,20 @@ git merge main   # або git rebase main — на свій розсуд
 
 ## Частина 5. Push на GitHub
 
-### Крок 9. Запуши main після кожного злиття
+### Крок 9. Запуши main після кожного злиття (Лаби 03+)
 
 ```bash
 git push origin main
 ```
 
-### Крок 10. Запуши поточну лабу (для бекапу і перевірки)
+### Крок 10. Запуши поточну лабу (для бекапу і здачі)
 
 ```bash
-git push origin Lab-01
+git push -u origin Lab-03
+# -u запам'ятовує зв'язок — далі достатньо просто: git push
 ```
 
-Перша пуш гілки — можна скоротити через флаг `-u`:
-
-```bash
-git push -u origin Lab-01
-# Тепер достатньо просто: git push
-```
+Для Лаб 01–02 це **єдиний** спосіб віддати роботу (у `main` вони не зливаються).
 
 Переглянути що запушено:
 
@@ -545,17 +559,15 @@ ssh -T git@github.com
 # Hi username! You've successfully authenticated, but GitHub does not provide shell access.
 ```
 
-**Крок 4 — Клонуй репо через SSH URL (замість HTTPS):**
+**Крок 4 — Використовуй SSH URL для свого репозиторію:**
+
+Якщо вже під'єднав `origin` через HTTPS (Крок 3б) — переключи на SSH:
 
 ```bash
-git clone git@github.com:<викладач>/OOP-Tomka-CourseForHardCoders.git
+git remote set-url origin git@github.com:<ваш-логін>/oop-course.git
 ```
 
-Якщо вже клонував через HTTPS — зміни remote:
-
-```bash
-git remote set-url origin git@github.com:<викладач>/OOP-Tomka-CourseForHardCoders.git
-```
+Перевір: `git push` більше не питає пароль.
 
 ### Перевірка remote URL
 
@@ -590,42 +602,42 @@ git remote -v
 
 ## Типові помилки
 
-### 1. Коміт потрапив у `main` замість `Lab-01`
+### 1. Коміт потрапив у `main` замість гілки лаби
 
 ```bash
 # Відмінити останній коміт з main (зміни залишаться в файлах)
 git checkout main
 git reset --soft HEAD~1
 
-# Перейти на Lab-01 і закомітити там
-git checkout Lab-01
+# Перейти на гілку лаби і закомітити там
+git checkout Lab-03
 git add .
-git commit -m "Lab01 Task01: ..."
+git commit -m "Lab03 Task01"
 ```
 
 ### 2. Забув `git add` — файл не потрапив у коміт
 
 ```bash
-git status                    # видно що файл не staged
-git add src/Models/Patient.cs # додай конкретний файл
-git commit --amend --no-edit  # додай до попереднього коміту (якщо ще не пушив)
+git status                         # видно що файл не staged
+git add ClinicApp/Patient.cs       # додай конкретний файл
+git commit --amend --no-edit       # додай до попереднього коміту (якщо ще не пушив)
 ```
 
 ### 3. Неправильний формат коміту
 
 ```bash
 # Змінити повідомлення останнього коміту (якщо ще не пушив)
-git commit --amend -m "Lab01 Task01: add Patient class with properties"
+git commit --amend -m "Lab03 Task01"
 ```
 
 ### 4. Конфлікт при злитті
 
 ```
-Auto-merging src/Models/Patient.cs
-CONFLICT (content): Merge conflict in src/Models/Patient.cs
+Auto-merging ClinicApp/Patient.cs
+CONFLICT (content): Merge conflict in ClinicApp/Patient.cs
 ```
 
-Відкрий файл — Git позначив конфліктні місця:
+Відкрій файл — Git позначив конфліктні місця:
 
 ```csharp
 <<<<<<< HEAD
@@ -633,13 +645,13 @@ public string FullName { get; set; }
 =======
 public string FirstName { get; set; }
 public string LastName  { get; set; }
->>>>>>> Lab-01
+>>>>>>> Lab-03
 ```
 
 Обери правильний варіант (або об'єднай), видали маркери, потім:
 
 ```bash
-git add src/Models/Patient.cs
+git add ClinicApp/Patient.cs
 git commit -m "resolve merge conflict in Patient"
 ```
 
@@ -662,7 +674,8 @@ git push origin main
 
 | Команда | Що робить |
 |---------|-----------|
-| `git clone <url>` | Скачати репо (одноразово) |
+| `git init` | Створити локальний репозиторій (одноразово) |
+| `git clone <url>` | Скачати чужий репо (напр. довідник курсу) |
 | `git status` | Стан робочої директорії і staging |
 | `git diff` | Що змінилось (не staged) |
 | `git diff --cached` | Що в staging |
@@ -672,11 +685,11 @@ git push origin main
 | `git log --oneline` | Коротка історія комітів |
 | `git log --oneline --graph --all` | Граф усіх гілок |
 | `git checkout main` | Перейти на гілку main |
-| `git checkout -b Lab-01` | Створити гілку і перейти на неї |
+| `git checkout -b Lab-03` | Створити гілку і перейти на неї |
 | `git branch` | Список гілок (зірочка = поточна) |
-| `git merge --no-ff Lab-01 -m "..."` | Злити Lab-01 в поточну гілку |
+| `git merge --no-ff Lab-03 -m "..."` | Злити Lab-03 в поточну гілку |
 | `git push origin main` | Запушити main на GitHub |
-| `git push -u origin Lab-01` | Запушити гілку і встановити tracking |
+| `git push -u origin Lab-03` | Запушити гілку і встановити tracking |
 | `git pull origin main` | Отримати зміни з GitHub |
 | `git stash` | Тимчасово сховати незакомічені зміни |
 | `git stash pop` | Відновити сховані зміни |
@@ -697,15 +710,15 @@ git push origin main
 
 ```
 main
-├── Lab-01   (Intro to C#)      → merge → main
-├── Lab-02   (Arrays)           → merge → main
-├── Lab-03   (Classes)          → merge → main
+├── Lab-01   (Основи C#)        → push, БЕЗ злиття (тренажер Lab01/)
+├── Lab-02   (Масиви)           → push, БЕЗ злиття (тренажер Lab02/)
+├── Lab-03   (Класи)            → merge → main   ← тут стартує ClinicApp/
+├── Lab-04   (Члени класу)      → merge → main
 │   ...
 ├── Lab-17   (EF Core Basics)   → merge → main
-├── Lab-18   (EF Relations)     → merge → main
 │   ...
 └── Lab-22   (SOLID + DI)       → merge → main
 ```
 
-Кожна гілка: `Lab-XX` з великої літери, дві цифри, дефіс.  
-Кожен коміт: `LabXX TaskXX: дієслово + що зроблено`.
+Кожна гілка: `Lab-XX` — з великої літери, дві цифри, дефіс.
+Кожен коміт: `LabXX TaskYY` — дві цифри, без опису.

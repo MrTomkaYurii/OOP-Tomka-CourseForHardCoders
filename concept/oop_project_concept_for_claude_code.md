@@ -45,7 +45,7 @@ OOP-Tomka-CourseForHardCoders/
  │    ├── lab-00-choose-domain/
  │    ├── lab-01-intro/
  │    └── ... (кожна лаба = папка з instructions.md)
- └── Concept/
+ └── concept/
       ├── COURSE_DESIGN.md        ← таблиця всіх лаб, деталі по кожній
       ├── CODEBASE_STATE.md       ← стан src/ після кожної лаби
       ├── CONCEPTS_BY_LAB.md      ← які C# конструкції вводяться коли
