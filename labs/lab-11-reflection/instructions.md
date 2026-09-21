@@ -8,6 +8,37 @@
 
 Після Lab 10 система має повний аналітичний модуль. Ця лаба додає **плани лікування** (`TreatmentPlan`) як новий тип даних та інструментарій рефлексії, що перевіряє валідність об'єктів і генерує форми введення **автоматично** — зчитуючи атрибути з властивостей класу під час виконання.
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 10 — стан `main` після її злиття:
+
+```text
+oop-course/                           ← гілка main (після злиття Лаби 10)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/
+    │   ├── AppointmentStatus.cs
+    │   ├── BloodType.cs
+    │   └── Speciality.cs
+    ├── Models/
+    │   └── … ще 14 файлів без змін
+    ├── Managers/
+    │   └── … ще 8 файлів без змін
+    ├── Utils/
+    │   ├── ClinicFormatter.cs
+    │   └── ClinicValidator.cs
+    ├── Interfaces/  (4 файли)
+    └── Comparators/  (4 файли)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -388,6 +419,49 @@ git commit -m "Lab11 Task05: integrate TreatmentPlanManager, add TreatmentPlansM
 
 ---
 
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                           ← гілка Lab-11 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs                    ✏
+    ├── Clinic.cs                     ✏
+    ├── Enums/
+    │   ├── AppointmentStatus.cs
+    │   ├── BloodType.cs
+    │   ├── Speciality.cs
+    │   └── TreatmentStatus.cs        🆕
+    ├── Models/
+    │   ├── TreatmentPlan.cs          🆕
+    │   └── … ще 14 файлів без змін
+    ├── Managers/
+    │   ├── TreatmentPlanManager.cs   🆕
+    │   └── … ще 8 файлів без змін
+    ├── Utils/
+    │   ├── ClinicFormatter.cs
+    │   ├── ClinicValidator.cs
+    │   ├── FormBuilder.cs            🆕
+    │   ├── ModelValidator.cs         🆕
+    │   └── ValidationResult.cs       🆕
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    └── Attributes/
+        ├── MaxLengthAttribute.cs     🆕
+        ├── MinValueAttribute.cs      🆕
+        └── RequiredAttribute.cs      🆕
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+
+---
+
 ## Перевірка перед здачею
 
 ```bash
@@ -398,6 +472,7 @@ dotnet run
 
 Переконайтесь, що:
 
+- [ ] Структура проєкту збігається зі схемою вище
 - [ ] Атрибути `RequiredAttribute`, `MaxLengthAttribute`, `MinValueAttribute` — власні класи, що наслідують `Attribute`
 - [ ] `[AttributeUsage(AttributeTargets.Property)]` присутній на кожному атрибуті
 - [ ] `TreatmentPlan` має мінімум 3 властивості з різними атрибутами

@@ -8,7 +8,7 @@ const {
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
 const ogImage = new URL("/author.jpg", Astro.site).toString();
-const fullTitle = title === "OOP C# Course" ? title : `${title} | OOP C# Course`;
+const fullTitle = title.includes("OOP C# Course") ? title : `${title} | OOP C# Course`;
 ---
 
 <!doctype html>

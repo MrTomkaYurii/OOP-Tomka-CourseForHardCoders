@@ -10,6 +10,42 @@
 
 Крім того, клініка потребує нову функціональність — **чергу очікування**: пацієнти приходять, стають у чергу, і приймаються по порядку. Це окрема функція, яка природньо виражається через `Queue<T>`.
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 08 — стан `main` після її злиття:
+
+```text
+oop-course/                             ← гілка main (після злиття Лаби 08)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (3 файли)
+    ├── Models/
+    │   ├── Patient.cs
+    │   ├── Doctor.cs
+    │   ├── Appointment.cs
+    │   └── … ще 8 файлів без змін
+    ├── Managers/
+    │   ├── PatientManager.cs
+    │   ├── DoctorManager.cs
+    │   ├── AppointmentManager.cs
+    │   ├── GrowablePatientManager.cs
+    │   ├── MedicalRecordManager.cs
+    │   └── BillingManager.cs
+    ├── Utils/  (2 файли)
+    └── Interfaces/
+        ├── ICancellable.cs
+        ├── IPayable.cs
+        └── ISchedulable.cs
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -245,6 +281,47 @@ git commit -m "Lab09 Task04: add IIdentifiable, Repository<T> where T : IIdentif
 
 ---
 
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                             ← гілка Lab-09 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs                      ✏
+    ├── Clinic.cs                       ✏
+    ├── Enums/  (3 файли)
+    ├── Models/
+    │   ├── Patient.cs                  ✏
+    │   ├── Doctor.cs                   ✏
+    │   ├── Appointment.cs              ✏
+    │   ├── WaitingQueue.cs             🆕
+    │   └── … ще 8 файлів без змін
+    ├── Managers/
+    │   ├── PatientManager.cs           ✏
+    │   ├── DoctorManager.cs
+    │   ├── AppointmentManager.cs       ✏
+    │   ├── GrowablePatientManager.cs
+    │   ├── MedicalRecordManager.cs
+    │   ├── BillingManager.cs
+    │   └── Repository.cs               🆕
+    ├── Utils/  (2 файли)
+    └── Interfaces/
+        ├── ICancellable.cs
+        ├── IPayable.cs
+        ├── ISchedulable.cs
+        └── IIdentifiable.cs            🆕
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+
+---
+
 ## Перевірка перед здачею
 
 ```bash
@@ -253,6 +330,7 @@ dotnet build
 dotnet run
 ```
 
+- [ ] Структура проєкту збігається зі схемою вище
 - [ ] `1. Пацієнти` — поведінка не змінилась, але немає ліміту на кількість
 - [ ] `6. Черга` — з'явився новий пункт у головному меню
 - [ ] Додати 3 пацієнтів у чергу → прийняти двох → у черзі 1

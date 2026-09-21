@@ -267,7 +267,7 @@
 
 ---
 
-### Lab 05 — Encapsulation (feature/encapsulation → злито в main)
+### Lab 05 — Інкапсуляція (тека `ClinicApp/`, гілка `Lab-05`, зливається в `main`)
 
 **Нові конструкції:**
 - Sub-namespaces: `ClinicApp.Models`, `ClinicApp.Enums`, `ClinicApp.Managers`, `ClinicApp.Utils`
@@ -280,7 +280,11 @@
 - `nameof(Property)` — ім'я символу як рядок (безпечно при рефакторингу)
 - `try / catch` з правильним порядком: конкретніший тип (підклас) — першим
 - `static class ClinicValidator` — правила валідації в одному місці (патерн)
-- Опційно: `System.Text.RegularExpressions.Regex.IsMatch()`, `static readonly Regex`
+- Опційно: `System.Text.RegularExpressions.Regex.IsMatch()`, `static readonly Regex` (у шаблонах: `[0-9]` і `\z` замість `\d` і `$` — `\d` приймає Unicode-цифри, `$` пропускає кінцевий `
+`)
+- Порядок побічних ефектів у конструкторі: `Id = _nextId++` — **останнім**, після валідації
+- `Enum.IsDefined(typeof(T), значення)` — необов'язкова перевірка числа з меню (`(BloodType)99` компілюється)
+- Слово «підклас» уживається лише для порядку `catch`; успадкування — Лаба 06
 
 **Заборонено (ще не введено):**
 - `: BaseClass`, `base()`, `override`, `virtual`, `abstract` (Lab 06)

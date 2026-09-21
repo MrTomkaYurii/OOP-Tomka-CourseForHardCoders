@@ -8,6 +8,41 @@
 
 Після Lab 06 система вміє зберігати медичні записи. Але оплата прийомів досі не відстежується — немає поняття "оплачено / не оплачено", немає суми, немає можливості скасування через інтерфейс. Ця лаба додає **фінансовий блок**: інтерфейси `IPayable`, `ICancellable`, `ISchedulable` та новий розділ меню "Рахунки".
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 06 — стан `main` після її злиття:
+
+```text
+oop-course/                             ← гілка main (після злиття Лаби 06)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (3 файли)
+    ├── Models/
+    │   ├── Patient.cs
+    │   ├── Doctor.cs
+    │   ├── Appointment.cs
+    │   ├── WorkSchedule.cs
+    │   ├── Diagnosis.cs
+    │   ├── LabResult.cs
+    │   ├── MedicalRecord.cs
+    │   └── Prescription.cs
+    ├── Managers/
+    │   ├── PatientManager.cs
+    │   ├── DoctorManager.cs
+    │   ├── AppointmentManager.cs
+    │   ├── GrowablePatientManager.cs
+    │   └── MedicalRecordManager.cs
+    └── Utils/  (2 файли)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -252,6 +287,48 @@ git commit -m "Lab07 Task04: integrate BillingManager into Clinic, add BillingMe
 
 ---
 
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                             ← гілка Lab-07 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs                      ✏
+    ├── Clinic.cs                       ✏
+    ├── Enums/  (3 файли)
+    ├── Models/
+    │   ├── Patient.cs
+    │   ├── Doctor.cs                   ✏
+    │   ├── Appointment.cs              ✏
+    │   ├── WorkSchedule.cs
+    │   ├── Diagnosis.cs
+    │   ├── LabResult.cs
+    │   ├── MedicalRecord.cs
+    │   └── Prescription.cs
+    ├── Managers/
+    │   ├── PatientManager.cs
+    │   ├── DoctorManager.cs
+    │   ├── AppointmentManager.cs       ✏
+    │   ├── GrowablePatientManager.cs
+    │   ├── MedicalRecordManager.cs
+    │   └── BillingManager.cs           🆕
+    ├── Utils/  (2 файли)
+    └── Interfaces/
+        ├── ICancellable.cs             🆕
+        ├── IPayable.cs                 🆕
+        └── ISchedulable.cs             🆕
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+
+---
+
 ## Перевірка перед здачею
 
 ```bash
@@ -262,6 +339,7 @@ dotnet run
 
 Переконайтесь, що:
 
+- [ ] Структура проєкту збігається зі схемою вище
 - [ ] Головне меню має описи через `—` для кожного пункту
 - [ ] Пункт "5. Рахунки" присутній і відкриває підменю
 - [ ] "Борги пацієнта" виводить список і суму

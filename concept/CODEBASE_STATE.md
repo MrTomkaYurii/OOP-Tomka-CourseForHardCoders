@@ -170,7 +170,7 @@ src/
 ```
 src/
 ├── Clinic.cs                        ← without changes to API
-├── GrowablePatientManager.cs        ← + using ClinicApp.Models
+├── (GrowablePatientManager.cs → Managers/ за інструкцією; в еталоні поки в корені; з'явився в Lab 03)
 ├── Program.cs                       ← + using ClinicApp.*; try/catch у меню
 ├── Enums/
 │   ├── AppointmentStatus.cs         ← namespace ClinicApp.Enums (moved)
@@ -203,6 +203,13 @@ src/
 - Опційно: `Regex.IsMatch()` для перевірки формату
 
 **Що НЕ змінилось:** меню, API менеджерів, зовнішня поведінка
+
+**Розходження еталон ↔ інструкція (`labs/lab-05-*`), для наступного проходу по гілці:**
+- `Id = _nextId++` стоїть першим у конструкторах → невдале створення «з'їдає» Id; інструкція вимагає ставити його останнім.
+- Валідатор передає `fieldName` — укр. підпис («Ім'я»), інструкція — `nameof(Property)`; `WorkSchedule` кидає з рядками `"start"`/`"end"`.
+- `LicenseNumber` і `WorkSchedule` лишаються з inline-перевірками (за інструкцією — навмисно, правило разове).
+- `GrowablePatientManager` в корені (інструкція: `Managers/`, namespace `ClinicApp.Managers`).
+- Меню: інструкція вимагає `try/catch` у «Додати пацієнта», «Додати лікаря» (разом з `WorkSchedule`) і «Записати» — в еталоні так і є.
 
 ---
 
@@ -927,3 +934,24 @@ src/Program.cs                         ← SolidDiMenu() + using Infrastructure/
 2. **Оновлюй цей файл** — додай новий рядок після завершення лаби
 3. **Меню росте** — кожна ✅ лаба показує щось нове в консолі
 4. **⏳ лаби** — внутрішнє покращення, меню НЕ змінюється
+
+---
+
+## Розбіжності старих інструкцій Лаб 06–22 з еталоном
+
+Результат `python tools/structure/gen_structure.py --audit`: порівняння `git add` у блоках «Коміт» з файлами, які лаба реально змінює в еталонних гілках. Використовується як чек-лист при переробці кожної лаби (там же додаються номери задач `Тn` у схемі).
+
+| Лаба | Що не збігається |
+|------|------------------|
+| 09 | Змінено `Managers/AppointmentManager.cs`, але його нема в жодному `git add` |
+| 13 | У `git add` немає: `Clinic.cs`, `Program.cs`, 4 файли `Events/*`, `BillingManager`, `PatientManager`, `AppointmentManager`, `TreatmentPlanManager`, `ClinicLogger`, `PatientPassportWriter`, `SessionEventTracker` (тобто майже все) |
+| 14 | Немає: `Clinic.cs`, `Program.cs`, `AnalyticsManager`, `ReportManager`, `SpecialityReport` |
+| 15 | Немає: `Clinic.cs`, `Program.cs`, 3 файли `Extensions/*`, `AppointmentFilter`, `AppointmentPipeline`, `AppointmentProcessor` |
+| 16 | Немає: `ClinicApp.csproj` (пакет Spectre.Console), `Program.cs`, `UI/ClinicRenderer.cs` |
+| 19 | Немає: `Models/Diagnosis.cs`, `LabResult.cs`, `Prescription.cs` |
+| 20 | **Неіснуючі шляхи:** `Models/PagedResult.cs`, `Models/Dtos/` (в еталоні — `Models/PatientSummaryDto.cs`, `AppointmentSummaryDto.cs`) |
+| 21 | **Неіснуючі шляхи:** `Services/AsyncClinicService.cs`, `Services/DrugInfoService.cs` (в еталоні — `Data/AsyncClinicService.cs`, `Data/ClinicHttpClient.cs`); немає `Data/ClinicRepository.cs`, `Models/ClinicDashboard.cs` |
+| 22 | **Неіснуючі шляхи:** `Services/Clinic.cs`, `Services/AppointmentProcessor.cs`, `Abstractions/` (в еталоні — `Clinic.cs` у корені, `Managers/AppointmentProcessor.cs`, інтерфейси в `Services/`); немає `Infrastructure/ServiceContainer.cs` |
+| 06–08, 10–12, 17–18 | Збігається |
+
+Схеми структури Лаб 06–22 згенеровані з еталона **без номерів задач** — їх додають вручну при переробці лаби (мусять збігатись з комітами цієї лаби). Лаби 01–05 мають повні схеми з `Тn`.

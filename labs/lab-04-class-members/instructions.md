@@ -16,6 +16,29 @@
 
 Працюєте в тому самому проєкті `ClinicApp/`. Гілка зливається в `main`.
 
+### Структура проєкту на початку лаби
+
+Це результат Лаби 03 — стан `main` після її злиття:
+
+```text
+oop-course/                          ← гілка main (після злиття Лаби 03)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Patient.cs
+    ├── Doctor.cs
+    ├── PatientManager.cs
+    ├── DoctorManager.cs
+    ├── Appointment.cs
+    ├── AppointmentManager.cs
+    ├── Clinic.cs
+    └── GrowablePatientManager.cs
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
 ### Що нового дозволено (і тільки воно)
 
 - `enum` — іменовані константи;
@@ -75,6 +98,7 @@ git checkout -b Lab-04
 4. Замінити `string Status` в `Appointment` на `AppointmentStatus`.
 5. Замінити `string BloodType` в `Patient` на `BloodType`.
 6. Замінити `string Speciality` в `Doctor` на `Speciality`.
+7. Виправити код, який через зміну типів перестав компілюватись: початкові дані та введення з меню в `Program.cs`, пошук за спеціальністю в `DoctorManager`.
 
 ### Специфікація
 
@@ -112,9 +136,23 @@ if (Status == AppointmentStatus.Scheduled) ...
 4. **Порівняння enum** — звичайне `==` / `!=`, як з числами.
 5. **`enum.ToString()`** поверне назву значення як у коді (`"APositive"`), а не
    `"A+"`. Гарне відображення зробите в Задачі 3 (статичний форматер).
+6. **Що ще зламається після заміни типів — і це частина задачі.** `Program.cs`:
+   початкові дані передавали групу крові й спеціальність рядками, а меню
+   читало їх з консолі як текст. `DoctorManager`: пошук за спеціальністю
+   порівнював текст запиту з рядковим полем. Без цих виправлень проєкт не
+   збереться, а коміт задачі буде неповним.
+7. **Ввід enum з меню.** Користувач вводить число, а поле тепер має тип enum, тож
+   потрібне явне приведення числа до типу перерахування — запис вигляду
+   `(ТипEnum)число`. Покажіть у меню пронумерований список значень і перетворіть
+   введений номер. Чи існує в enum таке значення, це приведення не перевіряє —
+   до цього повернемось у Лабі 05.
+8. **Пошук за спеціальністю на цьому кроці** — найпростіше порівнювати текст
+   запиту з текстовим поданням значення enum; повноцінний варіант з українськими
+   назвами зробите в Задачах 3–4.
 
 📖 Документація:
 - [Тип `enum`](https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/enum)
+- [Приведення enum ↔ число](https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/enum#conversions)
 - [Типи перерахувань (посібник)](https://learn.microsoft.com/dotnet/csharp/programming-guide/enumeration-types)
 
 ### Адаптація до вашого домену
@@ -130,6 +168,7 @@ if (Status == AppointmentStatus.Scheduled) ...
 ```bash
 git add ClinicApp/AppointmentStatus.cs ClinicApp/BloodType.cs ClinicApp/Speciality.cs
 git add ClinicApp/Appointment.cs ClinicApp/Patient.cs ClinicApp/Doctor.cs
+git add ClinicApp/DoctorManager.cs ClinicApp/Program.cs
 git commit -m "Lab04 Task01"
 ```
 
@@ -391,6 +430,38 @@ git commit -m "Lab04 Task04"
 
 ---
 
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі 4 завдання виконано:
+
+```text
+oop-course/                          ← гілка Lab-04 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs                   ✏ Т1 Т2 Т4
+    ├── Patient.cs                   ✏ Т1 Т3
+    ├── Doctor.cs                    ✏ Т1 Т2 Т3
+    ├── PatientManager.cs            ✏ Т3 Т4
+    ├── DoctorManager.cs             ✏ Т1 Т3 Т4
+    ├── Appointment.cs               ✏ Т1
+    ├── AppointmentManager.cs        ✏ Т3 Т4
+    ├── Clinic.cs
+    ├── GrowablePatientManager.cs
+    ├── AppointmentStatus.cs         🆕 Т1
+    ├── BloodType.cs                 🆕 Т1
+    ├── Speciality.cs                🆕 Т1
+    ├── WorkSchedule.cs              🆕 Т2
+    └── ClinicFormatter.cs           🆕 Т3
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були в Лабі 03.
+
+Усі файли поки що лежать в одній теці `ClinicApp/` — у підпапки (`Models/`, `Enums/`, `Managers/`, `Utils/`) їх розкладемо в Лабі 05.
+
+---
+
 ## Перевірка перед здачею
 
 ```bash
@@ -400,6 +471,7 @@ dotnet run --project ClinicApp
 
 Переконайтесь, що:
 
+- [ ] Структура проєкту збігається зі схемою вище
 - [ ] Проєкт компілюється без помилок і попереджень
 - [ ] У коді **немає рядкових літералів** `"Scheduled"`, `"A+"`, `"Кардіологія"` —
   усе через `enum`

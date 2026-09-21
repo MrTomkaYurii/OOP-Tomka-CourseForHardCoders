@@ -19,6 +19,37 @@
 
 ---
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 16 — стан `main` після її злиття:
+
+```text
+oop-course/                           ← гілка main (після злиття Лаби 16)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (4 файли)
+    ├── Models/
+    │   ├── Patient.cs
+    │   ├── Doctor.cs
+    │   └── … ще 14 файлів без змін
+    ├── Managers/  (13 файлів)
+    ├── Utils/  (12 файлів)
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    ├── Attributes/  (3 файли)
+    ├── Events/  (4 файли)
+    ├── Extensions/  (3 файли)
+    └── UI/  (1 файл)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -256,6 +287,43 @@ DbSeeder.Seed(context);
 git add src/Data/DbSeeder.cs src/Migrations/
 git commit -m "Lab17 Task04: add DbSeeder and run InitialCreate migration"
 ```
+
+---
+
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                                   ← гілка Lab-17 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj                      ✏
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (4 файли)
+    ├── Models/
+    │   ├── Patient.cs                        ✏
+    │   ├── Doctor.cs                         ✏
+    │   └── … ще 14 файлів без змін
+    ├── Managers/  (13 файлів)
+    ├── Utils/  (12 файлів)
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    ├── Attributes/  (3 файли)
+    ├── Events/  (4 файли)
+    ├── Extensions/  (3 файли)
+    ├── UI/  (1 файл)
+    ├── Data/
+    │   ├── ClinicDbContext.cs                🆕
+    │   └── DbSeeder.cs                       🆕
+    └── Migrations/  (3 файли — генерує EF)   🆕
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
 
 ---
 

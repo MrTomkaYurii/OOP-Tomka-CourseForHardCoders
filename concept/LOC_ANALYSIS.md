@@ -73,6 +73,8 @@
 | `Utils/ClinicValidator.cs` | 33 |
 | **Підсумок** | **91** |
 
+> Примітка: `GrowablePatientManager.cs` (58 LOC) тепер належить Лабі 03 (Задача 8), тож власний внесок Лаби 05 — ~33 LOC (`ClinicValidator`) + рефакторинг моделей.
+
 ---
 
 ### Lab 06 — Inheritance

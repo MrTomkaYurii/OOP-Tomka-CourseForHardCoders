@@ -61,7 +61,7 @@
 | `BloodType`            | Lab 04  | `enum BloodType` (9 значень)                     |
 | `Phone`                | Lab 04  | рядок                                            |
 | `FirstName`, `LastName`| Lab 05 ↑| тепер private backing fields + валідація        |
-| `DateOfBirth`          | Lab 05 ↑| валідується (не майбутня, не >150 років)        |
+| `DateOfBirth`          | Lab 05 ↑| валідується (не майбутня, не раніше 1900)        |
 | `Phone`                | Lab 05 ↑| валідується формат 10 цифр                      |
 
 ---
@@ -427,7 +427,7 @@ src/
 │   ├── PatientStatsBySpent.cs   — Lab 10 (IComparer<PatientStats>)
 │   └── PatientStatsByLastVisit.cs— Lab 10 (IComparer<PatientStats>)
 │
-├── GrowablePatientManager.cs    — Lab 05 (зростаючий масив — концептуальний)
+├── GrowablePatientManager.cs    — Lab 03, Задача 8 (зростаючий масив — концептуальний)
 │
 ├── Managers/
 │   ├── PatientManager.cs        — Lab 03 → Lab 04 → Lab 09 (List<Patient>) → Lab 13 (event PatientAdded)

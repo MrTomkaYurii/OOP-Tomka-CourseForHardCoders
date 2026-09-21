@@ -25,6 +25,39 @@ public Clinic(string name)
 
 ---
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 21 — стан `main` після її злиття:
+
+```text
+oop-course/                                    ← гілка main (після злиття Лаби 21)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (4 файли)
+    ├── Models/
+    │   └── … ще 20 файлів без змін
+    ├── Managers/
+    │   ├── AppointmentProcessor.cs
+    │   └── … ще 12 файлів без змін
+    ├── Utils/  (12 файлів)
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    ├── Attributes/  (3 файли)
+    ├── Events/  (4 файли)
+    ├── Extensions/  (3 файли)
+    ├── UI/  (1 файл)
+    ├── Data/  (6 файлів)
+    └── Migrations/  (9 файлів — генерує EF)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -425,6 +458,57 @@ ProcessAppointment(new SpecialistAppointment(...)); // ✅
 git add Program.cs
 git commit -m "Lab22 Task06: verify Liskov substitution via GetRequiredService and polymorphism"
 ```
+
+---
+
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                                    ← гілка Lab-22 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs                             ✏
+    ├── Clinic.cs                              ✏
+    ├── Enums/  (4 файли)
+    ├── Models/
+    │   ├── ClinicConfig.cs                    🆕
+    │   └── … ще 20 файлів без змін
+    ├── Managers/
+    │   ├── AppointmentProcessor.cs            ✏
+    │   └── … ще 12 файлів без змін
+    ├── Utils/  (12 файлів)
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    ├── Attributes/  (3 файли)
+    ├── Events/  (4 файли)
+    ├── Extensions/  (3 файли)
+    ├── UI/  (1 файл)
+    ├── Data/  (6 файлів)
+    ├── Migrations/  (9 файлів — генерує EF)
+    ├── Infrastructure/
+    │   └── ServiceContainer.cs                🆕
+    ├── Services/
+    │   ├── AppointmentService.cs              🆕
+    │   ├── DoctorService.cs                   🆕
+    │   ├── IAppointmentService.cs             🆕
+    │   ├── IDoctorService.cs                  🆕
+    │   ├── IPatientService.cs                 🆕
+    │   ├── LoggingPatientService.cs           🆕
+    │   └── PatientService.cs                  🆕
+    └── Strategies/
+        ├── DiscountCostStrategy.cs            🆕
+        ├── ICostStrategy.cs                   🆕
+        ├── RegularCostStrategy.cs             🆕
+        └── UrgentCostStrategy.cs              🆕
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
 
 ---
 

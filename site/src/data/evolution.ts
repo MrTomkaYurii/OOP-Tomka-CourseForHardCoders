@@ -119,7 +119,7 @@ export const evolutionSteps: EvolutionStep[] = [
     module: "Patients+",
     menu: "Валідація і зрозумілі помилки замість падіння",
     phase: "model",
-    files: ["Utils/ClinicValidator.cs", "GrowablePatientManager.cs", "Models/*", "Managers/*"],
+    files: ["Utils/ClinicValidator.cs", "Models/*", "Managers/*", "Enums/*"],
     concepts: ["private поля", "явні сеттери", "throw", "try/catch", "namespace"],
     realWorld: "Кожна форма на сайті та кожен API-endpoint валідує вхідні дані саме так. Явна валідація у сеттерах гарантує, що система ніколи не збереже некоректний стан.",
     stats: { files: 35, types: 14 },

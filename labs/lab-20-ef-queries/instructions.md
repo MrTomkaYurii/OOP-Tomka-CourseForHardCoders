@@ -13,6 +13,41 @@
 
 ---
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 19 — стан `main` після її злиття:
+
+```text
+oop-course/                                    ← гілка main (після злиття Лаби 19)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (4 файли)
+    ├── Models/
+    │   ├── Patient.cs
+    │   └── … ще 16 файлів без змін
+    ├── Managers/  (13 файлів)
+    ├── Utils/  (12 файлів)
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    ├── Attributes/  (3 файли)
+    ├── Events/  (4 файли)
+    ├── Extensions/  (3 файли)
+    ├── UI/  (1 файл)
+    ├── Data/
+    │   ├── ClinicDbContext.cs
+    │   ├── DbSeeder.cs
+    │   └── ClinicRepository.cs
+    └── Migrations/  (7 файлів — генерує EF)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -273,6 +308,46 @@ EF видасть попередження: "Patient з QueryFilter є required 
 git add src/Models/Patient.cs src/Data/ClinicDbContext.cs src/Migrations/
 git commit -m "Lab20 Task04: add Soft Delete with IsDeleted flag and Global Query Filter"
 ```
+
+---
+
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                                    ← гілка Lab-20 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (4 файли)
+    ├── Models/
+    │   ├── Patient.cs                         ✏
+    │   ├── AppointmentSummaryDto.cs           🆕
+    │   ├── PatientSummaryDto.cs               🆕
+    │   └── … ще 16 файлів без змін
+    ├── Managers/  (13 файлів)
+    ├── Utils/  (12 файлів)
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    ├── Attributes/  (3 файли)
+    ├── Events/  (4 файли)
+    ├── Extensions/  (3 файли)
+    ├── UI/  (1 файл)
+    ├── Data/
+    │   ├── ClinicDbContext.cs                 ✏
+    │   ├── DbSeeder.cs
+    │   ├── ClinicRepository.cs
+    │   └── ClinicQueryService.cs              🆕
+    └── Migrations/  (9 файлів — генерує EF)   🆕
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
 
 ---
 

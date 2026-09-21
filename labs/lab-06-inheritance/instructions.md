@@ -12,6 +12,36 @@
 
 ---
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 05 — стан `main` після її злиття:
+
+```text
+oop-course/                             ← гілка main (після злиття Лаби 05)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (3 файли)
+    ├── Models/
+    │   ├── Patient.cs
+    │   ├── Doctor.cs
+    │   ├── Appointment.cs
+    │   └── WorkSchedule.cs
+    ├── Managers/
+    │   ├── PatientManager.cs
+    │   ├── DoctorManager.cs
+    │   ├── AppointmentManager.cs
+    │   └── GrowablePatientManager.cs
+    └── Utils/  (2 файли)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -430,6 +460,43 @@ git commit -m "Lab06 Task04: integrate MedicalRecords into Clinic and Program me
 
 ---
 
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                             ← гілка Lab-06 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs                      ✏
+    ├── Clinic.cs                       ✏
+    ├── Enums/  (3 файли)
+    ├── Models/
+    │   ├── Patient.cs
+    │   ├── Doctor.cs
+    │   ├── Appointment.cs
+    │   ├── WorkSchedule.cs
+    │   ├── Diagnosis.cs                🆕
+    │   ├── LabResult.cs                🆕
+    │   ├── MedicalRecord.cs            🆕
+    │   └── Prescription.cs             🆕
+    ├── Managers/
+    │   ├── PatientManager.cs
+    │   ├── DoctorManager.cs
+    │   ├── AppointmentManager.cs
+    │   ├── GrowablePatientManager.cs
+    │   └── MedicalRecordManager.cs     🆕
+    └── Utils/  (2 файли)
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+
+---
+
 ## Перевірка перед здачею
 
 ```bash
@@ -440,6 +507,7 @@ dotnet run
 
 Переконайтесь, що:
 
+- [ ] Структура проєкту збігається зі схемою вище
 - [ ] `new MedicalRecord(...)` не компілюється — клас абстрактний
 - [ ] `Diagnosis`, `LabResult`, `Prescription` успішно створюються
 - [ ] `MedicalRecord record = new Diagnosis(...)` — присвоєння підкласу базовому типу працює

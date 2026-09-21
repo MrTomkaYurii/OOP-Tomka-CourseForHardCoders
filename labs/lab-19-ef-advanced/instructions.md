@@ -10,6 +10,45 @@
 
 ---
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 18 — стан `main` після її злиття:
+
+```text
+oop-course/                                    ← гілка main (після злиття Лаби 18)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (4 файли)
+    ├── Models/
+    │   ├── Patient.cs
+    │   ├── Diagnosis.cs
+    │   ├── LabResult.cs
+    │   ├── MedicalRecord.cs
+    │   ├── Prescription.cs
+    │   └── … ще 11 файлів без змін
+    ├── Managers/  (13 файлів)
+    ├── Utils/  (12 файлів)
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    ├── Attributes/  (3 файли)
+    ├── Events/  (4 файли)
+    ├── Extensions/  (3 файли)
+    ├── UI/  (1 файл)
+    ├── Data/
+    │   ├── ClinicDbContext.cs
+    │   ├── DbSeeder.cs
+    │   └── ClinicRepository.cs
+    └── Migrations/  (5 файлів — генерує EF)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -280,6 +319,48 @@ modelBuilder.Entity<Patient>()
 git add src/Models/Patient.cs src/Data/DbSeeder.cs src/Migrations/
 git commit -m "Lab19 Task04: add RowVersion concurrency token and extend DbSeeder"
 ```
+
+---
+
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                                    ← гілка Lab-19 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (4 файли)
+    ├── Models/
+    │   ├── Patient.cs                         ✏
+    │   ├── Diagnosis.cs                       ✏
+    │   ├── LabResult.cs                       ✏
+    │   ├── MedicalRecord.cs                   ✏
+    │   ├── Prescription.cs                    ✏
+    │   ├── EmergencyContact.cs                🆕
+    │   └── … ще 11 файлів без змін
+    ├── Managers/  (13 файлів)
+    ├── Utils/  (12 файлів)
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    ├── Attributes/  (3 файли)
+    ├── Events/  (4 файли)
+    ├── Extensions/  (3 файли)
+    ├── UI/  (1 файл)
+    ├── Data/
+    │   ├── ClinicDbContext.cs                 ✏
+    │   ├── DbSeeder.cs                        ✏
+    │   └── ClinicRepository.cs
+    └── Migrations/  (7 файлів — генерує EF)   🆕
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
 
 ---
 

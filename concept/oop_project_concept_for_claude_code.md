@@ -31,7 +31,7 @@ OOP-Tomka-CourseForHardCoders/
  │    ├── Models/         ← Lab 03+: Patient, Doctor, Appointment, WorkSchedule
  │    │                      Lab 06+: MedicalRecord, Diagnosis, LabResult, Prescription
  │    ├── Managers/       ← Lab 03+: PatientManager, DoctorManager, AppointmentManager
- │    │                      Lab 05: GrowablePatientManager
+ │    │                      Lab 03 (Задача 8): GrowablePatientManager
  │    │                      Lab 06+: MedicalRecordManager
  │    │                      Lab 07+: BillingManager
  │    ├── Interfaces/     ← Lab 07+: IPayable, ICancellable, ISchedulable

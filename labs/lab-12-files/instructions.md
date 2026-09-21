@@ -8,6 +8,36 @@
 
 Після Lab 11 система вміє валідувати дані через рефлексію. Але все, що ввів користувач, зникає при закритті програми. Ця лаба додає **персистентність**: логування дій у файл, експорт звітів, імпорт даних з CSV та збереження сесії між запусками.
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 11 — стан `main` після її злиття:
+
+```text
+oop-course/                           ← гілка main (після злиття Лаби 11)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (4 файли)
+    ├── Models/  (15 файлів)
+    ├── Managers/  (9 файлів)
+    ├── Utils/
+    │   ├── ClinicFormatter.cs
+    │   ├── ClinicValidator.cs
+    │   ├── FormBuilder.cs
+    │   ├── ModelValidator.cs
+    │   └── ValidationResult.cs
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    └── Attributes/  (3 файли)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -384,6 +414,43 @@ git commit -m "Lab12 Task04: add SessionManager, save/load session on exit/start
 
 ---
 
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                           ← гілка Lab-12 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs                    ✏
+    ├── Clinic.cs                     ✏
+    ├── Enums/  (4 файли)
+    ├── Models/  (15 файлів)
+    ├── Managers/  (9 файлів)
+    ├── Utils/
+    │   ├── ClinicFormatter.cs
+    │   ├── ClinicValidator.cs
+    │   ├── FormBuilder.cs
+    │   ├── ModelValidator.cs
+    │   ├── ValidationResult.cs
+    │   ├── ClinicExporter.cs         🆕
+    │   ├── ClinicLogger.cs           🆕
+    │   ├── CsvImporter.cs            🆕
+    │   ├── ImportResult.cs           🆕
+    │   └── SessionManager.cs         🆕
+    ├── Interfaces/  (4 файли)
+    ├── Comparators/  (4 файли)
+    └── Attributes/  (3 файли)
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+
+---
+
 ## Перевірка перед здачею
 
 ```bash
@@ -394,6 +461,7 @@ dotnet run
 
 Переконайтесь, що:
 
+- [ ] Структура проєкту збігається зі схемою вище
 - [ ] `clinic.log` з'являється після першого LogInfo/LogWarning/LogError виклику
 - [ ] Кожен рядок логу має формат `[yyyy-MM-dd HH:mm:ss] [LEVEL] message`
 - [ ] Папка `reports/yyyy-MM-dd/` створюється автоматично при першому експорті

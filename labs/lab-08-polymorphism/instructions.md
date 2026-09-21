@@ -10,6 +10,37 @@
 
 > Ця лаба зливається в `main` після Task 4. Task 5 — бонус.
 
+## Структура проєкту на початку лаби
+
+Це результат Лаби 07 — стан `main` після її злиття:
+
+```text
+oop-course/                             ← гілка main (після злиття Лаби 07)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs
+    ├── Clinic.cs
+    ├── Enums/  (3 файли)
+    ├── Models/
+    │   ├── Appointment.cs
+    │   └── … ще 7 файлів без змін
+    ├── Managers/
+    │   ├── PatientManager.cs
+    │   ├── DoctorManager.cs
+    │   ├── AppointmentManager.cs
+    │   ├── GrowablePatientManager.cs
+    │   ├── MedicalRecordManager.cs
+    │   └── BillingManager.cs
+    ├── Utils/  (2 файли)
+    └── Interfaces/  (3 файли)
+```
+
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+---
+
 ## Гілка
 
 ```bash
@@ -388,6 +419,42 @@ git commit -m "Lab08 Task04: explore sealed limitations, implement discount modi
 
 ---
 
+## Структура проєкту наприкінці лаби
+
+Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+
+```text
+oop-course/                             ← гілка Lab-08 (після злиття — main)
+├── .gitignore
+├── oop-course.sln
+└── ClinicApp/
+    ├── ClinicApp.csproj
+    ├── Program.cs                      ✏
+    ├── Clinic.cs
+    ├── Enums/  (3 файли)
+    ├── Models/
+    │   ├── Appointment.cs              ✏
+    │   ├── RegularAppointment.cs       🆕
+    │   ├── SpecialistAppointment.cs    🆕
+    │   ├── UrgentAppointment.cs        🆕
+    │   └── … ще 7 файлів без змін
+    ├── Managers/
+    │   ├── PatientManager.cs
+    │   ├── DoctorManager.cs
+    │   ├── AppointmentManager.cs       ✏
+    │   ├── GrowablePatientManager.cs
+    │   ├── MedicalRecordManager.cs
+    │   └── BillingManager.cs
+    ├── Utils/  (2 файли)
+    └── Interfaces/  (3 файли)
+```
+
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+
+---
+
 ## Перевірка перед здачею
 
 ```bash
@@ -398,6 +465,7 @@ dotnet run
 
 Переконайтесь, що:
 
+- [ ] Структура проєкту збігається зі схемою вище
 - [ ] `Appointment[] arr = { new RegularAppointment(...), new UrgentAppointment(...), new SpecialistAppointment(...) }` — компілюється
 - [ ] Цикл `for` по `arr` виводить різні рядки для кожного типу — без `if`/`switch`
 - [ ] `UrgentAppointment.GetCost()` повертає більше за `RegularAppointment.GetCost()` при однаковій тривалості
