@@ -319,21 +319,32 @@
 
 ---
 
-### Lab 07 — Interfaces (feature/interfaces → зливається)
+### Lab 07 — Interfaces (тека `ClinicApp/`, гілка `Lab-07`, зливається в `main`)
 
 **Нові конструкції:**
-- `interface IPayable { decimal GetCost(); bool IsPaid; void MarkPaid(); }`
-- `interface ICancellable { bool Cancel(string reason = ""); bool IsCancelled; string CancellationReason; }`
-- `interface ISchedulable { bool CanSchedule(DateTime); }`
-- Реалізація кількох інтерфейсів: `class Appointment : IPayable, ICancellable`
-- Метод що приймає інтерфейс як параметр: `void Process(IPayable[] items)`
-- `is IPayable p` — перевірка реалізації інтерфейсу
+- `interface IPayable { decimal GetCost(); bool IsPaid { get; } void MarkPaid(); }`
+- `interface ICancellable { bool IsCancelled { get; } string CancellationReason { get; } bool Cancel(string reason = ""); }`
+- `interface ISchedulable { bool CanSchedule(DateTime at); DateTime[] GetAvailableSlots(DateTime date, int slotCount); }`
+- Тека `Interfaces/`, простір імен `ClinicApp.Interfaces`; ім'я з префіксом `I`
+- Реалізація кількох інтерфейсів: `class Appointment : IPayable, ICancellable`; чому один клас, але багато інтерфейсів
+- Змінна/параметр/масив типу інтерфейсу: `IPayable[] GetAllUnpaid()`; через інтерфейс видно лише члени контракту
+- `is IPayable p` / `p is ICancellable` — перевірка реалізації інтерфейсу; `is Appointment a` як «деталі, якщо це запис»
+- Порівняння `interface` vs `abstract class` («вміє» проти «є різновидом»)
+- `decimal`, суфікс `m`, `ToString("F2")`; `readonly`-поле, що присвоюється в конструкторі
+- Коваріантність масивів (`IPayable[] = new Appointment[3]`) і `ArrayTypeMismatchException` при записі чужого типу
+- Значення параметра за замовчуванням записується і в інтерфейсі, і в класі (інакше `CS7036` через змінну інтерфейсу)
+- Споживачі контрактів: `IPayable[]` → `BillingManager`; `ICancellable[]` → `static int AppointmentManager.CancelAll(ICancellable[], string)` (масив `Appointment[]` передається без приведення); `ISchedulable` → змінна в меню «Вільні години лікаря»
+- Виклик `static`-методу через ім'я класу (через екземпляр — `CS0176`)
 
-**Що з'явиться в меню:** 5. Рахунки — борги пацієнта, оплата запису, загальна сума
+**Експерименти з компілятором (підказки):** `CS0535` (не реалізовано член), `CS0737` (реалізація не `public`), `CS0144` (`new` інтерфейсу), `CS0525` (поле в інтерфейсі), `CS0246` (немає `using`), `CS1061` (член поза контрактом), `CS7036`, `CS0266` (`IPayable[]` → `Appointment[]`).
+
+**Що з'явиться в меню:** 5. Рахунки — борги пацієнта, всі неоплачені, оплата запису, загальний борг; «Звіт» → 6; головне меню з описами через `—`; у «Записи» — `8. Скасувати всі записи пацієнта`; у «Лікарі» — `5. Вільні години лікаря`
 
 **Заборонено (ще не введено):**
 - `new` keyword (method hiding) (Lab 08)
 - `sealed` (Lab 08)
+- `List<T>`, `Dictionary<K,V>` та інші generics (Lab 09); LINQ (Lab 14)
+- default-методи інтерфейсів (C# 8) та явна реалізація інтерфейсу — згадано лише як «окрема тема»
 
 ---
 
