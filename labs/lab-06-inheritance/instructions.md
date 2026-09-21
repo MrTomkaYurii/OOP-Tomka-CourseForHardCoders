@@ -2,29 +2,30 @@
 
 ## Мета
 
-Навчитися будувати ієрархії класів через успадкування: визначати спільну поведінку в абстрактному базовому класі, зобов'язувати підкласи реалізовувати абстрактні методи, перевизначати `virtual` методи та безпечно працювати з об'єктами різних типів через базовий тип.
+Навчитися будувати ієрархії класів через успадкування: виносити спільне в абстрактний базовий клас, зобов'язувати похідні класи реалізовувати абстрактні методи, перевизначати `virtual`-методи, безпечно працювати з об'єктами різних типів через базовий тип і розпізнавати реальний тип об'єкта під час виконання (`is`, `as`).
 
 ## Контекст
 
-Система вже вміє зберігати пацієнтів, лікарів і записи на прийом. Але медична картка пацієнта — окрема сутність: лікар додає різні типи записів (діагноз, результат аналізу, рецепт). Всі вони мають спільні атрибути (хто, кому, коли), але відрізняються за структурою та поведінкою.
+Система вже вміє зберігати пацієнтів, лікарів і записи на прийом, а її класи захищені від некоректних даних (Лаба 05). Але медична картка пацієнта — окрема сутність: лікар додає до неї записи різних видів — діагноз, результат аналізу, рецепт. Усі вони мають спільні атрибути (кому, хто, коли), але відрізняються змістом і поведінкою: діагноз буває хронічним, рецепт «спливає», аналіз буває поза нормою.
 
-Якщо зберігати кожен тип окремо — код дублюється і систему важко розширити. Успадкування вирішує це: одна база, різні підкласи.
+Якщо зробити три незв'язані класи — це три копії однакових полів і три окремі сховища в менеджері (`Diagnosis[]`, `LabResult[]`, `Prescription[]`). Додати четвертий вид запису означало б переписувати все навколо. Успадкування вирішує це: **одна база — різні похідні класи**, а код, що працює із «записом узагалі», не знає й не мусить знати, яким саме він є.
 
----
-
-## Структура проєкту на початку лаби
+### Структура проєкту на початку лаби
 
 Це результат Лаби 05 — стан `main` після її злиття:
 
 ```text
-oop-course/                             ← гілка main (після злиття Лаби 05)
+oop-course/                          ← гілка main (після злиття Лаби 05)
 ├── .gitignore
 ├── oop-course.sln
 └── ClinicApp/
     ├── ClinicApp.csproj
     ├── Program.cs
     ├── Clinic.cs
-    ├── Enums/  (3 файли)
+    ├── Enums/
+    │   ├── AppointmentStatus.cs
+    │   ├── BloodType.cs
+    │   └── Speciality.cs
     ├── Models/
     │   ├── Patient.cs
     │   ├── Doctor.cs
@@ -35,14 +36,67 @@ oop-course/                             ← гілка main (після злит
     │   ├── DoctorManager.cs
     │   ├── AppointmentManager.cs
     │   └── GrowablePatientManager.cs
-    └── Utils/  (2 файли)
+    └── Utils/
+        ├── ClinicFormatter.cs
+        └── ClinicValidator.cs
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### Що таке успадкування
+
+**Успадкування** — механізм, за якого один клас (*похідний*, «нащадок») отримує все, що є в іншому (*базовому*), і може додати власне. У коді це двокрапка в заголовку: `class Diagnosis : MedicalRecord`.
+
+**Коли успадкування доречне.** Перевірте фразою «X **є** різновидом Y»: діагноз *є* медичним записом — ієрархія доречна. Якщо ж «X **має** Y» (лікар *має* розклад роботи), це не успадкування, а звичайне поле, як `Doctor.Schedule`. Плутанина «є» / «має» — найпоширеніша помилка проєктування.
+
+**Що передається нащадку.** `public`- і `protected`-члени (поля, властивості, методи). `private`-члени фізично існують в об'єкті, але код нащадка напряму їх не бачить. **Конструктори не успадковуються:** у кожного класу свої, а конструктор нащадка мусить викликати конструктор базового класу.
+
+**Три слова, що керують заміною поведінки:**
+
+| Слово | Де пишеться | Що означає |
+|-------|-------------|------------|
+| `abstract` | у базовому класі | метод **без тіла**: «кожен нащадок зобов'язаний його реалізувати». Клас, що має такий метод, теж `abstract` — створити його через `new` не можна |
+| `virtual` | у базовому класі | метод **з реалізацією за замовчуванням**: «нащадок може її замінити, а може й лишити» |
+| `override` | у похідному класі | сама заміна `abstract`- або `virtual`-методу базового класу |
+
+**Перший погляд на поліморфізм.** Змінна типу `MedicalRecord` може вказувати на `Diagnosis`, `LabResult` чи `Prescription`. Виклик методу через таку змінну виконає версію **реального об'єкта**, а не типу змінної. Саме на цьому побудовано Задачі 2 і 4. Глибше про поліморфізм — у Лабі 08.
+
+> **Звідки ви вже знаєте `override`.** З Лаби 03 ви пишете `override ToString()`. Тепер видно, чому це працює: кожен клас у C# неявно успадковує `object`, у якому метод `ToString()` оголошено як `virtual`.
+
+### Що нового дозволено (і тільки воно)
+
+- заголовок нащадка `class Похідний : Базовий`;
+- `abstract` (для класу й методу), `virtual`, `override`;
+- `protected` та виклик конструктора базового класу `: base(...)`;
+- оператори `is` (зокрема `is Тип змінна`), `as` та явне приведення `(Тип)об'єкт`; виняток `InvalidCastException`;
+- масив базового типу, у якому лежать об'єкти різних похідних типів.
+
+Про `null`: оператор `as` повертає «або об'єкт, або `null`», тому тип результату записується як `Diagnosis?` (див. розділ «Коротко про `null` і тип `T?`» в Лабі 03).
+
+Досі заборонено: `interface` (Лаба 07), `new`-приховування методів і `sealed` (Лаба 08), `List<T>` / `Dictionary` та інші generic-колекції (Лаба 09), LINQ (Лаба 14). Усе робимо масивами й циклами, як і раніше.
+
+### Ваш домен
+
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** наприкінці кожного завдання. Структуру рішення зберігайте: **одна абстрактна база + щонайменше три нащадки**, де один із нащадків перевизначає `virtual`-метод `IsActive()` за власним правилом.
+
+### Як користуватися підказками
+
+Підказки — **напрям думки, а не готовий код**. «Специфікація» каже, *що* має вийти; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Приклади коду в цій лабі показують загальну схему на **вигаданій** ієрархії (`Vehicle`, `Bicycle`, `Truck`) — перенесення її на `MedicalRecord`, `Diagnosis`, `LabResult` і `Prescription` робите самі. Приклади «Як має працювати» показують лише **використання** вашого коду й очікуваний вивід.
+
+### Як перевіряти Задачі 1–3
+
+Меню для медичної картки з'явиться лише в Задачі 4. До того класи перевіряйте **тимчасовим кодом** у `Program.cs` — між блоком тестових даних і головним циклом меню: створіть об'єкти, виведіть результат у консоль, порівняйте з прикладами.
+
+Цей тимчасовий код у коміти Задач 1–3 **не потрапляє**: `git add` там перелічує лише файли завдання. Тож `git status` показуватиме `Program.cs` як змінений — це нормально. У Задачі 4 ви замінюєте тимчасовий код справжніми тестовими даними й меню та комітите `Program.cs` разом з рештою.
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
@@ -51,191 +105,278 @@ git checkout -b Lab-06
 
 ---
 
-## Задача 1. Abstract клас `MedicalRecord` + `Diagnosis` ⭐⭐
+## Задача 1. Абстрактний клас `MedicalRecord` та `Diagnosis` ⭐⭐
 
 ### Умова
 
-Усі медичні записи мають спільні поля: хто пацієнт, який лікар, коли зроблено. Але вміст кожного типу різний — діагноз, аналіз і рецепт несуть зовсім різну інформацію.
+Усі медичні записи мають спільні поля: хто пацієнт, який лікар, коли зроблено. Але зміст кожного виду різний — діагноз, аналіз і рецепт несуть зовсім різну інформацію.
 
-`abstract class` дозволяє оголосити спільний контракт: визначити що **є** у кожного запису, і що кожен підклас **зобов'язаний** реалізувати. Поки клас абстрактний — `new MedicalRecord(...)` неможливий, тільки `new Diagnosis(...)`.
+`abstract class` дозволяє оголосити спільний контракт: що **є** у кожного запису і що кожен нащадок **зобов'язаний** реалізувати. Поки клас абстрактний — `new MedicalRecord(...)` неможливий, лише `new Diagnosis(...)`.
 
 **Що реалізувати:**
 
-1. `abstract class MedicalRecord` у `src/Models/`:
-   - `Id` (статичний лічильник, як у `Patient`)
-   - `PatientId`, `DoctorId`, `Date`, `Notes`
-   - `protected` конструктор — ініціалізує спільні поля і перевіряє `PatientId > 0`, `DoctorId > 0` через `ClinicValidator.ValidatePositive`
-   - `abstract string GetSummary()` — зміст запису, кожен підклас реалізує по-своєму
-   - `virtual string GetRecordType()` — базова реалізація: `"Медичний запис"`
-   - `virtual bool IsActive()` — базова реалізація: запис активний якщо давніший не більше 6 місяців
-   - `override ToString()` — використовує `GetRecordType()` і `GetSummary()`
+1. `abstract class MedicalRecord` у `ClinicApp/Models/` (простір імен `ClinicApp.Models`):
+   - `Id` (статичний лічильник, як у `Patient`), `PatientId`, `DoctorId`, `Date`, `Notes`;
+   - `protected`-конструктор — перевіряє `PatientId > 0` і `DoctorId > 0` через `ClinicValidator.ValidatePositive`, ініціалізує спільні поля; `Id` присвоюється **останнім** (принцип Лаби 05);
+   - `abstract string GetSummary()` — зміст запису, кожен нащадок реалізує по-своєму;
+   - `virtual string GetRecordType()` — базова реалізація: `"Медичний запис"`;
+   - `virtual bool IsActive()` — базова реалізація: запис активний, якщо він не старший за 6 місяців;
+   - `override ToString()` — складається з `GetRecordType()` і `GetSummary()`.
 
-2. Перший конкретний підклас `Diagnosis : MedicalRecord`:
-   - Приватні поля `_diagnosisCode`, `_description` з явними сеттерами — валідація через `ClinicValidator.ValidateName`
-   - Публічні властивості: `DiagnosisCode`, `Description`, `IsChronic`
-   - Конструктор що викликає `base(...)` і присвоює через властивості
-   - `override GetSummary()` — `"I10: Гіпертонічна хвороба [хронічне]"`
-   - `override GetRecordType()` — `"Діагноз"`
+2. Перший конкретний нащадок `Diagnosis : MedicalRecord`:
+   - приватні поля `_diagnosisCode`, `_description` з явними сеттерами — валідація через `ClinicValidator.ValidateName`;
+   - публічні властивості `DiagnosisCode`, `Description`, `IsChronic`;
+   - конструктор, що викликає `base(...)` і присвоює власні поля через властивості;
+   - `override GetSummary()` — `"I10: Гіпертонічна хвороба [хронічне]"`;
+   - `override GetRecordType()` — `"Діагноз"`.
 
 ### Специфікація
 
+`MedicalRecord`:
+
 | Член | Тип | Опис |
 |------|-----|------|
-| `Id` | `int` (get only) | Авто-лічильник |
-| `PatientId` | `int` (get only) | ID пацієнта |
-| `DoctorId` | `int` (get only) | ID лікаря |
-| `Date` | `DateTime` (get only) | Дата запису |
-| `Notes` | `string` (get; set) | Додаткові нотатки |
+| `Id` | `int` (лише `get`) | Авто-лічильник |
+| `PatientId` | `int` (лише `get`) | ID пацієнта, має бути > 0 |
+| `DoctorId` | `int` (лише `get`) | ID лікаря, має бути > 0 |
+| `Date` | `DateTime` (лише `get`) | Дата запису |
+| `Notes` | `string` (`get`; `set`) | Додаткові нотатки, за замовчуванням `""`, без перевірок |
+| конструктор | `protected` | `(int patientId, int doctorId, DateTime date)` |
 | `GetSummary()` | `abstract string` | Зміст запису |
 | `GetRecordType()` | `virtual string` | Тип: `"Медичний запис"` |
-| `IsActive()` | `virtual bool` | Давніший ≤ 6 місяців |
-| `ToString()` | `override` | `"[1] Діагноз | 09.05.2026 | I10: Гіпертонічна хвороба"` |
+| `IsActive()` | `virtual bool` | Не старший за 6 місяців |
+| `ToString()` | `override` | `"[1] Діагноз \| 21.09.2026 \| I10: Гіпертонічна хвороба"`; якщо `Notes` не порожні — у кінці додається `" \| " + Notes` |
+
+`Diagnosis`:
+
+| Член | Тип | Опис |
+|------|-----|------|
+| `DiagnosisCode` | `string` (`get`; `set` з валідацією) | Код діагнозу (`"I10"`); порожній або довший за 50 символів — `ArgumentException` |
+| `Description` | `string` (`get`; `set` з валідацією) | Опис; ті самі правила |
+| `IsChronic` | `bool` (`get`; `set`) | Ознака хронічного, за замовчуванням `false` |
+| конструктор | `public` | `(int patientId, int doctorId, DateTime date, string diagnosisCode, string description, bool isChronic = false)` |
+| `GetSummary()` | `override` | `код: опис`, а для хронічного — ще `" [хронічне]"` |
+| `GetRecordType()` | `override` | `"Діагноз"` |
 
 ### Приклад
 
+Схема ієрархії — на **вигаданому** класі `Vehicle` (у вашому проєкті такі конструкції робите самі):
+
+```csharp
+public abstract class Vehicle
+{
+    public int Wheels { get; }
+
+    protected Vehicle(int wheels)
+    {
+        Wheels = wheels;
+    }
+
+    public abstract string Describe();            // нащадок ЗОБОВ'ЯЗАНИЙ реалізувати
+    public virtual string Kind() => "Транспорт";  // нащадок МОЖЕ замінити
+}
+
+public class Bicycle : Vehicle
+{
+    public Bicycle() : base(2) { }                // виклик конструктора базового класу
+
+    public override string Describe() => "Велосипед із педалями";
+    public override string Kind() => "Двоколісний";
+}
+```
+
+Як така ієрархія використовується (`Truck` — інший нащадок `Vehicle`):
+
+```csharp
+// Vehicle v = new Vehicle(4);     // помилка компіляції: клас абстрактний
+Vehicle v = new Bicycle();          // змінна базового типу тримає нащадка
+Console.WriteLine(v.Kind());        // "Двоколісний" — виконується версія Bicycle
+```
+
+Як має працювати **ваш** код (дати залежать від дня запуску, номер `[1]` — від кількості вже створених записів):
+
 ```csharp
 // abstract — не можна створити безпосередньо:
-// MedicalRecord r = new MedicalRecord(...);  // помилка компіляції!
+// MedicalRecord r = new MedicalRecord(1, 1, DateTime.Today);  // помилка компіляції!
 
-// Тільки через підклас:
+// Тільки через нащадка:
 Diagnosis d = new Diagnosis(1, 1, DateTime.Today, "I10", "Гіпертонічна хвороба", isChronic: true);
-Console.WriteLine(d.GetRecordType());  // "Діагноз"
-Console.WriteLine(d.GetSummary());     // "I10: Гіпертонічна хвороба [хронічне]"
-Console.WriteLine(d);                  // "[1] Діагноз | 09.05.2026 | I10: Гіпертонічна хвороба [хронічне]"
-Console.WriteLine(d.IsActive());       // true (щойно створено)
+Console.WriteLine(d.GetRecordType());  // Діагноз
+Console.WriteLine(d.GetSummary());     // I10: Гіпертонічна хвороба [хронічне]
+Console.WriteLine(d);                  // [1] Діагноз | 21.09.2026 | I10: Гіпертонічна хвороба [хронічне]
+Console.WriteLine(d.IsActive());       // True (щойно створено)
 
-// Базовий тип може зберігати підклас:
+// Змінна базового типу може тримати нащадка:
 MedicalRecord record = new Diagnosis(1, 1, DateTime.Today, "J06.9", "Ринофарингіт");
-Console.WriteLine(record.GetRecordType()); // "Діагноз" — виклик іде в підклас!
+Console.WriteLine(record.GetRecordType()); // Діагноз — виклик іде в нащадка!
 ```
 
 ### Підказки
 
-1. `abstract class` оголошується ключовим словом `abstract`. Він може мати і звичайні методи, і `abstract` методи:
-   ```csharp
-   public abstract class MedicalRecord
-   {
-       public abstract string GetSummary();         // підклас ЗОБОВ'ЯЗАНИЙ реалізувати
-       public virtual string GetRecordType() => "Медичний запис"; // підклас МОЖЕ перевизначити
-   }
-   ```
-2. `abstract` метод не має тіла (немає `{ }`). Якщо підклас не реалізує `abstract` метод — помилка компіляції.
-3. `virtual` метод має тіло за замовчуванням. Підклас може (`override`) або не може його перевизначати.
-4. `protected` конструктор — видимий тільки в підкласах через `base(...)`. Ззовні `new MedicalRecord(...)` неможливий:
-   ```csharp
-   protected MedicalRecord(int patientId, int doctorId, DateTime date) { ... }
-   ```
-5. У підкласі конструктор викликає батьківський через `: base(...)`:
-   ```csharp
-   public Diagnosis(int patientId, int doctorId, DateTime date, string code, string desc, bool isChronic = false)
-       : base(patientId, doctorId, date)
-   {
-       DiagnosisCode = code;
-       // ...
-   }
-   ```
-6. `override ToString()` у базовому класі використовує `virtual`/`abstract` методи — кожен підклас отримує правильний рядок автоматично:
-   ```csharp
-   public override string ToString() =>
-       "[" + Id + "] " + GetRecordType() + " | " + Date.ToString("dd.MM.yyyy") + " | " + GetSummary();
-   ```
+1. **Що йде в базовий клас.** Питання-фільтр: «чи є це поле у *кожного* запису?» Пацієнт, лікар, дата — так, тож вони в `MedicalRecord`. Код діагнозу чи дозування препарату є лише в одного виду — вони належать нащадкам.
+2. **Файл і клас.** Створіть `ClinicApp/Models/MedicalRecord.cs` з простором імен `ClinicApp.Models`. Слово `abstract` ставиться перед `class` у заголовку. Щоб скористатись `ClinicValidator`, потрібен `using` для простору імен `ClinicApp.Utils` (як у Лабі 05).
+3. **Властивості лише для читання.** `Id`, `PatientId`, `DoctorId`, `Date` присвоюються один раз у конструкторі — так само, як `Id` у `Patient` (Лаба 03: статичний лічильник і `_nextId++`). `Notes` — властивість із `get` і `set`, початкове значення — порожній рядок; перевірок їй не потрібно.
+4. **Конструктор — `protected`.** Модифікатор означає «видимий у самому класі та в його нащадках». Порядок дій у конструкторі — принцип із Лаби 05: спершу перевірки (`ValidatePositive` для `patientId` і `doctorId`; у виклик передавайте `nameof` відповідного параметра), потім присвоєння, а `Id` — останнім.
+5. **`abstract`-метод не має тіла.** Замість `{ … }` після заголовка стоїть крапка з комою. Якщо нащадок не реалізує такий метод — помилка компіляції. Тому й сам клас, що містить такий метод, мусить бути `abstract`. Проте не все в абстрактному класі абстрактне: він може мати й звичайні поля, властивості та методи з тілом — саме так влаштований `MedicalRecord`.
+6. **`virtual`-метод має тіло за замовчуванням**, яке нащадок може замінити (а може й ні). Тут це `GetRecordType()` (текст «Медичний запис») та `IsActive()`.
+7. **Правило `IsActive()` у базі:** «запис активний, якщо він не старший за 6 місяців». Порівняйте `Date` з датою «шість місяців тому» — її дає `DateTime.AddMonths` з від'ємним аргументом. Межа включно: запис рівно піврічної давності ще активний.
+8. **`ToString()`.** Складайте рядок із **викликів методів** `GetRecordType()` і `GetSummary()` (не з полів!), дату виводьте у форматі `dd.MM.yyyy`; нотатки додавайте лише коли вони непорожні. Базовий клас не знає, який нащадок виконає `GetSummary()` — і не мусить: це вирішується під час виконання.
+9. **Клас `Diagnosis`.** Оголошується як нащадок: після імені — двокрапка й ім'я базового класу. Поля й властивості робіть за схемою Лаби 05: приватне поле `_camelCase`, властивість із валідацією через `ClinicValidator.ValidateName`, у виклик передавайте `nameof(...)` властивості. Назва методу говорить про «ім'я», але він просто перевіряє «непорожній рядок до 50 символів» — для коду діагнозу й опису це саме те, що треба.
+10. **Конструктор нащадка мусить викликати конструктор бази.** Після списку параметрів ставиться двокрапка й `base(...)` з потрібними аргументами. Тіло конструктора нащадка виконується вже *після* базового; у ньому присвоюйте власні поля через **властивості** (щоб спрацювала валідація), а не напряму в поля. Спробуйте прибрати `base(...)`: компілятор поскаржиться на відсутній аргумент (код `CS7036`) — у базового класу немає конструктора без параметрів, тож нащадок мусить сказати, який саме викликати.
+11. **`override` — обов'язкове слово.** І `GetSummary()`, і `GetRecordType()` у `Diagnosis` записуються з `override`. Без нього для `GetSummary()` код не збереться (`CS0534`: абстрактний метод не реалізовано). Для `GetRecordType()` наслідки підступніші: компілятор видасть лише **попередження** `CS0114`.
+    **Експеримент.** На хвилину приберіть `override` з `GetRecordType()` у `Diagnosis`. Збережіть діагноз у змінну типу `MedicalRecord` і виведіть `GetRecordType()` та сам запис (`ToString`) — а тоді те саме через змінну типу `Diagnosis`. Що бачите? Поверніть `override`. Компілятор запропонує ще й «додати слово `new`» — це інша конструкція (Лаба 08), вона вам не потрібна. Висновок: попередження компілятора в ієрархіях — майже завжди помилка.
+12. **Експеримент з порядком конструкторів.** У `try/catch` двічі створіть `Diagnosis` з порожнім кодом, а тоді коректний — який у нього `Id`? Тепер зробіть те саме з `patientId = 0`. Чому результати різні? Підказка: конструктор бази виконується **повністю до** тіла конструктора нащадка. Якщо помилку виявила база — `Id` ще не призначено; якщо нащадок — база вже «з'їла» номер. Принцип «`Id` останнім» у ієрархії повністю не досяжний — це відомий компроміс; у Лабі 17 нумерацією займеться база даних.
+13. **Ще два експерименти з компілятором:** `new MedicalRecord(...)` (код `CS0144`) і зміна `protected` на `private` у конструкторі бази (код `CS0122` у всіх нащадках — вони більше не можуть викликати `base(...)`). Зауваження: для *абстрактного* класу `public`-конструктор поводиться так само, як `protected` (створити об'єкт все одно не можна), але `protected` чесніше показує намір.
+14. **(За бажанням)** запис не може бути датований майбутнім — `ClinicValidator.ValidateDate` це вже вміє. Подумайте, де його викликати.
 
-📖 [Abstract and sealed classes and class members](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/abstract-and-sealed-classes-and-class-members)
-📖 [virtual (C# Reference)](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/virtual)
-📖 [Inheritance (C# Programming Guide)](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance)
+📖 Документація:
+- [Успадкування](https://learn.microsoft.com/dotnet/csharp/fundamentals/object-oriented/inheritance)
+- [Абстрактні класи та члени](https://learn.microsoft.com/dotnet/csharp/programming-guide/classes-and-structs/abstract-and-sealed-classes-and-class-members)
+- [`abstract`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/abstract), [`virtual`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/virtual), [`override`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/override)
+- [`base`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/base) та [`protected`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/protected)
+- [`object.ToString`](https://learn.microsoft.com/dotnet/api/system.object.tostring)
+- [`DateTime.AddMonths`](https://learn.microsoft.com/dotnet/api/system.datetime.addmonths)
 
 ### Адаптація до вашого домену
 
 | Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
 |---------|--------|----------|-------------|-------------|------------|---------|
 | `MedicalRecord` (abstract) | `GuestRecord` (abstract) | `OrderRecord` (abstract) | `AcademicRecord` (abstract) | `ServiceRecord` (abstract) | `LibraryRecord` (abstract) | `GymRecord` (abstract) |
-| `Diagnosis` (перший підклас) | `Complaint` | `FeedbackEntry` | `GradeEntry` | `DamageReport` | `LoanRecord` | `ProgressEntry` |
+| `Diagnosis` (перший нащадок) | `Complaint` | `FeedbackEntry` | `GradeEntry` | `DamageReport` | `LoanRecord` | `ProgressEntry` |
 | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` | `abstract GetSummary()` |
 | `virtual GetRecordType()` → `"Медичний запис"` | → `"Запис гостя"` | → `"Замовлення"` | → `"Академічний запис"` | → `"Сервісний запис"` | → `"Бібліотечний запис"` | → `"Запис у клубі"` |
 
 ### Коміт
 
 ```bash
-git add src/Models/MedicalRecord.cs src/Models/Diagnosis.cs
-git commit -m "Lab06 Task01: add abstract MedicalRecord base class and Diagnosis subclass"
+git add ClinicApp/Models/MedicalRecord.cs ClinicApp/Models/Diagnosis.cs
+git commit -m "Lab06 Task01"
 ```
 
 ---
 
-## Задача 2. `LabResult` та `Prescription` + `MedicalRecordManager` ⭐⭐⭐
+## Задача 2. `LabResult`, `Prescription` та `MedicalRecordManager` ⭐⭐⭐
 
 ### Умова
 
-`Diagnosis` — лише один із типів медичних записів. Результат аналізу (`LabResult`) має числове значення, одиниці виміру і ознаку норми. Рецепт (`Prescription`) — назву препарату, дозування і тривалість курсу.
+`Diagnosis` — лише один із видів медичних записів. Результат аналізу (`LabResult`) має числове значення, одиниці виміру, норму й ознаку «в нормі». Рецепт (`Prescription`) — назву препарату, дозування й тривалість курсу.
 
-Кожен підклас реалізує `GetSummary()` по-своєму і за потреби перевизначає `virtual` методи — наприклад, `Prescription` змінює логіку `IsActive()`: рецепт активний допоки не закінчився курс, незалежно від 6-місячного правила.
+Кожен нащадок реалізує `GetSummary()` по-своєму і за потреби перевизначає `virtual`-методи. Наприклад, `Prescription` змінює логіку `IsActive()`: рецепт активний, доки не закінчився курс, незалежно від 6-місячного правила.
 
-`MedicalRecordManager` зберігає **поліморфний масив** `MedicalRecord[]` — в одному масиві живуть діагнози, аналізи і рецепти. `DisplayAll()` перебирає масив і викликає `ToString()` — кожен об'єкт виводить свій рядок.
+`MedicalRecordManager` зберігає **поліморфний масив** `MedicalRecord[]` — в одному масиві живуть діагнози, аналізи й рецепти. `DisplayAll()` перебирає масив і виводить кожен запис — кожен об'єкт показує свій рядок.
 
 **Що реалізувати:**
 
-1. `LabResult : MedicalRecord`:
-   - Приватні поля `_testName`, `_unit`, `_referenceRange` — валідація через `ClinicValidator.ValidateName`
-   - `Value` (double) і `IsNormal` (bool) — auto-property без валідації
-   - `override GetSummary()` → `"Гемоглобін: 145 г/л (норма: 120–160)"`; якщо поза нормою — додати `" ⚠ поза нормою"`
-   - `override GetRecordType()` → `"Аналіз"`
+1. `LabResult : MedicalRecord` (`ClinicApp/Models/`):
+   - приватні поля `_testName`, `_unit`, `_referenceRange` — валідація через `ClinicValidator.ValidateName`;
+   - `Value` (`double`) і `IsNormal` (`bool`) — автовластивості без валідації;
+   - `override GetSummary()` → `"Гемоглобін: 145 г/л (норма: 120–160)"`; якщо поза нормою — додати `" ⚠ поза нормою"`;
+   - `override GetRecordType()` → `"Аналіз"`.
 
-2. `Prescription : MedicalRecord`:
-   - Приватні поля `_medicationName`, `_dosage` — валідація через `ClinicValidator.ValidateName`
-   - Приватне поле `_durationDays` — валідація через `ClinicValidator.ValidatePositive`
-   - `Instructions` — auto-property (необов'язкове поле, не валідується)
-   - Обчислювана властивість `ExpiresAt` → `Date.AddDays(DurationDays)`
-   - `override GetSummary()` → `"Лізиноприл 10 мг × 30 днів (1 раз на добу вранці)"`
-   - `override GetRecordType()` → `"Рецепт"`
-   - `override IsActive()` → `ExpiresAt >= DateTime.Today` (замість 6-місячного правила)
+2. `Prescription : MedicalRecord` (`ClinicApp/Models/`):
+   - приватні поля `_medicationName`, `_dosage` — валідація через `ClinicValidator.ValidateName`;
+   - приватне поле `_durationDays` — валідація через `ClinicValidator.ValidatePositive`;
+   - `Instructions` — автовластивість (необов'язкове поле, не валідується);
+   - обчислювана властивість `ExpiresAt` → `Date.AddDays(DurationDays)`;
+   - `override GetSummary()` → `"Лізиноприл 10 мг × 30 днів (1 раз на добу вранці)"`;
+   - `override GetRecordType()` → `"Рецепт"`;
+   - `override IsActive()` → `ExpiresAt >= DateTime.Today` (замість 6-місячного правила).
 
-3. `MedicalRecordManager` у `src/Managers/`:
-   - Поліморфний масив `MedicalRecord[] _records` (ліміт 1000)
-   - `Add(MedicalRecord)`, `FindById(int)`
-   - `GetByPatient(int)` → `MedicalRecord[]`
-   - `GetByDoctor(int)` → `MedicalRecord[]`
-   - `DisplayAll()`, `DisplayList(MedicalRecord[])`
-   - Індексатор `this[int index]`
+3. `MedicalRecordManager` у `ClinicApp/Managers/`:
+   - поліморфний масив `MedicalRecord[] _records` (ліміт 1000);
+   - `Add(MedicalRecord)`, `FindById(int)`;
+   - `GetByPatient(int)` → `MedicalRecord[]`;
+   - `GetByDoctor(int)` → `MedicalRecord[]`;
+   - `DisplayAll()`, `DisplayList(MedicalRecord[])`;
+   - індексатор `this[int index]`.
+
+### Специфікація
+
+`LabResult`:
+
+| Член | Тип | Опис |
+|------|-----|------|
+| `TestName` | `string` (`get`; `set` з валідацією) | Назва аналізу |
+| `Value` | `double` (`get`; `set`) | Виміряне значення |
+| `Unit` | `string` (`get`; `set` з валідацією) | Одиниці виміру |
+| `ReferenceRange` | `string` (`get`; `set` з валідацією) | Норма текстом: `"120–160"`, `"< 5.2"` |
+| `IsNormal` | `bool` (`get`; `set`) | Результат у нормі? |
+| конструктор | `public` | `(int patientId, int doctorId, DateTime date, string testName, double value, string unit, string referenceRange, bool isNormal)` |
+| `GetSummary()` / `GetRecordType()` | `override` | див. вище / `"Аналіз"` |
+
+`Prescription`:
+
+| Член | Тип | Опис |
+|------|-----|------|
+| `MedicationName` | `string` (`get`; `set` з валідацією) | Препарат |
+| `Dosage` | `string` (`get`; `set` з валідацією) | Дозування, `"10 мг"` |
+| `DurationDays` | `int` (`get`; `set` з валідацією) | Тривалість курсу, > 0 (`ArgumentOutOfRangeException`) |
+| `Instructions` | `string` (`get`; `set`) | Як приймати; за замовчуванням `""` |
+| `ExpiresAt` | `DateTime` (лише `get`, обчислюється) | `Date` + `DurationDays` днів |
+| конструктор | `public` | `(int patientId, int doctorId, DateTime date, string medicationName, string dosage, int durationDays, string instructions = "")` |
+| `GetSummary()` / `GetRecordType()` | `override` | див. вище / `"Рецепт"`; текст інструкції в дужках — лише якщо вона непорожня |
+| `IsActive()` | `override` | Курс ще не закінчився (включно з днем закінчення) |
+
+`MedicalRecordManager`:
+
+| Член | Тип результату | Опис |
+|------|----------------|------|
+| `Count` | `int` | Кількість записів |
+| `Add(MedicalRecord)` | `void` | Перевірка ліміту (1000) з повідомленням; після додавання — повідомлення на кшталт `Запис [1] Діагноз додано.` |
+| `FindById(int)` | `MedicalRecord?` | Лінійний пошук; `null`, якщо не знайдено |
+| `GetByPatient(int)` | `MedicalRecord[]` | Усі записи пацієнта |
+| `GetByDoctor(int)` | `MedicalRecord[]` | Усі записи лікаря |
+| `DisplayAll()` | `void` | Усі записи; якщо їх немає — повідомлення |
+| `DisplayList(MedicalRecord[])` | `void` | Виводить масив; якщо порожній — повідомлення |
+| `this[int index]` | `MedicalRecord?` | Індексатор (лише `get`); поза межами — `null` |
 
 ### Приклад
+
+Як має працювати **ваш** код:
 
 ```csharp
 LabResult lr = new LabResult(1, 1, DateTime.Today, "Холестерин", 6.2, "ммоль/л", "< 5.2", isNormal: false);
 Console.WriteLine(lr);
-// [3] Аналіз | 09.05.2026 | Холестерин: 6.2 ммоль/л (норма: < 5.2) ⚠ поза нормою
+// [3] Аналіз | 21.09.2026 | Холестерин: 6.2 ммоль/л (норма: < 5.2) ⚠ поза нормою
 
 Prescription rx = new Prescription(1, 1, DateTime.Today.AddDays(-5), "Лізиноприл", "10 мг", 30, "вранці");
-Console.WriteLine(rx.IsActive());   // true — курс 30 днів, тільки 5 минуло
-Console.WriteLine(rx.ExpiresAt.ToString("dd.MM.yyyy"));  // через 25 днів
+Console.WriteLine(rx.IsActive());                        // True — курс 30 днів, минуло лише 5
+Console.WriteLine(rx.ExpiresAt.ToString("dd.MM.yyyy"));  // 16.10.2026 — через 25 днів
+```
 
-// Поліморфний масив — різні типи, одне сховище:
+Поліморфний масив — різні типи, одне сховище:
+
+```csharp
 MedicalRecord[] records = manager.GetByPatient(1);
 for (int i = 0; i < records.Length; i++)
-    Console.WriteLine(records[i]);  // кожен виводить свій ToString()
+    Console.WriteLine(records[i]);   // кожен виводить свій ToString()
+
+// [1] Діагноз | 22.08.2026 | I10: Гіпертонічна хвороба [хронічне]
+// [3] Аналіз | 14.09.2026 | Гемоглобін: 145 г/л (норма: 120–160)
+// [5] Рецепт | 16.09.2026 | Лізиноприл 10 мг × 30 днів (1 раз на добу вранці)
 ```
 
 ### Підказки
 
-1. `override IsActive()` у `Prescription` повністю замінює базову реалізацію:
-   ```csharp
-   public override bool IsActive() => ExpiresAt >= DateTime.Today;
-   ```
-2. Поліморфний масив: `MedicalRecord[]` може зберігати будь-який підклас.
-   ```csharp
-   _records[0] = new Diagnosis(...);     // OK
-   _records[1] = new LabResult(...);     // OK
-   _records[2] = new Prescription(...);  // OK
-   ```
-3. `DisplayAll()` не знає реального типу кожного запису — і не мусить. `ToString()` вирішує:
-   ```csharp
-   for (int i = 0; i < _count; i++)
-       Console.WriteLine(_records[i]);  // викликається override ToString() підкласу
-   ```
-4. Це і є поліморфізм: один код `Console.WriteLine(_records[i])` поводиться по-різному залежно від реального типу об'єкта.
-5. Валідація в підкласах будується за тим самим патерном що і в `Patient`/`Doctor` з Lab 05: приватне поле + явний сеттер + `ClinicValidator`. Новий клас — нові правила, але **один і той самий** `ClinicValidator`.
+1. **Той самий шаблон, що й у `Diagnosis`.** Кожен новий вид запису — окремий файл у `Models/`, клас-нащадок `MedicalRecord`, конструктор із викликом `base(...)`, приватні поля з валідованими властивостями, два `override` (`GetSummary`, `GetRecordType`). Порядок параметрів конструкторів — за таблицями специфікації, бо на нього спираються тестові дані та меню в Задачі 4.
+2. **Які поля валідуються.** Текстові (`TestName`, `Unit`, `ReferenceRange`, `MedicationName`, `Dosage`) — через `ValidateName`; `DurationDays` — через `ValidatePositive`. Без перевірок лишаються `Value` (це просто число), `IsNormal` (прапорець) та `Instructions` (необов'язковий текст). У викликах валідатора знову передавайте `nameof(...)` властивості. Це **той самий** `ClinicValidator` з Лаби 05: новий клас — нові поля, але правила лишаються в одному місці, а не копіюються в кожен клас.
+3. **Про `IsNormal`.** Це свідомий компроміс: норма записана **текстом** (`"< 5.2"`, `"120–160"`), тож автоматично порівняти з нею `Value` не вийде, і прапорець виставляє той, хто вводить результат. У реальній системі норму зберігали б двома числами (мінімум і максимум), а `IsNormal` був би обчислюваною властивістю — за бажанням спробуйте так зробити.
+4. **`GetSummary()` для аналізу** — назва, значення, одиниці й норма в дужках; суфікс `" ⚠ поза нормою"` лише коли `IsNormal` дорівнює `false`. Якщо в консолі замість `⚠`, `×`, `–` з'являються знаки питання — це кодування консолі: у `Program.cs` (теж після блоку `using`) встановіть `Console.OutputEncoding` у UTF-8 (див. документацію).
+5. **Роздільник дробової частини залежить від регіональних налаштувань.** Додаючи `double` до рядка, .NET бере поточну культуру: на комп'ютері з українськими налаштуваннями `6.2` виведеться як `6,2` (у прикладах вище — з крапкою). Це та сама проблема, що в Лабі 01: зафіксуйте `InvariantCulture` двома рядками в `Program.cs` — одразу після блоку `using` (розділ «Як виконувати завдання» Лаби 01; докладніше — підказка 2 Задачі 4). Ці рядки потраплять у коміт Задачі 4 разом з рештою `Program.cs`.
+6. **`ExpiresAt` — обчислювана властивість:** лише `get`, приватного поля немає, значення щоразу рахується з `Date` і `DurationDays` методом `DateTime.AddDays`. Такі властивості вже траплялись у Лабі 03.
+7. **`override IsActive()` у `Prescription`** повністю замінює правило бази: рецепт активний, поки не минув день закінчення курсу (сам день закінчення ще активний). Базову реалізацію можна було б викликати через `base.IsActive()`, але тут вона не потрібна. У `LabResult` метод **не** перевизначайте — аналіз користується базовим правилом.
+8. **`MedicalRecordManager` будується за шаблоном `PatientManager` (Лаба 03):** масив фіксованого розміру, лічильник `_count`, константа ліміту, `Add` з перевіркою ліміту та повідомленням. Вибірки (`GetByPatient`, `GetByDoctor`) — у **два проходи**: спершу порахувати відповідні записи, потім створити масив потрібного розміру й заповнити його. Жодних `List<T>`.
+9. **Тип масиву — базовий: `MedicalRecord[]`.** Це і є «поліморфний масив»: у нього можна класти і `Diagnosis`, і `LabResult`, і `Prescription`, бо кожен із них *є* `MedicalRecord`. Окремі масиви під кожен вид не потрібні.
+10. **`DisplayAll()` та `DisplayList(...)` — це один цикл**, у якому кожен елемент просто виводиться. Ніяких `if` і `is`: кожен об'єкт сам знає, як себе показати (`ToString()` нащадка). Це і є поліморфізм — один рядок коду поводиться по-різному залежно від реального типу об'єкта.
+11. **`FindById` та індексатор** — за зразком менеджерів із Лаб 03–04: результат має тип `MedicalRecord?`, `null` означає «не знайдено» (для індексатора — «індекс поза межами»).
+12. **Перевірка тимчасовим кодом:** створіть менеджер, додайте по одному запису кожного виду й виведіть `DisplayAll()`. Потім спробуйте покласти в масив запис для `patientId = 0` — конструктор має відхилити його ще до `Add`.
 
-📖 [Polymorphism (C# Programming Guide)](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/polymorphism)
-📖 [override (C# Reference)](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/override)
+📖 Документація:
+- [Поліморфізм](https://learn.microsoft.com/dotnet/csharp/fundamentals/object-oriented/polymorphism)
+- [`override`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/override)
+- [`DateTime.AddDays`](https://learn.microsoft.com/dotnet/api/system.datetime.adddays)
+- [Індексатори](https://learn.microsoft.com/dotnet/csharp/programming-guide/indexers/)
+- [`CultureInfo.InvariantCulture`](https://learn.microsoft.com/dotnet/api/system.globalization.cultureinfo.invariantculture) та [`Console.OutputEncoding`](https://learn.microsoft.com/dotnet/api/system.console.outputencoding)
 
 ### Адаптація до вашого домену
 
@@ -246,11 +387,13 @@ for (int i = 0; i < records.Length; i++)
 | `LabResult` | `RoomInspection` | `QualityCheck` | `ExamResult` | `TechInspection` | `BookReturn` | `FitnessTest` |
 | `Prescription` | `ServiceRequest` | `SpecialOrder` | `Assignment` | `RepairOrder` | `FineNotice` | `TrainingPlan` |
 
+У вашому домені щонайменше один нащадок має власне правило `IsActive()` (як `Prescription`: «поки не минув термін»), а один — числове поле з ознакою (як `LabResult`).
+
 ### Коміт
 
 ```bash
-git add src/Models/LabResult.cs src/Models/Prescription.cs src/Managers/MedicalRecordManager.cs
-git commit -m "Lab06 Task02: add LabResult, Prescription subclasses and MedicalRecordManager"
+git add ClinicApp/Models/LabResult.cs ClinicApp/Models/Prescription.cs ClinicApp/Managers/MedicalRecordManager.cs
+git commit -m "Lab06 Task02"
 ```
 
 ---
@@ -259,96 +402,84 @@ git commit -m "Lab06 Task02: add LabResult, Prescription subclasses and MedicalR
 
 ### Умова
 
-Масив `MedicalRecord[]` зберігає об'єкти різних типів. Але часто потрібно отримати тільки діагнози, або тільки хронічні, або тільки активні рецепти. Це вимагає **перевірки реального типу** об'єкта під час виконання.
+Масив `MedicalRecord[]` зберігає об'єкти різних типів. Але часто потрібно отримати лише діагнози, або лише хронічні, або лише активні рецепти. Для цього треба **перевірити реальний тип** об'єкта під час виконання.
 
-`is` — оператор перевірки типу. `as` — безпечне приведення: повертає `null` якщо тип не збігається, замість `InvalidCastException`.
+`is` — оператор перевірки типу. `as` — безпечне приведення: повертає `null`, якщо тип не збігається, замість `InvalidCastException`.
 
-**Що реалізувати:**
+**Що реалізувати.** Додати до `MedicalRecordManager`:
 
-Додати до `MedicalRecordManager`:
-
-1. `GetDiagnoses(int patientId)` → `Diagnosis[]` — всі діагнози пацієнта
-2. `GetLabResults(int patientId)` → `LabResult[]` — всі аналізи пацієнта
-3. `GetPrescriptions(int patientId)` → `Prescription[]` — всі рецепти пацієнта
-4. `GetChronicDiagnoses(int patientId)` → `Diagnosis[]` — тільки хронічні
-5. `GetActivePrescriptions(int patientId)` → `Prescription[]` — тільки активні (через `IsActive()`)
+1. `GetDiagnoses(int patientId)` → `Diagnosis[]` — усі діагнози пацієнта;
+2. `GetLabResults(int patientId)` → `LabResult[]` — усі аналізи пацієнта;
+3. `GetPrescriptions(int patientId)` → `Prescription[]` — усі рецепти пацієнта;
+4. `GetChronicDiagnoses(int patientId)` → `Diagnosis[]` — лише хронічні;
+5. `GetActivePrescriptions(int patientId)` → `Prescription[]` — лише активні (через `IsActive()`);
 6. `DisplayPatientSummary(int patientId)` — зведена картка:
-   - Кількість записів кожного типу
-   - Список хронічних діагнозів (якщо є)
-   - Список активних рецептів з датою закінчення (якщо є)
+   - кількість записів кожного типу;
+   - список хронічних діагнозів (якщо є);
+   - список активних рецептів з датою закінчення (якщо є).
 
 ### Приклад
 
-```csharp
-// is — перевірка типу, повертає bool:
-MedicalRecord r = new Diagnosis(...);
-if (r is Diagnosis) Console.WriteLine("це діагноз");
+Синтаксис — на вигаданій ієрархії з Задачі 1 (`Truck` — ще один нащадок `Vehicle`):
 
-// is з pattern variable — перевірка і приведення одночасно:
-if (r is Diagnosis d)
-    Console.WriteLine(d.DiagnosisCode);  // d вже має тип Diagnosis
+```csharp
+Vehicle v = new Bicycle();
+
+// is — перевірка типу, повертає bool:
+if (v is Bicycle)
+    Console.WriteLine("це велосипед");
+
+// is зі змінною — перевірка і приведення одночасно:
+if (v is Bicycle b)
+    Console.WriteLine(b.Wheels);      // b уже має тип Bicycle
 
 // as — спробувати привести, або null:
-Diagnosis? diag = r as Diagnosis;
-if (diag != null)
-    Console.WriteLine(diag.IsChronic);
+Bicycle? asBike = v as Bicycle;
+if (asBike != null)
+    Console.WriteLine(asBike.Wheels);
 
-// Фільтрація в методі:
-public Diagnosis[] GetDiagnoses(int patientId)
-{
-    int n = 0;
-    for (int i = 0; i < _count; i++)
-        if (_records[i].PatientId == patientId && _records[i] is Diagnosis) n++;
-
-    Diagnosis[] result = new Diagnosis[n];
-    int idx = 0;
-    for (int i = 0; i < _count; i++)
-        if (_records[i].PatientId == patientId && _records[i] is Diagnosis d)
-            result[idx++] = d;
-    return result;
-}
+// явне приведення — при невдачі кидає виняток:
+Truck t = (Truck)v;                   // InvalidCastException: Bicycle не є Truck
 ```
 
-```csharp
-// Використання:
-manager.DisplayPatientSummary(1);
-// === Медична картка пацієнта #1 ===
-// Всього записів: 5 (діагнозів: 2, аналізів: 2, рецептів: 1)
-// Хронічні діагнози (1):
-//   [1] Діагноз | 09.04.2026 | I10: Гіпертонічна хвороба [хронічне]
-// Активні рецепти (1):
-//   [5] Рецепт | 04.05.2026 | Лізиноприл 10 мг × 30 днів | до 03.06.2026
+Як має працювати **ваш** `DisplayPatientSummary` (дати залежать від дня запуску):
+
+```
+=== Медична картка пацієнта #1 ===
+Всього записів: 5 (діагнозів: 2, аналізів: 2, рецептів: 1)
+Хронічні діагнози (1):
+  [1] Діагноз | 22.08.2026 | I10: Гіпертонічна хвороба [хронічне]
+Активні рецепти (1):
+  [5] Рецепт | 16.09.2026 | Лізиноприл 10 мг × 30 днів (1 раз на добу вранці) | до 16.10.2026
 ```
 
 ### Підказки
 
-1. Різниця `is` та `as`:
+1. **Три способи працювати з реальним типом:**
 
-   | | `is` | `as` |
-   |---|---|---|
-   | Повертає | `bool` | об'єкт або `null` |
-   | Кидає виняток? | ніколи | ніколи |
-   | Явне приведення `(T)obj` | — | так, кидає `InvalidCastException` при невдачі |
+   | | `is` | `as` | `(Тип)об'єкт` |
+   |---|---|---|---|
+   | Що повертає | `bool` | об'єкт потрібного типу або `null` | об'єкт потрібного типу |
+   | Якщо тип не збігається | `false` | `null` | **кидає `InvalidCastException`** |
+   | Кидає виняток? | ніколи | ніколи | так, при невдачі |
 
-2. Pattern variable `is T variable` — сучасний стиль C#, замінює `is` + `as`:
-   ```csharp
-   // Старий стиль:
-   if (r is Diagnosis)
-   {
-       Diagnosis d = (Diagnosis)r;
-       // ...
-   }
-   // Новий стиль (одна операція):
-   if (r is Diagnosis d)
-   {
-       // d одразу типу Diagnosis
-   }
-   ```
-3. Комбінація умов: `_records[i] is Diagnosis d && d.IsChronic` — тільки хронічні діагнози.
-4. Явне приведення `(Diagnosis)record` — кидає `InvalidCastException` якщо тип не збігається. Використовуйте `is`/`as` коли не впевнені у типі.
+2. **`is` зі змінною** (`is Тип змінна`) — сучасний стиль: перевірка й приведення в одній операції. Змінна доступна там, де компілятор певен, що перевірка вдалась: у тілі `if` і праворуч від `&&` в тій самій умові. Це замінює зв'язку «`is` — а потім окреме приведення».
+3. **`as` завжди дає `Тип?`.** З увімкненими nullable-типами результат `as` записується як `Diagnosis?`, і перед використанням його треба перевірити на `null` — так само, як `FindById` з Лаби 03.
+4. **Явне приведення небезпечне.** Спробуйте `(Diagnosis)record` для запису-рецепта й прочитайте текст виняткової ситуації. Використовуйте `is`/`as`, коли не впевнені в типі; явне приведення — лише коли тип гарантований.
+5. **Метод-фільтр за типом — знайомий двопрохідний алгоритм.** Перший прохід рахує записи, які належать потрібному пацієнту **і** мають потрібний тип. Потім створюється масив результатів потрібного розміру (тип елементів — конкретний нащадок: `Diagnosis[]`, а не `MedicalRecord[]`). Другий прохід перевіряє ту саму умову й заповнює масив; саме тут зручна форма `is Тип змінна`, бо вона одразу дає змінну потрібного типу для запису в масив результатів.
+6. **Додаткові умови** (`IsChronic`, `IsActive()`) додаються до тієї самої умови через `&&`: змінна, яку дав `is`, доступна в правій частині. Вибірки `GetChronicDiagnoses` і `GetActivePrescriptions` — це фільтри за **типом і ознакою** водночас.
+7. **`is` означає «є різновидом», а не «точно цього типу».** Якби існував клас `ChronicDiagnosis : Diagnosis`, то `запис is Diagnosis` було б `true` і для нього. Якщо колись знадобиться саме точний тип — див. `GetType()` у документації. У нашій ієрархії нащадки не мають власних нащадків, тож різниці ви не побачите, — але знати її треба.
+8. **`DisplayPatientSummary`.** Один прохід по записах пацієнта з трьома лічильниками; далі — розділи «Хронічні діагнози» та «Активні рецепти», які **виводяться лише непорожніми** (для пацієнта без хронічних діагнозів порожнього заголовка бути не повинно). Якщо в пацієнта взагалі немає записів — одне коротке повідомлення.
+9. **Де перевірка типу доречна, а де ні.** У менеджері фільтр за типом — законне використання `is`: потрібні саме діагнози. А от `DisplayList` **не** має перевіряти типи — він просто виводить те, що дали (це задача поліморфізму, а не `is`). Якщо у ваш `DisplayList` захотілось додати `if (… is …)` — зупиніться й подумайте, чи не вирішує це `ToString()`.
+10. **Зверніть увагу на дублювання.** П'ять методів вийшли майже однаковими — різниться тільки тип. Це прямий наслідок того, що ми поки не вміємо писати код «для будь-якого типу»; у Лабі 09 з'явиться інструмент, що прибирає таке дублювання. Зараз нічого не переписуйте.
 
-📖 [Type-testing operators and cast expressions](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/type-testing-and-cast)
-📖 [Pattern matching overview](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/functional/pattern-matching)
+📖 Документація:
+- [Оператори перевірки типу та приведення (`is`, `as`, `(T)x`)](https://learn.microsoft.com/dotnet/csharp/language-reference/operators/type-testing-and-cast)
+- [Огляд зіставлення зі зразком (pattern matching)](https://learn.microsoft.com/dotnet/csharp/fundamentals/functional/pattern-matching)
+- [Шаблони: оголошення та типи](https://learn.microsoft.com/dotnet/csharp/language-reference/operators/patterns)
+- [`InvalidCastException`](https://learn.microsoft.com/dotnet/api/system.invalidcastexception)
+- [`object.GetType`](https://learn.microsoft.com/dotnet/api/system.object.gettype)
+- [Nullable-типи посилань (`T?`)](https://learn.microsoft.com/dotnet/csharp/nullable-references)
 
 ### Адаптація до вашого домену
 
@@ -362,87 +493,131 @@ manager.DisplayPatientSummary(1);
 ### Коміт
 
 ```bash
-git add src/Managers/MedicalRecordManager.cs
-git commit -m "Lab06 Task03: add type-filtered queries using is/as pattern matching"
+git add ClinicApp/Managers/MedicalRecordManager.cs
+git commit -m "Lab06 Task03"
 ```
 
 ---
 
-## Задача 4. Інтеграція — `Clinic` + меню + тестові дані ⭐⭐⭐⭐
+## Задача 4. Інтеграція: `Clinic`, меню й тестові дані ⭐⭐⭐⭐
 
 ### Умова
 
-Ієрархія класів і менеджер готові. Тепер потрібно підключити їх до системи: `Clinic` отримує новий менеджер, `Program.cs` — новий розділ меню, а в тестових даних з'являються реальні приклади кожного типу.
+Ієрархія класів і менеджер готові. Тепер треба підключити їх до системи: `Clinic` отримує новий менеджер, `Program.cs` — новий розділ меню, а в тестових даних з'являються приклади кожного виду запису.
 
-Ця задача демонструє **силу поліморфізму в реальному контексті**: код меню не знає реальних типів записів. Він викликає `DisplayList(MedicalRecord[])` — і кожен запис виводить себе правильно.
+Ця задача показує **силу поліморфізму в реальному контексті**: код меню не знає реальних типів записів. Він викликає `DisplayList(MedicalRecord[])` — і кожен запис виводить себе правильно.
 
 **Що реалізувати:**
 
 1. У `Clinic.cs` додати властивість `MedicalRecordManager MedicalRecords`.
+2. У `Program.cs` замінити тимчасовий тестовий код (із Задач 1–3) справжніми тестовими даними — приклади всіх трьох видів для кількох пацієнтів (див. таблицю нижче).
+3. У `Program.cs` одразу після блоку `using` зафіксувати `InvariantCulture` (як у Лабі 01) — інакше дробові числа поводитимуться по-різному на різних комп'ютерах.
+4. Головне меню: новий пункт `4` — «Медична картка»; пункт «Звіт» переїжджає на `5`.
+5. Підменю «Медична картка» з пунктами:
+   - `1` — Картка пацієнта (зведення через `DisplayPatientSummary`);
+   - `2` — Усі записи пацієнта;
+   - `3` — Додати діагноз;
+   - `4` — Додати аналіз;
+   - `5` — Додати рецепт;
+   - `6` — Записи лікаря;
+   - `0` — Назад.
+6. Продемонструвати поліморфізм явно: вивести всі записи одного пацієнта — масив `MedicalRecord[]` містить різні типи, а цикл із `GetRecordType()` і `GetSummary()` (або `ToString()`) дає правильний рядок для кожного.
 
-2. У тестових даних `Program.cs` додати приклади всіх трьох типів для кількох пацієнтів:
-   - Хронічний і гострий діагноз для одного пацієнта
-   - Аналіз в нормі і поза нормою
-   - Активний і вже завершений рецепт (для демонстрації `IsActive()`)
+### Формат вводу
 
-3. Новий розділ меню "Медична картка" з пунктами:
-   - `1` — Картка пацієнта (зведення через `DisplayPatientSummary`)
-   - `2` — Всі записи пацієнта
-   - `3` — Додати діагноз
-   - `4` — Додати аналіз
-   - `5` — Додати рецепт
-   - `6` — Записи лікаря
+Дата нового запису — завжди `DateTime.Today`. Кожен пункт додавання запитує дані у такому порядку (перед запитом ID корисно показати списки пацієнтів і лікарів через їхні `DisplayAll()`):
 
-4. Продемонструвати поліморфізм явно: вивести всі записи одного пацієнта — масив `MedicalRecord[]` містить різні типи, але `foreach` + `ToString()` дає правильний рядок для кожного.
+| Пункт | Що запитує програма (у порядку) |
+|-------|---------------------------------|
+| `3` — діагноз | ID пацієнта (ціле) → ID лікаря (ціле) → код діагнозу (`J06.9`) → опис → «Хронічне? (1=так, 0=ні)» |
+| `4` — аналіз | ID пацієнта → ID лікаря → назва аналізу → значення (число **з крапкою**) → одиниці виміру → норма (текст, напр. `4.0–9.0`) → «В нормі? (1=так, 0=ні)» |
+| `5` — рецепт | ID пацієнта → ID лікаря → препарат → дозування (`10 мг`) → кількість днів (ціле) → інструкція (Enter — пропустити) |
+| `1`, `2` | ID пацієнта (ціле) |
+| `6` | ID лікаря (ціле) |
+
+Що має відбуватись при помилках:
+
+| Ситуація | Реакція програми |
+|----------|------------------|
+| ID або кількість днів — не число | повідомлення про некоректне число, повернення в підменю |
+| Пацієнта чи лікаря з таким ID немає | повідомлення «не знайдено», повернення в підменю |
+| Значення аналізу — не число | повідомлення, повернення в підменю (а не тихий `0`) |
+| Порожній код діагнозу, кількість днів `0` тощо | `Помилка: …` з тексту винятку; **програма не падає** |
+
+### Тестові дані
+
+Додайте щонайменше такі записи (ID пацієнтів і лікарів — ті, що вже є в даних Лаби 05):
+
+| Пацієнт | Запис | Що це демонструє |
+|---------|-------|------------------|
+| #1 | діагноз `I10`, хронічний, 30 днів тому | `GetChronicDiagnoses`, `[хронічне]` |
+| #1 | діагноз `J06.9`, гострий, 5 днів тому | не потрапляє в «хронічні» |
+| #1 | аналіз «Гемоглобін» — в нормі | рядок без `⚠` |
+| #1 | аналіз «Холестерин» — поза нормою | `⚠ поза нормою` |
+| #1 | рецепт «Лізиноприл», 30 днів, виписаний 5 днів тому | `IsActive() == true` |
+| #2 | рецепт, 10 днів, виписаний 40 днів тому | `IsActive() == false` — не потрапляє в «Активні рецепти» |
+| #2, #3 | по одному запису іншого виду (діагноз, аналіз) | різні пацієнти й лікарі, `GetByDoctor` |
 
 ### Приклад
 
-```csharp
-// Clinic.cs:
-public MedicalRecordManager MedicalRecords { get; }
-// у конструкторі:
-MedicalRecords = new MedicalRecordManager();
+Як має виглядати додавання аналізу через меню:
 
-// Тестові дані в Program.cs:
-clinic.MedicalRecords.Add(new Diagnosis(1, 1, DateTime.Today.AddDays(-30), "I10", "Гіпертонічна хвороба", isChronic: true));
-clinic.MedicalRecords.Add(new LabResult(1, 1, DateTime.Today.AddDays(-7), "Холестерин", 6.2, "ммоль/л", "< 5.2", isNormal: false));
-clinic.MedicalRecords.Add(new Prescription(1, 1, DateTime.Today.AddDays(-5), "Лізиноприл", "10 мг", 30, "вранці"));
+```
+── Медична картка ────────────
+  ...
+Оберіть: 4
+ID пацієнта: 1
+ID лікаря: 1
+Назва аналізу: Гемоглобін
+Значення (число): 145
+Одиниці виміру: г/л
+Норма (напр. 4.0–9.0): 120–160
+В нормі? (1=так, 0=ні): 1
+Запис [9] Аналіз додано.
+```
 
-// Поліморфний вивід — один код, різна поведінка:
-MedicalRecord[] records = clinic.MedicalRecords.GetByPatient(1);
-for (int i = 0; i < records.Length; i++)
-    Console.WriteLine(records[i].GetRecordType() + ": " + records[i].GetSummary());
-// Діагноз: I10: Гіпертонічна хвороба [хронічне]
-// Аналіз: Холестерин: 6.2 ммоль/л (норма: < 5.2) ⚠ поза нормою
-// Рецепт: Лізиноприл 10 мг × 30 днів (вранці)
+А так — відхилений запис (порожній код діагнозу); програма повертається в підменю. Точний текст після `Помилка:` залежить від повідомлень вашого `ClinicValidator`:
+
+```
+Оберіть: 3
+ID пацієнта: 1
+ID лікаря: 1
+Код діагнозу (напр. J06.9):
+Опис: Ринофарингіт
+Хронічне? (1=так, 0=ні): 0
+Помилка: DiagnosisCode не може бути порожнім.
+```
+
+Поліморфний вивід — один код, різна поведінка (цикл по `GetByPatient(1)`):
+
+```
+Діагноз: I10: Гіпертонічна хвороба [хронічне]
+Діагноз: J06.9: Гострий ринофарингіт
+Аналіз: Гемоглобін: 145 г/л (норма: 120–160)
+Аналіз: Холестерин: 6.2 ммоль/л (норма: < 5.2) ⚠ поза нормою
+Рецепт: Лізиноприл 10 мг × 30 днів (1 раз на добу вранці)
 ```
 
 ### Підказки
 
-1. `MedicalRecord` у `Clinic.cs` вимагає `using ClinicApp.Managers;` — переконайтесь, що using є.
-2. Меню "Медична картка" — окрема `static void MedicalRecordsMenu(Clinic clinic)` за зразком існуючих меню.
-3. У пунктах "Додати діагноз/аналіз/рецепт" огорніть конструктор у `try/catch` — підкласи кидають `ArgumentException` при некоректних даних:
-   ```csharp
-   try
-   {
-       clinic.MedicalRecords.Add(new Diagnosis(patientId, doctorId, DateTime.Today, code, desc, isChronic));
-   }
-   catch (ArgumentOutOfRangeException e) { Console.WriteLine("Помилка: " + e.Message); }
-   catch (ArgumentException e) { Console.WriteLine("Помилка: " + e.Message); }
-   ```
-4. Для "завершеного рецепту" в тестових даних: `DateTime.Today.AddDays(-40)` з `DurationDays = 10` — курс закінчився 30 днів тому, `IsActive()` поверне `false`.
-5. Перевірте: `DisplayPatientSummary` для пацієнта без жодного хронічного діагнозу — не виводить порожній розділ.
-6. Ключовий момент для самоперевірки: у методі `DisplayList(MedicalRecord[] records)` немає жодного `if`, жодного `is`. Це і є поліморфізм — код не знає типів, але поводиться правильно:
-   ```csharp
-   public void DisplayList(MedicalRecord[] records)
-   {
-       for (int i = 0; i < records.Length; i++)
-           Console.WriteLine(records[i]);  // викликає override ToString() підкласу
-   }
-   ```
+1. **`Clinic`.** Нова властивість — за зразком інших менеджерів: лише `get`, значення створюється в конструкторі. Тип `MedicalRecordManager` лежить у `ClinicApp.Managers`, тож у `Clinic.cs` потрібен `using ClinicApp.Managers;` — після Лаби 05 він там уже є для інших менеджерів; перевірте.
+2. **Культура.** Потрібні ті самі два рядки, що й у Лабі 01 (розділ «Як виконувати завдання»): `Thread.CurrentThread.CurrentCulture` встановлюється в `CultureInfo.InvariantCulture`. Місце — **одразу після блоку `using`** і до решти коду: якщо поставити їх вище за `using`, компілятор видасть помилку `CS1529` (директиви `using` мають іти першими). Побічний ефект — дробові числа в усій програмі (наприклад, «Середній вік» у статистиці пацієнтів) тепер виводяться з крапкою: `29.2`, а не `29,2`.
+3. **Головне меню.** Змінюються дві речі: текст меню (новий пункт, «Звіт» — `5`) і `switch` із виводом відповідних методів. Легко забути одне з двох — перевірте обидва.
+4. **Підменю — окремий метод** (наприклад, `MedicalRecordsMenu`, що приймає `Clinic`) за зразком `PatientsMenu`, `DoctorsMenu`, `AppointmentsMenu` (а не гігантський блок усередині головного циклу).
+5. **Не передавайте мовчки нулі.** `int.TryParse` повертає `bool` — перевіряйте його. Якщо ввели «abc» для кількості днів, а ви проігнорували результат, змінна стане `0`, і користувач побачить «тривалість має бути більше нуля» — хоч насправді помилка була у форматі числа.
+6. **Число з крапкою — пастка.** З `InvariantCulture` звичайний `double.TryParse("6,2", out …)` поверне **`true` і значення `62`**: кома там — роздільник розрядів, а не десяткова. Щоб відхиляти такий ввід, використайте перевантаження `TryParse` із параметрами `NumberStyles` (потрібне значення — `NumberStyles.Float`) і `IFormatProvider` (`CultureInfo.InvariantCulture`). Перевірте на трьох вводах: `6.2`, `6,2`, `abc`.
+7. **Перевіряйте існування пацієнта й лікаря.** Запис для пацієнта з ID `99`, якого немає, — некоректний стан системи (той самий інваріант, що в Лабі 05). Знайдіть пацієнта й лікаря за ID (`FindById` або `TryFindById` з Лаб 03–04) і лише тоді створюйте запис; інакше — повідомлення й повернення в меню.
+8. **`try/catch` навколо створення запису.** У `try` — усе, що може кинути виняток (створення `Diagnosis`/`LabResult`/`Prescription`). Два блоки `catch` у правильному порядку (Лаба 05): спершу `ArgumentOutOfRangeException`, потім `ArgumentException`. У кожному — повідомлення `Помилка: …` і повернення в меню. Перевірте вручну: порожній код діагнозу, кількість днів `0`.
+9. **Завершений рецепт у тестових даних.** Достатньо дати «40 днів тому» і курсу 10 днів: він закінчився 30 днів тому, тож `IsActive()` поверне `false`, а в зведенні пацієнта цей рецепт не з'явиться.
+10. **Зведення для пацієнта без хронічних діагнозів** не має виводити порожній розділ «Хронічні діагнози». Перевірте це на пацієнті #3.
+11. **Поліморфний вивід (пункт 6 умови).** Цикл по масиву, який повернув `GetByPatient`: для кожного елемента виведіть тип запису й зміст. Поза межами `Program.cs` ця логіка не потрібна — ви лише демонструєте, що код не знає реальних типів.
+12. **Ключовий момент для самоперевірки:** у методі `DisplayList(MedicalRecord[] records)` немає жодного `if`, жодного `is`. Це і є поліморфізм — код не знає типів, але поводиться правильно. Якщо ви таки додали перевірку типу — приберіть її й дайте працювати `ToString()`.
 
-📖 [base keyword](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/base)
-📖 [Inheritance and polymorphism (tutorial)](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/tutorials/inheritance)
+📖 Документація:
+- [`base`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/base)
+- [Уроки: успадкування](https://learn.microsoft.com/dotnet/csharp/fundamentals/tutorials/inheritance)
+- [`double.TryParse`](https://learn.microsoft.com/dotnet/api/system.double.tryparse) та [`NumberStyles`](https://learn.microsoft.com/dotnet/api/system.globalization.numberstyles)
+- [`try-catch`](https://learn.microsoft.com/dotnet/csharp/language-reference/statements/exception-handling-statements)
 
 ### Адаптація до вашого домену
 
@@ -454,8 +629,8 @@ for (int i = 0; i < records.Length; i++)
 ### Коміт
 
 ```bash
-git add src/Clinic.cs src/Program.cs
-git commit -m "Lab06 Task04: integrate MedicalRecords into Clinic and Program menu"
+git add ClinicApp/Clinic.cs ClinicApp/Program.cs
+git commit -m "Lab06 Task04"
 ```
 
 ---
@@ -465,82 +640,98 @@ git commit -m "Lab06 Task04: integrate MedicalRecords into Clinic and Program me
 Так має виглядати `ClinicApp/`, коли всі завдання виконано:
 
 ```text
-oop-course/                             ← гілка Lab-06 (після злиття — main)
+oop-course/                          ← гілка Lab-06 (після злиття — main)
 ├── .gitignore
 ├── oop-course.sln
 └── ClinicApp/
     ├── ClinicApp.csproj
-    ├── Program.cs                      ✏
-    ├── Clinic.cs                       ✏
-    ├── Enums/  (3 файли)
+    ├── Program.cs                      ✏ Т4
+    ├── Clinic.cs                       ✏ Т4
+    ├── Enums/
+    │   ├── AppointmentStatus.cs
+    │   ├── BloodType.cs
+    │   └── Speciality.cs
     ├── Models/
     │   ├── Patient.cs
     │   ├── Doctor.cs
     │   ├── Appointment.cs
     │   ├── WorkSchedule.cs
-    │   ├── Diagnosis.cs                🆕
-    │   ├── LabResult.cs                🆕
-    │   ├── MedicalRecord.cs            🆕
-    │   └── Prescription.cs             🆕
+    │   ├── Diagnosis.cs                🆕 Т1
+    │   ├── LabResult.cs                🆕 Т2
+    │   ├── MedicalRecord.cs            🆕 Т1
+    │   └── Prescription.cs             🆕 Т2
     ├── Managers/
     │   ├── PatientManager.cs
     │   ├── DoctorManager.cs
     │   ├── AppointmentManager.cs
     │   ├── GrowablePatientManager.cs
-    │   └── MedicalRecordManager.cs     🆕
-    └── Utils/  (2 файли)
+    │   └── MedicalRecordManager.cs     🆕 Т2  ✏ Т3
+    └── Utils/
+        ├── ClinicFormatter.cs
+        └── ClinicValidator.cs
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 05. Файл може мати кілька позначок: `MedicalRecordManager.cs` створюється в Т2, а в Т3 до нього додаються методи-фільтри.
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
 ## Перевірка перед здачею
 
 ```bash
-cd src
-dotnet build
-dotnet run
+dotnet build ClinicApp
+dotnet run --project ClinicApp
 ```
 
 Переконайтесь, що:
 
 - [ ] Структура проєкту збігається зі схемою вище
-- [ ] `new MedicalRecord(...)` не компілюється — клас абстрактний
+- [ ] Проєкт компілюється без помилок і **без попереджень** (зокрема без `CS0114` — це забутий `override`)
+- [ ] `new MedicalRecord(...)` не компілюється — клас абстрактний (перевірте й закоментуйте назад)
 - [ ] `Diagnosis`, `LabResult`, `Prescription` успішно створюються
-- [ ] `MedicalRecord record = new Diagnosis(...)` — присвоєння підкласу базовому типу працює
+- [ ] `MedicalRecord record = new Diagnosis(...)` — присвоєння нащадка змінній базового типу працює
 - [ ] `record.GetRecordType()` повертає `"Діагноз"`, а не `"Медичний запис"`
-- [ ] `Prescription.IsActive()` повертає `false` для рецепту що закінчився
+- [ ] `Prescription.IsActive()` повертає `false` для рецепта, що закінчився, і `true` для чинного
+- [ ] `Diagnosis.IsActive()` за замовчуванням: `true` для запису молодшого за 6 місяців, `false` — для старшого
 - [ ] `DisplayList(MedicalRecord[])` виводить різні рядки для різних типів — без жодного `if (r is ...)`
-- [ ] `GetChronicDiagnoses` повертає тільки хронічні
-- [ ] `DisplayPatientSummary` правильно рахує типи і показує зведення
-- [ ] Меню "Медична картка" (пункт 4) доступне і всі підпункти працюють
+- [ ] `GetChronicDiagnoses` повертає лише хронічні; `GetActivePrescriptions` — лише активні
+- [ ] `DisplayPatientSummary` правильно рахує типи, не виводить порожніх розділів
+- [ ] Меню «Медична картка» — пункт `4` головного меню, «Звіт» — `5`, усі підпункти працюють
 - [ ] `new Diagnosis(1, 1, DateTime.Today, "", "Ринофарингіт")` кидає `ArgumentException`
 - [ ] `new Prescription(1, 1, DateTime.Today, "Аспірин", "500 мг", 0)` кидає `ArgumentOutOfRangeException`
 - [ ] При введенні порожнього коду діагнозу в меню — програма показує повідомлення про помилку, а не падає
+- [ ] Значення аналізу `6.2` (з крапкою) сприймається як `6.2`; `6,2` і `abc` — відхиляються з повідомленням
+- [ ] Запис для неіснуючого пацієнта чи лікаря (ID `99`) відхиляється з повідомленням
+- [ ] У коді немає `interface`, `new`/`sealed` (приховування), `List<T>`, `Dictionary<,>`, LINQ
 
 ---
 
 ## Питання для самоперевірки
 
-1. Чому `abstract class` не можна інстанціювати? Що відбувається при спробі `new MedicalRecord(...)`?
-2. Яка різниця між `abstract` і `virtual` методом? Що станеться якщо підклас не реалізує `abstract` метод?
-3. Чому `override ToString()` у базовому класі викликає `GetSummary()` підкласу, а не базового? Як це називається?
-4. Навіщо `protected` конструктор у базовому класі? Чим він відрізняється від `public` і `private`?
+1. Чому `abstract class` не можна інстанціювати? Що відбувається при спробі `new MedicalRecord(...)` і який код помилки видає компілятор?
+2. Яка різниця між `abstract` і `virtual` методом? Що станеться, якщо нащадок не реалізує `abstract`-метод? А якщо не перевизначить `virtual`?
+3. Чому `override ToString()` у базовому класі викликає `GetSummary()` нащадка, а не базового? Як це називається?
+4. Навіщо `protected`-конструктор у базовому класі? Чим він відрізняється від `public` і `private` (що покаже компілятор при `private`)?
 5. Яка різниця між `is`, `as` і явним приведенням `(Diagnosis)record`? Коли кожен із них кидає виняток?
-6. Чому `Prescription.IsActive()` перевизначає логіку, а `LabResult.IsActive()` ні? Як базовий клас "знає" яку реалізацію викликати?
+6. Чому `Prescription.IsActive()` перевизначає логіку, а `LabResult.IsActive()` — ні? Як базовий клас «знає», яку реалізацію викликати?
 7. Метод `DisplayList(MedicalRecord[])` не містить жодного `if (r is ...)`, але виводить різні рядки для різних типів. Чому це можливо?
-8. Чому `ClinicValidator` викликається і в базовому конструкторі (`ValidatePositive` для `patientId`, `doctorId`), і у сеттерах підкласів (`ValidateName` для назв)? Де саме "живе" відповідальність за кожну перевірку?
+8. Чому `ClinicValidator` викликається і в базовому конструкторі (`ValidatePositive` для `patientId`, `doctorId`), і в сеттерах нащадків (`ValidateName` для текстових полів)? Де саме «живе» відповідальність за кожну перевірку?
+9. Що відбудеться, якщо забути `override` біля `GetRecordType()` у `Diagnosis`? Яке попередження побачите і що виведе `record.GetRecordType()` для змінної базового типу?
+10. Чому невдале створення `Diagnosis` (порожній код) «з'їдає» номер `Id`, а невдале створення з `patientId = 0` — ні? Що це говорить про порядок виконання конструкторів бази й нащадка?
+11. Чому `запис is Diagnosis` не гарантує, що реальний тип об'єкта — саме `Diagnosis`? Коли це може мати значення?
 
 ---
 
-## Злиття
+## Статус гілки
+
+Після всіх завдань (кожне — окремий коміт `Lab06 TaskNN` на гілці `Lab-06`):
 
 ```bash
+git push -u origin Lab-06
 git checkout main
 git merge --no-ff Lab-06 -m "Merge Lab-06: Inheritance"
+git push
 ```
 
-> Наступна лаба: `git checkout -b Lab-07`
+> Наступна лаба: `git checkout main` → `git checkout -b Lab-07`.

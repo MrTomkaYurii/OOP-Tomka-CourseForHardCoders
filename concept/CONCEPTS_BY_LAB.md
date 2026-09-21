@@ -292,23 +292,30 @@
 
 ---
 
-### Lab 06 — Inheritance (feature/inheritance → злито в main)
+### Lab 06 — Inheritance (тека `ClinicApp/`, гілка `Lab-06`, зливається в `main`)
 
 **Нові конструкції:**
 - `abstract class MedicalRecord` — базовий клас ієрархії медичних записів
 - `abstract string GetSummary()` — підклас зобов'язаний реалізувати
 - `virtual string GetRecordType()`, `virtual bool IsActive()` — підклас може перевизначити
 - `: BaseClass`, `protected` конструктор, `base(...)` виклик
-- `override` в підкласах (`Diagnosis`, `LabResult`, `Prescription`)
-- `is` (перевірка типу), `is T variable` (pattern variable)
-- `as` (безпечне приведення, повертає null)
+- `override` в підкласах (`Diagnosis`, `LabResult`, `Prescription`); пояснення, чому працює `override ToString()` з Лаби 03 (`object.ToString()` — `virtual`)
+- `is` (перевірка типу), `is T variable` (pattern variable); `is` = «є різновидом», точний тип — `GetType()`
+- `as` (безпечне приведення, повертає null → тип результату `T?`)
 - Явне приведення `(T)obj` — і коли воно кидає `InvalidCastException`
 - Поліморфний масив `MedicalRecord[]` — різні підкласи в одному масиві
+- Порядок конструкторів: базовий завершується **до** тіла похідного (наслідок: помилка в похідному «з'їдає» `Id`, помилка в базі — ні)
+- `double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out v)` — пастка: при `InvariantCulture` звичайний `TryParse("6,2")` дає `62`
+- `Console.OutputEncoding` (необов'язково, для `⚠ × –`); `DateTime.AddMonths` / `AddDays`
+- Рядки `InvariantCulture` у `Program.cs` — **після** блоку `using` (перед — помилка `CS1529`)
+
+**Експерименти з компілятором (підказки Задачі 1):** `CS0144` (new абстрактного), `CS0534` (не реалізовано abstract), `CS7036` (немає `base(...)`), `CS0114` (забутий `override` — лише попередження), `CS0122` (`private` конструктор бази), `CS0506` (override без virtual).
 
 **Заборонено (ще не введено):**
 - `interface` (Lab 07)
-- `new` keyword (method hiding) (Lab 08)
+- `new` keyword (method hiding) (Lab 08) — у підказці про `CS0114` прямо сказано, що пропозицію «додати `new`» приймати не треба
 - `sealed` (Lab 08)
+- `List<T>`, `Dictionary<K,V>` та інші generics (Lab 09); LINQ (Lab 14)
 
 ---
 
