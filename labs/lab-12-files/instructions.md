@@ -2,13 +2,13 @@
 
 ## Мета
 
-Навчитись читати та писати файли в C#: від простих `File.WriteAllText` до `StreamWriter` з форматуванням, CSV-парсингу з обробкою помилок та збереження стану між запусками програми.
+Навчитись читати та писати файли в C#: від простих `File.AppendAllText` до `StreamWriter` з форматуванням, CSV-парсингу з обробкою помилок та збереження стану між запусками програми.
 
 ## Контекст
 
-Після Lab 11 система вміє валідувати дані через рефлексію. Але все, що ввів користувач, зникає при закритті програми. Ця лаба додає **персистентність**: логування дій у файл, експорт звітів, імпорт даних з CSV та збереження сесії між запусками.
+Після Лаби 11 система вміє валідувати дані через рефлексію. Але все, що ввів користувач, зникає при закритті програми. Ця лаба додає **персистентність**: логування дій у файл, експорт звітів, імпорт даних з CSV та збереження сесії між запусками.
 
-## Структура проєкту на початку лаби
+### Структура проєкту на початку лаби
 
 Це результат Лаби 11 — стан `main` після її злиття:
 
@@ -34,140 +34,157 @@ oop-course/                           ← гілка main (після злитт
     └── Attributes/  (3 файли)
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### Що нового дозволено (і тільки воно)
+
+- клас `File`: `AppendAllText`, `ReadAllLines`, `Exists`, `Delete`;
+- `StreamWriter` у блоці `using`;
+- `Path.Combine` і `Directory.CreateDirectory`;
+- `Encoding.UTF8`, `DateTime.ParseExact`, `Enum.Parse`.
+
+Досі заборонено: LINQ (Лаба 14), делегати й лямбди (Лаби 13–15).
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
-git pull
 git checkout -b Lab-12
 ```
 
+Коміт — на кожне завдання (`Lab12 TaskNN`).
+
+### Ваш домен
+
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** в кінці кожного завдання.
+
+### Як користуватися підказками
+
+Підказки — **напрям думки, не готовий код**. «Що реалізувати» і «Специфікація» кажуть *що*; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Спершу документація і власна спроба.
+
 ---
 
-## Завдання 1 — ClinicLogger: пишемо у файл ⭐⭐
+## Задача 1. `ClinicLogger`: журнал дій у файлі ⭐⭐
 
 ### Умова
 
-Клініці потрібен журнал подій — файл `clinic.log`, куди записуються дії системи з часовою міткою. Треба також вміти переглянути останні N рядків без відкриття файлу вручну.
+Клініці потрібен журнал подій — файл `clinic.log`, куди записуються дії системи з часовою міткою. Треба також мати змогу переглянути останні N рядків, не відкриваючи файл вручну.
 
-### Що реалізувати
+**Що реалізувати:**
 
-**`Utils/ClinicLogger.cs`**:
+1. Клас `ClinicLogger` у `ClinicApp/Utils/` з методами зі специфікації. Кожен запис дописується в кінець файлу.
+2. У `Clinic.cs` додати властивість `Logger` і створити `ClinicLogger` у конструкторі.
+3. У `Program.cs` записувати в лог ключові дії: додавання пацієнта й лікаря, запис на прийом, скасування й завершення запису, оплату (`LogInfo`); помилки введення в `catch` (`LogWarning`).
+4. У головному меню додати пункт `10` — «Файли» з двома пунктами: «Останні рядки лога» (запитує N) і «Очистити лог».
 
-```csharp
-public class ClinicLogger
-{
-    private readonly string _logPath;
+### Специфікація
 
-    public ClinicLogger(string logPath = "clinic.log") { ... }
+| Член `ClinicLogger` | Опис |
+|---------------------|------|
+| конструктор `(string logPath = "clinic.log")` | шлях до файлу лога |
+| `LogInfo(string message)` | запис рівня `INFO` |
+| `LogWarning(string message)` | запис рівня `WARN` |
+| `LogError(string message)` | запис рівня `ERROR` |
+| `GetLastLines(int n)` | `string[]` — останні `n` рядків; порожній масив, якщо файлу немає |
+| `Clear()` | очистити лог |
+| `Exists()` | `bool` — чи існує файл |
 
-    public void LogInfo(string message)    => Write("INFO ", message);
-    public void LogWarning(string message) => Write("WARN ", message);
-    public void LogError(string message)   => Write("ERROR", message);
+Формат рядка: `[yyyy-MM-dd HH:mm:ss] [LEVEL] message`.
 
-    private void Write(string level, string message)
-    {
-        string line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}";
-        File.AppendAllText(_logPath, line + Environment.NewLine, Encoding.UTF8);
-    }
+### Приклад
 
-    public string[] GetLastLines(int n)
-    {
-        if (!File.Exists(_logPath)) return Array.Empty<string>();
-        string[] all = File.ReadAllLines(_logPath, Encoding.UTF8);
-        // повернути останні n рядків з масиву all
-        ...
-    }
-
-    public void Clear() { ... }
-    public bool Exists() => File.Exists(_logPath);
-}
 ```
-
-Додати `Logger` до `Clinic.cs` та підключити до меню пункт "10. Файли" з підпунктами перегляду та очищення лога.
+[2026-10-15 10:02:11] [INFO ] Додано пацієнта #6: Марія Ткач
+[2026-10-15 10:03:40] [INFO ] Запис #9 створено: пацієнт #6 → лікар #2
+[2026-10-15 10:04:05] [WARN ] Помилка введення: Телефон має містити рівно 10 цифр.
+```
 
 ### Підказки
 
 1. `File.AppendAllText(path, text, encoding)` — дописує в кінець файлу, не перезаписує. Якщо файл не існує — створює автоматично.
 2. `File.ReadAllLines(path, encoding)` — зчитує **всі** рядки у масив `string[]`. Для великих файлів це дорого, але для лога прийнятно.
-3. `Encoding.UTF8` — обов'язково для кирилиці. `using System.Text;` потрібен.
-4. `Environment.NewLine` — правильний перенос рядка для поточної ОС (`\r\n` на Windows, `\n` на Linux).
-5. Щоб отримати останні N рядків: `int skip = Math.Max(0, all.Length - n)` → `Array.Copy(...)`.
-6. [File.AppendAllText — docs](https://learn.microsoft.com/en-us/dotnet/api/system.io.file.appendalltext)
-7. [File.ReadAllLines — docs](https://learn.microsoft.com/en-us/dotnet/api/system.io.file.readalllines)
+3. `Encoding.UTF8` — обов'язково для кирилиці (`using System.Text;`).
+4. `Environment.NewLine` — правильний перенос рядка для поточної ОС.
+5. Останні N рядків: визначте, скільки рядків пропустити з початку (не менше нуля), і скопіюйте решту в новий масив.
+6. Один приватний метод запису, який викликають `LogInfo`/`LogWarning`/`LogError`, — щоб формат рядка був в одному місці.
+
+📖 Документація:
+- [`File.AppendAllText`](https://learn.microsoft.com/dotnet/api/system.io.file.appendalltext)
+- [`File.ReadAllLines`](https://learn.microsoft.com/dotnet/api/system.io.file.readalllines)
 
 ### Адаптація до вашого домену
 
 | Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
 |---------|--------|----------|-------------|-------------|------------|---------|
 | `ClinicLogger` → `clinic.log` | `HotelLogger` → `hotel.log` | `RestaurantLogger` → `restaurant.log` | `UniversityLogger` → `uni.log` | `RentalLogger` → `rental.log` | `LibraryLogger` → `library.log` | `GymLogger` → `gym.log` |
-| `LogInfo/Warning/Error` | однаково | однаково | однаково | однаково | однаково | однаково |
 
 ### Коміт
 
 ```bash
-git add src/Utils/ClinicLogger.cs src/Clinic.cs src/Program.cs
-git commit -m "Lab12 Task01: add ClinicLogger with AppendAllText and GetLastLines"
+git add ClinicApp/Utils/ClinicLogger.cs ClinicApp/Clinic.cs ClinicApp/Program.cs
+git commit -m "Lab12 Task01"
 ```
 
 ---
 
-## Завдання 2 — ClinicExporter: StreamWriter і форматування ⭐⭐
+## Задача 2. `ClinicExporter`: звіти у файли через `StreamWriter` ⭐⭐
 
 ### Умова
 
-Адміністратор хоче отримувати готові текстові звіти у файлах — з заголовками, роздільниками, датою генерації. Файли мають зберігатись у теці `reports/2026-05-14/` (дата автоматично).
+Адміністратор хоче отримувати готові текстові звіти у файлах — із заголовком, датою генерації і підсумком. Файли зберігаються в теці з датою: `reports/2026-10-15/`.
 
-### Що реалізувати
+**Що реалізувати:**
 
-**`Utils/ClinicExporter.cs`**:
+1. Клас `ClinicExporter` у `ClinicApp/Utils/`: отримує `Clinic` і базову теку через конструктор.
+2. Чотири методи експорту зі специфікації; кожен пише окремий файл і повертає шлях до нього.
+3. Метод `ExportAll()` — викликає всі чотири експорти.
+4. У `Clinic.cs` додати властивість `Exporter`; у меню «Файли» додати пункт `3` — «Експортувати всі звіти» (виводить шляхи створених файлів).
 
-```csharp
-public class ClinicExporter
-{
-    private readonly Clinic _clinic;
-    private readonly string _baseDir;
+### Специфікація
 
-    public ClinicExporter(Clinic clinic, string baseDir = "reports") { ... }
+| Член `ClinicExporter` | Файл | Вміст |
+|-----------------------|------|-------|
+| конструктор `(Clinic clinic, string baseDir = "reports")` | | |
+| `ExportPatients()` | `patients.txt` | усі пацієнти |
+| `ExportAppointments()` | `appointments.txt` | усі записи |
+| `ExportBilling()` | `billing.txt` | неоплачені записи і загальний борг |
+| `ExportTreatmentPlans()` | `treatment_plans.txt` | усі плани лікування |
+| `ExportAll()` | | викликає всі чотири, повертає `string[]` шляхів |
 
-    private string PrepareDir()
-    {
-        string dir = Path.Combine(_baseDir, DateTime.Today.ToString("yyyy-MM-dd"));
-        Directory.CreateDirectory(dir);
-        return dir;
-    }
+Кожен файл: заголовок з назвою звіту і датою генерації, роздільник, нумеровані рядки даних, підсумок (кількість). Тека — `reports/yyyy-MM-dd/`, створюється автоматично.
 
-    public string ExportPatients()
-    {
-        string path = Path.Combine(PrepareDir(), "patients.txt");
+### Приклад
 
-        using StreamWriter writer = new StreamWriter(path, false, Encoding.UTF8);
-        // заголовок: назва, дата генерації, роздільник
-        // цикл: для кожного пацієнта з clinic.Patients.GetAll() → writer.WriteLine(...)
-        // підсумок: кількість пацієнтів
-        return path;
-    }
-
-    // ExportAppointments(), ExportBilling(), ExportTreatmentPlans() — аналогічна структура
-
-    public void ExportAll() { ... }
-}
+```
+=== Пацієнти — звіт ===
+Згенеровано: 15.10.2026 10:20
+----------------------------------------
+  1. [1] Іван Петренко | 41 рік | A+ | (050) 123-4567
+  2. [2] Олена Коваль  | 33 роки | B- | (067) 234-5678
+----------------------------------------
+Всього: 2
 ```
 
 ### Підказки
 
-1. `StreamWriter(path, append: false, encoding)` — `false` означає перезаписати файл якщо існує.
-2. `using StreamWriter writer = new StreamWriter(...)` — автоматично викликає `writer.Dispose()` (закриває файл) при виході з блоку. Без `using` файл може залишитись відкритим.
-3. `Directory.CreateDirectory(dir)` — створює теку і всі батьківські теки. **Не кидає виняток** якщо тека вже існує.
-4. `Path.Combine("reports", "2026-05-14", "patients.txt")` — правильно склеює частини шляху для будь-якої ОС. Не роби `"reports/" + date + "/patients.txt"` — на Windows і Linux різний роздільник.
-5. `{i + 1,3}` — вирівнювання по правому краю в 3 символи: `  1.`, ` 10.`, `100.`.
-6. [StreamWriter — docs](https://learn.microsoft.com/en-us/dotnet/api/system.io.streamwriter)
-7. [Path.Combine — docs](https://learn.microsoft.com/en-us/dotnet/api/system.io.path.combine)
-8. [Directory.CreateDirectory — docs](https://learn.microsoft.com/en-us/dotnet/api/system.io.directory.createdirectory)
+1. `StreamWriter(path, false, encoding)` — `false` означає перезаписати файл, якщо він існує.
+2. `using StreamWriter writer = new StreamWriter(...)` автоматично закриває файл при виході з блоку. Без `using` файл може лишитись відкритим.
+3. `Directory.CreateDirectory(dir)` створює теку і всі батьківські теки; **не кидає виняток**, якщо тека вже існує.
+4. `Path.Combine("reports", "2026-10-15", "patients.txt")` склеює шлях правильно для будь-якої ОС — не збирайте шлях конкатенацією з `/`.
+5. Створення теки з датою винесіть в один приватний метод — його використовують усі чотири експорти.
+6. `{i + 1,3}` у рядку з інтерполяцією вирівнює номер по правому краю в 3 символи.
+
+📖 Документація:
+- [`StreamWriter`](https://learn.microsoft.com/dotnet/api/system.io.streamwriter)
+- [`Path.Combine`](https://learn.microsoft.com/dotnet/api/system.io.path.combine)
+- [`Directory.CreateDirectory`](https://learn.microsoft.com/dotnet/api/system.io.directory.createdirectory)
 
 ### Адаптація до вашого домену
 
@@ -175,24 +192,32 @@ public class ClinicExporter
 |---------|--------|----------|-------------|-------------|------------|---------|
 | `ClinicExporter` | `HotelExporter` | `RestaurantExporter` | `UniversityExporter` | `RentalExporter` | `LibraryExporter` | `GymExporter` |
 | `ExportPatients/Appointments/Billing` | `ExportGuests/Bookings/Invoices` | `ExportCustomers/Reservations/Orders` | `ExportStudents/Courses/Grades` | `ExportClients/Rentals/Invoices` | `ExportReaders/Loans/Fines` | `ExportMembers/Sessions/Payments` |
-| `reports/yyyy-MM-dd/` | однаково | однаково | однаково | однаково | однаково | однаково |
 
 ### Коміт
 
 ```bash
-git add src/Utils/ClinicExporter.cs src/Clinic.cs src/Program.cs
-git commit -m "Lab12 Task02: add ClinicExporter with StreamWriter, Path.Combine, Directory.CreateDirectory"
+git add ClinicApp/Utils/ClinicExporter.cs ClinicApp/Clinic.cs ClinicApp/Program.cs
+git commit -m "Lab12 Task02"
 ```
 
 ---
 
-## Завдання 3 — ImportResult та CsvImporter: читаємо та парсимо ⭐⭐⭐
+## Задача 3. `CsvImporter`: імпорт пацієнтів з помилковими рядками ⭐⭐⭐
 
 ### Умова
 
-Адміністратор отримав список нових пацієнтів у форматі CSV і хоче завантажити їх одним файлом. Але CSV може містити помилкові рядки — треба їх пропустити і повідомити про кожну окремо.
+Адміністратор отримав список нових пацієнтів у форматі CSV і хоче завантажити їх одним файлом. CSV може містити помилкові рядки — їх треба пропустити і повідомити про кожен окремо, не зупиняючи імпорт.
 
-### Формат CSV
+**Що реалізувати:**
+
+1. Клас `ImportResult` у `ClinicApp/Utils/` — підсумок імпорту (специфікація нижче).
+2. Клас `CsvImporter` у `ClinicApp/Utils/` з методом `ImportPatients(Clinic clinic, string filePath)`: читає файл, створює пацієнтів і додає їх у `clinic.Patients`.
+3. Перший рядок (заголовок) і порожні рядки пропускати; помилковий рядок записувати в `ImportResult` з номером і причиною, імпорт продовжувати.
+4. У меню «Файли» додати пункт `4` — «Імпорт пацієнтів з CSV»: запитує шлях до файлу і виводить підсумок.
+
+### Специфікація
+
+Формат CSV:
 
 ```
 FirstName,LastName,DateOfBirth,BloodType,Phone
@@ -202,109 +227,70 @@ FirstName,LastName,DateOfBirth,BloodType,Phone
 ,Ткач,01.01.2000,,
 ```
 
-Перший рядок — заголовок, пропускається. Порожні рядки — пропускаються. Помилкові рядки — записуються в `ImportResult`, але не зупиняють імпорт.
+| Член `ImportResult` | Опис |
+|---------------------|------|
+| `Imported` | кількість імпортованих (`private set`) |
+| `Skipped` | кількість пропущених (`private set`) |
+| `Errors` | список помилок лише для читання |
+| `AddSuccess()` | +1 до `Imported` |
+| `AddError(int lineNumber, string reason)` | +1 до `Skipped`, помилка `"Рядок N: причина"` |
+| `Print()` | підсумок і всі помилки |
 
-### Що реалізувати
+Якщо файлу немає — одна помилка з номером рядка `0`.
 
-**`Utils/ImportResult.cs`**:
+### Приклад
 
-```csharp
-public class ImportResult
-{
-    private readonly List<string> _errors = new();
-
-    public int Imported { get; private set; }
-    public int Skipped  { get; private set; }
-    public IReadOnlyList<string> Errors => _errors;
-
-    public void AddSuccess() => Imported++;
-
-    public void AddError(int lineNumber, string reason)
-    {
-        Skipped++;
-        _errors.Add($"Рядок {lineNumber}: {reason}");
-    }
-
-    public void Print() { ... }
-}
 ```
-
-**`Utils/CsvImporter.cs`**:
-
-```csharp
-public class CsvImporter
-{
-    public ImportResult ImportPatients(string filePath)
-    {
-        var result = new ImportResult();
-
-        if (!File.Exists(filePath))
-        {
-            result.AddError(0, $"Файл не знайдено: {filePath}");
-            return result;
-        }
-
-        string[] lines = File.ReadAllLines(filePath, Encoding.UTF8);
-
-        for (int i = 1; i < lines.Length; i++) // i=1: пропускаємо заголовок
-        {
-            string line = lines[i].Trim();
-            if (string.IsNullOrEmpty(line)) continue;
-
-            try
-            {
-                string[] parts = line.Split(',');
-                // парсинг: parts[0]=FirstName, parts[1]=LastName, parts[2]=DateOfBirth...
-                // DateTime.ParseExact(parts[2].Trim(), "dd.MM.yyyy", CultureInfo.InvariantCulture)
-                // (BloodType)Enum.Parse(typeof(BloodType), parts[3].Trim())
-                ...
-                result.AddSuccess();
-            }
-            catch (Exception ex)
-            {
-                result.AddError(i + 1, ex.Message);
-            }
-        }
-
-        return result;
-    }
-}
+Імпортовано: 2 | Пропущено: 2
+  Рядок 4: Рядок має 1 поле замість 5.
+  Рядок 5: Ім'я не може бути порожнім.
 ```
 
 ### Підказки
 
-1. `try/catch` **навколо одного рядка** — не навколо всього циклу. Помилка в рядку 3 не повинна зупиняти рядки 4, 5, 6.
-2. `line.Split(',')` — повертає `string[]`. Перевір `.Length` перед зверненням до `parts[2]` — рядок може мати менше полів.
-3. `DateTime.ParseExact(str, "dd.MM.yyyy", CultureInfo.InvariantCulture)` — суворий парсинг формату. `using System.Globalization;` потрібен.
-4. `Enum.Parse(typeof(BloodType), str)` — кидає `ArgumentException` якщо рядок не відповідає жодному значенню enum. Це нормально — `catch` перехопить.
-5. Номер рядка у повідомленні: `i + 1` (бо `i` рахується з 0, а людина рахує з 1).
-6. [File.ReadAllLines — docs](https://learn.microsoft.com/en-us/dotnet/api/system.io.file.readalllines)
-7. [string.Split — docs](https://learn.microsoft.com/en-us/dotnet/api/system.string.split)
-8. [Enum.Parse — docs](https://learn.microsoft.com/en-us/dotnet/api/system.enum.parse)
+1. `try/catch` — **навколо обробки одного рядка**, а не навколо всього циклу: помилка в рядку 3 не повинна зупинити рядки 4, 5, 6.
+2. `line.Split(',')` повертає `string[]`. Перевірте кількість полів перед зверненням до `parts[2]` — рядок може мати менше полів.
+3. `DateTime.ParseExact(str, "dd.MM.yyyy", CultureInfo.InvariantCulture)` — суворий парсинг дати (`using System.Globalization;`).
+4. `Enum.Parse(typeof(BloodType), str)` кидає виняток, якщо рядок не відповідає жодному значенню enum — `catch` його перехопить.
+5. Валідація пацієнта з Лаби 05 спрацює сама: некоректне ім'я чи телефон кине виняток у конструкторі.
+6. Номер рядка для людини — індекс у масиві плюс один.
+
+📖 Документація:
+- [`String.Split`](https://learn.microsoft.com/dotnet/api/system.string.split)
+- [`DateTime.ParseExact`](https://learn.microsoft.com/dotnet/api/system.datetime.parseexact)
+- [`Enum.Parse`](https://learn.microsoft.com/dotnet/api/system.enum.parse)
 
 ### Адаптація до вашого домену
 
 | Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
 |---------|--------|----------|-------------|-------------|------------|---------|
-| `CsvImporter.ImportPatients` | `CsvImporter.ImportGuests` | `CsvImporter.ImportCustomers` | `CsvImporter.ImportStudents` | `CsvImporter.ImportClients` | `CsvImporter.ImportReaders` | `CsvImporter.ImportMembers` |
-| `ImportResult` | однаково | однаково | однаково | однаково | однаково | однаково |
+| `ImportPatients` | `ImportGuests` | `ImportCustomers` | `ImportStudents` | `ImportClients` | `ImportReaders` | `ImportMembers` |
 
 ### Коміт
 
 ```bash
-git add src/Utils/ImportResult.cs src/Utils/CsvImporter.cs src/Clinic.cs src/Program.cs
-git commit -m "Lab12 Task03: add ImportResult and CsvImporter with per-line error handling"
+git add ClinicApp/Utils/ImportResult.cs ClinicApp/Utils/CsvImporter.cs ClinicApp/Program.cs
+git commit -m "Lab12 Task03"
 ```
 
 ---
 
-## Завдання 4 — SessionManager: зберігаємо стан між запусками ⭐⭐⭐
+## Задача 4. `SessionManager`: збереження пацієнтів між запусками ⭐⭐⭐
 
 ### Умова
 
-Зараз при кожному запуску програми дані починаються з нуля — пацієнти, яких додав користувач, зникають. `SessionManager` зберігає список пацієнтів у файл `session.dat` при виході та відновлює їх при наступному старті.
+Зараз при кожному запуску програми дані починаються з нуля — пацієнти, яких додав користувач, зникають. Збережіть список пацієнтів у файл `session.dat` при виході і відновіть його при наступному старті.
 
-### Формат файлу
+**Що реалізувати:**
+
+1. Клас `SessionManager` у `ClinicApp/Utils/` з методами зі специфікації.
+2. У `Clinic.cs` додати властивість `Session`.
+3. У `Program.cs` на старті (після початкових даних): якщо сесія існує — запитати «Завантажити? (y/n)» і завантажити.
+4. У `Program.cs` при виході (пункт `0`): запитати «Зберегти сесію? (y/n)» і зберегти.
+
+### Специфікація
+
+Формат файлу:
 
 ```
 [PATIENTS]
@@ -313,103 +299,48 @@ git commit -m "Lab12 Task03: add ImportResult and CsvImporter with per-line erro
 [END]
 ```
 
-Секції позначені `[НАЗВА]` — так можна легко розширити формат у майбутньому (додати `[APPOINTMENTS]` тощо).
+| Член `SessionManager` | Опис |
+|-----------------------|------|
+| конструктор `(string sessionPath = "session.dat")` | шлях до файлу сесії |
+| `Exists()` | `bool` — чи є збережена сесія |
+| `Save(Clinic clinic)` | перезаписує файл: секція `[PATIENTS]`, рядок на пацієнта, `[END]` |
+| `Load(Clinic clinic)` | `int` — скільки пацієнтів додано; `0`, якщо файлу немає |
 
-### Що реалізувати
+Правила `Load`: рядки до першої секції і порожні — ігнорувати; пошкоджений рядок — пропустити; пацієнта, який уже є в системі (те саме ім'я, прізвище і дата народження), — не додавати вдруге.
 
-**`Utils/SessionManager.cs`**:
+### Приклад
 
-```csharp
-public class SessionManager
-{
-    private readonly string _sessionPath;
-
-    public bool Exists() => File.Exists(_sessionPath);
-
-    public void Save(Clinic clinic)
-    {
-        using StreamWriter writer = new StreamWriter(_sessionPath, false, Encoding.UTF8);
-        // Запишіть секцію [PATIENTS]
-        // Для кожного пацієнта — один рядок у форматі:
-        //   FirstName,LastName,DateOfBirth,BloodType,Phone
-        // (DateOfBirth форматуйте через :dd.MM.yyyy)
-        // Закрийте секцію [END]
-    }
-
-    public int Load(Clinic clinic)
-    {
-        if (!File.Exists(_sessionPath)) return 0;
-
-        string[] lines = File.ReadAllLines(_sessionPath, Encoding.UTF8);
-        string section = "";
-        int loaded = 0;
-
-        foreach (string line in lines)
-        {
-            if (line.StartsWith("[")) { section = line; continue; }
-            if (string.IsNullOrWhiteSpace(line)) continue;
-
-            if (section == "[PATIENTS]")
-            {
-                try
-                {
-                    // розпарсити рядок → створити Patient → додати в clinic.Patients
-                    ...
-                    loaded++;
-                }
-                catch { /* пошкоджений рядок — пропустити */ }
-            }
-        }
-
-        return loaded;
-    }
-}
 ```
-
-**`Program.cs`** — на старті:
-
-```csharp
-if (clinic.Session.Exists())
-{
-    Console.Write("Знайдено збережену сесію. Завантажити? (y/n): ");
-    if (Console.ReadLine()?.Trim().ToLower() == "y")
-    {
-        int loaded = clinic.Session.Load(clinic);
-        Console.WriteLine($"Завантажено {loaded} пацієнтів.");
-    }
-}
-```
-
-При виході (case "0"):
-
-```csharp
-Console.Write("Зберегти сесію? (y/n): ");
-if (Console.ReadLine()?.Trim().ToLower() == "y")
-    clinic.Session.Save(clinic);
+Знайдено збережену сесію. Завантажити? (y/n): y
+Завантажено 2 пацієнтів.
+…
+Зберегти сесію? (y/n): y
+Сесію збережено.
 ```
 
 ### Підказки
 
-1. `StreamWriter(path, append: false)` — другий параметр `false` = перезаписати. При збереженні сесії ми завжди хочемо свіжий файл.
-2. `line.StartsWith("[")` — детектуємо секцію. Після цього `section = line` зберігає поточний контекст для наступних рядків.
-3. `catch { }` без параметра — пропускаємо пошкоджений рядок без повідомлення. Це прийнятно: краще завантажити 9 з 10 пацієнтів, ніж впасти.
-4. Зверни увагу: `_nextId` у `Patient` є `static`. При завантаженні пацієнтів з файлу їм призначаться **нові** ID (лічильник продовжує рахунок від поточного значення). Це нормально для даного рівня.
-5. `{p.DateOfBirth:dd.MM.yyyy}` — форматування DateTime у рядок у потрібному форматі.
-6. [StreamWriter — docs](https://learn.microsoft.com/en-us/dotnet/api/system.io.streamwriter)
-7. [string.StartsWith — docs](https://learn.microsoft.com/en-us/dotnet/api/system.string.startswith)
+1. Рядок, що починається з `[`, — заголовок секції. Запам'ятайте поточну секцію і обробляйте наступні рядки відповідно до неї — так у майбутньому легко додати `[APPOINTMENTS]`.
+2. Сесія зберігає **всіх** пацієнтів, включно з початковими. Тому без перевірки «вже є» кожен запуск дублюватиме початкових пацієнтів.
+3. Пошкоджений рядок пропускайте в `catch` — краще завантажити 9 з 10 пацієнтів, ніж впасти.
+4. `_nextId` у `Patient` — статичний: завантажені пацієнти отримають **нові** `Id`. Для цієї лаби це нормально.
+5. `{p.DateOfBirth:dd.MM.yyyy}` — форматування дати в рядку з інтерполяцією.
+
+📖 Документація:
+- [`StreamWriter`](https://learn.microsoft.com/dotnet/api/system.io.streamwriter)
+- [`String.StartsWith`](https://learn.microsoft.com/dotnet/api/system.string.startswith)
 
 ### Адаптація до вашого домену
 
 | Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
 |---------|--------|----------|-------------|-------------|------------|---------|
-| `SessionManager` зберігає `[PATIENTS]` | зберігає `[GUESTS]` | зберігає `[CUSTOMERS]` | зберігає `[STUDENTS]` | зберігає `[CLIENTS]` | зберігає `[READERS]` | зберігає `[MEMBERS]` |
-| `session.dat` | однаково | однаково | однаково | однаково | однаково | однаково |
+| `[PATIENTS]` | `[GUESTS]` | `[CUSTOMERS]` | `[STUDENTS]` | `[CLIENTS]` | `[READERS]` | `[MEMBERS]` |
 
 ### Коміт
 
 ```bash
-git add src/Utils/SessionManager.cs src/Clinic.cs src/Program.cs
-git commit -m "Lab12 Task04: add SessionManager, save/load session on exit/start"
+git add ClinicApp/Utils/SessionManager.cs ClinicApp/Clinic.cs ClinicApp/Program.cs
+git commit -m "Lab12 Task04"
 ```
 
 ---
@@ -424,8 +355,8 @@ oop-course/                           ← гілка Lab-12 (після злит
 ├── oop-course.sln
 └── ClinicApp/
     ├── ClinicApp.csproj
-    ├── Program.cs                    ✏
-    ├── Clinic.cs                     ✏
+    ├── Program.cs                    ✏ Т1 Т2 Т3 Т4
+    ├── Clinic.cs                     ✏ Т1 Т2 Т4
     ├── Enums/  (4 файли)
     ├── Models/  (15 файлів)
     ├── Managers/  (9 файлів)
@@ -435,40 +366,37 @@ oop-course/                           ← гілка Lab-12 (після злит
     │   ├── FormBuilder.cs
     │   ├── ModelValidator.cs
     │   ├── ValidationResult.cs
-    │   ├── ClinicExporter.cs         🆕
-    │   ├── ClinicLogger.cs           🆕
-    │   ├── CsvImporter.cs            🆕
-    │   ├── ImportResult.cs           🆕
-    │   └── SessionManager.cs         🆕
+    │   ├── ClinicLogger.cs           🆕 Т1
+    │   ├── ClinicExporter.cs         🆕 Т2
+    │   ├── ImportResult.cs           🆕 Т3
+    │   ├── CsvImporter.cs            🆕 Т3
+    │   └── SessionManager.cs         🆕 Т4
     ├── Interfaces/  (4 файли)
     ├── Comparators/  (4 файли)
     └── Attributes/  (3 файли)
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 11.
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
 ## Перевірка перед здачею
 
 ```bash
-cd src
-dotnet build
-dotnet run
+dotnet build ClinicApp
+dotnet run --project ClinicApp
 ```
 
 Переконайтесь, що:
 
 - [ ] Структура проєкту збігається зі схемою вище
-- [ ] `clinic.log` з'являється після першого LogInfo/LogWarning/LogError виклику
-- [ ] Кожен рядок логу має формат `[yyyy-MM-dd HH:mm:ss] [LEVEL] message`
-- [ ] Папка `reports/yyyy-MM-dd/` створюється автоматично при першому експорті
-- [ ] Файли звітів мають заголовок, дату генерації та нижній підсумок
-- [ ] CSV-файл з 1 помилковим рядком з 5: `Імпортовано: 4 | Пропущено: 1` + деталі
-- [ ] Файл `session.dat` з'являється при збереженні сесії
-- [ ] Після перезапуску і вибору "y" — пацієнти з попередньої сесії знову в системі
+- [ ] Після додавання пацієнта в `clinic.log` з'являється рядок `[yyyy-MM-dd HH:mm:ss] [INFO ] …`
+- [ ] «Файли» → «Останні рядки лога» показує N останніх записів
+- [ ] Папка `reports/yyyy-MM-dd/` створюється автоматично; у кожному звіті — заголовок, дата генерації, підсумок
+- [ ] CSV з 1 помилковим рядком із 5: `Імпортовано: 4 | Пропущено: 1` + деталі
+- [ ] Після збереження сесії, перезапуску і «y» — додані раніше пацієнти знову в системі, початкові не дублюються
 - [ ] Пошкоджений рядок у `session.dat` не зупиняє завантаження решти
 
 ---
@@ -476,20 +404,23 @@ dotnet run
 ## Питання для самоперевірки
 
 1. Чим `File.WriteAllText` відрізняється від `File.AppendAllText`? Коли кожен з них доречний?
-2. Чому `using StreamWriter writer = ...` важливіший за просто `StreamWriter writer = new ...`? Що станеться якщо не закрити потік?
+2. Чому `using StreamWriter writer = ...` важливіший за просто `StreamWriter writer = new ...`? Що станеться, якщо не закрити потік?
 3. Чому `Path.Combine` краще за конкатенацію рядків `"reports/" + date + "/file.txt"`?
-4. У `CsvImporter` `try/catch` обгортає один рядок циклу, а не весь цикл. Яка різниця з точки зору поведінки?
-5. `SessionManager.Load` повертає `int` (кількість завантажених), а не `bool`. Чому це краще?
+4. У `CsvImporter` `try/catch` обгортає обробку одного рядка, а не весь цикл. Яка різниця з точки зору поведінки?
+5. `SessionManager.Load` повертає `int`, а не `bool`. Чому це краще?
 6. `File.ReadAllLines` завантажує весь файл у пам'ять. Коли це стає проблемою і що використовувати натомість?
 
 ---
 
-## Злиття
+## Статус гілки
+
+Після всіх 4 завдань (кожне — окремий коміт `Lab12 TaskNN` на гілці `Lab-12`):
 
 ```bash
+git push -u origin Lab-12
 git checkout main
 git merge --no-ff Lab-12 -m "Merge Lab-12: File I/O"
 git push
 ```
 
-> Наступна лаба: `git checkout -b Lab-13`
+> Наступна лаба: `git checkout main` → `git checkout -b Lab-13`.
