@@ -17,7 +17,7 @@
 ```text
 oop-course/                 ← гілка main
 ├── .gitignore
-└── oop-course.sln          ← порожнє рішення
+└── oop-course.slnx         ← порожнє рішення
 ```
 
 Після цієї лаби у `ClinicApp/` будуть класи `Patient`, `Doctor`, `Appointment`,
@@ -92,7 +92,7 @@ oop-course/                 ← гілка main
 > кінці — злиття в `main`. **Лаби 01–02 у `main` не зливались; з цієї лаби —
 > зливаються.**
 
-Рішення `oop-course.sln` створене в Лабі 01. Тут — гілка `Lab-03` і новий проєкт.
+Рішення `oop-course.slnx` створене в Лабі 01. Тут — гілка `Lab-03` і новий проєкт.
 
 ```bash
 git checkout main
@@ -118,7 +118,7 @@ dotnet sln add ClinicApp/ClinicApp.csproj
 
 ```bash
 dotnet run --project ClinicApp        # має вивести Hello, World!
-git add oop-course.sln ClinicApp/
+git add oop-course.slnx ClinicApp/
 git commit -m "Lab03: project"
 ```
 
@@ -888,7 +888,7 @@ git commit -m "Lab03 Task08"
 ```text
 oop-course/                          ← гілка Lab-03 (після злиття — main)
 ├── .gitignore
-├── oop-course.sln                   ✏ Крок 1
+├── oop-course.slnx                  ✏ Крок 1
 └── ClinicApp/
     ├── ClinicApp.csproj             🆕 Крок 1
     ├── Program.cs                   🆕 Крок 1   ✏ Т1 Т2 Т3 Т4 Т5 Т6 Т7 Т8

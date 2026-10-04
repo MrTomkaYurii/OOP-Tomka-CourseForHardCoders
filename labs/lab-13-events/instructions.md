@@ -24,7 +24,7 @@ clinic.Logger.LogInfo($"Запис створено: пацієнт {patientId}.
 ```text
 oop-course/                             ← гілка main (після злиття Лаби 12)
 ├── .gitignore
-├── oop-course.sln
+├── oop-course.slnx
 └── ClinicApp/
     ├── ClinicApp.csproj
     ├── Program.cs
@@ -381,7 +381,7 @@ git commit -m "Lab13 Task04"
 ```text
 oop-course/                             ← гілка Lab-13 (після злиття — main)
 ├── .gitignore
-├── oop-course.sln
+├── oop-course.slnx
 └── ClinicApp/
     ├── ClinicApp.csproj
     ├── Program.cs                      ✏ Т1 Т2 Т4

@@ -15,7 +15,7 @@
 ```text
 oop-course/                           ← гілка main (після злиття Лаби 10)
 ├── .gitignore
-├── oop-course.sln
+├── oop-course.slnx
 └── ClinicApp/
     ├── ClinicApp.csproj
     ├── Program.cs
@@ -411,7 +411,7 @@ git commit -m "Lab11 Task05"
 ```text
 oop-course/                           ← гілка Lab-11 (після злиття — main)
 ├── .gitignore
-├── oop-course.sln
+├── oop-course.slnx
 └── ClinicApp/
     ├── ClinicApp.csproj
     ├── Program.cs                    ✏ Т5

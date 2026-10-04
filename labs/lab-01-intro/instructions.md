@@ -38,7 +38,7 @@ Git-механіку детально пояснює окремий **[Git Во�
 ```
 <ваш-репозиторій>/
 ├── .gitignore
-├── oop-course.sln          ← рішення: посилається на всі проєкти нижче
+├── oop-course.slnx         ← рішення: посилається на всі проєкти нижче
 ├── Lab01/                   ← Лаба 01 — базовий C# (окремий проєкт)
 │   ├── Lab01.csproj
 │   ├── Program.cs
@@ -80,7 +80,7 @@ Git-механіку детально пояснює окремий **[Git Во�
 3. Повторюєте крок 2 для кожного завдання.
 4. `git push -u origin Lab-XX` — гілка потрапляє на GitHub (резервна копія).
 5. **З Лаби 03** — коли всі завдання лаби готові, гілка зливається в `main`:
-   `git checkout main` → `git merge --no-ff Lab-XX` → `git push`.
+   `git checkout main` → `git merge --no-ff Lab-XX -m "Merge Lab-XX: <Назва>"` → `git push`.
 
 > ### Пам'ятайте це до кінця курсу
 >
@@ -136,7 +136,7 @@ appsettings.Development.json
 Чому це важливо: теки `bin/` і `obj/` — це мегабайти згенерованих бінарників,
 які залежать від вашої машини. У git має бути лише ваш вихідний код.
 
-**0.3. Створіть рішення (solution)** — файл `.sln`, який тримає разом усі проєкти
+**0.3. Створіть рішення (solution)** — файл `.slnx`, який тримає разом усі проєкти
 курсу, щоб Visual Studio / Rider відкривали їх однією дією. Робимо це відразу
 на `main`, бо рішення спільне для всіх лаб:
 
@@ -144,10 +144,14 @@ appsettings.Development.json
 dotnet new sln --name oop-course
 ```
 
+> Починаючи з .NET 10 ця команда створює файл `oop-course.slnx` (новий XML-формат
+> рішення). Старіші SDK створюють `oop-course.sln` — тоді в усіх командах
+> `git add` курсу пишіть `.sln` замість `.slnx`. Перевірити: `ls` або `dir`.
+
 **0.4. Перший коміт.**
 
 ```bash
-git add .gitignore oop-course.sln
+git add .gitignore oop-course.slnx
 git commit -m "chore: initial commit — gitignore + solution"
 ```
 
@@ -191,7 +195,7 @@ dotnet run --project Lab01
 **1.4. Закомітьте створення проєкту:**
 
 ```bash
-git add oop-course.sln Lab01/
+git add oop-course.slnx Lab01/
 git commit -m "Lab01: project"
 ```
 
@@ -888,7 +892,7 @@ git commit -m "Lab01 Task08"
 ```text
 oop-course/                          ← гілка Lab-01 (у main НЕ зливається)
 ├── .gitignore                          🆕 Крок 0
-├── oop-course.sln                      🆕 Крок 0   ✏ Крок 1
+├── oop-course.slnx                     🆕 Крок 0   ✏ Крок 1
 └── Lab01/
     ├── Lab01.csproj                    🆕 Крок 1
     ├── Program.cs                      🆕 Крок 1   ✏ Т1 Т2 Т3 Т4 Т5 Т6 Т7 Т8
@@ -904,7 +908,7 @@ oop-course/                          ← гілка Lab-01 (у main НЕ зли�
 
 **Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом · Крок *n* — підготовчі кроки на початку лаби.
 
-`.gitignore` і `.sln` ви створюєте на `main` (Крок 0), а гілка `Lab-01` відходить від нього — тому вони вже є в гілці. Проєкт `Lab01/` існує лише на гілці `Lab-01`.
+`.gitignore` і `.slnx` ви створюєте на `main` (Крок 0), а гілка `Lab-01` відходить від нього — тому вони вже є в гілці. Проєкт `Lab01/` існує лише на гілці `Lab-01`.
 
 ---
 
