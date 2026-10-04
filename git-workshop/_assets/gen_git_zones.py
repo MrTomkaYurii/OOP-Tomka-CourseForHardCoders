@@ -56,8 +56,8 @@ zones = [
         "items": [("Untracked  (нові файли)", WARN),
                   ("Modified  (змінені)", (220,120,120)),
                   ("Deleted  (видалені)", DIM)],
-        "note1": "git status",
-        "note2": "показує стан цієї зони",
+        "note1": "git restore <файл>",
+        "note2": "відкинути зміни у файлі",
         "bg": (22, 32, 27), "border": (55, 85, 68),
     },
     {
@@ -75,7 +75,7 @@ zones = [
         "sub":   ".git — локальний репо",
         "items": [("Commit objects (SHA)", ACCENT),
                   ("Branches / Tags", (150,200,180)),
-                  ("Stash", MUTED)],
+                  ("Stash (git stash)", MUTED)],
         "note1": "git log --oneline",
         "note2": "показує історію",
         "bg": (20, 28, 34), "border": (50, 90, 140),
@@ -128,7 +128,7 @@ FWD_Y  = BOX_Y0 + BOX_H//2 - 22   # forward  (green, going right)
 BACK_Y = BOX_Y0 + BOX_H//2 + 22   # backward (orange, going left)
 
 fwd_labels  = ["git add", "git commit", "git push"]
-back_labels = ["git restore\n--staged", "git restore", "git pull /\ngit fetch"]
+back_labels = ["git restore\n--staged", "git\ncheckout", "git pull"]
 
 for i in range(3):
     gx0 = xs[i]   + ZONE_W + 4   # left  edge of gap
@@ -161,7 +161,7 @@ BAR_Y = BOX_Y0 + BOX_H + 22
 bar_x0 = xs[0]
 bar_x1 = xs[1] + ZONE_W
 rr(draw, [bar_x0, BAR_Y, bar_x1, BAR_Y+34], 6, (25,42,34), outline=(50,85,65), width=1)
-ctext(draw, (bar_x0+bar_x1)//2, BAR_Y+17, "git status  —  стан зон 1 i 2", f_cmd, ACCENT)
+ctext(draw, (bar_x0+bar_x1)//2, BAR_Y+17, "git status  —  стан зон 1 і 2", f_cmd, ACCENT)
 
 # git log bar — zone 2 only
 rr(draw, [xs[2], BAR_Y, xs[2]+ZONE_W, BAR_Y+34], 6, (20,28,42), outline=(40,70,130), width=1)
@@ -178,7 +178,7 @@ draw.line([(cl_xR, CL_Y),(cl_xL+8, CL_Y)], fill=(130,180,220), width=2)
 # arrowhead points LEFT (into Local Repo)
 draw.polygon([(cl_xL+8,CL_Y-5),(cl_xL,CL_Y),(cl_xL+8,CL_Y+5)], fill=(130,180,220))
 
-lbl_cl = "git clone  (Remote -> Local, одноразово)"
+lbl_cl = "git clone  (Remote -> Local, на новому комп'ютері)"
 bb_cl  = draw.textbbox((0,0), lbl_cl, font=f_cmd)
 tw_cl  = bb_cl[2]-bb_cl[0]
 rr(draw, [mid_cl-tw_cl//2-4, CL_Y-22, mid_cl+tw_cl//2+4, CL_Y-4], 3, (20,26,38))
