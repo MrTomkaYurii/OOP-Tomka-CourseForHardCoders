@@ -1,19 +1,16 @@
-# Лабораторна робота 18 — EF Core: зв'язки та Navigation Properties
+# Лаба 18 — EF Core: зв'язки та Navigation Properties
 
-## Проблема
+## Мета
 
-Після Lab 17 у базі даних є дві незалежні таблиці: `Patients` і `Doctors`. Але в реальній системі запис на прийом (`Appointment`) пов'язаний з конкретним пацієнтом і лікарем.
+Описати зв'язки між таблицями через зовнішні ключі та navigation properties, зберегти ієрархію записів в одній таблиці (TPH), завантажувати пов'язані дані одним запитом (`Include`) і робити запити лише для читання без відстеження змін (`AsNoTracking`).
 
-Якщо зберігати `Appointment` як окрему сутність і при відображенні хотіти показати ім'я пацієнта і лікаря, виникає проблема — дані в різних таблицях. Можна завантажити всі три таблиці окремо і зіставити вручну, але це:
-1. Багато коду
-2. Якщо на 100 записів треба ім'я пацієнта — **101 запит до БД** (проблема N+1)
-3. Нема гарантії узгодженості (FK не відстежується)
+## Контекст
 
-Реляційні бази даних вирішують це через **зовнішні ключі** (Foreign Keys). EF Core додає до цього **Navigation Properties** — C#-властивості які автоматично описують зв'язки між класами.
+Після Лаби 17 у БД є дві незалежні таблиці — `Patients` і `Doctors`. Але запис на прийом пов'язаний з конкретним пацієнтом і лікарем. Якщо завантажувати таблиці окремо і зіставляти вручну, це: багато коду; **проблема N+1** — для 100 записів 101 запит до БД, щоб показати імена; жодної гарантії узгодженості даних.
 
----
+Реляційні БД вирішують це **зовнішніми ключами** (Foreign Keys). EF Core додає до них **navigation properties** — C#-властивості, що описують зв'язки між класами.
 
-## Структура проєкту на початку лаби
+### Структура проєкту на початку лаби
 
 Це результат Лаби 17 — стан `main` після її злиття:
 
@@ -48,264 +45,277 @@ oop-course/                                   ← гілка main (після з
     └── Migrations/  (3 файли — генерує EF)
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### Ключові поняття
+
+- **Navigation property** — властивість, що посилається на інший об'єкт або колекцію: у `Patient` — колекція його записів, у `Appointment` — його пацієнт. EF заповнює її даними з БД за відповідного запиту.
+- **Eager loading** — `.Include(...)`: EF виконує один SQL-`JOIN` і повертає пов'язані дані разом, замість N+1 окремих запитів.
+- **One-to-Many** — «один пацієнт — багато записів». Описується з боку `Appointment`, де живе стовпець зовнішнього ключа: `HasOne(...).WithMany(...).HasForeignKey(...)`.
+- **TPH (Table Per Hierarchy)** — усі підтипи `Appointment` в **одній таблиці** зі стовпцем-дискримінатором `AppointmentType`; поля підтипів (`UrgencyNote`, `ConsultationTopic`) у рядках інших типів — `NULL`. Перевага — без `JOIN`; недолік — порожні стовпці.
+- **`AsNoTracking()`** — EF за замовчуванням зберігає копію кожного завантаженого об'єкта, щоб помітити зміни. Для запитів лише на читання це зайва робота — `AsNoTracking()` її вимикає.
+
+### Що нового дозволено (і тільки воно)
+
+- navigation properties (`ICollection<T>`, посилання на об'єкт);
+- `HasOne` / `WithMany` / `HasForeignKey`, `OnDelete`;
+- TPH: `HasDiscriminator`;
+- `Include`, `AsNoTracking`.
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
 git checkout -b Lab-18
 ```
 
+Коміт — на кожне завдання (`Lab18 TaskNN`).
+
+### Ваш домен
+
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** в кінці кожного завдання.
+
+### Як користуватися підказками
+
+Підказки — **напрям думки, не готовий код**. «Що реалізувати» і «Специфікація» кажуть *що*; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Спершу документація і власна спроба.
+
 ---
 
-## Ключові концепції
+## Задача 1. Navigation properties і підготовка моделей до EF ⭐⭐
 
-### Navigation Properties
+### Умова
 
-Navigation Property — це властивість одного класу, що посилається на інший клас (або колекцію):
+Додайте до моделей зв'язки і підготуйте ієрархію записів до роботи з EF: завантажуючи об'єкт, EF викликає конструктор без параметрів, а потім заповнює властивості через сеттери.
+
+**Що реалізувати:**
+
+1. У `Patient` і `Doctor` додати колекцію записів `Appointments` (специфікація нижче).
+2. У `Appointment` додати навігаційні властивості `Patient` і `Doctor`.
+3. У `Appointment` додати `protected` конструктор без параметрів із безпечними значеннями за замовчуванням.
+4. У `UrgentAppointment` змінити `UrgencyNote` на `{ get; private set; }` і додати `protected` конструктор без параметрів.
+5. У `SpecialistAppointment` змінити `ConsultationTopic` на `{ get; private set; }` і додати **`private`** конструктор без параметрів (клас `sealed` — `protected` у ньому безглуздий).
+
+### Специфікація
+
+| Клас | Додати |
+|------|--------|
+| `Patient` | `public ICollection<Appointment> Appointments { get; private set; } = new List<Appointment>();` |
+| `Doctor` | те саме |
+| `Appointment` | `public Patient? Patient { get; set; }`, `public Doctor? Doctor { get; set; }`, `protected Appointment()` |
+| `UrgentAppointment` | `UrgencyNote { get; private set; }`, `protected UrgentAppointment()` |
+| `SpecialistAppointment` | `ConsultationTopic { get; private set; }`, `private SpecialistAppointment()` |
+
+### Приклад
 
 ```csharp
-// В Patient: колекція всіх записів цього пацієнта
-public ICollection<Appointment> Appointments { get; private set; } = new List<Appointment>();
-
-// В Appointment: посилання на конкретного пацієнта
-public Patient? Patient { get; set; }
+Patient p = context.Patients.Include(p => p.Appointments).First();
+Console.WriteLine(p.Appointments.Count);   // кількість записів пацієнта з БД
 ```
 
-Самі по собі ці властивості — звичайні C#-поля. EF Core "оживляє" їх — при відповідному запиті заповнює даними з бази.
+### Підказки
 
-### Eager Loading та проблема N+1
+1. `ICollection<T>` — інтерфейс, який EF уміє заповнювати; ініціалізація порожнім списком захищає від `null` у нового об'єкта.
+2. `private set` EF встановлює через рефлексію — ззовні властивість і далі лише для читання.
+3. EF може викликати й `private` конструктор (теж через рефлексію) — тому для `sealed` класу достатньо `private`.
 
-**Проблема N+1**: завантажити 100 записів, потім для кожного окремим запитом завантажити пацієнта — 101 запит.
+📖 Документація:
+- [Зв'язки: огляд](https://learn.microsoft.com/ef/core/modeling/relationships)
+- [Конструктори сутностей](https://learn.microsoft.com/ef/core/modeling/constructors)
 
-**Рішення**: `.Include()` — EF виконує один SQL `JOIN` і повертає все разом:
+### Адаптація до вашого домену
 
-```csharp
-// Без Include: 1 запит на Appointments + 100 на Patient = 101 запити
-var appointments = context.Appointments.ToList();
-foreach (var a in appointments)
-    Console.WriteLine(a.Patient.FullName);  // N+1!
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Patient.Appointments` | `Guest.Bookings` | `Customer.Reservations` | `Student.Enrollments` | `Client.Rentals` | `Reader.Loans` | `Member.Sessions` |
 
-// З Include: 1 запит з JOIN = 1 запит
-var appointments = context.Appointments.Include(a => a.Patient).ToList();
-foreach (var a in appointments)
-    Console.WriteLine(a.Patient!.FullName);  // OK
+### Коміт
+
+```bash
+git add ClinicApp/Models/
+git commit -m "Lab18 Task01"
 ```
 
-### One-to-Many (Fluent API)
+---
 
-Зв'язок "один до багатьох" між Patient і Appointment:
+## Задача 2. Зв'язки One-to-Many і TPH у Fluent API ⭐⭐⭐
 
-```
-Patient (1) ←──→ (N) Appointment
-```
+### Умова
 
-Fluent API описує це з боку Appointment (де живе FK стовпець):
+Опишіть таблицю `Appointments`: два зовнішні ключі, ієрархію підтипів в одній таблиці і збереження стану запису.
 
-```
-HasOne(a => a.Patient)         — Appointment має одного Patient
-.WithMany(p => p.Appointments) — Patient має багато Appointments
-.HasForeignKey(a => a.PatientId) — FK стовпець у таблиці Appointments
-.OnDelete(DeleteBehavior.Cascade) — якщо Patient видалено → видалити всі Appointments
-```
+**Що реалізувати:**
 
-### TPH — Table Per Hierarchy
+1. Додати в `ClinicDbContext` таблицю `DbSet<Appointment> Appointments`.
+2. Налаштувати `Appointment` у `OnModelCreating` за специфікацією: ключ, зв'язки з пацієнтом і лікарем, дискримінатор.
+3. Налаштувати поля підтипів `UrgentAppointment` і `SpecialistAppointment`.
+4. Відобразити стан оплати: `IsPaid` обчислюється з приватного поля `_isPaid`, тому зберігати треба саме поле.
 
-Коли є ієрархія класів (`Appointment` → `RegularAppointment`, `UrgentAppointment`, `SpecialistAppointment`), EF Core зберігає всі підтипи в **одній таблиці** з додатковим стовпцем-дискримінатором:
+### Специфікація
+
+| Що | Налаштування |
+|----|--------------|
+| Таблиця | `Appointments` |
+| Ключ | `Id`, IDENTITY; значення з `_nextId` ігнорується (як у Лабі 17) |
+| `PatientId` | FK → `Patients(Id)`, видалення **каскадне** (видалили пацієнта — видалились записи) |
+| `DoctorId` | FK → `Doctors(Id)`, видалення **заборонене** (`Restrict`), поки в лікаря є записи |
+| Дискримінатор | стовпець `AppointmentType` (рядок): `Base`, `Regular`, `Urgent`, `Specialist` |
+| `Status` | рядком |
+| Стан оплати | приватне поле `_isPaid` → стовпець `IsPaid` |
+| `UrgencyNote` | до 200 символів, за замовчуванням `""` |
+| `ConsultationTopic` | до 200 символів, за замовчуванням `""` |
+
+### Приклад
 
 ```
 Appointments
-├── Id, PatientId, DoctorId, ScheduledAt, Status, ...  ← спільні поля
-├── AppointmentType: "Regular" / "Urgent" / "Specialist"  ← дискримінатор
-├── UrgencyNote  ← тільки для Urgent (NULL для інших)
-└── ConsultationTopic  ← тільки для Specialist (NULL для інших)
+Id | PatientId | DoctorId | AppointmentType | Status    | IsPaid | UrgencyNote   | ConsultationTopic
+ 1 |     1     |    1     | Regular         | Completed |   1    | NULL          | NULL
+ 2 |     2     |    2     | Urgent          | Scheduled |   0    | біль у грудях | NULL
 ```
 
-Перевага: немає JOIN між таблицями при завантаженні ієрархії. Недолік: null-стовпці для невластивих полів.
+### Підказки
 
-### AsNoTracking
+1. **Два каскади — помилка.** SQL Server не дозволяє двох каскадних шляхів до однієї таблиці: якщо обидва FK каскадні, міграція впаде. Тому один каскадний, другий — `Restrict`.
+2. Поля підтипів налаштовуються окремо — `modelBuilder.Entity<UrgentAppointment>()`.
+3. **Приватне поле як стовпець:** властивість, якої немає в класі, але яку EF має зберігати, оголошується через `Property<bool>("_isPaid")` з потрібною назвою стовпця.
+4. Значення дискримінатора задаються для кожного типу ієрархії через `HasValue<…>("…")`.
 
-EF Core за замовчуванням **відстежує** кожен завантажений об'єкт (Change Tracker). Це потрібно для `Update/Delete`, але марнує пам'ять і час при read-only запитах.
+📖 Документація:
+- [Зв'язки один-до-багатьох](https://learn.microsoft.com/ef/core/modeling/relationships/one-to-many)
+- [Каскадне видалення](https://learn.microsoft.com/ef/core/saving/cascade-delete)
+- [Успадкування (TPH)](https://learn.microsoft.com/ef/core/modeling/inheritance)
+- [Поля-резерви (backing fields)](https://learn.microsoft.com/ef/core/modeling/backing-field)
 
-`.AsNoTracking()` відключає відстеження — на 20-30% швидше для запитів тільки на читання.
+### Адаптація до вашого домену
 
----
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Appointments`: Regular / Urgent / Specialist | `Bookings`: Standard / Suite / Corporate | `Reservations`: Regular / PrivateRoom / Event | `Enrollments`: Regular / Online / Intensive | `Rentals`: Basic / Premium / LongTerm | `Loans`: Regular / Digital / Research | `Sessions`: Regular / Personal / Group |
 
-## Завдання
-
-### Завдання 1. Navigation Properties та EF Core сумісність
-
-**Задача:** додати navigation properties до моделей і підготувати їх для EF Core.
-
-**Проблема 1: Navigation properties**
-
-Додайте до `Patient`:
-```csharp
-public ICollection<Appointment> Appointments { get; private set; } = new List<Appointment>();
-```
-
-Додайте до `Doctor` аналогічно.
-
-Додайте до `Appointment` зворотні посилання:
-```csharp
-public Patient? Patient { get; set; }
-public Doctor? Doctor { get; set; }
-```
-
-**Проблема 2: EF Core сумісність**
-
-EF Core при завантаженні об'єкта з БД:
-1. Викликає parameterless constructor
-2. Встановлює кожну властивість через setter
-
-Клас `Appointment` не має parameterless constructor — додайте `protected Appointment()`. Всередині встановіть безпечні значення за замовчуванням для полів з `private set`.
-
-**Проблема 3: readonly властивості підкласів**
-
-`UrgentAppointment.UrgencyNote` оголошено як `{ get; }` — EF не може встановити після конструктора. Змініть на `{ get; private set; }` і додайте protected ctor.
-
-`SpecialistAppointment` — sealed клас. `sealed` + `protected` = безглузда комбінація. EF Core може викликати `private` constructor через рефлексію. Використайте `private`.
-
-**Ключові питання:**
-- Навіщо `ICollection<T>` а не просто `List<T>` або `T[]`?
-- Чому `private set` достатньо для EF Core, хоча setter "закритий"?
+### Коміт
 
 ```bash
-git add src/Models/ src/Models/Appointment.cs
-git commit -m "Lab18 Task01: add navigation properties and EF Core compatibility fixes"
+git add ClinicApp/Data/ClinicDbContext.cs
+git commit -m "Lab18 Task02"
 ```
 
 ---
 
-### Завдання 2. Fluent API для One-to-Many
+## Задача 3. Міграція і записи в `DbSeeder` ⭐⭐
 
-**Задача:** описати зв'язки між `Appointment`, `Patient`, `Doctor` і налаштувати TPH.
+### Умова
 
-**Таблиця Appointments:**
+Застосуйте нову схему і додайте в сідер записи на прийом. Записи потребують справжніх `Id` пацієнтів і лікарів, які видає БД, — тому записи додаються **після** збереження пацієнтів і лікарів.
 
-Структура аналогічна до Lab 17, але з двома FK і дискримінатором:
-- `PatientId` — Foreign Key на Patients(Id)
-- `DoctorId` — Foreign Key на Doctors(Id)
-- `AppointmentType` — дискримінатор для TPH (тип: рядок)
-- `UrgencyNote` — nullable, тільки для Urgent
-- `ConsultationTopic` — nullable, тільки для Specialist
+**Що реалізувати:**
 
-**Cascade Delete — важлива деталь:**
+1. Розділити `DbSeeder.Seed` на кроки `SeedPatients`, `SeedDoctors`, `SeedAppointments`, кожен зі своїм `SaveChanges()`.
+2. `SeedAppointments` завантажує пацієнтів і лікарів із БД і створює 4 записи різних типів (звичайний, терміновий, спеціаліста), частина — завершені й оплачені.
+3. `SeedAppointments` ідемпотентний: якщо записи вже є — нічого не додає.
+4. Створити і застосувати міграцію `AddAppointmentsWithRelations`; у згенерованому класі знайти стовпець `AppointmentType`, FK з `ON DELETE CASCADE` і FK з `ON DELETE NO ACTION`.
 
-SQL Server не дозволяє дві каскадні доріжки (cascade paths) до однієї таблиці. Якщо обидва FK (`PatientId` і `DoctorId`) мають `OnDelete(Cascade)`, SQL Server видасть помилку при міграції.
-
-Рішення: один FK — `Cascade`, другий — `Restrict`:
-- `Patient → Appointments`: Cascade (видалення пацієнта → видалення його записів)
-- `Doctor → Appointments`: Restrict (заборона видалити лікаря, якщо є записи)
-
-**HasDiscriminator:**
-```
-entity.HasDiscriminator<string>("AppointmentType")
-      .HasValue<Appointment>("Base")
-      .HasValue<RegularAppointment>("Regular")
-      ...
-```
-
-Після оголошення дискримінатора, підтипи потребують окремої мінімальної конфігурації:
-```
-modelBuilder.Entity<UrgentAppointment>()
-    .Property(u => u.UrgencyNote).HasMaxLength(200).HasDefaultValue("");
-```
-
-**Ключові питання:**
-- Чому не можна два `OnDelete(Cascade)` в одній таблиці при SQL Server?
-- Що означає `HasValue<RegularAppointment>("Regular")` — де "Regular" зберігається?
+### Специфікація
 
 ```bash
-git add src/Data/ClinicDbContext.cs
-git commit -m "Lab18 Task02: configure one-to-many Fluent API and TPH for Appointment hierarchy"
+dotnet ef migrations add AddAppointmentsWithRelations --project ClinicApp
+dotnet ef database update --project ClinicApp
 ```
 
----
+| Крок сідера | Що робить |
+|-------------|-----------|
+| `SeedPatients` | 5 пацієнтів (якщо таблиця порожня) |
+| `SeedDoctors` | 5 лікарів (якщо таблиця порожня) |
+| `SeedAppointments` | 4 записи трьох типів на реальні `Id`, частина `Completed` і оплачені (якщо таблиця порожня) |
 
-### Завдання 3. Міграція та DbSeeder з Appointments
+### Приклад
 
-**Задача:** застосувати нову схему та заповнити тестовими даними.
-
-**Проблема Seeder:** пацієнти і лікарі вже мають Ids з БД, але в Seeder вони невідомі заздалегідь. Рішення — завантажити їх після `SaveChanges`:
-
-```
-SeedPatients(context);   // patients отримують DB-Id
-SeedDoctors(context);    // doctors отримують DB-Id
-SeedAppointments(context); // тепер можна читати реальні Ids
-```
-
-Всередині `SeedAppointments`:
-```
-var patients = context.Patients.ToList();  // завантажує реальні записи з Id
+```csharp
+var patients = context.Patients.ToList();   // справжні Id з БД
 var doctors  = context.Doctors.ToList();
 ```
 
-Тепер `patients[0].Id` — це реальний DB Id, а не `_nextId`.
+### Підказки
 
-Додайте 4 записи різних типів (Regular, Urgent, Specialist), деякі — Complete+Paid.
+1. Порядок важливий: записи посилаються на пацієнтів і лікарів через FK — без них у БД запис не збережеться.
+2. Після `SaveChanges()` EF записує в об'єкти `Id`, видані БД; повторне завантаження (`ToList()`) дає їх надійно.
+3. Завершення й оплата — тими самими методами, що й раніше (`Complete()`, `MarkPaid()`), перед збереженням.
 
-Запустіть:
-```
-dotnet ef migrations add AddAppointmentsWithRelations
-dotnet ef database update
-```
+📖 Документація:
+- [Міграції: огляд](https://learn.microsoft.com/ef/core/managing-schemas/migrations/)
 
-Відкрийте сгенерований клас міграції — знайдіть:
-- Де стовпець `AppointmentType`?
-- Де FK constraint з `ON DELETE CASCADE`?
-- Де `ON DELETE NO ACTION` (Restrict)?
+### Адаптація до вашого домену
 
-**Ключові питання:**
-- Чому `context.Patients.ToList()` а не `context.Patients` безпосередньо для отримання Ids?
-- Що станеться, якщо SeedAppointments викликати до SeedDoctors?
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `SeedAppointments` | `SeedBookings` | `SeedReservations` | `SeedEnrollments` | `SeedRentals` | `SeedLoans` | `SeedSessions` |
+
+### Коміт
 
 ```bash
-git add src/Data/DbSeeder.cs src/Migrations/
-git commit -m "Lab18 Task03: add migration for Appointments with relations and extend DbSeeder"
+git add ClinicApp/Data/DbSeeder.cs ClinicApp/Migrations/
+git commit -m "Lab18 Task03"
 ```
 
 ---
 
-### Завдання 4. ClinicRepository — запити з .Include()
+## Задача 4. `ClinicRepository`: запити з `Include` ⭐⭐⭐
 
-**Задача:** створити `src/Data/ClinicRepository.cs` з методами які демонструють Eager Loading.
+### Умова
 
-`ClinicRepository` приймає `ClinicDbContext` через конструктор (ін'єкція залежності — тема Lab 21, але патерн правильний вже зараз).
+Зберіть складні запити до БД в одному класі. Репозиторій отримує `ClinicDbContext` через конструктор (ін'єкція залежності — тема Лаби 22, але патерн правильний уже зараз).
 
-Реалізуйте методи:
+**Що реалізувати:**
 
-**1. GetPatientWithAppointments(int patientId)**
-Повертає `Patient?` з заповненою колекцією `Appointments`. Використайте `.Include(p => p.Appointments)`.
+1. Клас `ClinicRepository` у `ClinicApp/Data/` з конструктором `(ClinicDbContext context)`.
+2. Чотири методи зі специфікації.
 
-**2. GetUpcomingAppointments()**
-Повертає заплановані записи у майбутньому. Потребує даних і пацієнта, і лікаря — два `.Include()`.
+### Специфікація
 
-**3. GetAppointmentsByPatient(int patientId)**
-Всі записи пацієнта, відсортовані по даті (newest first). Include Doctor для відображення імені.
+| Метод | Повертає | Що робить |
+|-------|----------|-----------|
+| `GetPatientWithAppointments(int patientId)` | `Patient?` | пацієнт із заповненою колекцією `Appointments` |
+| `GetUpcomingAppointments()` | `List<Appointment>` | заплановані майбутні записи з пацієнтом і лікарем |
+| `GetAppointmentsByPatient(int patientId)` | `List<Appointment>` | усі записи пацієнта з лікарем, від найновіших |
+| `GetDoctorStats()` | `List<(string Name, int Count, decimal Revenue)>` | для кожного лікаря — кількість записів і виручка; запит лише для читання |
 
-**4. GetDoctorStats()**
-Для кожного лікаря: кількість записів і загальна виручка. Використайте `.AsNoTracking()` — дані тільки для читання.
+### Приклад
 
-**Алгоритм для AsNoTracking:**
 ```
-context.Doctors.AsNoTracking().Include(d => d.Appointments).Select(d => new { ... })
+GetDoctorStats():
+Олег Сидоренко  | записів: 2 | 600.00 грн
+Наталія Мороз   | записів: 1 | 450.00 грн
 ```
 
-**Чому AsNoTracking:**
-Change Tracker EF Core зберігає копію кожного завантаженого об'єкта в пам'яті для порівняння. При 1000+ записів це суттєво. `.AsNoTracking()` пропускає цей крок.
+### Підказки
 
-**Ключові питання:**
-- Що відбудеться, якщо `.Include()` немає, а ми звертаємось до `appointment.Patient.FullName`?
-- Чи можна зробити `.Include().ThenInclude()` — навіщо це?
-- У чому різниця між `AsNoTracking()` і відключенням Change Tracker взагалі?
+1. Пацієнта й лікаря для запису — двома `Include`.
+2. **Виручку не можна порахувати в SQL**: `GetCost()` — C#-метод, EF не перекладе його в SQL. Завантажте лікарів разом із записами (`AsNoTracking` + `Include`), матеріалізуйте (`ToList()`), а суму порахуйте вже в пам'яті.
+3. `Include` разом із проєкцією `Select` у запиті ігнорується — завантажуйте зв'язані дані або через `Include`, або через `Select`, а не обома одразу.
+4. Без `Include` навігаційна властивість лишиться `null` — і звернення до `appointment.Patient.FullName` кине `NullReferenceException`.
+
+📖 Документація:
+- [Завантаження пов'язаних даних](https://learn.microsoft.com/ef/core/querying/related-data/)
+- [Запити без відстеження](https://learn.microsoft.com/ef/core/querying/tracking)
+- [Обчислення на клієнті](https://learn.microsoft.com/ef/core/querying/client-eval)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `GetPatientWithAppointments` | `GetGuestWithBookings` | `GetCustomerWithReservations` | `GetStudentWithEnrollments` | `GetClientWithRentals` | `GetReaderWithLoans` | `GetMemberWithSessions` |
+
+### Коміт
 
 ```bash
-git add src/Data/ClinicRepository.cs
-git commit -m "Lab18 Task04: add ClinicRepository with Eager Loading queries"
+git add ClinicApp/Data/ClinicRepository.cs
+git commit -m "Lab18 Task04"
 ```
 
 ---
@@ -324,12 +334,12 @@ oop-course/                                    ← гілка Lab-18 (після
     ├── Clinic.cs
     ├── Enums/  (4 файли)
     ├── Models/
-    │   ├── Patient.cs                         ✏
-    │   ├── Doctor.cs                          ✏
-    │   ├── Appointment.cs                     ✏
-    │   ├── RegularAppointment.cs              ✏
-    │   ├── SpecialistAppointment.cs           ✏
-    │   ├── UrgentAppointment.cs               ✏
+    │   ├── Patient.cs                         ✏ Т1
+    │   ├── Doctor.cs                          ✏ Т1
+    │   ├── Appointment.cs                     ✏ Т1
+    │   ├── RegularAppointment.cs              ✏ Т1
+    │   ├── SpecialistAppointment.cs           ✏ Т1
+    │   ├── UrgentAppointment.cs               ✏ Т1
     │   └── … ще 10 файлів без змін
     ├── Managers/  (13 файлів)
     ├── Utils/  (12 файлів)
@@ -340,41 +350,56 @@ oop-course/                                    ← гілка Lab-18 (після
     ├── Extensions/  (3 файли)
     ├── UI/  (1 файл)
     ├── Data/
-    │   ├── ClinicDbContext.cs                 ✏
-    │   ├── DbSeeder.cs                        ✏
-    │   └── ClinicRepository.cs                🆕
-    └── Migrations/  (5 файлів — генерує EF)   🆕
+    │   ├── ClinicDbContext.cs                 ✏ Т2
+    │   ├── DbSeeder.cs                        ✏ Т3
+    │   └── ClinicRepository.cs                🆕 Т4
+    └── Migrations/  (5 файлів — генерує EF)   ✏ Т3
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 17.
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
-## Рефлексійні питання
+## Перевірка перед здачею
 
-1. **Navigation vs Id.** В `Appointment` є і `PatientId` (FK), і `Patient?` (navigation property). Навіщо зберігати FK окремо, якщо є навігаційне посилання?
+```bash
+dotnet build ClinicApp
+dotnet run --project ClinicApp
+```
 
-2. **Cascade vs Restrict.** Клініка вирішила: видалення пацієнта видаляє його записи. Але видалення лікаря забороняється. Чи це правильно з бізнес-точки зору? Яка альтернатива?
+Переконайтесь, що:
 
-3. **TPH vs TPT (Table Per Type).** TPH (один рядок включає nullable стовпці) vs TPT (окремі таблиці для кожного підтипу з JOIN). Коли TPH краще? Коли TPT?
+- [ ] Структура проєкту збігається зі схемою вище
+- [ ] У таблиці `Appointments` є стовпці `AppointmentType`, `IsPaid`, `UrgencyNote`, `ConsultationTopic`
+- [ ] FK `PatientId` — `ON DELETE CASCADE`, `DoctorId` — `ON DELETE NO ACTION`
+- [ ] Після сідера в БД 4 записи трьох типів, оплачені мають `IsPaid = 1`
+- [ ] `GetPatientWithAppointments` повертає пацієнта із записами; `GetDoctorStats` — кількість і виручку кожного лікаря
+- [ ] Повторний запуск не дублює дані
 
-4. **LazyLoading.** У EF Core є механізм LazyLoading — navigation property завантажується автоматично при першому зверненні. Чому ми його не вмикаємо за замовчуванням?
+---
 
-5. **Include depth.** Чи можна зробити `.Include(p => p.Appointments).ThenInclude(a => a.Doctor)`? Що це дасть? Чи є небезпека?
+## Питання для самоперевірки
 
-6. **Repository pattern.** `ClinicRepository` агрегує складні запити. Але це збільшує кількість файлів. Чи варто тримати прості запити (`context.Patients.ToList()`) прямо в Program.cs, а складні — в Repository?
+1. **Navigation чи Id.** В `Appointment` є і `PatientId` (FK), і `Patient` (навігація). Навіщо зберігати FK окремо?
+2. **Cascade чи Restrict.** Видалення пацієнта видаляє його записи, а видалення лікаря заборонене. Чи правильно це з погляду бізнесу? Яка альтернатива?
+3. **TPH чи TPT.** Один рядок з nullable-стовпцями чи окремі таблиці для підтипів із `JOIN` — коли що краще?
+4. **Lazy loading.** EF може завантажувати навігацію автоматично при першому зверненні. Чому ми його не вмикаємо?
+5. **Глибина `Include`.** Що дасть `.Include(p => p.Appointments).ThenInclude(a => a.Doctor)`? Чи є небезпека?
+6. **Чому `GetCost()` не працює в SQL-запиті** і де проходить межа між тим, що виконує БД, і тим, що виконує C#?
 
 ---
 
 ## Статус гілки
 
-Після завершення всіх завдань — злити в `main`:
+Після всіх 4 завдань (кожне — окремий коміт `Lab18 TaskNN` на гілці `Lab-18`):
 
 ```bash
+git push -u origin Lab-18
 git checkout main
 git merge --no-ff Lab-18 -m "Merge Lab-18: EF Core Relations"
+git push
 ```
 
-> Наступна лаба: `git checkout -b Lab-19`
+> Наступна лаба: `git checkout main` → `git checkout -b Lab-19`.
