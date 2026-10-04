@@ -1,31 +1,27 @@
-# Лабораторна робота 22 — SOLID + Dependency Injection
+# Лаба 22 — SOLID + Dependency Injection
 
-## Проблема
+## Мета
 
-Після Labs 03-21 у нас є ~5 300 рядків коду, що працює. Але є прихована проблема — **жорсткі залежності**:
+Застосувати п'ять принципів SOLID до наявного проєкту і зробити залежності між класами керованими через Dependency Injection: виділити конфігурацію, додати стратегії ціноутворення, розбити сервіси на вузькі інтерфейси, зареєструвати їх у DI-контейнері з декоратором і перевірити принцип підстановки Лісков.
+
+## Контекст
+
+Після Лаб 03–21 у нас тисячі рядків робочого коду, але з прихованою проблемою — **жорсткими залежностями**:
 
 ```csharp
-// Clinic.cs — 16 залежностей hardcoded у конструкторі
+// Clinic.cs — усі залежності створюються прямо в конструкторі
 public Clinic(string name)
 {
-    Patients   = new PatientManager();     // ← hardcoded
-    Logger     = new ClinicLogger();       // ← hardcoded
-    Exporter   = new ClinicExporter(this); // ← hardcoded
-    // ...ще 13 рядків...
+    Patients = new PatientManager();      // ← жорстко
+    Logger   = new ClinicLogger();        // ← жорстко
+    Exporter = new ClinicExporter(this);  // ← жорстко
+    // … ще десяток рядків
 }
 ```
 
-Що з цим не так?
-- Неможливо підмінити `ClinicLogger` на `TestLogger` для тестів
-- Неможливо додати новий тип ціноутворення без зміни `AppointmentProcessor`
-- `Clinic` знає про 16 конкретних класів — при зміні будь-якого треба змінювати Clinic
+Наслідки: `ClinicLogger` неможливо підмінити тестовим; новий тип ціноутворення вимагає змінювати `AppointmentProcessor`; `Clinic` знає про десятки конкретних класів і змінюється разом із кожним. **SOLID** — п'ять принципів проти цих проблем; **Dependency Injection** — механізм, що робить залежності керованими.
 
-**SOLID** — 5 принципів що вирішують ці проблеми.  
-**Dependency Injection** — механізм що робить залежності керованими.
-
----
-
-## Структура проєкту на початку лаби
+### Структура проєкту на початку лаби
 
 Це результат Лаби 21 — стан `main` після її злиття:
 
@@ -38,8 +34,7 @@ oop-course/                                    ← гілка main (після �
     ├── Program.cs
     ├── Clinic.cs
     ├── Enums/  (4 файли)
-    ├── Models/
-    │   └── … ще 20 файлів без змін
+    ├── Models/  (20 файлів)
     ├── Managers/
     │   ├── AppointmentProcessor.cs
     │   └── … ще 12 файлів без змін
@@ -54,409 +49,364 @@ oop-course/                                    ← гілка main (після �
     └── Migrations/  (9 файлів — генерує EF)
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### SOLID коротко
+
+| Принцип | Формулювання | Де в цій лабі |
+|---------|--------------|---------------|
+| **S** — Single Responsibility | у класу одна причина для зміни | `ClinicConfig` (Задача 1) |
+| **O** — Open/Closed | відкритий для розширення, закритий для змін | стратегії ціни (Задача 2) |
+| **L** — Liskov Substitution | підтип замінює базовий тип без сюрпризів | ієрархія `Appointment` (Задача 5) |
+| **I** — Interface Segregation | клієнт не залежить від методів, яких не використовує | вузькі сервісні інтерфейси (Задача 3) |
+| **D** — Dependency Inversion | залежати від абстракцій, а не від конкретних класів | сервіси через конструктор (Задачі 3–4) |
+
+### Dependency Injection
+
+**DI-контейнер** (`ServiceCollection`) зберігає правила «який тип створювати для якої залежності» і сам будує об'єкти з усіма їхніми залежностями. **Час життя** реєстрації:
+
+| Lifetime | Новий екземпляр | Підходить для |
+|----------|-----------------|---------------|
+| `Singleton` | один на весь застосунок | логер, `HttpClient`, конфігурація |
+| `Scoped` | один на кожен scope (`CreateScope()`) | `DbContext`, репозиторії, сервіси |
+| `Transient` | при кожному запиті | легкі об'єкти без стану |
+
+Singleton **не може** залежати від Scoped: інакше він «захопить» перший `DbContext` назавжди.
+
+**Декоратор** реалізує той самий інтерфейс, що й «справжній» об'єкт, і делегує йому виклики, додаючи свою поведінку (наприклад, логування) — без зміни самого об'єкта.
+
+### Що нового дозволено (і тільки воно)
+
+- `record` з обчислюваними властивостями;
+- primary constructor (C# 12): `class PatientService(ClinicDbContext context)`;
+- пакет `Microsoft.Extensions.DependencyInjection`: `ServiceCollection`, `AddSingleton` / `AddScoped`, `AddDbContext`, `GetRequiredService` / `GetService`, `CreateScope`.
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
 git checkout -b Lab-22
 ```
 
----
+Коміт — на кожне завдання (`Lab22 TaskNN`).
 
-## Ключові концепції
+### Ваш домен
 
-### S — Single Responsibility Principle
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** в кінці кожного завдання.
 
-**"Клас повинен мати тільки одну причину для зміни."**
+### Як користуватися підказками
 
-Клас `Clinic` порушує SRP — у нього п'ять причин змінитись:
-1. Змінилась конфігурація клініки → міняємо Clinic
-2. Додали новий менеджер → міняємо Clinic
-3. Змінилась логіка подій → міняємо Clinic
-4. Змінився формат звіту → міняємо Clinic
-5. Змінився формат розкладу → міняємо Clinic
-
-**Рішення:** виділяємо окремий `ClinicConfig` record для конфігурації.
-
-```csharp
-// Було:
-public class Clinic { public string Name { get; } ... }
-
-// Стало:
-public record ClinicConfig(string Name, string Address = "", DateTime? Founded = null);
-public class Clinic { public ClinicConfig Config { get; } ... }
-```
-
-### O — Open/Closed Principle
-
-**"Класи відкриті для розширення, закриті для змін."**
-
-Проблема без OCP:
-```csharp
-// AppointmentProcessor — щоб додати нову ставку, треба змінити існуючий клас:
-if (appointment is UrgentAppointment) cost *= 1.5m;
-else if (appointment is SpecialistAppointment) cost *= 1.3m;
-// Новий тип → новий if → зміна існуючого коду → ризик регресій
-```
-
-**Рішення — Strategy pattern:**
-```csharp
-public interface ICostStrategy
-{
-    string Description { get; }
-    decimal Calculate(Appointment appointment);
-}
-
-// Новий тип ціноутворення = новий клас, без змін AppointmentProcessor:
-public class NightShiftCostStrategy : ICostStrategy { ... }
-```
-
-### L — Liskov Substitution Principle
-
-**"Підтипи повинні бути замінними для своїх базових типів."**
-
-У нашому проєкті вже реалізовано: `RegularAppointment`, `UrgentAppointment`, `SpecialistAppointment` — всі замінні для `Appointment`. Метод що приймає `Appointment` — працює з будь-яким підтипом.
-
-Порушення LSP (для аналізу):
-```csharp
-// ❌ Порушення: підклас кидає виняток де базовий — не кидає
-class ReadOnlyCollection : Collection {
-    public override void Add(T item) => throw new NotSupportedException(); // LSP порушено
-}
-```
-
-### I — Interface Segregation Principle
-
-**"Клієнти не повинні залежати від методів, які вони не використовують."**
-
-Погано (один великий інтерфейс):
-```csharp
-interface IClinicService {
-    Task<List<Patient>> GetPatients();
-    Task<List<Doctor>>  GetDoctors();
-    Task AddPatient(Patient p);
-    Task BookAppointment(Appointment a);
-    Task ExportCsv(string path);
-    Task GenerateReport();
-    // ... 20+ методів
-}
-// Клас що потребує тільки GetDoctors() — знає про все інше
-```
-
-Добре (ISP):
-```csharp
-interface IPatientService     { Task<List<Patient>> GetAllAsync(); ... }
-interface IDoctorService      { Task<List<Doctor>>  GetAllAsync(); ... }
-interface IAppointmentService { Task<List<Appointment>> GetUpcomingAsync(); ... }
-```
-
-### D — Dependency Inversion Principle
-
-**"Модулі верхнього рівня залежать від абстракцій, не від конкретних реалізацій."**
-
-```csharp
-// ❌ Погано — пряма залежність від конкретного класу:
-public class ReportGenerator
-{
-    private readonly PatientService _service;  // конкретний клас
-    public ReportGenerator() { _service = new PatientService(new ClinicDbContext()); }
-}
-
-// ✅ Добре — залежність від абстракції:
-public class ReportGenerator
-{
-    private readonly IPatientService _service;  // інтерфейс
-    public ReportGenerator(IPatientService service) { _service = service; }
-    // DI-контейнер підставить реалізацію автоматично
-}
-```
-
-### Dependency Injection — IServiceCollection
-
-```csharp
-var services = new ServiceCollection();
-
-// Реєстрація з lifetime:
-services.AddSingleton<ClinicLogger>();           // один на весь застосунок
-services.AddScoped<ClinicDbContext>();           // новий на кожен scope
-services.AddScoped<IPatientService, PatientService>(); // interface → implementation
-
-var provider = services.BuildServiceProvider();
-
-// Отримання сервісу:
-var logger = provider.GetRequiredService<ClinicLogger>(); // кидає якщо не зареєстровано
-var svc    = provider.GetService<IPatientService>();       // null якщо не зареєстровано
-```
-
-**Lifetimes:**
-| Lifetime | Новий екземпляр | Підходить для |
-|----------|----------------|---------------|
-| `Singleton` | Один раз | Logger, HttpClient, конфігурація |
-| `Scoped` | На кожен scope | DbContext, Repository, Service |
-| `Transient` | На кожен запит | Легкі stateless об'єкти |
-
-**Singleton + Scoped — небезпечна комбінація:**
-```csharp
-// ❌ Singleton не може залежати від Scoped!
-services.AddSingleton<MyService>(sp =>
-    new MyService(sp.GetRequiredService<ClinicDbContext>())); // DbContext — Scoped
-// При першому використанні: DbContext буде "захоплений" назавжди → memory leak
-```
-
-### Паттерн Decorator
-
-Decorator реалізує той самий інтерфейс і делегує виклики до "справжнього" об'єкта, додаючи поведінку:
-
-```csharp
-public class LoggingPatientService(IPatientService inner, ClinicLogger logger) : IPatientService
-{
-    public async Task<List<Patient>> GetAllAsync(CancellationToken ct = default)
-    {
-        logger.LogInfo("GetAllAsync викликано");
-        var result = await inner.GetAllAsync(ct);  // делегування
-        logger.LogInfo($"GetAllAsync → {result.Count} пацієнтів");
-        return result;
-    }
-    // ...
-}
-```
-
-DI реєстрація Decorator:
-```csharp
-services.AddScoped<IPatientService>(sp =>
-    new LoggingPatientService(
-        new PatientService(sp.GetRequiredService<ClinicDbContext>()),
-        sp.GetRequiredService<ClinicLogger>()));
-```
+Підказки — **напрям думки, не готовий код**. «Що реалізувати» і «Специфікація» кажуть *що*; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Спершу документація і власна спроба.
 
 ---
 
-## Завдання
+## Задача 1. S — конфігурація клініки в `ClinicConfig` ⭐
 
-### Завдання 1. S — Single Responsibility: ClinicConfig
+### Умова
 
-**Задача:** виділити конфігурацію клініки в окремий record.
+У `Clinic` кілька причин змінитись: конфігурація, нові менеджери, події, формат звітів… Почніть зі SRP: винесіть конфігурацію клініки в окремий незмінний `record`.
 
-Створіть `ClinicConfig` у `src/Models/`:
+**Що реалізувати:**
+
+1. Створити `record ClinicConfig` у `ClinicApp/Models/` (специфікація нижче).
+2. У `Clinic` додати властивість `Config` і конструктор `Clinic(ClinicConfig config)`.
+3. Залишити конструктор `Clinic(string name)` для зворотної сумісності — він передає роботу новому конструктору.
+4. `Name` у `Clinic` тепер береться з `Config`.
+5. Коментарем у `Clinic.cs` перелічити, які відповідальності в класі ще лишились.
+
+### Специфікація
+
+| `ClinicConfig` | |
+|----------------|--|
+| `Name` | `string` |
+| `Address` | `string`, за замовчуванням `""` |
+| `Founded` | `DateTime?`, за замовчуванням `null` |
+| `FoundedYear` | обчислювана: рік заснування або `"невідомо"` |
+
+| `Clinic` | |
+|----------|--|
+| `Config` | `ClinicConfig`, лише читання |
+| `Clinic(ClinicConfig config)` | новий основний конструктор |
+| `Clinic(string name)` | `: this(new ClinicConfig(name))` |
+| `Name` | повертає `Config.Name` |
+
+### Приклад
+
 ```csharp
-public record ClinicConfig(string Name, string Address = "", DateTime? Founded = null)
-{
-    public string FoundedYear => Founded.HasValue ? ... : "невідомо";
-}
+var clinic = new Clinic(new ClinicConfig("Медична клініка", "вул. Медична 1", new DateTime(2010, 3, 1)));
+Console.WriteLine(clinic.Config.FoundedYear);   // 2010
+var old = new Clinic("Клініка");                 // старий код і далі працює
 ```
 
-Модифікуйте `Clinic`:
-- Додайте `public ClinicConfig Config { get; }` 
-- Додайте конструктор `Clinic(ClinicConfig config)`
-- Залиште `Clinic(string name) : this(new ClinicConfig(name))` для зворотної сумісності
-- `public string Name => Config.Name;` — делегат замість прямого поля
+### Підказки
 
-Задокументуйте (XML-коментарі або `//`): скільки ще відповідальностей залишилось у `Clinic`.
+1. `record` з позиційними параметрами — незмінний тип: конфігурацію не можна «випадково» змінити з будь-якого місця програми.
+2. Обчислювана властивість у `record` оголошується в тілі після параметрів.
+3. Межа «одна відповідальність» — це одна **причина для зміни**, а не один метод.
 
-Чому використано `record` а не `class` для ClinicConfig? Що дає незмінність конфігурації?
+📖 Документація:
+- [Записи (`record`)](https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/record)
+- [Принцип єдиної відповідальності](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/architectural-principles#single-responsibility)
 
-**Ключові питання:**
-- Скільки причин змінитись у вашій поточній `Clinic.cs`?
-- Де проходить межа між "це одна відповідальність" і "це дві"?
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `ClinicConfig` | `HotelConfig` | `RestaurantConfig` | `UniversityConfig` | `RentalConfig` | `LibraryConfig` | `GymConfig` |
+
+### Коміт
 
 ```bash
-git add src/Models/ClinicConfig.cs src/Services/Clinic.cs
-git commit -m "Lab22 Task01: extract ClinicConfig as SRP value record"
+git add ClinicApp/Models/ClinicConfig.cs ClinicApp/Clinic.cs
+git commit -m "Lab22 Task01"
 ```
 
 ---
 
-### Завдання 2. O — Open/Closed: ICostStrategy
+## Задача 2. O — стратегії ціноутворення ⭐⭐
 
-**Задача:** додати підтримку стратегій ціноутворення без зміни `AppointmentProcessor`.
+### Умова
 
-Створіть у `src/Strategies/`:
-```
-ICostStrategy           — interface: Description, Calculate(Appointment)
-RegularCostStrategy     — базова ставка: DurationMinutes × 10 грн
-UrgentCostStrategy      — коефіцієнт: базова × multiplier (default 1.5)
-DiscountCostStrategy    — знижка: базова × (1 - discountPercent)
-```
+Щоб додати нову ставку, зараз треба дописувати `if` в існуючий код — і ризикувати зламати те, що працювало. Застосуйте патерн **Strategy**: кожна ставка — окремий клас, а `AppointmentProcessor` лише використовує передану стратегію.
 
-Розширте `AppointmentProcessor` (не переписуйте!):
+**Що реалізувати:**
+
+1. Створити теку `ClinicApp/Strategies/` з інтерфейсом `ICostStrategy` і трьома стратегіями (специфікація нижче).
+2. **Розширити** (не переписати) `AppointmentProcessor` (Лаба 15): необов'язкова стратегія, метод її встановлення, розрахунок ціни і статичне порівняння.
+3. Перевірити OCP: додати `NightShiftCostStrategy` (×1.2 для прийомів, що починаються о 18:00 і пізніше) — **без жодних змін** у `AppointmentProcessor`, `Appointment` і наявних стратегіях.
+
+### Специфікація
+
+| Тип | Опис |
+|-----|------|
+| `ICostStrategy` | `string Description { get; }`, `decimal Calculate(Appointment appointment)` |
+| `RegularCostStrategy` | `DurationMinutes × 10` грн |
+| `UrgentCostStrategy` | базова × множник (за замовчуванням `1.5`, задається конструктором) |
+| `DiscountCostStrategy` | базова × (1 − знижка), знижка задається конструктором |
+| `NightShiftCostStrategy` | базова × 1.2, якщо прийом о 18:00 і пізніше; інакше базова |
+
+| Нове в `AppointmentProcessor` | Опис |
+|-------------------------------|------|
+| поле `ICostStrategy?` | стратегія, спочатку не задана |
+| `WithCostStrategy(ICostStrategy strategy)` | встановлює стратегію, повертає `this` |
+| `CalculateCost(Appointment a)` | ціна за стратегією; якщо стратегії немає — `a.GetCost()` |
+| `static CompareCost(Appointment a, ICostStrategy s)` | `(decimal Regular, decimal WithStrategy)` |
+
+### Приклад
+
 ```csharp
-private ICostStrategy? _costStrategy;
-
-public AppointmentProcessor WithCostStrategy(ICostStrategy strategy) { ... return this; }
-public decimal CalculateCost(Appointment a) => _costStrategy?.Calculate(a) ?? a.GetCost();
-public static (decimal Regular, decimal WithStrategy) CompareCost(Appointment a, ICostStrategy s) => ...
+var (regular, night) = AppointmentProcessor.CompareCost(appt, new NightShiftCostStrategy());
+Console.WriteLine($"{regular:F2} → {night:F2}");   // 300.00 → 360.00 для прийому о 19:00
 ```
 
-**Тест OCP:** додайте `NightShiftCostStrategy` (ставка ×1.2 після 18:00) — без жодних змін у `AppointmentProcessor`, `Appointment`, або існуючих стратегіях.
+### Підказки
 
-**Ключові питання:**
-- Чому `ICostStrategy?` (nullable) а не обов'язковий параметр конструктора?
-- `_costStrategy?.Calculate(a) ?? a.GetCost()` — що відбудеться якщо стратегія не встановлена?
+1. Стратегія необов'язкова: без неї процесор поводиться, як раніше, — тому не параметр конструктора, а метод `WithCostStrategy`.
+2. `?.` і `??` разом дають «ціна за стратегією або звичайна ціна» одним виразом.
+3. Перевірка OCP — це саме те, що змінилось у `git diff` Задачі 2 після додавання `NightShiftCostStrategy`: лише новий файл.
+
+📖 Документація:
+- [Патерн «Стратегія»](https://refactoring.guru/uk/design-patterns/strategy)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `NightShiftCostStrategy` | `WeekendRateStrategy` | `LateDinnerStrategy` | `EveningCourseStrategy` | `HolidayRateStrategy` | `OverdueFineStrategy` | `PeakHoursStrategy` |
+
+### Коміт
 
 ```bash
-git add src/Strategies/ src/Services/AppointmentProcessor.cs
-git commit -m "Lab22 Task02: add ICostStrategy and OCP-compliant cost strategy implementations"
+git add ClinicApp/Strategies/ ClinicApp/Managers/AppointmentProcessor.cs
+git commit -m "Lab22 Task02"
 ```
 
 ---
 
-### Завдання 3+4. I + D — ISP + DIP: інтерфейси та реалізації
+## Задача 3. I + D — вузькі інтерфейси сервісів і їх реалізації ⭐⭐⭐
 
-**Задача:** визначити три сервісних інтерфейси і реалізувати їх поверх EF Core.
+### Умова
 
-Створіть у `src/Services/`:
+Замість одного великого «сервісу клініки» опишіть три вузькі інтерфейси (ISP) і реалізуйте їх поверх EF Core так, щоб реалізації отримували `ClinicDbContext` ззовні, через конструктор (DIP).
 
-**Інтерфейси (ISP):**
-```
-IPatientService     — GetAllAsync, GetByIdAsync, SearchAsync, AddAsync, SoftDeleteAsync, CountAsync
-IDoctorService      — GetAllAsync, GetByIdAsync, GetBySpecialityAsync, CountAsync
-IAppointmentService — GetUpcomingAsync, GetByPatientAsync, BookAsync, CancelAsync, CompleteAsync, GetTotalRevenueAsync
-```
+**Що реалізувати:**
 
-**Реалізації (DIP — залежать від ClinicDbContext через конструктор):**
+1. Створити теку `ClinicApp/Services/` з трьома інтерфейсами (специфікація нижче); усі методи асинхронні з `CancellationToken ct = default`.
+2. Реалізувати `PatientService`, `DoctorService`, `AppointmentService` з **primary constructor**, що приймає `ClinicDbContext`.
+3. У `Program.cs` додати функцію `PrintPatientCount(IPatientService service)` — вона приймає **інтерфейс**, а не клас.
 
-Використайте **primary constructor** (C# 12):
+### Специфікація
+
+| Інтерфейс | Методи |
+|-----------|--------|
+| `IPatientService` | `GetAllAsync`, `GetByIdAsync(int id)`, `SearchAsync(string query)`, `AddAsync(Patient p)`, `SoftDeleteAsync(int id)`, `CountAsync` |
+| `IDoctorService` | `GetAllAsync`, `GetByIdAsync(int id)`, `GetBySpecialityAsync(Speciality s)`, `CountAsync` |
+| `IAppointmentService` | `GetUpcomingAsync`, `GetByPatientAsync(int patientId)`, `BookAsync(Appointment a)`, `CancelAsync(int id)`, `CompleteAsync(int id)`, `GetTotalRevenueAsync` |
+
+### Приклад
+
 ```csharp
 public class PatientService(ClinicDbContext context) : IPatientService
 {
-    public async Task<List<Patient>> GetAllAsync(CancellationToken ct = default)
-        => await context.Patients.AsNoTracking().OrderBy(p => p.LastName).ToListAsync(ct);
-    // ...
+    // context доступний у всіх методах без явного поля
 }
 ```
 
-Primary constructor — параметри доступні як поля без явного оголошення.
-
-**DIP перевірка:** напишіть метод що приймає `IPatientService` (не `PatientService`):
-```csharp
-static async Task PrintPatientCount(IPatientService service)
-    => Console.WriteLine($"Пацієнтів: {await service.CountAsync()}");
+```
+Пацієнтів: 5
 ```
 
-Цей метод може працювати з PatientService, LoggingPatientService, або будь-яким mock.
+### Підказки
 
-**Ключові питання:**
-- В чому різниця між ISP і звичайним розбиттям на кілька класів?
-- Чому primary constructor зручніший для DIP ніж звичайний constructor?
+1. **Primary constructor** — параметри конструктора в оголошенні класу; вони доступні всім методам без явного поля.
+2. Для читання — `AsNoTracking()`; для змін — звичайне відстеження і `SaveChangesAsync`.
+3. `GetTotalRevenueAsync`: `GetCost()` не перекладається в SQL (Лаба 18) — завантажте записи і порахуйте суму в пам'яті.
+4. `PrintPatientCount` працюватиме з будь-якою реалізацією `IPatientService` — `PatientService`, декоратором із Задачі 4 чи тестовою заглушкою.
+
+📖 Документація:
+- [Primary constructors](https://learn.microsoft.com/dotnet/csharp/whats-new/tutorials/primary-constructors)
+- [Принцип інверсії залежностей](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/architectural-principles#dependency-inversion)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `IPatientService` / `IDoctorService` / `IAppointmentService` | `IGuestService` / `IStaffService` / `IBookingService` | `ICustomerService` / `IWaiterService` / `IReservationService` | `IStudentService` / `ILecturerService` / `IEnrollmentService` | `IClientService` / `IManagerService` / `IRentalService` | `IReaderService` / `ILibrarianService` / `ILoanService` | `IMemberService` / `ITrainerService` / `ISessionService` |
+
+### Коміт
 
 ```bash
-git add src/Abstractions/ src/Services/PatientService.cs src/Services/AppointmentService.cs
-git commit -m "Lab22 Task03: split interfaces ISP and introduce DIP with primary constructors"
+git add ClinicApp/Services/ ClinicApp/Program.cs
+git commit -m "Lab22 Task03"
 ```
 
 ---
 
-### Завдання 5. IServiceCollection: DI-контейнер і Decorator
+## Задача 4. DI-контейнер і декоратор логування ⭐⭐⭐
 
-**Задача А — ServiceContainer:**
+### Умова
 
-Створіть `src/Infrastructure/ServiceContainer.cs`:
+Перестаньте створювати сервіси вручну: зареєструйте їх у DI-контейнері, а логування додайте декоратором — без змін у `PatientService`.
 
-```csharp
-public static class ServiceContainer
-{
-    public static IServiceProvider Build()
-    {
-        var services = new ServiceCollection();
-        services.AddDbContext<ClinicDbContext>();       // Scoped
-        services.AddSingleton<ClinicLogger>();          // Singleton
-        services.AddScoped<IDoctorService,      DoctorService>();
-        services.AddScoped<IAppointmentService, AppointmentService>();
-        // IPatientService через Decorator — зареєструйте через фабрику (lambda sp => ...):
-        // new LoggingPatientService(new PatientService(...), ...)
-        // Отримуйте залежності через sp.GetRequiredService<T>()
-        services.AddScoped<IPatientService>(sp => /* ваша фабрика */);
-        return services.BuildServiceProvider();
-    }
-}
+**Що реалізувати:**
+
+1. Додати пакет `Microsoft.Extensions.DependencyInjection` (команда нижче).
+2. Створити `static class ServiceContainer` у `ClinicApp/Infrastructure/` з методом `Build()`, що реєструє сервіси за специфікацією і повертає `IServiceProvider`.
+3. Створити декоратор `LoggingPatientService` у `ClinicApp/Services/`: реалізує `IPatientService`, отримує «справжній» `IPatientService` і `ClinicLogger`, логує виклик і результат, делегує роботу.
+4. Зареєструвати `IPatientService` фабрикою, що обгортає `PatientService` у `LoggingPatientService`.
+5. У `Program.cs` побудувати контейнер, отримати сервіси в scope і перевірити час життя (див. приклад).
+
+### Специфікація
+
+```bash
+dotnet add ClinicApp package Microsoft.Extensions.DependencyInjection --version 8.0.0
 ```
 
-**Задача Б — Decorator (LoggingPatientService):**
+| Реєстрація | Lifetime |
+|------------|----------|
+| `ClinicDbContext` | Scoped (`AddDbContext`) |
+| `ClinicLogger` | Singleton |
+| `IDoctorService` → `DoctorService` | Scoped |
+| `IAppointmentService` → `AppointmentService` | Scoped |
+| `IPatientService` → `LoggingPatientService`(`PatientService`) | Scoped, фабрика `sp => …` |
 
-```csharp
-public class LoggingPatientService(IPatientService inner, ClinicLogger logger) : IPatientService
-{
-    public async Task<List<Patient>> GetAllAsync(CancellationToken ct = default)
-    {
-        // 1. logger.LogInfo — фіксуємо виклик
-        // 2. await inner.GetAllAsync(ct) — делегуємо до "справжнього" сервісу
-        // 3. logger.LogInfo — фіксуємо результат (кількість записів)
-        // 4. return result
-    }
-    // інші методи — реалізуйте аналогічно (з логуванням або без)
-}
-```
-
-**Задача В — lifetime перевірка:**
+### Приклад
 
 ```csharp
 var a = provider.GetRequiredService<ClinicLogger>();
 var b = provider.GetRequiredService<ClinicLogger>();
-Console.WriteLine(ReferenceEquals(a, b));  // true — Singleton
+Console.WriteLine(ReferenceEquals(a, b));      // True — Singleton
 
 using var s1 = provider.CreateScope();
 using var s2 = provider.CreateScope();
-var svc1 = s1.ServiceProvider.GetRequiredService<IAppointmentService>();
-var svc2 = s2.ServiceProvider.GetRequiredService<IAppointmentService>();
-Console.WriteLine(ReferenceEquals(svc1, svc2)); // false — Scoped, різні scope
+var x = s1.ServiceProvider.GetRequiredService<IAppointmentService>();
+var y = s2.ServiceProvider.GetRequiredService<IAppointmentService>();
+Console.WriteLine(ReferenceEquals(x, y));      // False — Scoped, різні scope
 ```
 
-**Ключові питання:**
-- Що відбудеться якщо зареєструвати `ClinicDbContext` як Singleton?
-- Навіщо `provider.CreateScope()` в консольному застосунку?
+### Підказки
+
+1. У фабриці залежності беріть із `sp.GetRequiredService<T>()` — контейнер сам віддасть потрібний екземпляр із правильним часом життя.
+2. Декоратор — композиція: він **містить** `IPatientService`, а не успадковує `PatientService`.
+3. Методи без логування декоратор просто передає далі — `inner.Метод(...)`.
+4. У консольному застосунку scope створюється явно — `CreateScope()`, один scope ≈ одна «операція».
+
+📖 Документація:
+- [Dependency injection у .NET](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection)
+- [Час життя сервісів](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection#service-lifetimes)
+- [Патерн «Декоратор»](https://refactoring.guru/uk/design-patterns/decorator)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `LoggingPatientService` | `LoggingGuestService` | `LoggingCustomerService` | `LoggingStudentService` | `LoggingClientService` | `LoggingReaderService` | `LoggingMemberService` |
+
+### Коміт
 
 ```bash
-git add src/Services/LoggingPatientService.cs Program.cs
-git commit -m "Lab22 Task05: register services in DI container with Decorator pattern"
+git add ClinicApp/ClinicApp.csproj ClinicApp/Infrastructure/ServiceContainer.cs ClinicApp/Services/LoggingPatientService.cs ClinicApp/Program.cs
+git commit -m "Lab22 Task04"
 ```
 
 ---
 
-### Завдання 6. GetRequiredService vs GetService + L: Liskov
+## Задача 5. `GetRequiredService` чи `GetService`; L — підстановка Лісков ⭐⭐
 
-**Задача А — DI resolution:**
+### Умова
 
-```csharp
-// GetRequiredService<T> — кидає InvalidOperationException якщо не зареєстровано
-var logger = provider.GetRequiredService<ClinicLogger>();
+Покажіть різницю між обов'язковим і необов'язковим отриманням сервісу з контейнера і перевірте, що ієрархія записів дотримується принципу підстановки Лісков.
 
-// GetService<T> — повертає null якщо не зареєстровано
-var opt = provider.GetService<ClinicLogger>();       // не null (зареєстровано)
-var missing = provider.GetService<SessionManager>(); // null (не зареєстровано)
+**Що реалізувати:**
+
+1. У `Program.cs` продемонструвати: `GetRequiredService` для зареєстрованого сервісу; `GetService` для зареєстрованого (не `null`) і для незареєстрованого `SessionManager` (`null`).
+2. Додати функцію `ProcessAppointment(Appointment a)`, що виводить опис і вартість, і викликати її з об'єктами всіх трьох підтипів — без `is`/`as`.
+3. Коментарем описати місце в проєкті, де LSP **могло б** бути порушено (наприклад, якби `UrgentAppointment.Cancel()` кидав виняток замість повернення `false`).
+
+### Специфікація
+
+| Метод | Сервіс не зареєстровано |
+|-------|-------------------------|
+| `GetRequiredService<T>()` | `InvalidOperationException` — для обов'язкових залежностей |
+| `GetService<T>()` | `null` — для необов'язкових |
+
+### Приклад
+
+```
+GetService<ClinicLogger>:   знайдено
+GetService<SessionManager>: null
+Звичайний прийом | 300.00 грн
+Терміновий (біль у грудях) | 450.00 грн
+Консультація спеціаліста: кардіологія | 780.00 грн
 ```
 
-Правило: `GetRequiredService` — коли сервіс обов'язковий. `GetService` — коли опціональний.
+### Підказки
 
-**Задача Б — L: Liskov Substitution аналіз:**
+1. LSP — не про синтаксис, а про поведінку: підтип не має кидати винятків чи посилювати вимоги там, де базовий тип цього не робить.
+2. Підстановку декоратора замість `PatientService` (Задача 4) теж можна розглядати як LSP: код, що працює з `IPatientService`, не помічає різниці.
 
-Перевірте що наша ієрархія `Appointment` дотримується LSP:
-```csharp
-// Метод приймає базовий тип
-static void ProcessAppointment(Appointment a)
-{
-    Console.WriteLine(a.GetDescription()); // поліморфний виклик
-    Console.WriteLine($"Вартість: {a.GetCost()}");
-}
+📖 Документація:
+- [`ServiceProviderServiceExtensions`](https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection.serviceproviderserviceextensions)
+- [Принцип підстановки Лісков](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/architectural-principles#liskov-substitution)
 
-// Всі підтипи замінні:
-ProcessAppointment(new RegularAppointment(...));    // ✅
-ProcessAppointment(new UrgentAppointment(...));     // ✅
-ProcessAppointment(new SpecialistAppointment(...)); // ✅
-```
+### Адаптація до вашого домену
 
-Знайдіть у кодовій базі приклад де LSP **могло б бути порушено** (наприклад, якби `UrgentAppointment.Cancel()` кидав виняток замість повернення `false`). Задокументуйте.
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `ProcessAppointment(Appointment)` | `ProcessBooking(Booking)` | `ProcessReservation(TableReservation)` | `ProcessEnrollment(Enrollment)` | `ProcessRental(Rental)` | `ProcessLoan(BookLoan)` | `ProcessSession(Session)` |
 
-**Ключові питання:**
-- Де в нашому проєкті можна замінити `PatientService` на `LoggingPatientService` — без зміни коду що їх використовує?
-- `GetRequiredService` vs `ActivatorUtilities.CreateInstance` — коли потрібен другий варіант?
+### Коміт
 
 ```bash
-git add Program.cs
-git commit -m "Lab22 Task06: verify Liskov substitution via GetRequiredService and polymorphism"
+git add ClinicApp/Program.cs
+git commit -m "Lab22 Task05"
 ```
 
 ---
@@ -470,15 +420,15 @@ oop-course/                                    ← гілка Lab-22 (після
 ├── .gitignore
 ├── oop-course.sln
 └── ClinicApp/
-    ├── ClinicApp.csproj
-    ├── Program.cs                             ✏
-    ├── Clinic.cs                              ✏
+    ├── ClinicApp.csproj                       ✏ Т4
+    ├── Program.cs                             ✏ Т3 Т4 Т5
+    ├── Clinic.cs                              ✏ Т1
     ├── Enums/  (4 файли)
     ├── Models/
-    │   ├── ClinicConfig.cs                    🆕
+    │   ├── ClinicConfig.cs                    🆕 Т1
     │   └── … ще 20 файлів без змін
     ├── Managers/
-    │   ├── AppointmentProcessor.cs            ✏
+    │   ├── AppointmentProcessor.cs            ✏ Т2
     │   └── … ще 12 файлів без змін
     ├── Utils/  (12 файлів)
     ├── Interfaces/  (4 файли)
@@ -490,51 +440,69 @@ oop-course/                                    ← гілка Lab-22 (після
     ├── Data/  (6 файлів)
     ├── Migrations/  (9 файлів — генерує EF)
     ├── Infrastructure/
-    │   └── ServiceContainer.cs                🆕
+    │   └── ServiceContainer.cs                🆕 Т4
     ├── Services/
-    │   ├── AppointmentService.cs              🆕
-    │   ├── DoctorService.cs                   🆕
-    │   ├── IAppointmentService.cs             🆕
-    │   ├── IDoctorService.cs                  🆕
-    │   ├── IPatientService.cs                 🆕
-    │   ├── LoggingPatientService.cs           🆕
-    │   └── PatientService.cs                  🆕
+    │   ├── IPatientService.cs                 🆕 Т3
+    │   ├── IDoctorService.cs                  🆕 Т3
+    │   ├── IAppointmentService.cs             🆕 Т3
+    │   ├── PatientService.cs                  🆕 Т3
+    │   ├── DoctorService.cs                   🆕 Т3
+    │   ├── AppointmentService.cs              🆕 Т3
+    │   └── LoggingPatientService.cs           🆕 Т4
     └── Strategies/
-        ├── DiscountCostStrategy.cs            🆕
-        ├── ICostStrategy.cs                   🆕
-        ├── RegularCostStrategy.cs             🆕
-        └── UrgentCostStrategy.cs              🆕
+        ├── ICostStrategy.cs                   🆕 Т2
+        ├── RegularCostStrategy.cs             🆕 Т2
+        ├── UrgentCostStrategy.cs              🆕 Т2
+        ├── DiscountCostStrategy.cs            🆕 Т2
+        └── NightShiftCostStrategy.cs          🆕 Т2
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 21.
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
-## Рефлексійні питання
+## Перевірка перед здачею
 
-1. **SOLID як єдине ціле.** Покажіть як порушення одного принципу призводить до порушення інших. Наприклад: якщо `Clinic` порушує SRP → чи стає складніше дотриматись DIP?
+```bash
+dotnet build ClinicApp
+dotnet run --project ClinicApp
+```
 
-2. **Decorator vs Inheritance для логування.** Чому `LoggingPatientService` реалізований як Decorator (композиція), а не як `class LoggingPatientService : PatientService` (спадкування)? Коли спадкування було б кращим вибором?
+Переконайтесь, що:
 
-3. **Singleton DbContext — чому небезпечно.** `DbContext` тримає в пам'яті стан змінених об'єктів (Change Tracker). Якщо він Singleton — що відбудеться при конкурентних запитах? Де стан одного запиту "просочиться" в інший?
+- [ ] Структура проєкту збігається зі схемою вище
+- [ ] `new Clinic("…")` і `new Clinic(new ClinicConfig(…))` — обидва працюють
+- [ ] Додавання `NightShiftCostStrategy` не змінило жодного існуючого файлу
+- [ ] `PrintPatientCount` приймає `IPatientService` і виводить кількість пацієнтів
+- [ ] Виклики `IPatientService` з'являються в лозі (працює декоратор)
+- [ ] Перевірка часу життя: Singleton — `True`, Scoped у різних scope — `False`
+- [ ] `GetService<SessionManager>()` повертає `null`
+- [ ] `ProcessAppointment` працює з усіма трьома підтипами без `is`/`as`
 
-4. **Primary constructor і DI.** `public class PatientService(ClinicDbContext context)` — як компілятор C# 12 перетворює цей запис? Які є обмеження primary constructor порівняно зі звичайним?
+---
 
-5. **OCP і кількість файлів.** OCP зменшує ризик регресій але збільшує кількість файлів (`RegularCostStrategy`, `UrgentCostStrategy`, `DiscountCostStrategy`...). Як знайти баланс? Коли варто відмовитись від стратегій і залишити простий if/switch?
+## Питання для самоперевірки
 
-6. **ISP в реальних проєктах.** ASP.NET Core's `ILogger<T>` — великий чи маленький інтерфейс? Чи порушує він ISP? Порівняйте з нашим `IPatientService`.
+1. **SOLID як ціле.** Як порушення одного принципу тягне за собою інші? Чи складніше дотриматись DIP, якщо `Clinic` порушує SRP?
+2. **Декоратор чи успадкування.** Чому `LoggingPatientService` — декоратор (композиція), а не `class LoggingPatientService : PatientService`? Коли успадкування було б кращим?
+3. **Singleton `DbContext`.** `DbContext` тримає в пам'яті стан змінених об'єктів. Що станеться при одночасних запитах, якщо він Singleton?
+4. **Primary constructor.** На що компілятор перетворює `class PatientService(ClinicDbContext context)`? Які обмеження порівняно зі звичайним конструктором?
+5. **OCP і кількість файлів.** Стратегії зменшують ризик регресій, але множать файли. Коли варто залишити простий `switch`?
+6. **ISP у .NET.** `ILogger<T>` — великий чи маленький інтерфейс? Чи порушує він ISP? Порівняйте з `IPatientService`.
 
 ---
 
 ## Статус гілки
 
-Після завершення всіх завдань — злити в `main`:
+Після всіх 5 завдань (кожне — окремий коміт `Lab22 TaskNN` на гілці `Lab-22`):
 
 ```bash
+git push -u origin Lab-22
 git checkout main
 git merge --no-ff Lab-22 -m "Merge Lab-22: SOLID and Dependency Injection"
+git push
 ```
 
 > Це остання лаба курсу. Вітаємо!

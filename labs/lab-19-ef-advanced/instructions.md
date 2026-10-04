@@ -1,16 +1,18 @@
-# Лабораторна робота 19 — EF Core: TPH глибоко, Owned Entity, Concurrency
+# Лаба 19 — EF Core: TPH для абстрактної ієрархії, Owned Entity, Concurrency
 
-## Проблема
+## Мета
 
-Після Lab 18 таблиця `Appointments` вже зберігає ієрархію підтипів через TPH. Але `MedicalRecord` (діагноз, аналіз, рецепт) ще не в базі даних — і ця ієрархія складніша: `MedicalRecord` — абстрактний клас, а підтипи мають принципово різні набори полів.
+Зберегти в БД абстрактну ієрархію медичних записів (TPH з різними наборами полів), вбудувати в таблицю пацієнтів залежний об'єкт (Owned Entity) і захистити дані від одночасного редагування (concurrency token).
 
-Крім того, `Patient` зростає: йому потрібен контактний номер на випадок надзвичайної ситуації — але це не окрема сутність, а **частина** пацієнта (ім'я, телефон, роль). Зберігати це в окремій таблиці надлишково — краще кілька додаткових стовпців у Patients.
+## Контекст
 
-І ще: якщо два адміністратори одночасно редагують картку пацієнта — хто "переможе"? Без захисту від **паралельного доступу** останній запис мовчки перезапише перший.
+Після Лаби 18 таблиця `Appointments` зберігає ієрархію підтипів через TPH. Але медичні записи (діагноз, аналіз, рецепт) ще не в БД — і ця ієрархія складніша: `MedicalRecord` абстрактний, а підтипи мають зовсім різні набори полів.
 
----
+Крім того, пацієнту потрібна контактна особа на випадок надзвичайної ситуації. Це не окрема сутність, а **частина** пацієнта (ім'я, телефон, ким доводиться) — окрема таблиця для неї надлишкова, досить кількох стовпців у `Patients`.
 
-## Структура проєкту на початку лаби
+І ще: якщо два адміністратори одночасно редагують картку пацієнта, без захисту від **паралельного доступу** останній запис мовчки перезапише перший.
+
+### Структура проєкту на початку лаби
 
 Це результат Лаби 18 — стан `main` після її злиття:
 
@@ -45,279 +47,275 @@ oop-course/                                    ← гілка main (після �
     └── Migrations/  (5 файлів — генерує EF)
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### Ключові поняття
+
+- **TPH для абстрактного класу.** `new MedicalRecord()` неможливий — EF створює лише конкретні підтипи. Дискримінатор описується для базового типу; поля підтипів у рядках інших підтипів — `NULL`, тому вони налаштовуються як необов'язкові.
+- **Owned Entity (`OwnsOne`).** Залежний об'єкт без власного `Id` і таблиці: його поля стають стовпцями таблиці власника (`EC_Name`, `EC_Phone`, `EC_Relationship` у `Patients`). На відміну від `ValueConverter` (один рядок, як `WorkSchedule`), кожне поле — окремий стовпець рідного SQL-типу, по якому можна шукати.
+- **Concurrency token (`RowVersion`).** SQL Server автоматично змінює стовпець `rowversion` при кожному `UPDATE`. EF додає до `UPDATE` умову `WHERE RowVersion = @старе_значення`: якщо запис устиг змінити хтось інший, рядок не знайдеться — і EF кине `DbUpdateConcurrencyException`.
+
+### Що нового дозволено (і тільки воно)
+
+- TPH для абстрактного базового класу;
+- `OwnsOne` (Owned Entity);
+- `IsRowVersion()` і `DbUpdateConcurrencyException`.
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
 git checkout -b Lab-19
 ```
 
----
+Коміт — на кожне завдання (`Lab19 TaskNN`).
 
-## Ключові концепції
+### Ваш домен
 
-### TPH для абстрактної ієрархії
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** в кінці кожного завдання.
 
-В Lab 18 TPH застосовувався до `Appointment` — конкретного класу. Тепер ієрархія `MedicalRecord` — абстрактна: не можна створити `new MedicalRecord()`.
+### Як користуватися підказками
 
-EF Core підтримує TPH з abstract базовими класами — дискримінатор описується для базового типу, а всі concrete підтипи реєструються окремо.
-
-**Складність:** поля підтипів `Diagnosis`, `LabResult`, `Prescription` — принципово різні. В одній таблиці вони є `NULL` для несумісних підтипів. Флюент API описує ці поля як `IsRequired(false)`.
-
-### Owned Entity
-
-**Проблема:** `EmergencyContact` — не незалежна сутність; вона існує тільки як частина `Patient`. Але у неї три поля (`Name`, `Phone`, `Relationship`).
-
-ValueConverter (WorkSchedule) — серіалізує в один рядок. Для EmergencyContact це незручно — три поля трьох різних типів.
-
-**Рішення — Owned Entity (`OwnsOne`):**
-
-```
-Patient → EC_Name, EC_Phone, EC_Relationship (стовпці у таблиці Patients)
-```
-
-EF Core вбудовує стовпці EmergencyContact прямо в таблицю власника. Немає JOIN, немає FK, немає окремої таблиці.
-
-```
-modelBuilder.Entity<Patient>().OwnsOne(p => p.EmergencyContact, ec =>
-{
-    ec.Property(e => e.Name).HasColumnName("EC_Name").HasMaxLength(100);
-    ...
-});
-```
-
-Важлива деталь: `OwnsOne` дозволяє `null` (пацієнт без контакту). В БД стовпці просто NULL.
-
-### Concurrency Token
-
-**Проблема паралельного доступу:**
-
-1. Адміністратор А завантажує Patient (RowVersion = `[1,2,3,4]`)
-2. Адміністратор Б завантажує той самий Patient
-3. Адміністратор Б зберігає зміни → RowVersion стає `[1,2,3,5]`
-4. Адміністратор А намагається зберегти — його версія `[1,2,3,4]` вже застаріла!
-
-`IsRowVersion()` — EF додає до UPDATE:
-```sql
-UPDATE Patients SET ... WHERE Id = @id AND RowVersion = @original_version
-```
-
-Якщо за час між SELECT і UPDATE хтось вже змінив запис — `WHERE` не знаходить рядка → 0 рядків оновлено → EF кидає `DbUpdateConcurrencyException`.
-
-SQL Server автоматично оновлює `rowversion` (тип timestamp) при кожному UPDATE.
+Підказки — **напрям думки, не готовий код**. «Що реалізувати» і «Специфікація» кажуть *що*; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Спершу документація і власна спроба.
 
 ---
 
-## Завдання
+## Задача 1. Ієрархія `MedicalRecord`: підготовка до EF ⭐⭐
 
-### Завдання 1. MedicalRecord — EF Core сумісність
+### Умова
 
-**Задача:** підготувати абстрактну ієрархію для EF Core.
+Підготуйте абстрактну ієрархію медичних записів (Лаба 06) до роботи з EF: властивості мають отримувати значення з БД, а EF — створювати об'єкти підтипів.
 
-**Проблема: абстрактний клас з readonly властивостями**
+**Що реалізувати:**
 
-`MedicalRecord` — абстрактний. EF Core ніколи не створює його безпосередньо, лише конкретні підтипи. Але shared конфігурація для всіх підтипів (Id, PatientId, DoctorId, Date) — в базовому класі.
+1. У `MedicalRecord` змінити `Id`, `PatientId`, `DoctorId`, `Date` на `{ get; private set; }`.
+2. Додати в `MedicalRecord` `protected` конструктор без параметрів, що задає `Date = DateTime.Today`.
+3. Додати в `MedicalRecord` навігаційну властивість `Patient`.
+4. Додати `protected` конструктори без параметрів у `Diagnosis`, `LabResult`, `Prescription`.
 
-`public int Id { get; }` — потрібен `private set` для EF. Аналогічно для `PatientId`, `DoctorId`, `Date`.
+### Специфікація
 
-Protected ctor для EF:
+| Клас | Зміни |
+|------|-------|
+| `MedicalRecord` | `Id`, `PatientId`, `DoctorId`, `Date` — `private set`; `protected MedicalRecord()`; `public Patient? Patient { get; set; }` |
+| `Diagnosis`, `LabResult`, `Prescription` | `protected` конструктор без параметрів |
+
+### Приклад
+
 ```csharp
-protected MedicalRecord() { Date = DateTime.Today; }
+var records = context.MedicalRecords.Where(r => r.PatientId == 1).ToList();
+// у списку — Diagnosis, LabResult, Prescription: EF створив об'єкти потрібних підтипів
 ```
 
-Чому `Date = DateTime.Today`? Щоб властивість мала безпечне значення після EF-побудови, ще до того як EF встановить реальне значення через setter.
+### Підказки
 
-**Підкласи:**
-- `Diagnosis`: додати `protected Diagnosis() { }`
-- `LabResult`: додати `protected LabResult() { }`
-- `Prescription`: додати `protected Prescription() { }`
+1. `Date = DateTime.Today` у конструкторі без параметрів — безпечне значення до того, як EF запише справжнє.
+2. EF викликає `protected` конструктор через рефлексію; конструктор без параметрів потрібен кожному конкретному підтипу.
+3. Завантажуючи запис, EF заповнює властивості через сеттери — а сеттери підтипів валідують значення (Лаба 05). Подумайте, чи небезпечно це для даних, що вже лежать у БД.
 
-Перевірте: чи потрібні зміни в приватних полях підкласів (`_diagnosisCode`, `_testName`, etc.)? EF викликає setter при завантаженні — а setter валідує. Чи небезпечно це?
+📖 Документація:
+- [Конструктори сутностей](https://learn.microsoft.com/ef/core/modeling/constructors)
 
-**Navigation property:**
-Додайте до `MedicalRecord`:
-```csharp
-public Patient? Patient { get; set; }  // navigation
-```
+### Адаптація до вашого домену
 
-**Ключові питання:**
-- Чому EF Core може використовувати `protected` конструктор? Він же не `public`.
-- Чи потрібен parameterless ctor для підкласів, якщо базовий `protected MedicalRecord()` вже є?
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `MedicalRecord` → `Diagnosis` / `LabResult` / `Prescription` | `ServiceRecord` → … | `OrderRecord` → … | `AcademicRecord` → … | `VehicleRecord` → … | `LoanRecord` → … | `FitnessRecord` → … |
+
+### Коміт
 
 ```bash
-git add src/Models/MedicalRecord.cs
-git commit -m "Lab19 Task01: add MedicalRecord hierarchy with EF Core compatibility"
+git add ClinicApp/Models/MedicalRecord.cs ClinicApp/Models/Diagnosis.cs ClinicApp/Models/LabResult.cs ClinicApp/Models/Prescription.cs
+git commit -m "Lab19 Task01"
 ```
 
 ---
 
-### Завдання 2. Fluent API для MedicalRecord TPH
+## Задача 2. Таблиця `MedicalRecords` (TPH) у Fluent API ⭐⭐⭐
 
-**Задача:** описати TPH ієрархію MedicalRecord з правильними FK та nullable стовпцями.
+### Умова
 
-**Структура таблиці MedicalRecords:**
+Опишіть таблицю медичних записів: два зовнішні ключі, дискримінатор і необов'язкові поля підтипів.
+
+**Що реалізувати:**
+
+1. Додати в `ClinicDbContext` таблицю `DbSet<MedicalRecord> MedicalRecords`.
+2. Налаштувати `MedicalRecord` у `OnModelCreating`: таблиця, ключ, зв'язки, дискримінатор (специфікація нижче).
+3. Налаштувати поля кожного підтипу окремо — усі необов'язкові.
+
+### Специфікація
+
+| Стовпець | Налаштування |
+|----------|--------------|
+| `Id` | PK, IDENTITY; значення з `_nextId` ігнорується (як у Лабі 17) |
+| `PatientId` | FK → `Patients`, каскадне видалення |
+| `DoctorId` | FK → `Doctors`, `Restrict` |
+| `Date` | дата |
+| `Notes` | до 500 символів |
+| `RecordType` | дискримінатор: `Diagnosis` / `LabResult` / `Prescription` |
+| `DiagnosisCode` (до 20), `Description`, `IsChronic` | лише для `Diagnosis`, nullable |
+| `TestName`, `Value`, `Unit`, `ReferenceRange`, `IsNormal` | лише для `LabResult`, nullable |
+| `MedicationName`, `Dosage`, `DurationDays`, `Instructions` | лише для `Prescription`, nullable |
+
+### Приклад
 
 ```
-Id            — PK, IDENTITY
-PatientId     — FK на Patients, Cascade
-DoctorId      — FK на Doctors, Restrict
-Date          — datetime2
-Notes         — nvarchar(500)
-RecordType    — дискримінатор: "Diagnosis" / "LabResult" / "Prescription"
-DiagnosisCode — nullable, тільки для Diagnosis
-Description   — nullable, тільки для Diagnosis
-IsChronic     — nullable bit, тільки для Diagnosis
-TestName      — nullable, тільки для LabResult
-Value         — nullable float, тільки для LabResult
-Unit          — nullable, тільки для LabResult
-ReferenceRange— nullable, тільки для LabResult
-IsNormal      — nullable bit, тільки для LabResult
-MedicationName— nullable, тільки для Prescription
-Dosage        — nullable, тільки для Prescription
-DurationDays  — nullable int, тільки для Prescription
-Instructions  — nullable, тільки для Prescription
+MedicalRecords
+Id | PatientId | RecordType   | DiagnosisCode | TestName   | MedicationName
+ 1 |     1     | Diagnosis    | I10           | NULL       | NULL
+ 2 |     1     | LabResult    | NULL          | Холестерин | NULL
+ 3 |     1     | Prescription | NULL          | NULL       | Лізиноприл
 ```
 
-**Two Cascade Paths:**
+### Підказки
 
-Знову проблема двох каскадних шляхів. `MedicalRecord` має два FK: `PatientId` і `DoctorId`. Обидва не можуть бути `Cascade`.
+1. Два каскади до однієї таблиці SQL Server не дозволяє — як і в Лабі 18: пацієнт — каскад, лікар — `Restrict`.
+2. Абстрактний базовий тип не має власного значення дискримінатора — значення задаються лише для конкретних підтипів.
+3. `IsRequired(false)` явно позначає стовпець як nullable: без нього EF може вимагати `NOT NULL` для полів, яких в інших підтипах просто немає.
+4. Значення полів підтипів зберігаються в приватних полях (`_diagnosisCode`, `_testName` …) за властивостями — EF працює через властивості.
 
-Рішення: `Patient → MedicalRecords: Cascade`, `Doctor → MedicalRecords: Restrict`.
+📖 Документація:
+- [Успадкування (TPH)](https://learn.microsoft.com/ef/core/modeling/inheritance)
+- [Обов'язкові й необов'язкові властивості](https://learn.microsoft.com/ef/core/modeling/entity-properties#required-and-optional-properties)
 
-**Конфігурація підтипів:**
+### Адаптація до вашого домену
 
-Після головної конфігурації — окремо для кожного підтипу:
-```
-modelBuilder.Entity<Diagnosis>(entity => {
-    entity.Property(d => d.DiagnosisCode).HasMaxLength(20).IsRequired(false);
-    ...
-});
-```
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `MedicalRecords` (`RecordType`) | `ServiceRecords` | `OrderRecords` | `AcademicRecords` | `VehicleRecords` | `LoanRecords` | `FitnessRecords` |
 
-`IsRequired(false)` явно позначає стовпець як nullable — без нього EF може вимагати NOT NULL.
-
-**Ключові питання:**
-- Що означає `HasDiscriminator` для абстрактного базового класу? Чи потрібно `HasValue<MedicalRecord>("Base")`?
-- Чому всі поля підтипів в одній таблиці є nullable?
+### Коміт
 
 ```bash
-git add src/Data/ClinicDbContext.cs src/Migrations/
-git commit -m "Lab19 Task02: configure Fluent API for MedicalRecord TPH and add migration"
+git add ClinicApp/Data/ClinicDbContext.cs
+git commit -m "Lab19 Task02"
 ```
 
 ---
 
-### Завдання 3. Owned Entity: EmergencyContact
+## Задача 3. Контактна особа як Owned Entity ⭐⭐
 
-**Задача:** додати до пацієнта контактну особу як Owned Entity.
+### Умова
 
-Створіть клас `EmergencyContact`:
+Додайте пацієнту контактну особу на випадок надзвичайної ситуації. Вона не має власного `Id` і таблиці — існує лише як частина пацієнта.
+
+**Що реалізувати:**
+
+1. Створити клас `EmergencyContact` у `ClinicApp/Models/` з трьома властивостями зі специфікації.
+2. Додати в `Patient` необов'язкову властивість `EmergencyContact`.
+3. Налаштувати її в `OnModelCreating` через `OwnsOne` — три стовпці в таблиці `Patients`.
+
+### Специфікація
+
+| Властивість `EmergencyContact` | Стовпець у `Patients` | Довжина |
+|--------------------------------|-----------------------|---------|
+| `Name` — ім'я контактної особи | `EC_Name` | 100 |
+| `Phone` — телефон | `EC_Phone` | 20 |
+| `Relationship` — ким доводиться (дружина, мати, брат…) | `EC_Relationship` | 50 |
+
+| Член `Patient` | |
+|----------------|--|
+| `public EmergencyContact? EmergencyContact { get; set; }` | необов'язкова: без контакту стовпці `EC_*` — `NULL` |
+
+### Приклад
+
 ```
-Name         — ім'я контактної особи
-Phone        — телефон
-Relationship — хто вона для пацієнта (Дружина / Мати / Брат...)
+Patients
+Id | FirstName | … | EC_Name       | EC_Phone   | EC_Relationship
+ 1 | Іван      | … | Олена Петренко | 0671112233 | дружина
+ 2 | Олена     | … | NULL          | NULL       | NULL
 ```
 
-Цей клас:
-- не має `Id`
-- не має власної таблиці
-- існує тільки як частина Patient
+### Підказки
 
-**Власник (Patient):**
-```csharp
-public EmergencyContact? EmergencyContact { get; set; }
-```
+1. `OwnsOne` вбудовує поля залежного об'єкта в таблицю власника: немає `JOIN`, FK чи окремої таблиці.
+2. Назви стовпців задаються через `HasColumnName`.
+3. Порівняйте з `WorkSchedule` (Лаба 17): один рядок проти трьох окремих стовпців — по яких зручніше шукати?
 
-`?` — контакт не обов'язковий. Якщо `null` — в БД стовпці EC_* рівні NULL.
+📖 Документація:
+- [Owned Entity Types](https://learn.microsoft.com/ef/core/modeling/owned-entities)
 
-**Fluent API:**
-```
-modelBuilder.Entity<Patient>().OwnsOne(p => p.EmergencyContact, ec =>
-{
-    ec.Property(e => e.Name).HasColumnName("EC_Name").HasMaxLength(100);
-    ec.Property(e => e.Phone).HasColumnName("EC_Phone").HasMaxLength(20);
-    ec.Property(e => e.Relationship).HasColumnName("EC_Relationship").HasMaxLength(50);
-});
-```
+### Адаптація до вашого домену
 
-Перевірте після міграції: чи є нові стовпці EC_* у таблиці Patients?
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `EmergencyContact` | `EmergencyContact` гостя | `ContactPerson` клієнта | `Guardian` студента | `EmergencyContact` клієнта | `ContactPerson` читача | `EmergencyContact` учасника |
 
-**Відмінності OwnsOne vs ValueConverter:**
-
-| | `ValueConverter<TModel, TProvider>` | `OwnsOne` |
-|---|---|---|
-| Стовпців | 1 | N (по одному на поле) |
-| Пошук | `WHERE WorkSchedule = '8-17'` | `WHERE EC_Name LIKE '%...%'` |
-| Типи | Один серіалізований | Рідні SQL типи |
-| Приклад | WorkSchedule → "8-17" | EmergencyContact → 3 стовпці |
-
-**Ключові питання:**
-- Чи можна зробити `OwnsMany` (колекцію Owned Entity)? Що EF робить з таблицею?
-- Що відбудеться якщо встановити `patient.EmergencyContact = null` і зберегти?
+### Коміт
 
 ```bash
-git add src/Models/Patient.cs src/Models/EmergencyContact.cs src/Data/ClinicDbContext.cs
-git commit -m "Lab19 Task03: add EmergencyContact as Owned Entity for Patient"
+git add ClinicApp/Models/EmergencyContact.cs ClinicApp/Models/Patient.cs ClinicApp/Data/ClinicDbContext.cs
+git commit -m "Lab19 Task03"
 ```
 
 ---
 
-### Завдання 4. Concurrency Token та DbSeeder
+## Задача 4. `RowVersion`, міграція і медичні записи в сідері ⭐⭐⭐
 
-**Задача:** додати захист від паралельного редагування та наповнити БД медичними записами.
+### Умова
 
-**RowVersion:**
+Захистіть картку пацієнта від одночасного редагування, застосуйте всі зміни схеми цієї лаби однією міграцією і додайте медичні записи в сідер.
 
-Додайте до `Patient`:
-```csharp
-public byte[]? RowVersion { get; private set; }
-```
+**Що реалізувати:**
 
-Fluent API:
-```
-modelBuilder.Entity<Patient>()
-    .Property(p => p.RowVersion)
-    .IsRowVersion();
-```
+1. Додати в `Patient` властивість `RowVersion` і налаштувати її як concurrency token (`IsRowVersion()`).
+2. Створити і застосувати міграцію `AddMedicalRecordsAndOwnedEntities` (команди нижче).
+3. Додати в `DbSeeder` крок `SeedMedicalRecords` (після `SeedAppointments`): хронічний і звичайний діагнози, аналіз у нормі й поза нормою, активний рецепт — на реальні `Id` з БД; ідемпотентно.
+4. Додати в `Program.cs` статичну функцію `DemoConcurrencyConflict()` і викликати її один раз на старті: два окремі контексти завантажують того самого пацієнта, перший зберігає зміну, другий отримує `DbUpdateConcurrencyException`; виведіть, що сталося.
 
-`IsRowVersion()` — це поєднання трьох налаштувань:
-1. Тип `timestamp` / `rowversion` у SQL Server
-2. `IsConcurrencyToken = true` — EF включає у WHERE при UPDATE
-3. `ValueGeneratedOnAddOrUpdate = true` — SQL Server оновлює автоматично
-
-**Демонстрація конфліктів:**
-
-Напишіть метод (або тест) що симулює конфлікт:
-```
-1. Завантажити patient через context1
-2. Завантажити той самий patient через context2
-3. context1.SaveChanges() — успішно
-4. context2.SaveChanges() — DbUpdateConcurrencyException
-```
-
-Зверніть увагу: потрібні два окремих `DbContext` екземпляри для симуляції двох сесій.
-
-**DbSeeder — медичні записи:**
-
-Додайте `SeedMedicalRecords(context)`:
-- `Diagnosis`: принаймні один хронічний і один звичайний
-- `LabResult`: один аналіз в нормі, один поза нормою
-- `Prescription`: один активний рецепт
-
-Важливо: медичні записи потребують реальних `PatientId` і `DoctorId` з БД. Порядок виклику: `SeedPatients` → `SeedDoctors` → `SeedAppointments` → `SeedMedicalRecords`.
-
-**Ключові питання:**
-- Що таке Optimistic Concurrency (оптимістичне блокування)? Чим відрізняється від Pessimistic (блокування рядка)?
-- Коли використовувати RowVersion, а коли — `[ConcurrencyCheck]` на окремому полі?
-- Що зробити у `catch (DbUpdateConcurrencyException)`? Перезавантажити дані чи інформувати користувача?
+### Специфікація
 
 ```bash
-git add src/Models/Patient.cs src/Data/DbSeeder.cs src/Migrations/
-git commit -m "Lab19 Task04: add RowVersion concurrency token and extend DbSeeder"
+dotnet ef migrations add AddMedicalRecordsAndOwnedEntities --project ClinicApp
+dotnet ef database update --project ClinicApp
+```
+
+| Член `Patient` | Налаштування |
+|----------------|--------------|
+| `public byte[]? RowVersion { get; private set; }` | `IsRowVersion()` → тип `rowversion`, оновлюється SQL Server автоматично |
+
+| Крок `DemoConcurrencyConflict()` | Очікувано |
+|----------------------------------|-----------|
+| контекст А і контекст Б завантажують пацієнта #1 | обидва бачать однаковий `RowVersion` |
+| А змінює телефон і зберігає | успіх, `RowVersion` у БД змінився |
+| Б змінює ім'я і зберігає | `DbUpdateConcurrencyException` |
+
+### Приклад
+
+```
+== Конфлікт паралельного редагування ==
+Сесія А: зміни збережено.
+Сесія Б: DbUpdateConcurrencyException — запис уже змінено іншим користувачем.
+```
+
+### Підказки
+
+1. `IsRowVersion()` поєднує три налаштування: тип `rowversion`, участь у `WHERE` при `UPDATE` і автоматичну генерацію значення сервером.
+2. Два «користувачі» — це два **окремі** екземпляри `DbContext`: в одному контексті EF відстежує один об'єкт і конфлікту не буде.
+3. Перехопіть виняток у `try/catch`; у реальній програмі тут або перезавантажують дані, або повідомляють користувача.
+4. Порядок у сідері: пацієнти → лікарі → записи → медичні записи.
+
+📖 Документація:
+- [Конфлікти паралельного доступу](https://learn.microsoft.com/ef/core/saving/concurrency)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Patient.RowVersion` | `Guest.RowVersion` | `Customer.RowVersion` | `Student.RowVersion` | `Client.RowVersion` | `Reader.RowVersion` | `Member.RowVersion` |
+
+### Коміт
+
+```bash
+git add ClinicApp/Models/Patient.cs ClinicApp/Data/ClinicDbContext.cs ClinicApp/Data/DbSeeder.cs ClinicApp/Migrations/ ClinicApp/Program.cs
+git commit -m "Lab19 Task04"
 ```
 
 ---
@@ -332,16 +330,16 @@ oop-course/                                    ← гілка Lab-19 (після
 ├── oop-course.sln
 └── ClinicApp/
     ├── ClinicApp.csproj
-    ├── Program.cs
+    ├── Program.cs                             ✏ Т4
     ├── Clinic.cs
     ├── Enums/  (4 файли)
     ├── Models/
-    │   ├── Patient.cs                         ✏
-    │   ├── Diagnosis.cs                       ✏
-    │   ├── LabResult.cs                       ✏
-    │   ├── MedicalRecord.cs                   ✏
-    │   ├── Prescription.cs                    ✏
-    │   ├── EmergencyContact.cs                🆕
+    │   ├── Patient.cs                         ✏ Т3 Т4
+    │   ├── Diagnosis.cs                       ✏ Т1
+    │   ├── LabResult.cs                       ✏ Т1
+    │   ├── MedicalRecord.cs                   ✏ Т1
+    │   ├── Prescription.cs                    ✏ Т1
+    │   ├── EmergencyContact.cs                🆕 Т3
     │   └── … ще 11 файлів без змін
     ├── Managers/  (13 файлів)
     ├── Utils/  (12 файлів)
@@ -352,41 +350,56 @@ oop-course/                                    ← гілка Lab-19 (після
     ├── Extensions/  (3 файли)
     ├── UI/  (1 файл)
     ├── Data/
-    │   ├── ClinicDbContext.cs                 ✏
-    │   ├── DbSeeder.cs                        ✏
+    │   ├── ClinicDbContext.cs                 ✏ Т2 Т3 Т4
+    │   ├── DbSeeder.cs                        ✏ Т4
     │   └── ClinicRepository.cs
-    └── Migrations/  (7 файлів — генерує EF)   🆕
+    └── Migrations/  (7 файлів — генерує EF)   ✏ Т4
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 18.
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
-## Рефлексійні питання
+## Перевірка перед здачею
 
-1. **TPH nullable fields.** У таблиці MedicalRecords стовпці `DiagnosisCode`, `TestName`, `MedicationName` — nullable. Це "порушення" 1НФ (перша нормальна форма)? Чи це прийнятний компроміс?
+```bash
+dotnet build ClinicApp
+dotnet run --project ClinicApp
+```
 
-2. **TPT як альтернатива.** Table Per Type: Diagnosis в `Diagnoses`, LabResult в `LabResults` тощо — немає NULL. Але при завантаженні `MedicalRecord[]` — JOIN для кожного підтипу. Де TPH краще? Де TPT?
+Переконайтесь, що:
 
-3. **Owned Entity і агрегати.** EmergencyContact — це Value Object у термінах DDD (Domain-Driven Design). Що означає "value object"? Як воно відрізняється від Entity?
+- [ ] Структура проєкту збігається зі схемою вище
+- [ ] У БД є таблиця `MedicalRecords` зі стовпцем `RecordType` і nullable-стовпцями підтипів
+- [ ] У таблиці `Patients` є стовпці `EC_Name`, `EC_Phone`, `EC_Relationship` і `RowVersion`
+- [ ] Після сідера в БД медичні записи всіх трьох типів
+- [ ] На старті `DemoConcurrencyConflict()` показує успіх першої сесії і `DbUpdateConcurrencyException` другої
+- [ ] Повторний запуск не дублює дані
 
-4. **RowVersion і репліка.** Якщо БД реплікована (primary + replica), `rowversion` не синхронізується між серверами. Як вирішити проблему конкурентного доступу в такому середовищі?
+---
 
-5. **Soft delete.** Замість видалення запису — встановити `IsDeleted = true`. Як це реалізувати в EF Core так, щоб всі запити автоматично фільтрували видалені записи?
+## Питання для самоперевірки
 
-6. **Validation in setters vs DB constraints.** Setter `DiagnosisCode` валідує не-порожній рядок. А в БД — nullable column. Хто відповідає за якість даних — C# код чи схема БД? Або обоє?
+1. **Nullable-стовпці TPH.** `DiagnosisCode`, `TestName`, `MedicationName` — nullable. Це порушення першої нормальної форми чи прийнятний компроміс?
+2. **TPT як альтернатива.** Окремі таблиці для підтипів — без `NULL`, але з `JOIN` при завантаженні `MedicalRecord[]`. Де краще TPH, де TPT?
+3. **Value Object.** `EmergencyContact` — value object у термінах DDD. Чим value object відрізняється від сутності (entity)?
+4. **Оптимістичне чи песимістичне блокування.** Чим `RowVersion` відрізняється від блокування рядка на час редагування?
+5. **Що робити в `catch (DbUpdateConcurrencyException)`** — перезавантажити дані чи повідомити користувача? Від чого залежить вибір?
+6. **Валідація в сеттерах чи обмеження БД.** Сеттер `DiagnosisCode` не пропускає порожній рядок, а стовпець у БД — nullable. Хто відповідає за якість даних?
 
 ---
 
 ## Статус гілки
 
-Після завершення всіх завдань — злити в `main`:
+Після всіх 4 завдань (кожне — окремий коміт `Lab19 TaskNN` на гілці `Lab-19`):
 
 ```bash
+git push -u origin Lab-19
 git checkout main
 git merge --no-ff Lab-19 -m "Merge Lab-19: EF Core Advanced"
+git push
 ```
 
-> Наступна лаба: `git checkout -b Lab-20`
+> Наступна лаба: `git checkout main` → `git checkout -b Lab-20`.

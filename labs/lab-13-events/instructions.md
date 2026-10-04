@@ -1,10 +1,23 @@
-# Лабораторна робота №13. Events & Delegates
+# Лаба 13 — Events & Delegates (Події та делегати)
 
 ## Мета
 
-Зрозуміти проблему жорсткого зв'язування між класами та навчитись її вирішувати через механізм подій. Опанувати `delegate`, `EventArgs`, `event EventHandler<T>`, підписку через `+=` і побудову системи де компоненти реагують на зміни **не знаючи один про одного**.
+Зрозуміти проблему жорсткого зв'язування між класами та навчитись її вирішувати через механізм подій. Опанувати `delegate`, `EventArgs`, `event EventHandler<T>`, підписку через `+=` і побудову системи, де компоненти реагують на зміни, **не знаючи один про одного**.
 
-## Структура проєкту на початку лаби
+## Контекст
+
+Відкрийте `ClinicApp/Program.cs` і подивіться на будь-який пункт меню. Після кожної дії ви побачите щось подібне:
+
+```csharp
+clinic.Appointments.Book(patientId, doctorId, scheduledAt);
+clinic.Logger.LogInfo($"Запис створено: пацієнт {patientId}...");
+```
+
+Тобто **кожна дія в меню вручну повідомляє `Logger`**. Зараз слухач один — але що, якщо потрібно ще й оновити паспорт пацієнта чи вести статистику? Тоді після кожної дії буде три рядки, потім чотири, потім п'ять. Це **жорстке зв'язування**: `Program.cs` знає про всіх слухачів і мусить викликати кожного вручну.
+
+**Правильно**, щоб менеджер просто **повідомляв**: «запис створено». А всі зацікавлені слухачі реагують самі — незалежно, не знаючи одне про одного. Це **патерн Publisher–Subscriber**, реалізований через механізм подій у C#.
+
+### Структура проєкту на початку лаби
 
 Це результат Лаби 12 — стан `main` після її злиття:
 
@@ -36,310 +49,328 @@ oop-course/                             ← гілка main (після злит
     └── Attributes/  (3 файли)
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### Що таке делегат, подія і `EventArgs`
+
+**Делегат** — тип, що описує сигнатуру методу. Думайте про нього як про «контракт обробника»: «я очікую метод, що приймає `object? sender` і `AppointmentEventArgs e` і нічого не повертає». `EventHandler<T>` — вбудований у .NET делегат саме з такою сигнатурою: оголошувати власний не потрібно.
+
+**Подія (`event`)** — поле типу делегата з обмеженнями: ззовні класу дозволено лише `+=` і `-=`. Не можна присвоїти `= null` чи викликати подію напряму — це захищає від випадкового знищення всіх підписників.
+
+**`EventArgs`** — базовий клас для «посилки з даними про подію». Повідомляючи про створення запису, менеджер передає `AppointmentEventArgs` з усіма деталями; підписник отримує цю посилку і робить з нею що потрібно.
+
+### Що нового дозволено (і тільки воно)
+
+- `event EventHandler<T>`, підписка `+=` / відписка `-=`;
+- власні класи-нащадки `EventArgs`;
+- безпечний виклик події `?.Invoke(...)`;
+- методи з тілом-виразом `=>` для коротких обробників.
+
+Досі заборонено: LINQ (Лаба 14), лямбди й `Func`/`Action` (Лаба 15).
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
 git checkout -b Lab-13
 ```
 
----
+Коміт — на кожне завдання (`Lab13 TaskNN`).
 
-## Проблема, яку вирішує ця лаба
+### Ваш домен
 
-Відкрийте `src/Program.cs` і подивіться на будь-який пункт меню. Після кожної дії ви побачите щось подібне:
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** в кінці кожного завдання.
 
-```csharp
-clinic.Appointments.Book(patientId, doctorId, scheduledAt);
-clinic.Logger.LogInfo($"Запис створено: пацієнт {patientId}...");
-```
+### Як користуватися підказками
 
-Тобто **кожна дія в меню вручну повідомляє Logger**. Зараз Logger один — але що якщо потрібно ще й записати у файл статистики? Або оновити паспорт пацієнта? Тоді після кожної дії буде три рядки, потім чотири, потім п'ять.
-
-Це **жорстке зв'язування** — `Program.cs` знає про `Logger`, `PassportWriter`, `Tracker` і повинен викликати кожен з них вручну. Якщо додати нового підписника — доведеться змінювати `Program.cs`.
-
-**Правильно** було б щоб менеджер просто **повідомляв**: "запис створено". А всі зацікавлені слухачі реагують самі — незалежно, не знаючи одне про одного. Саме це і є **патерн Publisher-Subscriber**, реалізований через механізм подій у C#.
+Підказки — **напрям думки, не готовий код**. «Що реалізувати» і «Специфікація» кажуть *що*; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Спершу документація і власна спроба.
 
 ---
 
-## Завдання 1. Перша подія — зрозуміти механіку ⭐⭐
+## Задача 1. Перша подія: `AppointmentBooked` ⭐⭐
 
-### Що зараз не так
+### Умова
 
-`AppointmentManager.Book()` створює запис — але нікому про це не повідомляє. `Program.cs` мусить сам писати у лог після кожного виклику. Якщо десь забудеш — лог неповний.
+`AppointmentManager.Book()` створює запис, але нікому про це не повідомляє — `Program.cs` мусить сам писати в лог після кожного виклику. Додайте першу подію і першого підписника, щоб побачити механіку.
 
-### Що таке delegate і event
+**Що реалізувати:**
 
-**Delegate** — це тип що описує сигнатуру методу. Думайте про нього як про "контракт обробника": "я очікую метод, що приймає `object? sender` і `AppointmentEventArgs e` і нічого не повертає".
+1. Створити теку `ClinicApp/Events/` і клас `AppointmentEventArgs : EventArgs` з даними про запис (специфікація нижче). Усі властивості лише для читання, заповнюються в конструкторі.
+2. У `AppointmentManager` оголосити подію `AppointmentBooked` типу `EventHandler<AppointmentEventArgs>`.
+3. Піднімати `AppointmentBooked` після **кожного** успішного створення запису — у `Book`, `BookUrgent` і `BookSpecialist`.
+4. У `Program.cs` оголосити статичний обробник `OnAppointmentBookedConsole`, що виводить рядок `[EVENT] Запис #N створено…`, і підписати його **до** створення початкових даних.
 
-`EventHandler<T>` — це вбудований у .NET delegate з саме такою сигнатурою. Вам не потрібно оголошувати delegate вручну — достатньо `EventHandler<T>` де `T` — ваш клас аргументів.
+### Специфікація
 
-**Event** — це поле типу delegate з обмеженнями: ззовні класу дозволено лише `+=` і `-=`. Не можна присвоїти `= null` або викликати напряму. Це захищає від випадкового знищення всіх підписників.
+| Властивість `AppointmentEventArgs` | Тип |
+|------------------------------------|-----|
+| `AppointmentId` | `int` |
+| `PatientId` | `int` |
+| `DoctorId` | `int` |
+| `ScheduledAt` | `DateTime` |
+| `Notes` | `string` (за замовчуванням `""`) |
 
-### Що таке EventArgs
+| Член `AppointmentManager` | Опис |
+|---------------------------|------|
+| `event EventHandler<AppointmentEventArgs>? AppointmentBooked` | піднімається після успішного запису будь-якого типу |
 
-`EventArgs` — базовий клас для "посилки з даними про подію". Коли `AppointmentManager` повідомляє про створення запису, він передає `AppointmentEventArgs` з усіма деталями: id запису, id пацієнта, id лікаря, час. Підписник отримує цю посилку і робить з нею що потрібно.
+### Приклад
 
-### Що потрібно зробити
-
-**Крок 1.** Створіть папку `src/Events/` і в ній файл `AppointmentEventArgs.cs`.
-
-Цей клас успадковує `EventArgs` і містить readonly-властивості з даними про подію: `AppointmentId`, `PatientId`, `DoctorId`, `ScheduledAt`, `Notes`. Всі властивості заповнюються через конструктор — після створення об'єкт незмінний, бо подія вже відбулась.
-
-Подумайте: чому `Notes` має значення за замовчуванням `""`? Коли воно може бути порожнім?
-
-**Крок 2.** Відкрийте `src/Managers/AppointmentManager.cs`.
-
-Додайте поле події:
-```csharp
-public event EventHandler<AppointmentEventArgs>? AppointmentBooked;
+```
+  [EVENT] Запис #1 створено: пацієнт #1 → лікар #1, 16.10.2026 10:00
+  [EVENT] Запис #2 створено: пацієнт #2 → лікар #2, 16.10.2026 11:00
 ```
 
-Знак `?` означає що підписників може не бути — і це нормально. Якщо не перевірити, виклик кине `NullReferenceException`.
+Рядки з'являються автоматично — у коді меню немає жодного виклику обробника.
 
-Після успішного створення запису в методі `Book()` підніміть подію:
-```csharp
-AppointmentBooked?.Invoke(this, new AppointmentEventArgs(...));
+### Підказки
+
+1. Знак `?` у типі події означає, що підписників може не бути, і це нормально.
+2. Піднімайте подію безпечним викликом `?.Invoke(this, args)`: якщо підписників немає — нічого не відбувається. Без `?.` порожня подія кине `NullReferenceException`.
+3. Якщо в Лабі 08 ви винесли спільну частину `Book`/`BookUrgent`/`BookSpecialist` у приватний метод — підніміть подію там, і вона спрацює для всіх трьох.
+4. `sender` — об'єкт, що підняв подію (тут — менеджер). Передавайте `this`.
+5. `Notes` має значення за замовчуванням `""` — запис може бути без приміток.
+
+📖 Документація:
+- [Події (посібник)](https://learn.microsoft.com/dotnet/csharp/programming-guide/events/)
+- [`EventHandler<TEventArgs>`](https://learn.microsoft.com/dotnet/api/system.eventhandler-1)
+- [Як підняти й обробити подію](https://learn.microsoft.com/dotnet/standard/events/how-to-raise-and-consume-events)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `AppointmentEventArgs` | `BookingEventArgs` | `ReservationEventArgs` | `EnrollmentEventArgs` | `RentalEventArgs` | `LoanEventArgs` | `SessionEventArgs` |
+| `AppointmentBooked` | `BookingCreated` | `ReservationCreated` | `StudentEnrolled` | `RentalCreated` | `BookLoaned` | `SessionBooked` |
+
+### Коміт
+
+```bash
+git add ClinicApp/Events/AppointmentEventArgs.cs ClinicApp/Managers/AppointmentManager.cs ClinicApp/Program.cs
+git commit -m "Lab13 Task01"
 ```
-
-`?.Invoke` — безпечний виклик: якщо немає підписників, просто нічого не відбувається.
-
-**Крок 3.** Відкрийте `src/Program.cs`.
-
-Підпишіть простий обробник ще **до** ініціалізації тестових даних:
-```csharp
-clinic.Appointments.AppointmentBooked += OnAppointmentBookedConsole;
-```
-
-Нижче (поза циклом меню) оголосіть статичний метод:
-```csharp
-static void OnAppointmentBookedConsole(object? sender, AppointmentEventArgs e)
-{
-    Console.WriteLine($"  [EVENT] Запис #{e.AppointmentId} створено...");
-}
-```
-
-Зверніть увагу: `Program.cs` не викликає `Logger` — він просто "слухає" подію від менеджера.
-
-**Перевірка.** Запустіть програму, запишіть пацієнта через меню. Рядок `[EVENT]` з'являється автоматично — без жодного виклику у коді меню.
-
-### Ключові питання для розуміння
-
-- Чому обробник має саме таку сигнатуру `(object? sender, T e)`? Що означає `sender`?
-- Що станеться якщо написати `AppointmentBooked.Invoke(...)` без `?.`?
-- Спробуйте написати `clinic.Appointments.AppointmentBooked = null` — чому компілятор не дозволяє?
 
 ---
 
-## Завдання 2. Всі події + Logger як підписник ⭐⭐
+## Задача 2. Усі події системи і `ClinicLogger` як підписник ⭐⭐
 
-### Чому Logger не повинен викликатись вручну
+### Умова
 
-Подивіться на `Program.cs`: скрізь де є дія — є `clinic.Logger.LogInfo(...)`. Це означає що `Program.cs` **знає** про Logger і **пам'ятає** його викликати. Якщо хтось додасть новий пункт меню і забуде — дія не залогується.
+Зараз `Program.cs` **знає** про `Logger` і **пам'ятає** викликати його після кожної дії. Новий пункт меню без такого виклику — і дія не потрапить у лог. Нехай натомість менеджери піднімають події, а `Logger` як підписник реагує сам — автоматично і завжди.
 
-**Правильніше**: нехай `AppointmentManager` підніме подію → Logger як підписник сам відреагує. Автоматично. Завжди. Без залежності від `Program.cs`.
+**Що реалізувати:**
 
-### Що потрібно зробити
+1. У `ClinicApp/Events/` створити `PatientEventArgs`, `PaymentEventArgs`, `TreatmentPlanEventArgs` (специфікація нижче).
+2. Додати події в менеджери і піднімати їх у відповідних методах (таблиця подій нижче).
+3. У `TreatmentPlanManager` додати метод `Complete(int planId)`: знаходить план, завершує його і піднімає `PlanCompleted`. Пункт меню «Завершити план» (Лаба 11) тепер викликає цей метод.
+4. У `ClinicLogger` додати обробник для кожної події. Терміновий запис — `LogWarning` і додатковий рядок у файлі `alerts/urgent_{yyyy-MM-dd}.txt`.
+5. У `Clinic.cs` додати приватний метод `SubscribeEvents()`, що підписує `Logger` на всі події, і викликати його в кінці конструктора.
+6. Прибрати з `Program.cs` ручні виклики `clinic.Logger.LogInfo(...)` для дій, які тепер покриті подіями.
 
-**Крок 1. Нові EventArgs.**
+### Специфікація
 
-Аналогічно Task 1 створіть в `src/Events/`:
-- `PatientEventArgs.cs` — `PatientId`, `FullName`
-- `PaymentEventArgs.cs` — `AppointmentId`, `Amount`
-- `TreatmentPlanEventArgs.cs` — `PlanId`, `PatientId`, `Diagnosis`
+| `EventArgs` | Властивості |
+|-------------|-------------|
+| `PatientEventArgs` | `PatientId`, `FullName` |
+| `PaymentEventArgs` | `AppointmentId`, `Amount` (`decimal`) |
+| `TreatmentPlanEventArgs` | `PlanId`, `PatientId`, `Diagnosis` |
 
-Поля беріть ті, що логічно описують "що сталося": мінімально достатньо для обробника.
+| Менеджер | Подія | Де піднімається |
+|----------|-------|-----------------|
+| `AppointmentManager` | `AppointmentCancelled` | `Cancel()`; у `CancelAll()` — для кожного скасованого запису |
+| `AppointmentManager` | `AppointmentCompleted` | `Complete()` |
+| `AppointmentManager` | `UrgentAppointmentBooked` | `BookUrgent()` — **разом** з `AppointmentBooked` |
+| `PatientManager` | `PatientAdded` | `Add()` |
+| `BillingManager` | `PaymentReceived` | `PayAppointment()`; сума — `GetCost()` |
+| `TreatmentPlanManager` | `PlanCompleted` | новий `Complete(int planId)` |
 
-**Крок 2. Нові події в менеджерах.**
+Кожна подія піднімається лише після **успішної** дії.
 
-В `AppointmentManager` додайте ще три події — `AppointmentCancelled`, `AppointmentCompleted`, `UrgentAppointmentBooked`. Підніміть їх у відповідних методах: `Cancel()`, `Complete()`, `BookUrgent()`.
+### Приклад
 
-Зверніть увагу: в `BookUrgent()` варто підняти **дві** події — `AppointmentBooked` і `UrgentAppointmentBooked`. Терміновий запис — це все одно запис, тому перша подія теж доречна. Logger підписаний на обидві і залогує обидві — це задумана поведінка.
-
-В `PatientManager` — `PatientAdded` у методі `Add()`.
-
-В `BillingManager` — `PaymentReceived` у методі `PayAppointment()`. Яку суму передавати в `PaymentEventArgs`? Подумайте: `GetCost()` доступний через `IPayable`.
-
-В `TreatmentPlanManager` — `PlanCompleted`. Але зараз зміна статусу плану відбувається всередині самого `TreatmentPlan`. Вам потрібно додати метод-обгортку `Complete(int id)` у менеджері — саме він підніме подію після успішного завершення.
-
-**Крок 3. Logger як підписник.**
-
-Відкрийте `src/Utils/ClinicLogger.cs`. Додайте методи-обробники — по одному на кожну подію:
-
-```csharp
-public void OnPatientAdded(object? sender, PatientEventArgs e)
-    => LogInfo($"Новий пацієнт #{e.PatientId}: {e.FullName}");
+```
+[2026-10-15 11:00:02] [INFO ] Новий пацієнт #6: Марія Ткач
+[2026-10-15 11:01:15] [INFO ] Запис #9 створено: пацієнт #6 → лікар #2
+[2026-10-15 11:01:15] [WARN ] ТЕРМІНОВИЙ запис #9: біль у грудях
+[2026-10-15 11:03:40] [INFO ] Оплата запису #9: 450.00 грн
 ```
 
-Аналогічно для всіх інших подій. Для `OnUrgentBooked` — використайте `LogWarning` і додатково запишіть у файл `alerts/urgent_{дата}.txt` через `File.AppendAllText`.
+### Підказки
 
-Підказка для методів що вже мали `LogInfo` у меню: після цього кроку ці ручні виклики в `Program.cs` **видаляються** — Logger сам знає коли логувати.
+1. Нові `EventArgs` — за тим самим зразком, що `AppointmentEventArgs`: лише ті поля, що описують «що сталося».
+2. Терміновий запис — теж запис, тож `BookUrgent()` піднімає **обидві** події. Logger підписаний на обидві й залогує обидві — це задумано.
+3. Обробник у `ClinicLogger` — звичайний публічний метод із сигнатурою `(object? sender, XxxEventArgs e)`; короткий можна записати з тілом-виразом `=>`.
+4. Підписка — у `Clinic`, а не в `Program.cs`: `Clinic` — оркестратор, він знає всі менеджери й вирішує, хто на що підписаний.
+5. Підписка можлива лише після створення і менеджерів, і `Logger` — тому `SubscribeEvents()` викликається **в кінці** конструктора.
+6. Теку `alerts/` створіть через `Directory.CreateDirectory` перед записом.
 
-**Крок 4. Підписка в Clinic.cs.**
+📖 Документація:
+- [Події (посібник)](https://learn.microsoft.com/dotnet/csharp/programming-guide/events/)
+- [`File.AppendAllText`](https://learn.microsoft.com/dotnet/api/system.io.file.appendalltext)
 
-Відкрийте `src/Clinic.cs`. Додайте приватний метод `SubscribeEvents()` і викличте його в кінці конструктора.
+### Адаптація до вашого домену
 
-Чому саме тут, а не в `Program.cs`? Тому що `Clinic` — це оркестратор системи. Саме він знає про всі менеджери і вирішує хто на що підписаний. `Program.cs` не повинен знати про внутрішні зв'язки між компонентами.
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `PatientAdded` | `GuestRegistered` | `CustomerAdded` | `StudentAdded` | `ClientAdded` | `ReaderAdded` | `MemberAdded` |
+| `PaymentReceived` | `InvoicePaid` | `BillPaid` | `FeePaid` | `RentalPaid` | `FinePaid` | `MembershipPaid` |
+| `UrgentAppointmentBooked` | `SuiteBooked` | `PrivateRoomReserved` | `IntensiveEnrolled` | `PremiumRented` | `ResearchLoaned` | `PersonalTrainingBooked` |
 
-```csharp
-private void SubscribeEvents()
-{
-    Patients.PatientAdded             += Logger.OnPatientAdded;
-    Appointments.AppointmentBooked    += Logger.OnAppointmentBooked;
-    // ... решта подій
-}
+### Коміт
+
+```bash
+git add ClinicApp/Events/ ClinicApp/Managers/ ClinicApp/Utils/ClinicLogger.cs ClinicApp/Clinic.cs ClinicApp/Program.cs
+git commit -m "Lab13 Task02"
 ```
-
-**Крок 5. Прибрати ручні виклики Logger з Program.cs.**
-
-Тепер всі `clinic.Logger.LogInfo(...)` що стосуються подій — зайві. Logger підписаний і реагує сам. Знайдіть і видаліть їх.
-
-**Перевірка.** Два підписники на `AppointmentBooked`: ваш `OnAppointmentBookedConsole` з Task 1 і `Logger.OnAppointmentBooked`. При записі пацієнта — обидва спрацьовують. У консолі з'явиться рядок `[EVENT]`, у `clinic.log` — рядок від Logger. Менеджер не знає про жодного з них.
-
-### Ключові питання для розуміння
-
-- `AppointmentManager` не імпортує `ClinicLogger`. Де відбувається їх зв'язок?
-- Чому Logger — підписник, а не навпаки (Logger не викликає менеджер)?
-- `BookUrgent` піднімає дві події. Скільки рядків у лозі після одного `BookUrgent`? Чому?
 
 ---
 
-## Завдання 3. PatientPassportWriter — другий незалежний підписник ⭐⭐⭐
+## Задача 3. `PatientPassportWriter` — другий незалежний підписник ⭐⭐⭐
 
-### Нова вимога без зміни менеджерів
+### Умова
 
-Уявіть: замовник каже "при реєстрації пацієнта і при кожному завершеному прийомі — генеруйте файл паспорту пацієнта". Скільки файлів треба змінити в поточній системі?
+Замовник просить: «при реєстрації пацієнта, після кожного завершеного прийому і завершеного плану лікування — генеруйте файл паспорта пацієнта». З подіями це **один новий клас**: менеджери вже піднімають потрібні події, достатньо підписати нового слухача. `PatientManager`, `AppointmentManager`, `Program.cs` не змінюються.
 
-З подіями відповідь: **один новий файл** — `PatientPassportWriter`. Менеджери вже піднімають відповідні події. Потрібно лише підписати новий клас. `AppointmentManager`, `PatientManager`, `Program.cs` — жоден не змінюється.
+**Що реалізувати:**
 
-Це і є головна перевага подій: **відкрита для розширення, закрита для змін**.
+1. Клас `PatientPassportWriter` у `ClinicApp/Utils/`: отримує `Clinic` і теку для паспортів (за замовчуванням `patients`) через конструктор; теку створює в конструкторі.
+2. Три публічні обробники — на `PatientAdded`, `AppointmentCompleted`, `PlanCompleted`; усі викликають **один** приватний метод запису паспорта.
+3. Метод запису перезаписує файл `patients/passport_{id}.txt` повністю; якщо пацієнта не знайдено — нічого не пише.
+4. У `Clinic.cs` додати властивість `Passport` і підписати три обробники в `SubscribeEvents()`.
 
-### Що таке паспорт пацієнта
+### Специфікація
 
-Файл `patients/passport_{id}.txt` — повна картка пацієнта в текстовому форматі. Генерується заново при кожному тригері (простіше ніж відстежувати що змінилось). Містить:
+Секції паспорта (у такому порядку):
 
-- Особисті дані: ім'я, дата народження, вік, група крові, телефон
-- Медичні записи: діагнози, аналізи, рецепти (з `MedicalRecordManager`)
-- Записи на прийом (з `AppointmentManager`)
-- Плани лікування (з `TreatmentPlanManager`)
-- Фінансова заборгованість (з `BillingManager`)
+| Секція | Джерело |
+|--------|---------|
+| Особисті дані: ім'я, дата народження, вік, група крові, телефон | `Patients` |
+| Медичні записи: окремо діагнози, аналізи, рецепти | `MedicalRecords` |
+| Записи на прийом | `Appointments` |
+| Плани лікування | `TreatmentPlans` |
+| Заборгованість | `Billing` |
+| Дата генерації паспорта | `DateTime.Now` |
 
-### Що потрібно зробити
+### Приклад
 
-**Крок 1.** Створіть `src/Utils/PatientPassportWriter.cs`.
+```
+=== Паспорт пацієнта #1 ===
+Згенеровано: 15.10.2026 11:20
 
-Клас отримує `Clinic` через конструктор — щоб мати доступ до всіх менеджерів при генерації файлу. Також приймає `baseDir` (за замовчуванням `"patients"`) — папка де зберігаються паспорти. Папку варто створити одразу в конструкторі через `Directory.CreateDirectory`.
+Ім'я: Іван Петренко
+Дата народження: 15.03.1985 (41 рік)
+Група крові: A+   Телефон: (050) 123-4567
 
-Три публічні обробники, всі викликають один приватний метод `Write(int patientId)`:
-```csharp
-public void OnPatientAdded(object? sender, PatientEventArgs e)    => Write(e.PatientId);
-public void OnAppointmentCompleted(object? sender, AppointmentEventArgs e) => Write(e.PatientId);
-public void OnPlanCompleted(object? sender, TreatmentPlanEventArgs e)      => Write(e.PatientId);
+-- Діагнози --
+I10: Гіпертонічна хвороба [хронічне]
+-- Аналізи --
+Холестерин: 6.2 ммоль/л (норма: < 5.2) ⚠ поза нормою
+-- Рецепти --
+Лізиноприл 10 мг × 30 днів (вранці)
+
+-- Записи --
+[1] Звичайний прийом | 16.10.2026 10:00 | Completed | 300.00 грн
+
+-- Плани лікування --
+[1] Гіпертонія | 30 днів | Active
+
+Заборгованість: 0.00 грн
 ```
 
-Чому так? Тому що логіка генерації однакова — зібрати всі дані пацієнта і записати у файл. Не дублюйте цей код тричі.
+### Підказки
 
-**Крок 2.** Реалізуйте приватний метод `Write(int patientId)`.
+1. Логіка генерації однакова для всіх трьох тригерів — не дублюйте її: обробники лише передають `PatientId` у спільний метод.
+2. Перезапис (`StreamWriter` з `append: false`), а не дописування: паспорт — це знімок поточного стану, а не журнал.
+3. Для розбиття медичних записів на типи — `is` з оголошенням змінної (Лаба 06). Три окремі проходи для трьох секцій простіші за один прохід із кількома `if`.
+4. Ранній вихід `return`, якщо пацієнта не знайдено, — щоб не створити порожній файл.
 
-Алгоритм:
-1. Знайдіть пацієнта за ID. Якщо не знайдено — вийти (ранній вихід `return`).
-2. Складіть шлях: `Path.Combine(_baseDir, $"passport_{patientId}.txt")`.
-3. Відкрийте `StreamWriter` з `append: false` — **перезаписуємо** файл, не дописуємо. Паспорт завжди актуальний.
-4. Запишіть кожну секцію.
+📖 Документація:
+- [`StreamWriter`](https://learn.microsoft.com/dotnet/api/system.io.streamwriter)
+- [Зіставлення з шаблоном `is`](https://learn.microsoft.com/dotnet/csharp/language-reference/operators/is)
 
-Для секцій медичних записів використовуйте `is` з оголошенням змінної:
-```csharp
-if (records[i] is Diagnosis d) { /* записати d.DiagnosisCode, d.Description... */ }
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `PatientPassportWriter` → `passport_{id}.txt` | картка гостя | картка клієнта | залікова книжка | картка клієнта | формуляр читача | картка учасника |
+
+### Коміт
+
+```bash
+git add ClinicApp/Utils/PatientPassportWriter.cs ClinicApp/Clinic.cs
+git commit -m "Lab13 Task03"
 ```
-
-Три окремих проходи по масиву для трьох секцій — простіше ніж один складний з кількома `if`.
-
-**Крок 3.** Додайте `PatientPassportWriter` у `Clinic.cs`.
-
-Оголосіть властивість `public PatientPassportWriter Passport { get; }`, ініціалізуйте в конструкторі. В `SubscribeEvents()` підпишіть:
-```csharp
-Patients.PatientAdded             += Passport.OnPatientAdded;
-Appointments.AppointmentCompleted += Passport.OnAppointmentCompleted;
-TreatmentPlans.PlanCompleted      += Passport.OnPlanCompleted;
-```
-
-**Перевірка.** Зареєструйте пацієнта → файл `patients/passport_N.txt` з'явився. Завершіть прийом → файл оновився: дата генерації змінилась, прийом тепер `Completed`. Logger при цьому також спрацював — обидва підписники незалежні.
-
-### Ключові питання для розуміння
-
-- `PatientPassportWriter` підписаний на події `PatientManager` і `AppointmentManager`. Чи знають ці менеджери про `PatientPassportWriter`?
-- Чому `StreamWriter` з `append: false`, а не `append: true`?
-- Якщо завтра замовник попросить "ще й надсилати email при завершенні прийому" — які файли потрібно змінити?
 
 ---
 
-## Завдання 4. SessionEventTracker — крос-доменна реакція ⭐⭐⭐
+## Задача 4. `SessionEventTracker` — реакція на події з іншої підсистеми ⭐⭐⭐
 
-### Що таке крос-доменна реакція
+### Умова
 
-До цього кожен підписник реагував у своїй "зоні відповідальності": Logger пише у файл, PassportWriter генерує документ. Але інколи реакція на одну подію зачіпає інший підсистему.
+Досі кожен підписник реагував у своїй зоні: `Logger` пише у файл, `PassportWriter` генерує документ. Але інколи реакція на подію зачіпає іншу підсистему: скасовано прийом → звільнився слот → варто перевірити чергу очікування (Лаба 09). Скасування — подія `AppointmentManager`, черга — у `Clinic`. Зв'яжіть їх без прямої залежності між менеджерами.
 
-Приклад: лікар скасував прийом → звільнився часовий слот → логічно перевірити чи є хтось у черзі і повідомити. Скасування — це подія `AppointmentManager`. Черга — це `WaitingQueue` у `Clinic`. Як їх зв'язати без прямої залежності між менеджерами?
+**Що реалізувати:**
 
-Відповідь: `SessionEventTracker` підписаний на подію скасування і має доступ до `Clinic` — він і робить перевірку черги.
+1. Клас `SessionEventTracker` у `ClinicApp/Utils/`: отримує `Clinic` через конструктор і рахує події за сесію (лічильники нижче — `public` з `private set`).
+2. Обробник на кожну подію збільшує свій лічильник. Обробник скасування додатково перевіряє чергу: якщо вона не порожня — виводить `[ЧЕРГА] Слот звільнився. Наступний: …` (без видалення з черги).
+3. Метод `PrintSummary()` — підсумок сесії в консоль; метод `SaveSummary(string path = "session_summary.txt")` — той самий підсумок у файл, з датою й часом формування.
+4. У `Clinic.cs` додати властивість `Tracker` і підписати всі його обробники в `SubscribeEvents()`.
+5. У `Program.cs` при виході (пункт `0`) перед збереженням сесії викликати `PrintSummary()` і `SaveSummary()`.
 
-### Що потрібно зробити
+### Специфікація
 
-**Крок 1.** Створіть `src/Utils/SessionEventTracker.cs`.
+| Лічильник | Подія |
+|-----------|-------|
+| `PatientsAdded` | `PatientAdded` |
+| `AppointmentsBooked` | `AppointmentBooked` |
+| `UrgentBooked` | `UrgentAppointmentBooked` |
+| `AppointmentsCancelled` | `AppointmentCancelled` |
+| `AppointmentsCompleted` | `AppointmentCompleted` |
+| `PaymentsReceived` | `PaymentReceived` |
+| `PlansCompleted` | `PlanCompleted` |
 
-Клас отримує `Clinic` через конструктор. Зберігає лічильники для кожного типу події як `public int` з `private set`:
+### Приклад
+
 ```
-PatientsAdded, AppointmentsBooked, UrgentBooked,
-AppointmentsCancelled, AppointmentsCompleted,
-PaymentsReceived, PlansCompleted
-```
-
-**Крок 2.** Реалізуйте обробники.
-
-Більшість обробників просто збільшують лічильник. Винятком є `OnAppointmentCancelled` — він також перевіряє чергу:
-
-```csharp
-public void OnAppointmentCancelled(object? sender, AppointmentEventArgs e)
-{
-    AppointmentsCancelled++;
-    if (!_clinic.WaitingRoom.IsEmpty)
-    {
-        Patient next = _clinic.WaitingRoom.Peek();
-        Console.WriteLine($"  [ЧЕРГА] Слот звільнився. Наступний: {next.FullName}");
-    }
-}
-```
-
-**Крок 3.** Реалізуйте `PrintSummary()` і `SaveSummary(string path)`.
-
-`PrintSummary()` — виводить підсумок сесії в консоль: скільки пацієнтів додано, записів створено, завершено, оплачено тощо.
-
-`SaveSummary()` — записує те саме у файл `session_summary.txt` через `StreamWriter`. Додайте дату і час формування звіту.
-
-**Крок 4.** Додайте `Tracker` у `Clinic.cs`, підпишіть всі обробники у `SubscribeEvents()`.
-
-**Крок 5.** У `Program.cs` при виході (case `"0"`) перед збереженням сесії:
-```csharp
-clinic.Tracker.PrintSummary();
-clinic.Tracker.SaveSummary();
+  [ЧЕРГА] Слот звільнився. Наступний: Олена Коваль
+…
+=== Підсумок сесії ===
+Пацієнтів додано:    1
+Записів створено:    4 (термінових: 1)
+Скасовано:           1
+Завершено:           2
+Оплат:               2
+Планів завершено:    1
 ```
 
-Чому виклик `PrintSummary` залишається у `Program.cs` явним, а не через подію? Бо це не реакція на подію — це явна дія користувача "переглянь підсумок перед виходом".
+### Підказки
 
-**Перевірка.**
-- Додайте пацієнта до черги, потім скасуйте запис → консоль: `[ЧЕРГА] Слот звільнився...`
-- Вийдіть з програми → `session_summary.txt` зберігся з коректними лічильниками
-- У `clinic.log` — ті ж події від Logger. Обидва підписники (Logger і Tracker) спрацювали незалежно на одні й ті ж події
+1. Наступного в черзі дивіться через `Peek()`, а не `Dequeue()`: трекер лише повідомляє, а прийом — дія користувача.
+2. `PrintSummary()` викликається явно в `Program.cs`, а не через подію: це не реакція на зміну в системі, а дія користувача «підсумок перед виходом».
+3. `Logger` і `Tracker` підписані на ті самі події. Обробники викликаються в порядку підписки — подумайте, чи важливий цей порядок тут.
 
-### Ключові питання для розуміння
+📖 Документація:
+- [Події (посібник)](https://learn.microsoft.com/dotnet/csharp/programming-guide/events/)
 
-- `Logger` і `Tracker` підписані на ті самі події. В якому порядку вони спрацьовують? Чи важливий цей порядок?
-- Чому `PrintSummary()` викликається явно, а не як підписник на якусь подію "вихід"?
-- Спробуйте прибрати `?` з `event EventHandler<T>?` — що зміниться?
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| скасування → черга очікування | скасування броні → лист очікування | звільнився столик → черга | звільнилось місце → черга на курс | авто повернули → черга | книгу повернули → черга | звільнився тренер → черга |
+
+### Коміт
+
+```bash
+git add ClinicApp/Utils/SessionEventTracker.cs ClinicApp/Clinic.cs ClinicApp/Program.cs
+git commit -m "Lab13 Task04"
+```
 
 ---
 
@@ -353,66 +384,83 @@ oop-course/                             ← гілка Lab-13 (після зли
 ├── oop-course.sln
 └── ClinicApp/
     ├── ClinicApp.csproj
-    ├── Program.cs                      ✏
-    ├── Clinic.cs                       ✏
+    ├── Program.cs                      ✏ Т1 Т2 Т4
+    ├── Clinic.cs                       ✏ Т2 Т3 Т4
     ├── Enums/  (4 файли)
     ├── Models/  (15 файлів)
     ├── Managers/
-    │   ├── PatientManager.cs           ✏
+    │   ├── PatientManager.cs           ✏ Т2
     │   ├── DoctorManager.cs
-    │   ├── AppointmentManager.cs       ✏
+    │   ├── AppointmentManager.cs       ✏ Т1 Т2
     │   ├── GrowablePatientManager.cs
     │   ├── MedicalRecordManager.cs
-    │   ├── BillingManager.cs           ✏
+    │   ├── BillingManager.cs           ✏ Т2
     │   ├── Repository.cs
     │   ├── AnalyticsManager.cs
-    │   └── TreatmentPlanManager.cs     ✏
+    │   └── TreatmentPlanManager.cs     ✏ Т2
     ├── Utils/
-    │   ├── ClinicLogger.cs             ✏
-    │   ├── PatientPassportWriter.cs    🆕
-    │   ├── SessionEventTracker.cs      🆕
+    │   ├── ClinicLogger.cs             ✏ Т2
+    │   ├── PatientPassportWriter.cs    🆕 Т3
+    │   ├── SessionEventTracker.cs      🆕 Т4
     │   └── … ще 9 файлів без змін
     ├── Interfaces/  (4 файли)
     ├── Comparators/  (4 файли)
     ├── Attributes/  (3 файли)
     └── Events/
-        ├── AppointmentEventArgs.cs     🆕
-        ├── PatientEventArgs.cs         🆕
-        ├── PaymentEventArgs.cs         🆕
-        └── TreatmentPlanEventArgs.cs   🆕
+        ├── AppointmentEventArgs.cs     🆕 Т1
+        ├── PatientEventArgs.cs         🆕 Т2
+        ├── PaymentEventArgs.cs         🆕 Т2
+        └── TreatmentPlanEventArgs.cs   🆕 Т2
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 12.
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
 ## Перевірка перед здачею
 
-Запустіть:
-```
-dotnet run --project src
+```bash
+dotnet build ClinicApp
+dotnet run --project ClinicApp
 ```
 
-Виконайте послідовно і перевірте кожен пункт:
+Переконайтесь, що:
 
 - [ ] Структура проєкту збігається зі схемою вище
-- [ ] Зареєстрував пацієнта → `patients/passport_N.txt` з'явився
-- [ ] Записав пацієнта → рядок `[EVENT]` у консолі **і** рядок у `clinic.log` — два підписники
-- [ ] Оформив терміновий запис → у `clinic.log` два рядки + файл `alerts/urgent_{дата}.txt`
-- [ ] Завершив прийом → `passport_N.txt` оновився, дата генерації змінилась
-- [ ] Скасував запис (черга не порожня) → консоль: `[ЧЕРГА] Слот звільнився...`
-- [ ] Вийшов → `session_summary.txt` з коректними лічильниками
-- [ ] Спробував `clinic.Appointments.AppointmentBooked = null` → помилка компілятора
+- [ ] Записали пацієнта → рядок `[EVENT]` у консолі **і** рядок у `clinic.log` (два підписники)
+- [ ] Терміновий запис → у `clinic.log` два рядки + рядок у `alerts/urgent_{дата}.txt`
+- [ ] Зареєстрували пацієнта → з'явився `patients/passport_N.txt`
+- [ ] Завершили прийом → `passport_N.txt` оновився (нова дата генерації, прийом `Completed`)
+- [ ] Скасували запис при непорожній черзі → `[ЧЕРГА] Слот звільнився…`
+- [ ] Вихід → `session_summary.txt` з коректними лічильниками
+- [ ] У `Program.cs` не лишилось ручних `Logger.LogInfo` для дій, покритих подіями
+- [ ] *(Експеримент, не для коміту)* `clinic.Appointments.AppointmentBooked = null` — помилка компіляції
 
 ---
 
 ## Питання для самоперевірки
 
-1. У чому різниця між `delegate` полем і `event`? Що саме забороняє `event` ззовні класу?
-2. `AppointmentManager` не знає ні про `ClinicLogger`, ні про `PatientPassportWriter`. Де відбувається їх зв'язок? Чому це добре?
-3. `BookUrgent` піднімає дві події. Logger підписаний на обидві. Скільки рядків у лозі після одного `BookUrgent`?
-4. Якщо підписати один і той же метод двічі: `event += handler; event += handler` — скільки разів він спрацює?
-5. Чому `PatientPassportWriter.Write()` перезаписує файл а не дописує?
-6. Яку ще автоматичну реакцію можна додати до системи не змінюючи жодного менеджера?
+1. У чому різниця між полем-делегатом і `event`? Що саме забороняє `event` ззовні класу?
+2. Чому обробник має сигнатуру `(object? sender, T e)`? Що передається в `sender`?
+3. `AppointmentManager` не знає ні про `ClinicLogger`, ні про `PatientPassportWriter`. Де відбувається їхній зв'язок? Чому це добре?
+4. `BookUrgent` піднімає дві події, `Logger` підписаний на обидві. Скільки рядків у лозі після одного `BookUrgent`?
+5. Якщо підписати той самий метод двічі (`event += handler; event += handler`), скільки разів він спрацює?
+6. Чому паспорт перезаписується, а не дописується?
+7. Яку ще автоматичну реакцію можна додати до системи, не змінюючи жодного менеджера? Які файли для цього знадобиться змінити?
+
+---
+
+## Статус гілки
+
+Після всіх 4 завдань (кожне — окремий коміт `Lab13 TaskNN` на гілці `Lab-13`):
+
+```bash
+git push -u origin Lab-13
+git checkout main
+git merge --no-ff Lab-13 -m "Merge Lab-13: Events & Delegates"
+git push
+```
+
+> Наступна лаба: `git checkout main` → `git checkout -b Lab-14`.

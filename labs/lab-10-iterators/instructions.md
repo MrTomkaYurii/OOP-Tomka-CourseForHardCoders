@@ -2,19 +2,19 @@
 
 ## Мета
 
-Навчитись реалізовувати `IComparable<T>` і `IComparer<T>` для управління порядком сортування об'єктів, а також `IEnumerable<T>` з `yield return` для лінивої генерації послідовностей. Побудувати аналітичний модуль клініки, де ці концепції мають природній практичний сенс.
+Навчитись реалізовувати `IComparable<T>` і `IComparer<T>` для управління порядком сортування об'єктів, а також `IEnumerable<T>` з `yield return` для лінивої генерації послідовностей. Побудувати аналітичний модуль клініки, де ці концепції мають природний практичний сенс.
 
 ## Контекст
 
-Система вже накопичує дані: пацієнти, лікарі, записи на прийом. Але жодного способу отримати відповідь на питання "хто з лікарів прийняв найбільше пацієнтів?" або "хто з пацієнтів витратив найбільше?" — немає. Це задача аналітики: обчислити статистику по кожному об'єкту і відсортувати за різними критеріями.
+Система вже накопичує дані: пацієнти, лікарі, записи на прийом. Але відповісти на питання «хто з лікарів прийняв найбільше пацієнтів?» або «хто з пацієнтів витратив найбільше?» неможливо. Це задача аналітики: обчислити статистику по кожному об'єкту і відсортувати за різними критеріями.
 
 Порівняння і сортування в C# будуються на двох інтерфейсах:
-- `IComparable<T>` — **природній порядок**: клас сам знає як порівнювати себе з іншим. Один порядок, вбудований в тип.
+- `IComparable<T>` — **природний порядок**: клас сам знає, як порівнювати себе з іншим. Один порядок, вбудований у тип.
 - `IComparer<T>` — **зовнішній компаратор**: окремий клас реалізує один критерій сортування. Таких компараторів можна мати скільки завгодно.
 
-Генерація даних для аналітики природньо виражається через `IEnumerable<T>` з `yield return` — ліниве обчислення статистики для кожного об'єкта по черзі, замість того щоб спочатку побудувати весь масив у пам'яті.
+Генерація даних для аналітики природно виражається через `IEnumerable<T>` з `yield return` — ліниве обчислення статистики для кожного об'єкта по черзі, замість того щоб спочатку побудувати весь масив у пам'яті.
 
-## Структура проєкту на початку лаби
+### Структура проєкту на початку лаби
 
 Це результат Лаби 09 — стан `main` після її злиття:
 
@@ -27,67 +27,94 @@ oop-course/                           ← гілка main (після злитт
     ├── Program.cs
     ├── Clinic.cs
     ├── Enums/  (3 файли)
-    ├── Models/
-    │   └── … ще 12 файлів без змін
-    ├── Managers/
-    │   └── … ще 7 файлів без змін
+    ├── Models/  (12 файлів)
+    ├── Managers/  (7 файлів)
     ├── Utils/  (2 файли)
     └── Interfaces/  (4 файли)
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### Що нового дозволено (і тільки воно)
+
+- інтерфейси `IComparable<T>` і `IComparer<T>`;
+- `Array.Sort()` і `List<T>.Sort()` — без аргументу і з компаратором;
+- `IEnumerable<T>` і `yield return`.
+
+Досі заборонено: LINQ (Лаба 14), делегати й лямбди (Лаби 13–15).
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
-git pull
 git checkout -b Lab-10
 ```
 
+Коміт — на кожне завдання (`Lab10 TaskNN`).
+
+### Ваш домен
+
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** в кінці кожного завдання.
+
+### Як користуватися підказками
+
+Підказки — **напрям думки, не готовий код**. «Що реалізувати» і «Специфікація» кажуть *що*; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Спершу документація і власна спроба.
+
 ---
 
-## Завдання 1 — `DoctorStats` і `IComparable<T>`: природній порядок ⭐⭐
+## Задача 1. `DoctorStats` і природний порядок через `IComparable<T>` ⭐⭐
 
 ### Умова
 
-Клініці потрібен об'єкт що представляє аналітичний знімок по лікарю: скільки прийомів провів, яка загальна виручка, коли був останній прийом. Цей об'єкт повинен вміти порівнювати себе з іншим таким об'єктом — щоб масив `DoctorStats[]` можна було відсортувати одним викликом `Array.Sort()`.
+Клініці потрібен об'єкт — аналітичний знімок по лікарю: скільки прийомів провів, яка загальна виручка, коли був останній прийом. Цей об'єкт має вміти порівнювати себе з іншим таким об'єктом, щоб масив `DoctorStats[]` можна було відсортувати одним викликом `Array.Sort()`.
 
-### Що реалізувати
+**Що реалізувати:**
 
-Створи клас `DoctorStats` у `src/Models/DoctorStats.cs`.
+1. Створити клас `DoctorStats` у `ClinicApp/Models/DoctorStats.cs` з властивостями зі специфікації (лише для читання).
+2. Конструктор отримує всі п'ять значень і присвоює їх властивостям.
+3. Реалізувати `IComparable<DoctorStats>`: лікар із більшою кількістю прийомів стоїть **першим** після `Array.Sort()`.
+4. Перевизначити `ToString()`: один рядок — ID, ім'я, кількість прийомів, виручка, дата останнього прийому.
 
-**Властивості (тільки читання):**
-- `int DoctorId` — ID лікаря
-- `string FullName` — повне ім'я
-- `int AppointmentCount` — загальна кількість прийомів
-- `decimal TotalRevenue` — сума `GetCost()` по всіх прийомах
-- `DateTime LastAppointmentDate` — дата останнього прийому (`DateTime.MinValue` якщо прийомів немає)
+### Специфікація
 
-**Конструктор:** отримує всі п'ять значень, присвоює властивостям.
+| Властивість | Тип | Опис |
+|-------------|-----|------|
+| `DoctorId` | `int` | ID лікаря |
+| `FullName` | `string` | Повне ім'я |
+| `AppointmentCount` | `int` | Загальна кількість прийомів |
+| `TotalRevenue` | `decimal` | Сума `GetCost()` по всіх прийомах |
+| `LastAppointmentDate` | `DateTime` | Дата останнього прийому; `DateTime.MinValue`, якщо прийомів немає |
 
-**`IComparable<DoctorStats>`:** реалізуй інтерфейс — визнач природній порядок: більша кількість прийомів = вища позиція в рейтингу. Тобто при сортуванні за зростанням (`Array.Sort()`) перший — той у кого найбільше прийомів.
+### Приклад
 
-**`override ToString()`:** один рядок — ID, ім'я, кількість прийомів, виручка, дата останнього прийому.
+```csharp
+DoctorStats[] arr =
+{
+    new DoctorStats(1, "Олег Сидоренко", 2, 600m, DateTime.Today),
+    new DoctorStats(2, "Наталія Мороз",  5, 1500m, DateTime.Today),
+};
+Array.Sort(arr);
+Console.WriteLine(arr[0].FullName);   // Наталія Мороз — 5 прийомів
+```
 
 ### Підказки
 
-1. `IComparable<T>` вимагає один метод: `int CompareTo(T? other)`. Повертає від'ємне число якщо `this` йде перед `other`, нуль якщо рівні, додатнє якщо `this` йде після.
+1. `IComparable<T>` вимагає один метод: `int CompareTo(T? other)`. Він повертає від'ємне число, якщо `this` йде перед `other`, нуль — якщо рівні, додатне — якщо `this` йде після.
+2. Щоб більша кількість прийомів опинилась першою, порівнюйте навпаки — `other` з `this`, а не `this` з `other`. Перевірте на папері: лікар А = 5 прийомів, лікар Б = 2 — після `Sort()` А має бути першим.
+3. `DateTime.MinValue` — константа «найраніша можлива дата». Зручна як маркер «прийомів не було».
+4. Конструктор `DoctorStats` не рахує статистику сам — лише зберігає готові значення. Підрахунок буде в `AnalyticsManager` (Задача 4).
+5. Перевірити сортування можна тимчасовим кодом у `Program.cs`, як у прикладі; перед комітом його приберіть.
 
-2. Щоб більша кількість прийомів опинилась першою (тобто сортування за спаданням через `Sort()` за зростанням), порівнюй навпаки: `return other.AppointmentCount.CompareTo(this.AppointmentCount)`. Перевір цю логіку на папері з прикладом: лікар А = 5 прийомів, лікар Б = 2 прийоми — після `Sort()` А повинен бути першим.
-
-3. `DateTime.MinValue` — константа "найраніша можлива дата" в C#. Зручно як маркер "прийомів не було".
-
-4. Конструктор `DoctorStats` не рахує статистику сам — він лише зберігає готові значення. Підрахунок буде в `AnalyticsManager` (Завдання 4).
-
-📖 [IComparable\<T\> — Microsoft Docs](https://learn.microsoft.com/en-us/dotnet/api/system.icomparable-1)  
-📖 [Array.Sort — Microsoft Docs](https://learn.microsoft.com/en-us/dotnet/api/system.array.sort)
-
-### Що перевірити
-
-Створи вручну кілька `DoctorStats` з різною кількістю прийомів, помісти в масив `DoctorStats[]`, виклич `Array.Sort()` — переконайся що лікар з найбільшою кількістю прийомів стоїть першим.
+📖 Документація:
+- [`IComparable<T>`](https://learn.microsoft.com/dotnet/api/system.icomparable-1)
+- [`Array.Sort`](https://learn.microsoft.com/dotnet/api/system.array.sort)
 
 ### Адаптація до вашого домену
 
@@ -101,37 +128,47 @@ git checkout -b Lab-10
 ### Коміт
 
 ```bash
-git add src/Models/DoctorStats.cs
-git commit -m "Lab10 Task01: add DoctorStats with IComparable<DoctorStats> by appointment count"
+git add ClinicApp/Models/DoctorStats.cs
+git commit -m "Lab10 Task01"
 ```
 
 ---
 
-## Завдання 2 — `PatientStats` і `IComparable<PatientStats>` ⭐⭐
+## Задача 2. `PatientStats` і `IComparable<PatientStats>` ⭐⭐
 
 ### Умова
 
-За аналогією з `DoctorStats` — статистичний об'єкт для пацієнта: скільки візитів, скільки витрачено, дата останнього візиту. Природній порядок — за кількістю візитів (найактивніший пацієнт — перший).
+За аналогією з `DoctorStats` створіть статистичний об'єкт для пацієнта: скільки візитів, скільки витрачено, дата останнього візиту. Природний порядок — за кількістю візитів (найактивніший пацієнт — перший).
 
-### Що реалізувати
+**Що реалізувати:**
 
-Створи клас `PatientStats` у `src/Models/PatientStats.cs`.
+1. Створити клас `PatientStats` у `ClinicApp/Models/PatientStats.cs` з властивостями зі специфікації.
+2. Реалізувати `IComparable<PatientStats>`: більша кількість візитів — вища позиція.
+3. Перевизначити `ToString()`: один рядок з усіма даними; якщо візитів не було, замість `01.01.0001` вивести `—`.
 
-**Властивості:** `int PatientId`, `string FullName`, `int VisitCount`, `decimal TotalSpent`, `DateTime LastVisitDate`.
+### Специфікація
 
-**`IComparable<PatientStats>`:** природній порядок — більша кількість візитів = вища позиція.
+| Властивість | Тип | Опис |
+|-------------|-----|------|
+| `PatientId` | `int` | ID пацієнта |
+| `FullName` | `string` | Повне ім'я |
+| `VisitCount` | `int` | Кількість візитів |
+| `TotalSpent` | `decimal` | Сума `GetCost()` по всіх візитах |
+| `LastVisitDate` | `DateTime` | Дата останнього візиту; `DateTime.MinValue`, якщо візитів не було |
 
-**`override ToString()`:** один рядок з усіма даними.
+### Приклад
+
+```
+[3] Максим Бойко | Візитів: 0 | Витрачено: 0.00 грн | Останній візит: —
+```
 
 ### Підказки
 
-1. Структура ідентична `DoctorStats` — той самий патерн, різні поля і логіка порівняння. Одна з цілей цього завдання — закріпити патерн на другому прикладі.
+1. Структура ідентична `DoctorStats` — той самий патерн, інші поля. Мета задачі — закріпити патерн на другому прикладі.
+2. Порівняння з `DateTime.MinValue` у `ToString()` дає змогу показати «—» замість безглуздої дати.
 
-2. Зверни увагу на `LastVisitDate == DateTime.MinValue` у `ToString()` — якщо прийомів не було, виводь щось читабельне замість `01.01.0001`.
-
-### Що перевірити
-
-Виклич `Array.Sort()` на масиві `PatientStats[]` — пацієнт з найбільшою кількістю візитів повинен бути першим.
+📖 Документація:
+- [`IComparable<T>`](https://learn.microsoft.com/dotnet/api/system.icomparable-1)
 
 ### Адаптація до вашого домену
 
@@ -145,49 +182,52 @@ git commit -m "Lab10 Task01: add DoctorStats with IComparable<DoctorStats> by ap
 ### Коміт
 
 ```bash
-git add src/Models/PatientStats.cs
-git commit -m "Lab10 Task02: add PatientStats with IComparable<PatientStats> by visit count"
+git add ClinicApp/Models/PatientStats.cs
+git commit -m "Lab10 Task02"
 ```
 
 ---
 
-## Завдання 3 — `IComparer<T>`: множинні критерії сортування ⭐⭐⭐
+## Задача 3. Кілька критеріїв сортування через `IComparer<T>` ⭐⭐⭐
 
 ### Умова
 
-`IComparable<T>` дає один фіксований порядок. Але аналітичний модуль потребує кілька: лікарів можна ранжувати за навантаженням, за виручкою, за алфавітом. Для цього є `IComparer<T>` — окремий клас що реалізує один критерій і передається в `List<T>.Sort(comparer)`.
+`IComparable<T>` дає один фіксований порядок. Але аналітичному модулю потрібно кілька: лікарів можна ранжувати за навантаженням, за виручкою, за алфавітом. Для цього є `IComparer<T>` — окремий клас, що реалізує один критерій і передається в `List<T>.Sort(comparer)`.
 
-### Що реалізувати
+**Що реалізувати:**
 
-Створи папку `src/Comparators/`. В ній — чотири класи:
+1. Створити папку `ClinicApp/Comparators/` (простір імен `ClinicApp.Comparators`).
+2. Створити в ній чотири компаратори зі специфікації.
 
-**`DoctorStatsByRevenue`** — реалізує `IComparer<DoctorStats>`. Сортує за `TotalRevenue` за спаданням (більша виручка = вище).
+### Специфікація
 
-**`DoctorStatsByName`** — реалізує `IComparer<DoctorStats>`. Сортує за `FullName` за зростанням (А → Я). Для порівняння рядків використовуй `string.Compare(x, y, StringComparison.CurrentCulture)`.
+| Клас | Реалізує | Сортує за | Порядок |
+|------|----------|-----------|---------|
+| `DoctorStatsByRevenue` | `IComparer<DoctorStats>` | `TotalRevenue` | спадання (більша виручка вище) |
+| `DoctorStatsByName` | `IComparer<DoctorStats>` | `FullName` | зростання (А → Я), `string.Compare(x, y, StringComparison.CurrentCulture)` |
+| `PatientStatsBySpent` | `IComparer<PatientStats>` | `TotalSpent` | спадання |
+| `PatientStatsByLastVisit` | `IComparer<PatientStats>` | `LastVisitDate` | спадання (найновіший візит вище) |
 
-**`PatientStatsBySpent`** — реалізує `IComparer<PatientStats>`. Сортує за `TotalSpent` за спаданням.
+### Приклад
 
-**`PatientStatsByLastVisit`** — реалізує `IComparer<PatientStats>`. Сортує за `LastVisitDate` за спаданням (найновіший візит = вище). Для порівняння дат: `DateTime` реалізує `IComparable`, тому `y.LastVisitDate.CompareTo(x.LastVisitDate)` дає спадний порядок.
+```csharp
+List<DoctorStats> list = new List<DoctorStats> { a, b, c };
+list.Sort();                              // за кількістю прийомів (IComparable)
+list.Sort(new DoctorStatsByRevenue());    // за виручкою
+list.Sort(new DoctorStatsByName());       // за ім'ям
+```
 
 ### Підказки
 
-1. `IComparer<T>` вимагає один метод: `int Compare(T? x, T? y)`. Та сама семантика що й `CompareTo` — від'ємне якщо `x` перед `y`, нуль якщо рівні, додатнє якщо `x` після `y`.
+1. `IComparer<T>` вимагає один метод: `int Compare(T? x, T? y)`. Та сама семантика, що й `CompareTo`: від'ємне — `x` перед `y`, нуль — рівні, додатне — `x` після `y`.
+2. Обробляйте `null` явно: обидва `null` → `0`; лише `x == null` → `-1`; лише `y == null` → `1`. Тип параметрів nullable, тож компілятор попередить, якщо цього не зробити.
+3. Щоб отримати спадний порядок, міняйте місцями `x` і `y` у порівнянні.
+4. `DateTime` теж реалізує `IComparable` — дати порівнюються так само, як числа.
+5. Перевірити компаратори можна тимчасовим кодом у `Program.cs`, як у прикладі; перед комітом його приберіть.
 
-2. Обробляй `null` явно: якщо `x == null && y == null` → `0`; якщо тільки `x == null` → `-1`; якщо тільки `y == null` → `1`. Компілятор вимагає цього бо тип може бути nullable.
-
-3. Щоб отримати спадний порядок з `CompareTo`, просто міняй місцями `x` і `y`: `return y.TotalRevenue.CompareTo(x.TotalRevenue)` дає спадний замість зростаючого.
-
-4. Використання: `list.Sort(new DoctorStatsByRevenue())` — `List<T>.Sort()` приймає `IComparer<T>` як аргумент.
-
-📖 [IComparer\<T\> — Microsoft Docs](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.icomparer-1)  
-📖 [List\<T\>.Sort(IComparer) — Microsoft Docs](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.sort)
-
-### Що перевірити
-
-Зроби один список `DoctorStats`, відсортуй його чотирма різними способами і виведи — переконайся що порядок щоразу різний:
-- `.Sort()` — за кількістю прийомів (IComparable)
-- `.Sort(new DoctorStatsByRevenue())` — за виручкою
-- `.Sort(new DoctorStatsByName())` — за ім'ям
+📖 Документація:
+- [`IComparer<T>`](https://learn.microsoft.com/dotnet/api/system.collections.generic.icomparer-1)
+- [`List<T>.Sort`](https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.sort)
 
 ### Адаптація до вашого домену
 
@@ -201,129 +241,124 @@ git commit -m "Lab10 Task02: add PatientStats with IComparable<PatientStats> by 
 ### Коміт
 
 ```bash
-git add src/Comparators/
-git commit -m "Lab10 Task03: add IComparer<T> comparators for DoctorStats and PatientStats"
+git add ClinicApp/Comparators/
+git commit -m "Lab10 Task03"
 ```
 
 ---
 
-## Завдання 4 — `AnalyticsManager` і `yield return`: ліниве обчислення ⭐⭐⭐
+## Задача 4. `AnalyticsManager` і ліниве обчислення через `yield return` ⭐⭐⭐
 
 ### Умова
 
-Де і як обчислювати статистику? Можна зробити метод що будує весь масив `DoctorStats[]` одразу і повертає його. Але є кращий підхід: `IEnumerable<T>` з `yield return` — метод обчислює статистику для кожного лікаря по черзі і **одразу повертає** результат, не накопичуючи весь масив.
+Статистику можна обчислити методом, що будує весь масив `DoctorStats[]` одразу. Кращий підхід — `IEnumerable<T>` з `yield return`: метод обчислює статистику для кожного лікаря по черзі і **одразу віддає** результат, не накопичуючи весь масив. Коли лікарів тисячі, можна зупинитись після першого десятка — решта не обчислюватиметься взагалі.
 
-Це важливо коли лікарів тисячі — ти можеш зупинитись після першого десятка і решту не обчислювати взагалі.
+**Що реалізувати:**
 
-### Що реалізувати
+1. Створити клас `AnalyticsManager` у `ClinicApp/Managers/AnalyticsManager.cs`, який отримує `AppointmentManager`, `DoctorManager` і `PatientManager` через конструктор.
+2. Метод `ComputeDoctorStats()`: для кожного лікаря порахувати кількість його прийомів, суму `GetCost()` і найпізнішу дату — і віддати `DoctorStats` через `yield return`.
+3. Метод `ComputePatientStats()` — те саме для пацієнтів.
+4. У `Clinic.cs` додати властивість `Analytics` і створити `AnalyticsManager` у конструкторі.
 
-Створи клас `AnalyticsManager` у `src/Managers/AnalyticsManager.cs`.
+### Специфікація
 
-**Залежності через конструктор:**
+| Член `AnalyticsManager` | Повертає | Опис |
+|-------------------------|----------|------|
+| конструктор `(AppointmentManager appointments, DoctorManager doctors, PatientManager patients)` | | зберігає залежності |
+| `ComputeDoctorStats()` | `IEnumerable<DoctorStats>` | по одному `DoctorStats` на кожного лікаря, через `yield return` |
+| `ComputePatientStats()` | `IEnumerable<PatientStats>` | по одному `PatientStats` на кожного пацієнта, через `yield return` |
+
+Для лікаря чи пацієнта без прийомів: кількість `0`, сума `0`, дата `DateTime.MinValue`.
+
+### Приклад
+
+```csharp
+foreach (DoctorStats s in clinic.Analytics.ComputeDoctorStats())
+    Console.WriteLine(s);
+// [1] Олег Сидоренко | Прийомів: 2 | Виручка: 600.00 грн | Останній: 15.10.2026
+// [2] Наталія Мороз  | Прийомів: 0 | Виручка: 0.00 грн | Останній: —
 ```
-AnalyticsManager(AppointmentManager appointments, DoctorManager doctors, PatientManager patients)
-```
-
-**Метод `IEnumerable<DoctorStats> ComputeDoctorStats()`:**
-- Отримай всіх лікарів через `_doctors.GetAll()` і всі прийоми через `_appointments.GetAll()`
-- Для кожного лікаря (цикл `for`) — пройди по всіх прийомах і знайди його прийоми: порахуй кількість, суму `GetCost()`, знайди максимальну дату
-- Замість `return new DoctorStats(...)` — використовуй **`yield return new DoctorStats(...)`**
-- Метод повертає `IEnumerable<DoctorStats>`, тобто компілятор перетворює його на state machine
-
-**Метод `IEnumerable<PatientStats> ComputePatientStats()`:** аналогічно для пацієнтів.
-
-**Оновлення `Clinic.cs`:** додай `public AnalyticsManager Analytics { get; }` і ініціалізуй у конструкторі: `Analytics = new AnalyticsManager(Appointments, Doctors, Patients)`.
 
 ### Підказки
 
-1. `yield return` в методі з типом повернення `IEnumerable<T>` перетворює метод на **ітератор**. Після кожного `yield return` виконання методу "призупиняється" і відновлюється при наступному запиті елемента. Ось чому це "ліниво" — наступний `DoctorStats` не обчислюється поки його не запросили.
+1. Отримайте всіх лікарів через `_doctors.GetAll()` і всі прийоми через `_appointments.GetAll()`; для кожного лікаря — цикл по прийомах з умовою на `DoctorId`.
+2. `yield return` у методі з типом `IEnumerable<T>` перетворює метод на **ітератор**. Після кожного `yield return` виконання «призупиняється» і відновлюється, коли запитують наступний елемент.
+3. Щоб побачити лінивість: тимчасово виведіть рядок «обчислюю …» перед `yield return`. При `foreach` рядки з'являтимуться по одному під час ітерації, а не всі на початку.
+4. Найпізніша дата: почніть з `DateTime.MinValue` і оновлюйте, коли дата прийому пізніша.
 
-2. Щоб переконатись в ліниві: поклади `Console.WriteLine("обчислюю " + doctors[i].FullName)` перед `yield return`. При `foreach` по результату побачиш що рядки виводяться по одному під час ітерації, а не всі одразу на початку.
-
-3. Щоб зібрати результати в `List<DoctorStats>`:
-   ```csharp
-   List<DoctorStats> list = new List<DoctorStats>();
-   foreach (DoctorStats s in analytics.ComputeDoctorStats())
-       list.Add(s);
-   ```
-   Тут `foreach` споживає ітератор по одному елементу.
-
-4. Максимальна дата: починай з `DateTime.MinValue` і оновлюй коли `appointments[j].ScheduledAt > lastDate`.
-
-📖 [yield return — Microsoft Docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield)  
-📖 [IEnumerable\<T\> — Microsoft Docs](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1)  
-📖 [Iterators — C# Guide](https://learn.microsoft.com/en-us/dotnet/csharp/iterators)
-
-### Що перевірити
-
-- `ComputeDoctorStats()` повертає правильну кількість елементів (рівно стільки скільки лікарів)
-- Для лікаря без прийомів: `AppointmentCount == 0`, `TotalRevenue == 0`, `LastAppointmentDate == DateTime.MinValue`
-- `foreach` по результату без збереження в список — також працює
+📖 Документація:
+- [`yield`](https://learn.microsoft.com/dotnet/csharp/language-reference/statements/yield)
+- [`IEnumerable<T>`](https://learn.microsoft.com/dotnet/api/system.collections.generic.ienumerable-1)
+- [Ітератори](https://learn.microsoft.com/dotnet/csharp/iterators)
 
 ### Адаптація до вашого домену
 
 | Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
 |---------|--------|----------|-------------|-------------|------------|---------|
-| `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` | `AnalyticsManager` |
 | `ComputeDoctorStats()` | `ComputeStaffStats()` | `ComputeWaiterStats()` | `ComputeLecturerStats()` | `ComputeManagerStats()` | `ComputeLibrarianStats()` | `ComputeTrainerStats()` |
 | `ComputePatientStats()` | `ComputeGuestStats()` | `ComputeCustomerStats()` | `ComputeStudentStats()` | `ComputeClientStats()` | `ComputeReaderStats()` | `ComputeMemberStats()` |
-| `yield return` по кожному лікарю | по кожному співробітнику | по кожному офіціанту | по кожному викладачу | по кожному менеджеру | по кожному бібліотекарю | по кожному тренеру |
 
 ### Коміт
 
 ```bash
-git add src/Managers/AnalyticsManager.cs src/Clinic.cs
-git commit -m "Lab10 Task04: add AnalyticsManager with yield return for IEnumerable<DoctorStats/PatientStats>"
+git add ClinicApp/Managers/AnalyticsManager.cs ClinicApp/Clinic.cs
+git commit -m "Lab10 Task04"
 ```
 
 ---
 
-## Завдання 5 — Меню аналітики: все разом ⭐⭐⭐
+## Задача 5. Меню «Аналітика» ⭐⭐⭐
 
 ### Умова
 
-`DoctorStats`, `PatientStats`, компаратори, `AnalyticsManager` — все готово. Тепер підключи це до меню. Новий пункт **"8. Аналітика"** з п'ятьма варіантами звітів.
+`DoctorStats`, `PatientStats`, компаратори і `AnalyticsManager` готові. Підключіть їх до меню: новий пункт головного меню `8` — «Аналітика» з п'ятьма звітами.
 
-### Що реалізувати
+**Що реалізувати:**
 
-**`Program.cs`** — додай "8. Аналітика" до головного меню і функцію `AnalyticsMenu(Clinic clinic)`.
+1. У головному меню додати пункт `8` — «Аналітика».
+2. У `Program.cs` додати функцію `AnalyticsMenu(Clinic clinic)` з п'ятьма звітами зі специфікації.
+3. Додати дві допоміжні функції: `CollectDoctorStats(Clinic clinic)` і `CollectPatientStats(Clinic clinic)` — збирають результат ітератора в `List<...>` через `foreach`.
 
-Підменю з варіантами:
+### Специфікація
 
-1. **Лікарі за навантаженням** — `ComputeDoctorStats()` → зібрати в `List<DoctorStats>` → `.Sort()` (використовує `IComparable`) → вивести
-2. **Лікарі за виручкою** — `.Sort(new DoctorStatsByRevenue())`
-3. **Лікарі за іменем** — `.Sort(new DoctorStatsByName())`
-4. **Пацієнти за кількістю візитів** — `ComputePatientStats()` → `.Sort()` (IComparable)
-5. **Пацієнти за витратами** — `.Sort(new PatientStatsBySpent())`
+| Пункт | Звіт | Як сортувати |
+|-------|------|--------------|
+| `1` | Лікарі за навантаженням | `Sort()` без аргументу (`IComparable`) |
+| `2` | Лікарі за виручкою | `Sort(new DoctorStatsByRevenue())` |
+| `3` | Лікарі за іменем | `Sort(new DoctorStatsByName())` |
+| `4` | Пацієнти за кількістю візитів | `Sort()` без аргументу (`IComparable`) |
+| `5` | Пацієнти за витратами | `Sort(new PatientStatsBySpent())` |
+| `0` | Назад | |
 
-Два допоміжних методи для збору результатів:
-- `CollectDoctorStats(Clinic clinic)` → збирає `IEnumerable<DoctorStats>` у `List<DoctorStats>` через `foreach`
-- `CollectPatientStats(Clinic clinic)` → аналогічно
+### Приклад
+
+```
+── Аналітика ───────────────────
+  1. Лікарі за навантаженням
+  2. Лікарі за виручкою
+  3. Лікарі за іменем
+  4. Пацієнти за кількістю візитів
+  5. Пацієнти за витратами
+  0. Назад
+Оберіть: 2
+[2] Наталія Мороз  | Прийомів: 1 | Виручка: 780.00 грн | Останній: 16.10.2026
+[1] Олег Сидоренко | Прийомів: 2 | Виручка: 600.00 грн | Останній: 15.10.2026
+```
 
 ### Підказки
 
-1. Виклик `clinic.Analytics.ComputeDoctorStats()` повертає `IEnumerable<DoctorStats>` — ітератор, не список. Щоб сортувати, потрібен `List<DoctorStats>`. Збирай через `foreach` + `.Add()`.
+1. `clinic.Analytics.ComputeDoctorStats()` повертає ітератор, а не список. Щоб сортувати, потрібен `List<DoctorStats>` — збирайте через `foreach` і `.Add()`.
+2. Одну й ту саму `CollectDoctorStats()` можна викликати для кожного пункту меню — ітератор щоразу починає обчислення заново.
+3. `.Sort()` без аргументу вимагає, щоб тип реалізовував `IComparable<T>`. `.Sort(comparer)` використовує переданий компаратор.
+4. Не забудьте `using ClinicApp.Comparators;` на початку `Program.cs`.
 
-2. Один і той самий `CollectDoctorStats()` можна викликати для кожного пункту меню — метод щоразу починає ітерацію заново.
-
-3. При сортуванні зверни увагу: `.Sort()` без аргументу вимагає що тип реалізує `IComparable<T>`. `.Sort(comparer)` з аргументом — використовує переданий компаратор. Обидва методи існують на `List<T>`.
-
-4. `using ClinicApp.Comparators;` — не забудь додати у верхній частині `Program.cs`.
-
-📖 [List\<T\>.Sort() — Microsoft Docs](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.sort)
-
-### Що перевірити
-
-Запусти `dotnet run`. Відкрий "8. Аналітика". Перевір кожен з п'яти пунктів:
-- Лікарі виводяться у правильному порядку для кожного критерію
-- Після сортування за навантаженням і за виручкою порядок різний (якщо тестові дані різноманітні)
-- Пацієнти без жодного запису виводяться з `Візитів: 0` і датою `—`
+📖 Документація:
+- [`List<T>.Sort`](https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1.sort)
 
 ### Адаптація до вашого домену
 
 | Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
 |---------|--------|----------|-------------|-------------|------------|---------|
-| `8. Аналітика` | `8. Аналітика` | `8. Аналітика` | `8. Аналітика` | `8. Аналітика` | `8. Аналітика` | `8. Аналітика` |
 | Лікарі за навантаженням | Персонал за check-in | Офіціанти за столами | Викладачі за курсами | Менеджери за орендами | Бібліотекарі за видачами | Тренери за сесіями |
 | Лікарі за виручкою | Персонал за виручкою | Офіціанти за виручкою | Викладачі за студентами | Менеджери за виручкою | Бібліотекарі за відділами | Тренери за виручкою |
 | Пацієнти за кількістю візитів | Гості за ночами | Клієнти за відвідинами | Студенти за курсами | Клієнти за орендами | Читачі за видачами | Учасники за тренуваннями |
@@ -332,8 +367,8 @@ git commit -m "Lab10 Task04: add AnalyticsManager with yield return for IEnumera
 ### Коміт
 
 ```bash
-git add src/Program.cs
-git commit -m "Lab10 Task05: add Analytics menu item 8 with sort options for doctors and patients"
+git add ClinicApp/Program.cs
+git commit -m "Lab10 Task05"
 ```
 
 ---
@@ -348,66 +383,69 @@ oop-course/                              ← гілка Lab-10 (після зл�
 ├── oop-course.sln
 └── ClinicApp/
     ├── ClinicApp.csproj
-    ├── Program.cs                       ✏
-    ├── Clinic.cs                        ✏
+    ├── Program.cs                       ✏ Т5
+    ├── Clinic.cs                        ✏ Т4
     ├── Enums/  (3 файли)
     ├── Models/
-    │   ├── DoctorStats.cs               🆕
-    │   ├── PatientStats.cs              🆕
+    │   ├── DoctorStats.cs               🆕 Т1
+    │   ├── PatientStats.cs              🆕 Т2
     │   └── … ще 12 файлів без змін
     ├── Managers/
-    │   ├── AnalyticsManager.cs          🆕
+    │   ├── AnalyticsManager.cs          🆕 Т4
     │   └── … ще 7 файлів без змін
     ├── Utils/  (2 файли)
     ├── Interfaces/  (4 файли)
     └── Comparators/
-        ├── DoctorStatsByName.cs         🆕
-        ├── DoctorStatsByRevenue.cs      🆕
-        ├── PatientStatsByLastVisit.cs   🆕
-        └── PatientStatsBySpent.cs       🆕
+        ├── DoctorStatsByName.cs         🆕 Т3
+        ├── DoctorStatsByRevenue.cs      🆕 Т3
+        ├── PatientStatsByLastVisit.cs   🆕 Т3
+        └── PatientStatsBySpent.cs       🆕 Т3
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 09.
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
 ## Перевірка перед здачею
 
 ```bash
-cd src
-dotnet build
-dotnet run
+dotnet build ClinicApp
+dotnet run --project ClinicApp
 ```
+
+Переконайтесь, що:
 
 - [ ] Структура проєкту збігається зі схемою вище
 - [ ] `8. Аналітика` з'явилась у головному меню
-- [ ] "Лікарі за навантаженням" і "Лікарі за виручкою" дають **різний** порядок
-- [ ] "Лікарі за іменем" дає алфавітний порядок
+- [ ] «Лікарі за навантаженням» і «Лікарі за виручкою» дають **різний** порядок (якщо тестові дані різноманітні)
+- [ ] «Лікарі за іменем» дає алфавітний порядок
 - [ ] Пацієнт без записів показує `Візитів: 0` і дату `—`
-- [ ] Видалення `IComparable` з `DoctorStats` призводить до помилки компіляції при `.Sort()` без аргументу
-- [ ] `DoctorStatsByRevenue` — окремий клас, реалізує `IComparer<DoctorStats>`
+- [ ] *(Експеримент, не для коміту)* якщо прибрати `IComparable` з `DoctorStats`, проєкт збирається, але `.Sort()` без аргументу кидає `InvalidOperationException` під час виконання
 
 ---
 
 ## Питання для самоперевірки
 
 1. Чим `IComparable<T>` відрізняється від `IComparer<T>`? Коли використовувати перше, коли друге?
-2. Що повертає `CompareTo` при рівних значеннях? Що станеться якщо завжди повертати `0`?
-3. Чому `yield return` у `ComputeDoctorStats()` дає "ліниве" обчислення? Коли саме виконується тіло циклу?
+2. Що повертає `CompareTo` при рівних значеннях? Що станеться, якщо завжди повертати `0`?
+3. Чому `yield return` у `ComputeDoctorStats()` дає «ліниве» обчислення? Коли саме виконується тіло циклу?
 4. Як отримати з `IEnumerable<T>` лише перші N елементів без LINQ? (підказка: `foreach` + лічильник)
-5. Що станеться якщо викликати `.Sort()` на `List<DoctorStats>` після того як видалиш `IComparable<DoctorStats>` з класу?
-6. Порівняй: `ComputeDoctorStats()` з `yield return` vs метод що будує і повертає `DoctorStats[]`. В чому різниця у поведінці при великій кількості лікарів?
+5. Що станеться, якщо викликати `.Sort()` на `List<DoctorStats>` після того, як прибрати `IComparable<DoctorStats>` з класу? Чому це помилка часу виконання, а не компіляції?
+6. Порівняйте: `ComputeDoctorStats()` з `yield return` і метод, що будує й повертає `DoctorStats[]`. В чому різниця у поведінці при великій кількості лікарів?
 
 ---
 
-## Злиття
+## Статус гілки
+
+Після всіх 5 завдань (кожне — окремий коміт `Lab10 TaskNN` на гілці `Lab-10`):
 
 ```bash
+git push -u origin Lab-10
 git checkout main
 git merge --no-ff Lab-10 -m "Merge Lab-10: Iterators & Comparators"
 git push
 ```
 
-> Наступна лаба: `git checkout -b Lab-11`
+> Наступна лаба: `git checkout main` → `git checkout -b Lab-11`.

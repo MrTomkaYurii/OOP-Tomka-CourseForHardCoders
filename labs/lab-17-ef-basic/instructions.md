@@ -1,25 +1,16 @@
-# Лабораторна робота 17 — Entity Framework Core: основи
+# Лаба 17 — Entity Framework Core: основи
 
-## Проблема
+## Мета
 
-До цього моменту клініка існує тільки в оперативній пам'яті: кожен запуск програми починається з нуля. Усі введені пацієнти, лікарі та прийоми зникають після завершення сесії.
+Підключити до проєкту реляційну базу даних через ORM Entity Framework Core: описати таблиці C#-класами, налаштувати відображення через Fluent API, перетворення складних типів (Value Conversion), створити схему БД міграцією і заповнити її початковими даними.
 
-Як тільки програма набуває реального застосування, з'являються очевидні вимоги:
-- дані мають зберігатися між сесіями
-- кілька користувачів мають бачити одні й ті самі записи
-- пошук і фільтрація мають масштабуватися до тисяч записів
+## Контекст
 
-Найпоширеніше рішення — реляційна база даних. Але взаємодія з БД напряму (через SQL-запити) потребує значних зусиль: формування рядків-запитів, ручне відображення ResultSet у C#-об'єкти, відстеження змін. Object-Relational Mapper (ORM) автоматизує цю роботу.
+Досі клініка існує тільки в оперативній пам'яті: кожен запуск програми починається з нуля (сесія з Лаби 12 зберігає лише пацієнтів у текстовий файл). Реальна система потребує більшого: дані мають зберігатися між запусками, кілька користувачів мають бачити ті самі записи, пошук має масштабуватися до тисяч записів.
 
-**Entity Framework Core** — офіційний ORM від Microsoft для .NET. Він дозволяє:
-- описати структуру таблиць звичайними C#-класами
-- не писати SQL вручну — він генерується автоматично
-- відстежувати які об'єкти змінилися і формувати `UPDATE` тільки для них
-- управляти схемою БД через **міграції** — версійовані скрипти змін
+Найпоширеніше рішення — реляційна база даних. Працювати з нею напряму через SQL-рядки — це ручне формування запитів і ручне перетворення рядків таблиці в C#-об'єкти. **Object-Relational Mapper (ORM)** автоматизує цю роботу. **Entity Framework Core** — офіційний ORM від Microsoft: описує таблиці звичайними класами, сам генерує SQL, відстежує зміни об'єктів і керує схемою БД через **міграції**.
 
----
-
-## Структура проєкту на початку лаби
+### Структура проєкту на початку лаби
 
 Це результат Лаби 16 — стан `main` після її злиття:
 
@@ -46,246 +37,296 @@ oop-course/                           ← гілка main (після злитт
     └── UI/  (1 файл)
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### Ключові поняття EF Core
+
+- **`DbContext`** — посередник між кодом і БД: підключається до бази (`OnConfiguring`), оголошує таблиці (`DbSet<T>`), описує правила відображення (`OnModelCreating`) і **відстежує зміни** — під час `SaveChanges()` сам формує `INSERT`, `UPDATE`, `DELETE`.
+- **`DbSet<T>`** — «таблиця» в термінах C#. LINQ-запит до `DbSet` EF перетворює на SQL: `context.Patients.Where(p => p.LastName == "Коваль")` → `SELECT … WHERE LastName = 'Коваль'`.
+- **Fluent API** — конфігурація відображення в `OnModelCreating` ланцюжком викликів. На відміну від атрибутів (`[Required]`), тримає налаштування БД **окремо від моделі**: модель лишається чистим доменним класом. У цій лабі використовуємо саме Fluent API.
+- **Value Conversion** — правило, як зберегти C#-тип, що не має прямого відповідника в SQL: `enum BloodType` → рядок `"APositive"`, `struct WorkSchedule` → рядок `"8-17"`.
+- **Міграція** — автоматично згенерований клас зі змінами схеми БД (методи `Up()` / `Down()`). Цикл роботи: змінили модель → `dotnet ef migrations add Назва` → `dotnet ef database update`.
+
+### Що нового дозволено (і тільки воно)
+
+- пакети EF Core і провайдер SQL Server (LocalDB);
+- `DbContext`, `DbSet<T>`, Fluent API у `OnModelCreating`, `ValueConverter`;
+- міграції (`dotnet ef`);
+- `private set` і конструктор без параметрів для потреб EF.
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
 git checkout -b Lab-17
 ```
 
----
+Коміт — на кожне завдання (`Lab17 TaskNN`).
 
-## Ключові концепції
+### Ваш домен
 
-### DbContext
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** в кінці кожного завдання.
 
-`DbContext` — центральний клас EF Core. Він грає роль **посередника** між вашим C#-кодом і базою даних:
+### Як користуватися підказками
 
-```
-Program.cs → Manager → DbContext → SQL Server
-```
-
-Кожен `DbContext`:
-- підключається до БД (`OnConfiguring`)
-- оголошує які таблиці існують (`DbSet<T>`)
-- описує правила відображення класів у таблиці (`OnModelCreating`)
-- **відстежує зміни** об'єктів: EF пам'ятає початковий стан кожного об'єкта і під час `SaveChanges()` порівнює з поточним — формуючи `INSERT`, `UPDATE` або `DELETE`
-
-### DbSet&lt;T&gt;
-
-`DbSet<Patient>` — це "таблиця" в термінах C#. LINQ-запити до `DbSet` EF перетворює на SQL:
-
-```csharp
-// C# LINQ
-context.Patients.Where(p => p.LastName == "Коваль").ToList()
-// ↓ EF генерує
-// SELECT * FROM Patients WHERE LastName = 'Коваль'
-```
-
-### Fluent API
-
-Правила відображення можна задавати двома способами:
-1. **Data Annotations** — атрибути прямо на класах: `[Required]`, `[MaxLength(100)]`
-2. **Fluent API** — конфігурація в `OnModelCreating` через ланцюжок викликів
-
-Fluent API має вищий пріоритет і тримає конфігурацію БД **окремо від моделі** — модель залишається чистим доменним об'єктом. Саме цей підхід використовується в Lab 17.
-
-### Value Conversion
-
-Деякі C#-типи не мають прямого відповідника у SQL. Наприклад:
-- `enum BloodType` — в C# це `int`, але в БД краще зберігати як `"APositive"` (читабельно, не ламається при зміні порядку values)
-- `struct WorkSchedule` — складений об'єкт, але логічно це один стовпець
-
-EF Core дозволяє визначити **конвертер**: як серіалізувати тип у SQL і десеріалізувати назад. `WorkSchedule { Start=8, End=17 }` → `"8-17"` → `new WorkSchedule(8, 17)`.
-
-### Міграції
-
-База даних не знає про ваші C#-класи. Міграція — це **автоматично згенерований C#-клас**, що описує зміни схеми БД. Workflow:
-
-```
-Змінив модель → dotnet ef migrations add Назва → dotnet ef database update
-```
-
-`migrations add` аналізує різницю між поточними моделями та попередньою міграцією і генерує `Up()` / `Down()` методи. `database update` виконує `Up()` — застосовує зміни до БД.
+Підказки — **напрям думки, не готовий код**. «Що реалізувати» і «Специфікація» кажуть *що*; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Спершу документація і власна спроба.
 
 ---
 
-## Завдання
+## Задача 1. Пакети EF Core і `ClinicDbContext` ⭐⭐
 
-### Завдання 1. Встановлення пакетів та DbContext
+### Умова
 
-**Задача:** підключити EF Core до проєкту та налаштувати з'єднання з локальною БД.
+Підключіть EF Core до проєкту і налаштуйте з'єднання з локальною БД. Базовий пакет `Microsoft.EntityFrameworkCore` не знає ні про SQL Server, ні про SQLite — конкретний провайдер підключається окремим пакетом.
 
-EF Core складається з кількох NuGet-пакетів. Базовий пакет `Microsoft.EntityFrameworkCore` не знає ні про SQL Server, ні про SQLite — він лише оголошує абстракції. Конкретний провайдер бази даних — це окремий пакет.
+**Що реалізувати:**
 
-Встановіть три пакети через `dotnet add package`:
-- `Microsoft.EntityFrameworkCore` — ядро ORM
-- `Microsoft.EntityFrameworkCore.SqlServer` — провайдер SQL Server / LocalDB
-- `Microsoft.EntityFrameworkCore.Design` — інструменти для генерації міграцій (потрібен тільки під час розробки)
+1. Додати в `ClinicApp` три пакети версії `8.0.0` (під `net8.0`): `Microsoft.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Design`.
+2. Один раз на комп'ютері встановити інструмент міграцій `dotnet-ef` (команда нижче).
+3. Створити теку `ClinicApp/Data/` і клас `ClinicDbContext : DbContext` з таблицями `Patients` і `Doctors`.
+4. У `OnConfiguring` підключитися до LocalDB рядком підключення зі специфікації.
 
-**Алгоритм:**
-1. Перевірте версію .NET у `ClinicApp.csproj` — для `net8.0` підходить EF Core `8.0.x`
-2. Встановіть пакети з конкретною версією (`--version 8.0.0`)
-3. Переконайтеся що `<PackageReference>` з'явився у `.csproj`
+### Специфікація
 
-Після встановлення створіть папку `src/Data/` і в ній клас `ClinicDbContext : DbContext`.
+```bash
+dotnet add ClinicApp package Microsoft.EntityFrameworkCore --version 8.0.0
+dotnet add ClinicApp package Microsoft.EntityFrameworkCore.SqlServer --version 8.0.0
+dotnet add ClinicApp package Microsoft.EntityFrameworkCore.Design --version 8.0.0
+dotnet tool install --global dotnet-ef --version 8.0.0
+```
 
-**Ключові питання:**
-- Що робить `OnConfiguring`? Яку роль він грає в циклі роботи DbContext?
-- Чому `UseSqlServer` — це метод розширення, а не частина базового EF Core?
+| Член `ClinicDbContext` | Опис |
+|------------------------|------|
+| `DbSet<Patient> Patients` | таблиця пацієнтів |
+| `DbSet<Doctor> Doctors` | таблиця лікарів |
+| `OnConfiguring(...)` | `UseSqlServer(рядок підключення)` |
 
-**Рядок підключення до LocalDB:**
+Рядок підключення до LocalDB:
+
 ```
 Server=(localdb)\mssqllocaldb;Database=ClinicApp;Trusted_Connection=True;TrustServerCertificate=True;
 ```
 
-LocalDB — вбудований SQL Server для розробки. Не потребує окремого встановлення сервера; автоматично запускається при першому підключенні.
+### Приклад
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
+</ItemGroup>
+```
+
+### Підказки
+
+1. Версія EF Core має збігатися з версією .NET у `ClinicApp.csproj`: `net8.0` → `8.0.x`.
+2. `dotnet-ef` — глобальний інструмент командного рядка, а не пакет проєкту: без нього команда `dotnet ef` не знайдеться. Перевірка: `dotnet ef --version`.
+3. **LocalDB** — вбудований SQL Server для розробки (ставиться разом із Visual Studio); запускається автоматично при першому підключенні.
+4. `UseSqlServer` — метод розширення з пакета провайдера: саме тому він з'являється лише після встановлення `…SqlServer`.
+
+📖 Документація:
+- [EF Core: початок роботи](https://learn.microsoft.com/ef/core/get-started/overview/first-app)
+- [`DbContext`: налаштування](https://learn.microsoft.com/ef/core/dbcontext-configuration/)
+- [Інструмент `dotnet ef`](https://learn.microsoft.com/ef/core/cli/dotnet)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `ClinicDbContext` | `HotelDbContext` | `RestaurantDbContext` | `UniversityDbContext` | `RentalDbContext` | `LibraryDbContext` | `GymDbContext` |
+| `Patients`, `Doctors` | `Guests`, `Staff` | `Customers`, `Waiters` | `Students`, `Lecturers` | `Clients`, `Managers` | `Readers`, `Librarians` | `Members`, `Trainers` |
+
+### Коміт
 
 ```bash
-git add src/ClinicApp.csproj src/Data/ClinicDbContext.cs
-git commit -m "Lab17 Task01: add EF Core packages and ClinicDbContext"
+git add ClinicApp/ClinicApp.csproj ClinicApp/Data/ClinicDbContext.cs
+git commit -m "Lab17 Task01"
 ```
 
 ---
 
-### Завдання 2. Fluent API для Patient
+## Задача 2. Відображення `Patient` через Fluent API ⭐⭐
 
-**Задача:** описати правила відображення класу `Patient` у таблицю `Patients`.
+### Умова
 
-Перш ніж EF може працювати з моделлю, слід вирішити дві проблеми:
+Опишіть, як клас `Patient` зберігається в таблиці `Patients`. Спершу підготуйте сам клас до роботи з EF, потім налаштуйте відображення в `OnModelCreating`.
 
-**Проблема 1: Id readonly**
-Поле `public int Id { get; }` в `Patient` не може бути встановлено ззовні — тобто EF Core після `INSERT` не зможе записати у властивість нове значення з БД. Потрібно дозволити EF встановлювати Id, зберігши при цьому публічний API (ніхто ззовні не повинен мати можливість змінити Id вручну).
+**Що реалізувати:**
 
-Підказка: `private set` вирішує обидва вимоги одночасно.
+1. У `Patient` змінити `Id` на `{ get; private set; }`: EF має записати в нього значення з БД після `INSERT`, а ззовні змінити `Id` і далі неможливо.
+2. Переконатися, що в `Patient` є конструктор без параметрів (з Лаби 03) — EF використовує його, завантажуючи об'єкт із БД.
+3. У `ClinicDbContext.OnModelCreating` налаштувати `Patient` за специфікацією.
 
-**Проблема 2: Конструктор**
-EF Core при завантаженні об'єкта з БД викликає конструктор і потім встановлює властивості через setters. Якщо конструктор без параметрів вже є в класі — EF використає його. Якщо ні — потрібен захищений (`protected`) або приватний parameterless ctor.
+### Специфікація
 
-Перевірте: чи є в `Patient` вже `public Patient()`? Якщо так — EF Core вже може його використати.
+| Що | Налаштування |
+|----|--------------|
+| Таблиця | `Patients` |
+| Ключ | `Id`, значення генерує БД (IDENTITY); значення з лічильника `_nextId` при вставці ігнорується |
+| `FirstName`, `LastName` | обов'язкові, до 100 символів |
+| `Phone` | до 10 символів |
+| `Email` | до 100 символів |
+| `BloodType` | зберігається **рядком** (`"APositive"`), а не числом |
+| Індекс | за `LastName`, ім'я `IX_Patients_LastName` |
 
-**Fluent API в `OnModelCreating`:**
+### Приклад
 
-Структура конфігурації для сутності:
-```
+```csharp
 modelBuilder.Entity<Patient>(entity =>
 {
-    entity.ToTable("...");
+    entity.ToTable("Patients");
     entity.HasKey(p => p.Id);
-    entity.Property(p => p.Id).ValueGeneratedOnAdd();
     entity.Property(p => p.FirstName).HasMaxLength(100).IsRequired();
-    // ...
-    entity.HasIndex(p => p.LastName).HasDatabaseName("IX_Patients_LastName");
+    // … решта за специфікацією
 });
 ```
 
-`ValueGeneratedOnAdd` вказує: "БД генерує значення при INSERT" — це і є IDENTITY у SQL Server.
+### Підказки
 
-Для `BloodType` (enum): збережіть як рядок `HasConversion<string>()`. Без цього EF зберігатиме ціле число (0, 1, 2...) — при зміні порядку enum-значень дані в БД стануть некоректними.
+1. `ValueGeneratedOnAdd()` означає «значення генерує БД під час `INSERT`» — це і є IDENTITY в SQL Server.
+2. **Пастка з лічильником.** Конструктор `Patient` уже присвоює `Id` з `_nextId`. Побачивши ненульовий `Id`, EF спробує вставити його явно — і SQL Server відмовить (вставка в IDENTITY-стовпець вимкнена). Скажіть EF ігнорувати клієнтське значення при вставці: `Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore)` для властивості `Id`.
+3. Enum без перетворення зберігається числом (0, 1, 2…): змінили порядок значень — дані в БД стали некоректними. `HasConversion<string>()` зберігає назву.
+4. `HasKey` можна не писати — EF знайде `Id` за іменем. Але явна конфігурація читається краще.
 
-**Ключові питання:**
-- Навіщо явно вказувати `HasKey`, якщо EF і так знаходить `Id` за іменем?
-- Що відбувається з `_nextId` статичним лічильником при завантаженні об'єктів з БД?
+📖 Документація:
+- [Fluent API: конфігурація моделі](https://learn.microsoft.com/ef/core/modeling/)
+- [Згенеровані значення](https://learn.microsoft.com/ef/core/modeling/generated-properties)
+- [Явні значення для згенерованих властивостей](https://learn.microsoft.com/ef/core/saving/explicit-values-generated-properties)
+- [Перетворення значень](https://learn.microsoft.com/ef/core/modeling/value-conversions)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `Patient` → `Patients`, `BloodType` рядком | `Guest` → `Guests`, `RoomType` рядком | `Customer` → `Customers`, `DishCategory` рядком | `Student` → `Students`, `Faculty` рядком | `Client` → `Clients`, `CarClass` рядком | `Reader` → `Readers`, `BookGenre` рядком | `Member` → `Members`, `FitnessLevel` рядком |
+
+### Коміт
 
 ```bash
-git add src/Data/ClinicDbContext.cs src/Models/Patient.cs
-git commit -m "Lab17 Task02: configure Fluent API mapping for Patient entity"
+git add ClinicApp/Data/ClinicDbContext.cs ClinicApp/Models/Patient.cs
+git commit -m "Lab17 Task02"
 ```
 
 ---
 
-### Завдання 3. Fluent API для Doctor (Value Conversion)
+## Задача 3. Відображення `Doctor` і перетворення `WorkSchedule` ⭐⭐⭐
 
-**Задача:** описати відображення `Doctor` з особливою увагою до `WorkSchedule`.
+### Умова
 
-`WorkSchedule` — це `struct` з двома полями `Start` і `End`. Зберігати його в окремій таблиці (через JOIN) надлишково для такої простої структури. Натомість використаємо **Value Conversion**: серіалізуємо в рядок `"8-17"` і десеріалізуємо назад.
+Опишіть відображення `Doctor`. Особлива частина — розклад `WorkSchedule`: зберігати двопольну структуру окремою таблицею надлишково, тому збережіть її **одним рядком** `"8-17"` і відновлюйте назад при читанні.
 
-**Проблема:** `HasConversion` приймає лямбди, але компілює їх у **expression trees** — обмежений підмножина C#. Expression trees не підтримують виклики методів з опціональними параметрами (обмеження CS0854).
+**Що реалізувати:**
 
-Зокрема, `int.Parse(string)` технічно має опціональний параметр `IFormatProvider`, тому він може не компілюватися в expression tree залежно від версії .NET.
+1. Підготувати `Doctor` так само, як `Patient`: `Id { get; private set; }`, конструктор без параметрів.
+2. Налаштувати `Doctor` у `OnModelCreating` за специфікацією.
+3. Для `Schedule` створити `ValueConverter<WorkSchedule, string>`: розклад → `"Start-End"` і назад. Зворотний розбір винести в окремий статичний метод.
 
-**Рішення:** винести парсинг у статичний метод класу та передати делегат:
+### Специфікація
 
-```csharp
-private static WorkSchedule ParseWorkSchedule(string value)
-{
-    string[] parts = value.Split('-');
-    return new WorkSchedule(int.Parse(parts[0]), int.Parse(parts[1]));
-}
+| Що | Налаштування |
+|----|--------------|
+| Таблиця | `Doctors` |
+| Ключ | `Id`, IDENTITY; значення з `_nextId` ігнорується (як у `Patient`) |
+| `FirstName`, `LastName`, `LicenseNumber` | обов'язкові, до 100 символів |
+| `Phone` | до 10 символів |
+| `Speciality` | рядком |
+| `Schedule` | один рядок `"8-17"` через `ValueConverter` |
+
+### Приклад
+
+```
+Doctors
+Id | FirstName | LastName  | Speciality | Schedule
+ 1 | Олег      | Сидоренко | Cardiology | 8-16
 ```
 
-Після чого конвертер:
-```csharp
-var converter = new ValueConverter<WorkSchedule, string>(
-    s => s.Start.ToString() + "-" + s.End.ToString(),
-    v => ParseWorkSchedule(v));
-entity.Property(d => d.Schedule).HasConversion(converter)...
-```
+### Підказки
 
-Чому `ValueConverter<TModel, TProvider>` замість прямих лямбд у `HasConversion`? Тому що `new ValueConverter<>()` отримує `Func<,>` делегати, а не виразові дерева — немає обмежень CS0854.
+1. **Чому окремий метод для розбору.** Лямбди в `HasConversion` компілюються в **дерева виразів** — обмежену підмножину C#. Виклики з необов'язковими параметрами (як `int.Parse` з `IFormatProvider`) там можуть не компілюватися (помилка `CS0854`). Статичний метод розбору, викликаний із лямбди конвертера, цю проблему знімає.
+2. `ValueConverter<TModel, TProvider>` — окремий об'єкт: перший аргумент перетворює модель у значення для БД, другий — назад. Передайте його в `HasConversion(converter)`.
+3. Розбір: розділити рядок за `-`, перетворити дві частини на числа і створити `WorkSchedule` — валідація з Лаби 05 спрацює автоматично.
 
-**Ключові питання:**
-- У чому різниця між expression tree і `Func<>` делегатом?
-- Чи можна замість рядка "8-17" зберігати два окремі стовпці? Як би виглядала конфігурація?
+📖 Документація:
+- [Перетворення значень](https://learn.microsoft.com/ef/core/modeling/value-conversions)
+- [Дерева виразів](https://learn.microsoft.com/dotnet/csharp/advanced-topics/expression-trees/)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `WorkSchedule` → `"8-17"` | `BookingPeriod` → `"14-12"` | `ServiceHours` → `"10-23"` | `LectureSlot` → `"9-11"` | `RentalPeriod` → `"9-18"` | `ShiftSchedule` → `"9-18"` | `TrainingSlot` → `"7-9"` |
+
+### Коміт
 
 ```bash
-git add src/Data/ClinicDbContext.cs src/Models/Doctor.cs
-git commit -m "Lab17 Task03: configure Fluent API for Doctor with WorkSchedule value conversion"
+git add ClinicApp/Data/ClinicDbContext.cs ClinicApp/Models/Doctor.cs
+git commit -m "Lab17 Task03"
 ```
 
 ---
 
-### Завдання 4. DbSeeder та перший запуск
+## Задача 4. Міграція і `DbSeeder` ⭐⭐
 
-**Задача:** створити початкові дані та запустити міграцію.
+### Умова
 
-**DbSeeder:**
+Створіть схему БД міграцією і заповніть її початковими даними. Початкові дані — окремий клас, а не `Program.cs`: `Program.cs` керує навігацією, а сідер відповідає за початковий стан БД.
 
-Тестові дані — окремий клас, а не в `Program.cs`. Причина: `Program.cs` керує навігацією, DbSeeder відповідає за початковий стан БД — це різні обов'язки (SRP).
+**Що реалізувати:**
 
-Ключовий принцип: **ідемпотентність**. Seeder повинен безпечно запускатися при кожному старті:
+1. Створити першу міграцію `InitialCreate` і застосувати її до БД (команди нижче). Відкрити згенерований клас і переконатися, що `Up()` створює таблиці за вашою конфігурацією.
+2. Створити статичний клас `DbSeeder` у `ClinicApp/Data/` з методом `Seed(ClinicDbContext context)`: додає 5 пацієнтів і 5 лікарів різних спеціальностей і зберігає зміни.
+3. Сідер **ідемпотентний**: якщо пацієнти в БД уже є — нічого не додає.
+4. У `Program.cs` на старті створити контекст і викликати `DbSeeder.Seed`.
 
-```
-if (context.Patients.Any()) return;  // вже є дані — пропускаємо
-```
-
-`Any()` генерує `SELECT TOP 1 FROM Patients` — не завантажує всі записи, лише перевіряє наявність хоча б одного.
-
-Додайте 5 пацієнтів і 5 лікарів різних спеціальностей.
-
-**Міграція:**
-
-Після того як `ClinicDbContext` написано і проєкт компілюється, запустіть:
-```
-dotnet ef migrations add InitialCreate
-dotnet ef database update
-```
-
-Перша команда генерує клас `InitialCreate` у папці `Migrations/` — відкрийте його і прочитайте метод `Up()`. Що він створює? Чи відповідає структура таблиць вашій Fluent API конфігурації?
-
-**Алгоритм виклику Seeder:**
-
-У `Program.cs` або `Clinic.cs` при старті:
-```
-using var context = new ClinicDbContext();
-context.Database.EnsureCreated(); // або вже зроблено через database update
-DbSeeder.Seed(context);
-```
-
-Після запуску перевірте через SQL Server Object Explorer (у Visual Studio) або виконайте `SELECT * FROM Patients` у команді — дані мають бути в БД.
-
-**Ключові питання:**
-- Що робить `context.Database.EnsureCreated()` порівняно з `dotnet ef database update`?
-- Навіщо `using var context = ...`? Що відбудеться якщо не dispose контекст?
-- Чому краще використовувати `Any()` замість `Count() == 0` для перевірки?
+### Специфікація
 
 ```bash
-git add src/Data/DbSeeder.cs src/Migrations/
-git commit -m "Lab17 Task04: add DbSeeder and run InitialCreate migration"
+dotnet ef migrations add InitialCreate --project ClinicApp
+dotnet ef database update --project ClinicApp
+```
+
+| Член `DbSeeder` | Опис |
+|-----------------|------|
+| `Seed(ClinicDbContext context)` | якщо таблиця `Patients` не порожня — вихід; інакше 5 пацієнтів + 5 лікарів, `SaveChanges()` |
+
+### Приклад
+
+```
+SELECT Id, FirstName, LastName, BloodType FROM Patients;
+1 | Іван   | Петренко | APositive
+2 | Олена  | Коваль   | BNegative
+…
+```
+
+### Підказки
+
+1. Перевірку «чи є дані» робіть через `Any()` — він генерує `SELECT TOP 1`, а не завантажує всю таблицю.
+2. Контекст створюйте з `using`: він тримає з'єднання з БД і має бути звільнений.
+3. **Не використовуйте `Database.EnsureCreated()`** разом із міграціями: БД, створену так, наступна міграція спробує створити ще раз і впаде. Схему створює лише `dotnet ef database update`.
+4. Дані перевірте через SQL Server Object Explorer у Visual Studio.
+
+📖 Документація:
+- [Міграції: огляд](https://learn.microsoft.com/ef/core/managing-schemas/migrations/)
+- [Заповнення даними](https://learn.microsoft.com/ef/core/modeling/data-seeding)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| 5 пацієнтів + 5 лікарів | 5 гостей + 5 працівників | 5 клієнтів + 5 офіціантів | 5 студентів + 5 викладачів | 5 клієнтів + 5 менеджерів | 5 читачів + 5 бібліотекарів | 5 учасників + 5 тренерів |
+
+### Коміт
+
+```bash
+git add ClinicApp/Data/DbSeeder.cs ClinicApp/Migrations/ ClinicApp/Program.cs
+git commit -m "Lab17 Task04"
 ```
 
 ---
@@ -299,13 +340,13 @@ oop-course/                                   ← гілка Lab-17 (після 
 ├── .gitignore
 ├── oop-course.sln
 └── ClinicApp/
-    ├── ClinicApp.csproj                      ✏
-    ├── Program.cs
+    ├── ClinicApp.csproj                      ✏ Т1
+    ├── Program.cs                            ✏ Т4
     ├── Clinic.cs
     ├── Enums/  (4 файли)
     ├── Models/
-    │   ├── Patient.cs                        ✏
-    │   ├── Doctor.cs                         ✏
+    │   ├── Patient.cs                        ✏ Т2
+    │   ├── Doctor.cs                         ✏ Т3
     │   └── … ще 14 файлів без змін
     ├── Managers/  (13 файлів)
     ├── Utils/  (12 файлів)
@@ -316,40 +357,55 @@ oop-course/                                   ← гілка Lab-17 (після 
     ├── Extensions/  (3 файли)
     ├── UI/  (1 файл)
     ├── Data/
-    │   ├── ClinicDbContext.cs                🆕
-    │   └── DbSeeder.cs                       🆕
-    └── Migrations/  (3 файли — генерує EF)   🆕
+    │   ├── ClinicDbContext.cs                🆕 Т1  ✏ Т2 Т3
+    │   └── DbSeeder.cs                       🆕 Т4
+    └── Migrations/  (3 файли — генерує EF)   🆕 Т4
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 16.
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
-## Рефлексійні питання
+## Перевірка перед здачею
 
-1. **DbContext як Unit of Work.** EF Core реалізує патерн Unit of Work — всі зміни в одній "одиниці роботи" зберігаються разом через `SaveChanges()`. Як це пов'язано з принципом транзакцій у БД?
+```bash
+dotnet build ClinicApp
+dotnet run --project ClinicApp
+```
 
-2. **Fluent API vs Data Annotations.** Data Annotations (`[Required]`, `[MaxLength]`) — простіші, але змішують доменну модель з технічними деталями БД. Fluent API складніший, але чистіший. В якому випадку ви б вибрали Annotations?
+Переконайтесь, що:
 
-3. **Value Conversion і validatior.** `WorkSchedule` конструктор валідує `start < end`. Що відбудеться, якщо в БД є рядок "17-8" (corrupted data)? Як захиститися від цього?
+- [ ] Структура проєкту збігається зі схемою вище
+- [ ] `dotnet ef --version` показує версію 8.0.x
+- [ ] У БД `ClinicApp` є таблиці `Patients`, `Doctors` і `__EFMigrationsHistory`
+- [ ] `BloodType` і `Speciality` збережені рядками, `Schedule` — рядком виду `8-17`
+- [ ] Після першого запуску в БД 5 пацієнтів і 5 лікарів; після повторного — так само 5 (сідер ідемпотентний)
+- [ ] У коді немає `EnsureCreated()`
 
-4. **IDENTITY vs клієнтський Id.** Зараз `_nextId` в Patient і DB IDENTITY — два незалежних лічильники. Після `SaveChanges()` EF оновлює Id з БД. Що станеться з `_nextId`, якщо завтра в БД вже 1000 записів і програма стартує з нуля?
+---
 
-5. **Міграція як версія схеми.** Міграція — це як Git для структури БД. Що буде, якщо один розробник застосує міграцію `AddAppointments`, а інший ще ні — і обидва намагаються запустити додаток з однієї БД?
+## Питання для самоперевірки
 
-6. **`using var context`.** Чому `DbContext` реалізує `IDisposable`? Що відбувається під час `Dispose()` — чи зберігаються незбережені зміни?
+1. **Unit of Work.** Усі зміни в одному `DbContext` зберігаються разом через `SaveChanges()`. Як це пов'язано з транзакціями в БД?
+2. **Fluent API чи атрибути.** Атрибути (`[Required]`, `[MaxLength]`) простіші, але змішують модель із деталями БД. Коли ви обрали б атрибути?
+3. **Пошкоджені дані.** Конструктор `WorkSchedule` перевіряє `start < end`. Що станеться, якщо в БД рядок `"17-8"`? Як від цього захиститись?
+4. **Два лічильники.** `_nextId` у `Patient` і IDENTITY у БД рахують незалежно. Чому EF має ігнорувати значення з лічильника при вставці? Що було б без цього?
+5. **Міграція як версія схеми.** Що буде, якщо один розробник застосував міграцію `AddAppointments`, а інший ні — і обидва запускають програму з однією БД?
+6. **`using var context`.** Чому `DbContext` реалізує `IDisposable`? Чи зберігаються незбережені зміни під час `Dispose()`?
 
 ---
 
 ## Статус гілки
 
-Після завершення всіх завдань — злити в `main`:
+Після всіх 4 завдань (кожне — окремий коміт `Lab17 TaskNN` на гілці `Lab-17`):
 
 ```bash
+git push -u origin Lab-17
 git checkout main
 git merge --no-ff Lab-17 -m "Merge Lab-17: EF Core Basics"
+git push
 ```
 
-> Наступна лаба: `git checkout -b Lab-18`
+> Наступна лаба: `git checkout main` → `git checkout -b Lab-18`.

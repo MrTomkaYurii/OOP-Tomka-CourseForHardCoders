@@ -1,16 +1,16 @@
-# Лаба 08 — Polymorphism (Поліморфізм)
+# Лаба 08 — Поліморфізм
 
 ## Мета
 
-Зрозуміти різницю між `virtual`/`override` (справжній поліморфізм) та `new` (приховування методу). Навчитись будувати ієрархії підкласів де кожен тип поводиться по-своєму через єдиний базовий інтерфейс.
+Навчитися будувати ієрархію класів, у якій кожен підтип поводиться по-своєму через спільний базовий тип: робити методи `virtual` і перевизначати їх через `override`, звертатися до реалізації батька через `base`, закривати ієрархію словом `sealed` — і розрізняти справжнє перевизначення (`override`) та приховування методу (`new`).
 
 ## Контекст
 
-Після Lab 07 `Appointment` реалізує `IPayable` — але всі записи однакові і коштують однаково. Насправді клініка має три типи прийомів: звичайний, терміновий (+50% вартість) і консультація спеціаліста (+30% вартість). Ця лаба вводить підкласи. Меню **не змінюється** — зміни внутрішні.
+Після Лаби 07 запис на прийом уміє рахувати вартість (`IPayable`) і скасовуватись (`ICancellable`). Але всі записи однакові: будь-який прийом коштує `DurationMinutes × 10` грн і нічим не відрізняється від іншого.
 
-> Ця лаба зливається в `main` після Task 4. Task 5 — бонус.
+Насправді клініка має три види прийомів: **звичайний**, **терміновий** (на 50% дорожчий) і **консультацію спеціаліста** (на 30% дорожча). Ця лаба вводить для них підкласи `Appointment`. Головне, чого ви навчитесь: код, який працює з масивом `Appointment[]`, отримує правильний опис і правильну ціну кожного запису **без жодного `if` за типом** — це і є поліморфізм.
 
-## Структура проєкту на початку лаби
+### Структура проєкту на початку лаби
 
 Це результат Лаби 07 — стан `main` після її злиття:
 
@@ -37,391 +37,377 @@ oop-course/                             ← гілка main (після злит
     └── Interfaces/  (3 файли)
 ```
 
-Структуру **наприкінці** лаби (з позначками, що створюється і змінюється) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+Структуру **наприкінці** лаби (з позначками, що створюється і змінюється в кожній задачі) наведено в розділі «Структура проєкту наприкінці лаби» перед перевіркою.
+
+### Що нового дозволено (і тільки воно)
+
+- `virtual` і `override` для методів **звичайного** (не абстрактного) класу;
+- виклик реалізації батька через `base.Метод()`;
+- `sealed` на класі (від нього не можна успадкуватись) і `sealed override` на методі (його не можна перевизначити далі);
+- модифікатор `new` — приховування методу батька.
+
+Досі заборонено: `List<T>` / `Dictionary` та інші generic-колекції (Лаба 09), LINQ (Лаба 14), делегати й лямбди (Лаби 13–15).
 
 ---
 
-## Гілка
+## Крок 1. Гілка
+
+> **Робочий процес** (повністю — [Git Воркшоп](https://tomka.space/git-workshop/)):
+> лаба = гілка `Lab-XX` від `main`, коміт на кожне завдання (`LabXX TaskYY`), у кінці — злиття в `main`.
+
+Проєкт `ClinicApp/` уже існує. Тут лише нова гілка від `main`:
 
 ```bash
 git checkout main
-git pull
 git checkout -b Lab-08
 ```
 
+Коміт — на кожне завдання (`Lab08 TaskNN`).
+
+### Ваш домен
+
+За замовчуванням виконуйте завдання **як написано** (домен «клініка»). Для власного домену дивіться таблицю **«Адаптація до вашого домену»** наприкінці кожного завдання — вона підказує, які підтипи створити і як зміниться ціна. Структуру рішення зберігайте.
+
+### Як користуватися підказками
+
+Підказки — **напрям думки, а не готовий код**. «Що реалізувати» і «Специфікація» кажуть, *що* має вийти; підказки — *як міркувати*; блок **📖 Документація** — де прочитати синтаксис. Спершу документація і власна спроба.
+
 ---
 
-## Завдання 1 — virtual методи та перший підклас ⭐
+## Задача 1. Віртуальні методи та перший підклас ⭐
 
 ### Умова
 
-Зараз `GetCost()` і `GetDescription()` в `Appointment` — звичайні методи. Підклас може їх перекрити через `new`, але поліморфізм не працюватиме. Потрібно зробити їх `virtual`.
+Щоб підклас міг змінити поведінку методу батька, батько має явно це дозволити — позначити метод `virtual`. Зробіть вартість і опис запису віртуальними та створіть перший підклас — звичайний прийом.
 
-### Що реалізувати
+**Що реалізувати:**
 
-**`Models/Appointment.cs`** — внести зміни:
+1. У `Appointment` зробити `GetCost()` віртуальним (формула лишається: `DurationMinutes × 10` грн).
+2. Додати в `Appointment` новий віртуальний метод `GetDescription()`, який повертає `"Прийом"`.
+3. Додати в `Appointment` **звичайний** (не віртуальний) метод `GetPriority()`, який повертає `3`. Він навмисно не `virtual` — знадобиться в Задачі 3.
+4. Оновити `Appointment.ToString()`: на початку рядка — опис із `GetDescription()`, наприкінці — вартість із `GetCost()`.
+5. Створити клас `RegularAppointment : Appointment` у `Models/`: конструктор передає параметри батькові, `GetDescription()` повертає `"Звичайний прийом"`.
+
+**Як перевіряти, поки меню не змінене:** Задачі 1–2 не змінюють меню. Щоб побачити результат, тимчасово додайте кілька рядків наприкінці початкових даних у `Program.cs` (створіть записи різних типів і виведіть їх). Перед комітом Задачі 3 цей тимчасовий код приберіть — його місце займе демонстрація із Задачі 3.
+
+### Специфікація
+
+| Член `Appointment` | Було | Стало |
+|--------------------|------|-------|
+| `GetCost()` | звичайний метод | `virtual`, та сама формула |
+| `GetDescription()` | — | `virtual string`, повертає `"Прийом"` |
+| `GetPriority()` | — | **не** `virtual`, повертає `3` |
+| `ToString()` | без опису й ціни | `"[Id] Опис \| … \| Статус \| Вартість грн"` |
+
+| Член `RegularAppointment` | Опис |
+|---------------------------|------|
+| конструктор `(patientId, doctorId, scheduledAt, durationMinutes = 30)` | передає всі параметри в конструктор `Appointment` |
+| `GetDescription()` | `override`, повертає `"Звичайний прийом"` |
+
+### Приклад
 
 ```csharp
-public virtual decimal GetCost() => (decimal)DurationMinutes * 10m;
-public virtual string GetDescription() => "Звичайний прийом";
-public int GetPriority() => 3;  // не virtual — навмисно, для Task 3
+Appointment a = new RegularAppointment(1, 1, DateTime.Today.AddDays(1).AddHours(10));
+Console.WriteLine(a);
+// [7] Звичайний прийом | Пацієнт #1 → Лікар #1 | 15.10.2026 10:00–10:30 | Scheduled | 300.00 грн
 ```
 
-Також оновити `ToString()` щоб використовував `GetDescription()` і `GetCost()`:
-
-```csharp
-public override string ToString()
-{
-    string result = "[" + Id + "] " + GetDescription() +
-                    " | Пацієнт #" + PatientId + " → Лікар #" + DoctorId +
-                    " | " + ScheduledAt.ToString("dd.MM.yyyy HH:mm") + "–" + EndsAt.ToString("HH:mm") +
-                    " | " + Status +
-                    " | " + GetCost().ToString("F2") + " грн";
-    if (Notes.Length > 0) result += " | " + Notes;
-    return result;
-}
-```
-
-**`Models/RegularAppointment.cs`** — новий файл. Клас успадковує `Appointment`, конструктор викликає `base(...)`, `GetDescription()` повертає рядок-опис:
-
-```csharp
-public class RegularAppointment : Appointment
-{
-    public RegularAppointment(int patientId, int doctorId, DateTime scheduledAt, int durationMinutes = 30)
-        : base(patientId, doctorId, scheduledAt, durationMinutes) { }
-
-    public override string GetDescription() => /* рядок що описує тип прийому */;
-}
-```
-
-### Що перевірити
-
-Після змін: `new RegularAppointment(1, 1, DateTime.Today)` повинно компілюватись і виводитись через `ToString()` з описом "Звичайний прийом" та вартістю в гривнях.
+Змінна має тип `Appointment`, а опис — від `RegularAppointment`: виклик `GetDescription()` усередині `ToString()` іде в підклас.
 
 ### Підказки
 
-1. `virtual` у базовому класі — це дозвіл на перевизначення. Без нього `override` у підкласі не компілюється.
-2. Якщо `GetDescription()` в `ToString()` — то `ToString()` автоматично показуватиме рядок підкласу при виводі `Appointment[]`. Це і є поліморфізм.
-3. [virtual keyword — docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/virtual)
+1. **`virtual` — це дозвіл.** Без нього `override` у підкласі не скомпілюється. Ключове слово ставиться в оголошенні методу батька, між модифікатором доступу й типом результату.
+2. **Конструктор підкласу не повторює логіку батька.** Він лише передає параметри «нагору» — синтаксис `: base(...)` після списку параметрів (той самий принцип, що й у Лабі 06).
+3. **`ToString()` уже перевизначений** (з Лаби 03). Змініть лише його вміст: опис — через `GetDescription()`, вартість — через `GetCost()` з форматом `"F2"`. Саме тому, що `ToString()` викликає віртуальні методи, він автоматично показуватиме дані підкласу.
+4. **`IPayable` не ламається.** `GetCost()` лишається публічним і з тим самим типом — інтерфейс із Лаби 07 і далі задоволений.
+
+📖 Документація:
+- [`virtual`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/virtual)
+- [`override`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/override)
+- [Поліморфізм (огляд)](https://learn.microsoft.com/dotnet/csharp/fundamentals/object-oriented/polymorphism)
 
 ### Адаптація до вашого домену
 
 | Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
 |---------|--------|----------|-------------|-------------|------------|---------|
 | `Appointment` | `Booking` | `TableReservation` | `Enrollment` | `Rental` | `BookLoan` | `Session` |
-| `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` | `virtual GetDescription()` |
 | `virtual GetCost()` | `virtual GetCost()` | `virtual GetCost()` | `virtual GetCost()` | `virtual GetCost()` | `virtual GetFine()` | `virtual GetCost()` |
 | `RegularAppointment` | `StandardBooking` | `RegularReservation` | `RegularEnrollment` | `BasicRental` | `RegularLoan` | `RegularSession` |
 
 ### Коміт
 
 ```bash
-git add src/Models/Appointment.cs src/Models/RegularAppointment.cs
-git commit -m "Lab08 Task01: make GetCost() and GetDescription() virtual, add RegularAppointment"
+git add ClinicApp/Models/Appointment.cs ClinicApp/Models/RegularAppointment.cs
+git commit -m "Lab08 Task01"
 ```
 
 ---
 
-## Завдання 2 — UrgentAppointment і SpecialistAppointment ⭐⭐
+## Задача 2. Терміновий прийом і консультація спеціаліста ⭐⭐
 
 ### Умова
 
-Клініка хоче додати термінові прийоми (дорожче) і консультації спеціалістів (теж дорожче). Кожен тип має свою логіку ціни і свій опис. Але зберігатись вони повинні в одному масиві `Appointment[]`.
+Створіть ще два види прийому зі своєю ціною й описом. Обидва зберігаються там само, де й усі записи, — у масиві `Appointment[]`, і виводяться тим самим кодом.
 
-### Що реалізувати
+**Що реалізувати:**
 
-**`Models/UrgentAppointment.cs`** — новий файл:
+1. Клас `UrgentAppointment : Appointment` у `Models/`:
+   - властивість `UrgencyNote` (причина терміновості), лише для читання, задається в конструкторі;
+   - `GetCost()` — на 50% дорожче за базову ціну;
+   - `GetDescription()` — `"Терміновий"` і, якщо задано, причина в дужках; метод **закритий для подальшого перевизначення** (`sealed override`);
+   - `GetPriority()` повертає `1` і **приховує** метод батька (модифікатор `new`, не `override`).
+2. Клас `SpecialistAppointment : Appointment` у `Models/`, **закритий для успадкування** (`sealed class`):
+   - властивість `ConsultationTopic` (тема консультації), лише для читання, задається в конструкторі;
+   - `GetCost()` — на 30% дорожче за базову ціну;
+   - `GetDescription()` — `"Консультація спеціаліста"` і тема.
 
-- Поле `string UrgencyNote` (причина терміновості, ініціалізується в конструкторі)
-- `override GetCost()` → на 50% дорожче за базову ставку (`base.GetCost()`)
-- `sealed override GetDescription()` → рядок "Терміновий" + UrgencyNote (якщо не порожній)
-- `new int GetPriority() => 1` — **не** override (навмисно, пояснення в Task 3)
+### Специфікація
 
-```csharp
-public class UrgentAppointment : Appointment
-{
-    public string UrgencyNote { get; }
+| Клас | Конструктор | `GetCost()` | `GetDescription()` | `GetPriority()` |
+|------|-------------|-------------|--------------------|-----------------|
+| `UrgentAppointment` | `(patientId, doctorId, scheduledAt, urgencyNote = "", durationMinutes = 30)` | базова × 1.5 | `"Терміновий (біль у грудях)"`; без причини — `"Терміновий"`; `sealed override` | `new`, повертає `1` |
+| `SpecialistAppointment` (`sealed`) | `(patientId, doctorId, scheduledAt, topic = "", durationMinutes = 45)` | базова × 1.3 | `"Консультація спеціаліста: кардіологія"` | успадкований (`3`) |
 
-    public UrgentAppointment(int patientId, int doctorId, DateTime scheduledAt,
-                              string urgencyNote = "", int durationMinutes = 30)
-        : base(patientId, doctorId, scheduledAt, durationMinutes)
-    {
-        UrgencyNote = urgencyNote;
-    }
+«Базова» ціна — результат `GetCost()` класу `Appointment`.
 
-    public override decimal GetCost() { /* base.GetCost() × коефіцієнт */ }
-    public sealed override string GetDescription() { /* "Терміновий" + UrgencyNote */ }
-    public new int GetPriority() => 1;
-}
-```
-
-**`Models/SpecialistAppointment.cs`** — новий файл:
-
-- Клас **sealed** (не можна далі успадковувати)
-- Поле `string ConsultationTopic` (ініціалізується в конструкторі)
-- `override GetCost()` → на 30% дорожче за базову ставку
-- `override GetDescription()` → рядок "Консультація спеціаліста" + тема
+### Приклад
 
 ```csharp
-public sealed class SpecialistAppointment : Appointment
+Appointment[] list =
 {
-    public string ConsultationTopic { get; }
-
-    public SpecialistAppointment(int patientId, int doctorId, DateTime scheduledAt,
-                                  string topic = "", int durationMinutes = 45)
-        : base(patientId, doctorId, scheduledAt, durationMinutes)
-    {
-        ConsultationTopic = topic;
-    }
-
-    public override decimal GetCost() { /* base.GetCost() × коефіцієнт */ }
-    public override string GetDescription() { /* "Консультація спеціаліста" + тема */ }
-}
-```
-
-### Що перевірити
-
-```csharp
-Appointment[] appointments = new Appointment[]
-{
-    new RegularAppointment(1, 1, DateTime.Today),
-    new UrgentAppointment(1, 2, DateTime.Today, "біль у грудях"),
-    new SpecialistAppointment(2, 3, DateTime.Today, "кардіологія", 60)
+    new RegularAppointment(1, 1, tomorrow.AddHours(10)),
+    new UrgentAppointment(2, 2, tomorrow.AddHours(11), "біль у грудях"),
+    new SpecialistAppointment(3, 3, tomorrow.AddHours(12), "кардіологія", 60),
 };
 
-for (int i = 0; i < appointments.Length; i++)
-    Console.WriteLine(appointments[i]); // кожен рядок різний — без жодного if!
+for (int i = 0; i < list.Length; i++)
+    Console.WriteLine(list[i]);
+// [8]  Звичайний прийом | … | 300.00 грн
+// [9]  Терміновий (біль у грудях) | … | 450.00 грн
+// [10] Консультація спеціаліста: кардіологія | … | 780.00 грн
 ```
 
-Три різних рядки, три різних ціни — один масив `Appointment[]`.
+Один масив, один цикл, жодного `if` — і три різні рядки з трьома різними цінами.
 
 ### Підказки
 
-1. `sealed override` на методі = можна `override` цей метод тут, але підкласи `UrgentAppointment` вже не зможуть.
-2. `sealed class` = клас є листом ієрархії. Спроба успадкувати від `SpecialistAppointment` — помилка компіляції.
-3. `base.GetCost()` — викликає реалізацію батька (30 * DurationMinutes), потім множимо на коефіцієнт.
-4. [sealed modifier — docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/sealed)
-5. [override keyword — docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/override)
+1. **Не повторюйте формулу батька.** Ціна підкласу — це ціна батька, помножена на коефіцієнт. Реалізацію батька викликає `base.GetCost()`. Якщо завтра базова ставка зміниться з 10 на 12 грн — підкласи порахують правильно без жодної правки.
+2. **`decimal` і коефіцієнт.** Множник записуйте як `decimal`-літерал із суфіксом `m` (`1.5m`), інакше компілятор не дозволить множити `decimal` на `double`.
+3. **`sealed override`** — «перевизначаю тут, але далі вже не можна». Підклас `UrgentAppointment` (якби такий з'явився) не зможе змінити опис.
+4. **`sealed class`** — клас є «листком» ієрархії: від нього не можна успадкуватись узагалі.
+5. **`new` замість `override`** — це не помилка, а навмисний експеримент. Компілятор без `new` видасть попередження, що ви ховаєте метод батька; `new` каже «так, я знаю». Що це змінює насправді — з'ясуєте в Задачі 3.
+6. **Порожня причина.** Перевірте `UrgencyNote` на порожній рядок (`string.IsNullOrWhiteSpace`), щоб не виводити порожні дужки.
+
+📖 Документація:
+- [`base`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/base)
+- [`sealed`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/sealed)
+- [Модифікатор `new`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/new-modifier)
 
 ### Адаптація до вашого домену
 
 | Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
 |---------|--------|----------|-------------|-------------|------------|---------|
-| `UrgentAppointment` (×1.5) | `SuiteBooking` (×2.0) | `PrivateRoomReservation` (×1.5) | `OnlineEnrollment` (×0.9) | `PremiumRental` (×1.3) | `DigitalLoan` (інша логіка) | `PersonalTraining` (×2.0) |
-| `SpecialistAppointment` (×1.3) | `CorporateBooking` (×0.8) | `EventReservation` (×2.0) | `IntensiveCourse` (×1.4) | `LongTermRental` (×0.8) | `ResearchLoan` (довший термін) | `GroupSession` (×0.6) |
-| `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` | `sealed override GetDescription()` |
-| `sealed class SpecialistAppointment` | `sealed class CorporateBooking` | `sealed class EventReservation` | `sealed class IntensiveCourse` | `sealed class LongTermRental` | `sealed class ResearchLoan` | `sealed class GroupSession` |
+| `UrgentAppointment` (×1.5) | `SuiteBooking` (×2.0) | `PrivateRoomReservation` (×1.5) | `OnlineEnrollment` (×0.9) | `PremiumRental` (×1.3) | `DigitalLoan` (своя логіка штрафу) | `PersonalTraining` (×2.0) |
+| `SpecialistAppointment` (×1.3, `sealed`) | `CorporateBooking` (×0.8) | `EventReservation` (×2.0) | `IntensiveCourse` (×1.4) | `LongTermRental` (×0.8) | `ResearchLoan` (довший термін) | `GroupSession` (×0.6) |
+
+Коефіцієнт може бути й меншим за 1 (знижка) — механізм той самий.
 
 ### Коміт
 
 ```bash
-git add src/Models/UrgentAppointment.cs src/Models/SpecialistAppointment.cs
-git commit -m "Lab08 Task02: add UrgentAppointment and SpecialistAppointment"
+git add ClinicApp/Models/UrgentAppointment.cs ClinicApp/Models/SpecialistAppointment.cs
+git commit -m "Lab08 Task02"
 ```
 
 ---
 
-## Завдання 3 — new vs override: в чому різниця? ⭐⭐⭐
+## Задача 3. Запис різних типів через менеджер; `new` проти `override` ⭐⭐⭐
 
 ### Умова
 
-В `UrgentAppointment` є `new int GetPriority() => 1`, а в `Appointment` — `int GetPriority() => 3`. Студент має самостійно **дослідити** що відбувається при виклику через різні типи посилань, і пояснити різницю.
+Поки що нові типи створюються лише вручну. Навчіть `AppointmentManager` записувати пацієнтів на прийоми різних типів і покажіть у `Program.cs`, чим `override` відрізняється від `new`.
 
-### Що реалізувати
+**Що реалізувати:**
 
-**`Managers/AppointmentManager.cs`** — два зміни:
+1. Змінити `AppointmentManager.Book(...)`: тепер він створює `RegularAppointment` замість `Appointment`.
+2. Додати в `AppointmentManager` методи `BookUrgent(...)` і `BookSpecialist(...)` — так само, як `Book`, але створюють відповідно `UrgentAppointment` і `SpecialistAppointment`.
+3. У початкових даних `Program.cs` створити принаймні по одному запису кожного типу через ці три методи.
+4. Прибрати тимчасовий код перевірок Задач 1–2 і додати в `Program.cs` демонстрацію `new` проти `override` (див. специфікацію).
+5. У коментарі біля демонстрації відповісти на три запитання:
+   - Чому `GetDescription()` через змінну типу `Appointment` дає опис термінового прийому?
+   - Чому `GetPriority()` через ту саму змінну повертає `3`, хоча об'єкт — `UrgentAppointment`?
+   - Що треба змінити в `Appointment` і `UrgentAppointment`, щоб `GetPriority()` теж працював поліморфно?
 
-1. `Book()` тепер створює `RegularAppointment` замість `Appointment`:
-```csharp
-Appointment appointment = new RegularAppointment(patientId, doctorId, scheduledAt, durationMinutes);
+### Специфікація
+
+| Метод `AppointmentManager` | Параметри | Створює | Повертає |
+|----------------------------|-----------|---------|----------|
+| `Book` | як і раніше | `RegularAppointment` | `bool` — як і раніше |
+| `BookUrgent` | `patientId, doctorId, scheduledAt, urgencyNote = "", durationMinutes = 30` | `UrgentAppointment` | `bool` |
+| `BookSpecialist` | `patientId, doctorId, scheduledAt, topic = "", durationMinutes = 45` | `SpecialistAppointment` | `bool` |
+
+Перевірки (пацієнт і лікар існують, ліміт масиву) — ті самі, що в `Book`.
+
+**Демонстрація в `Program.cs`:** створіть **один** об'єкт `UrgentAppointment` і збережіть посилання на нього у дві змінні — типу `Appointment` і типу `UrgentAppointment`. Для кожної змінної виведіть `GetDescription()` і `GetPriority()`.
+
+### Приклад
+
 ```
-
-2. Додати два нових методи:
-```csharp
-public bool BookUrgent(int patientId, int doctorId, DateTime scheduledAt,
-                       string urgencyNote = "", int durationMinutes = 30)
-{ ... } // аналогічно Book(), але створює UrgentAppointment
-
-public bool BookSpecialist(int patientId, int doctorId, DateTime scheduledAt,
-                           string topic = "", int durationMinutes = 45)
-{ ... } // аналогічно Book(), але створює SpecialistAppointment
+== new vs override ==
+Через Appointment:       Терміновий (тест) | пріоритет 3
+Через UrgentAppointment: Терміновий (тест) | пріоритет 1
 ```
-
-**`Program.cs`** — оновити seed data:
-
-```csharp
-clinic.Appointments.Book(1, 1, tomorrow.AddHours(10));
-clinic.Appointments.BookUrgent(2, 2, tomorrow.AddHours(11), "гострий головний біль", 45);
-clinic.Appointments.BookSpecialist(3, 3, dayAfter.AddHours(9), "педіатрія", 20);
-
-// Демонстрація: new vs override
-Appointment urgentRef = clinic.Appointments[1]; // тип посилання — Appointment
-Console.WriteLine("GetDescription (override): " + urgentRef.GetDescription()); // "Терміновий (...)" ✓
-Console.WriteLine("GetPriority   (new):       " + urgentRef.GetPriority());    // 3, а не 1!
-```
-
-### Ключове питання для розуміння
-
-Запусти програму і подивись на вивід. Потім дай відповідь:
-
-- Чому `GetDescription()` повертає `"Терміновий (...)"`, а не `"Звичайний прийом"`?
-- Чому `GetPriority()` повертає `3`, а не `1`, хоча реальний об'єкт — `UrgentAppointment`?
-- Що треба змінити в `Appointment`, щоб `GetPriority()` теж вів себе поліморфно?
 
 ### Підказки
 
-1. Тип **посилання** (ліва частина `Appointment urgentRef`) визначає які методи доступні.
-2. Тип **об'єкта** (правова частина `new UrgentAppointment(...)`) визначає яка реалізація викликається — але **тільки для `virtual`/`override` методів**.
-3. `new` повідомляє компілятору: "я знаю, що ховаю базовий метод, це навмисно". Але поліморфізму не дає.
-4. [new modifier — docs](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/new-modifier)
+1. **Не копіюйте `Book` цілком.** Три методи відрізняються лише рядком створення об'єкта. Спільну частину (перевірки й додавання в масив) винесіть у приватний допоміжний метод, який приймає вже створений запис.
+2. **Тип змінної і тип об'єкта — різні речі.** Тип змінної (ліворуч від `=`) визначає, які методи *можна викликати*. Тип об'єкта (після `new`) визначає, *яка реалізація* виконається — але **лише для `virtual` / `override`**.
+3. **Метод, прихований через `new`, обирається за типом змінної.** Тому відповідь залежить від того, через яку змінну ви звертаєтесь.
+4. **Не покладайтесь на індекс у масиві.** Номер запису в `clinic.Appointments[...]` залежить від ваших початкових даних — для демонстрації створіть об'єкт явно.
+
+📖 Документація:
+- [Коли використовувати `override` і `new`](https://learn.microsoft.com/dotnet/csharp/programming-guide/classes-and-structs/knowing-when-to-use-override-and-new-keywords)
+- [Версіонування з `override` і `new`](https://learn.microsoft.com/dotnet/csharp/programming-guide/classes-and-structs/versioning-with-the-override-and-new-keywords)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `BookUrgent` / `BookSpecialist` | `BookSuite` / `BookCorporate` | `ReservePrivateRoom` / `ReserveEvent` | `EnrollOnline` / `EnrollIntensive` | `RentPremium` / `RentLongTerm` | `LendDigital` / `LendResearch` | `BookPersonal` / `BookGroup` |
 
 ### Коміт
 
 ```bash
-git add src/Managers/AppointmentManager.cs src/Program.cs
-git commit -m "Lab08 Task03: BookUrgent/BookSpecialist, update seed data, demonstrate new vs override"
+git add ClinicApp/Managers/AppointmentManager.cs ClinicApp/Program.cs
+git commit -m "Lab08 Task03"
 ```
 
 ---
 
-## Завдання 4 — фільтр за типом у меню ⭐⭐⭐
+## Задача 4. Тип і вартість у меню «Записи» ⭐⭐⭐
 
 ### Умова
 
-Поліморфізм поки "невидимий" — програма працює правильно, але користувач не бачить різниці. Додай у підменю "Записи" новий пункт **"8. За типом прийому"** — щоб можна було окремо переглянути термінові, консультації спеціаліста і звичайні.
+Користувач досі не бачить, який прийом терміновий, а який — консультація. Покажіть тип і ціну в кожному рядку списку записів і додайте перегляд записів за типом.
 
-### Що реалізувати
+**Що реалізувати:**
 
-**`Managers/AppointmentManager.cs`** — три нових методи (паттерн аналогічний `GetByPatient`):
+1. У `AppointmentManager` додати методи `GetUrgent()`, `GetSpecialist()`, `GetRegular()` — кожен повертає масив записів відповідного типу.
+2. Оновити `AppointmentManager.DisplayAppointment(...)`: у рядку з'являються опис (`GetDescription()`) і вартість (`GetCost()`).
+3. У підменю «Записи» додати пункт `9` — «За типом прийому» з трьома варіантами: термінові, консультації, звичайні.
 
-```csharp
-public Appointment[] GetUrgent()
-{
-    int matchCount = 0;
-    for (int i = 0; i < _count; i++)
-        if (_appointments[i] is UrgentAppointment) matchCount++;
-    Appointment[] result = new Appointment[matchCount];
-    int idx = 0;
-    for (int i = 0; i < _count; i++)
-        if (_appointments[i] is UrgentAppointment) result[idx++] = _appointments[i];
-    return result;
-}
-// Аналогічно: GetSpecialist() і GetRegular()
+### Специфікація
+
+| Метод | Повертає |
+|-------|----------|
+| `GetUrgent()` | `Appointment[]` — лише `UrgentAppointment` |
+| `GetSpecialist()` | `Appointment[]` — лише `SpecialistAppointment` |
+| `GetRegular()` | `Appointment[]` — лише `RegularAppointment` |
+
+Рядок запису в списку: `[Id] Опис | Пацієнт → Лікар | дата час–кінець | Статус | Вартість грн` (імена пацієнта й лікаря — як і раніше, через менеджери).
+
+Пункт меню:
+
+| Меню | Пункт | Що запитує | Що виводить |
+|------|-------|------------|-------------|
+| «Записи» | `9` — За типом прийому | `1` — термінові, `2` — консультації, `3` — звичайні | Список записів обраного типу або «не знайдено» |
+
+### Приклад
+
 ```
-
-Також оновити `DisplayAppointment` — додати тип і вартість у рядок виводу:
-
-```csharp
-string line = "[" + a.Id + "] " + a.GetDescription() +   // ← поліморфний виклик
-              " | " + patientName + " → " + doctorName +
-              " | " + a.ScheduledAt.ToString("dd.MM.yyyy HH:mm") + "–" + a.EndsAt.ToString("HH:mm") +
-              " | " + a.Status +
-              " | " + a.GetCost().ToString("F2") + " грн"; // ← різна ціна для кожного типу
+── Записи ──────────────────────
+  …
+  8. Скасувати всі записи пацієнта
+  9. За типом прийому
+  0. Назад
+Оберіть: 9
+  1. Термінові
+  2. Консультації спеціаліста
+  3. Звичайні
+Оберіть: 1
+[9] Терміновий (біль у грудях) | Олена Коваль → Наталія Мороз | 15.10.2026 11:00–11:30 | Scheduled | 450.00 грн
 ```
-
-**`Program.cs`** — додати у меню "Записи":
-
-```csharp
-Console.WriteLine("  8. За типом прийому");
-// ...
-case "8": AppointmentsByTypeMenu(clinic); break;
-```
-
-```csharp
-static void AppointmentsByTypeMenu(Clinic clinic)
-{
-    Console.WriteLine("── За типом прийому ──────────");
-    Console.WriteLine("  1. Термінові");
-    Console.WriteLine("  2. Консультації спеціаліста");
-    Console.WriteLine("  3. Звичайні");
-    Console.Write("Оберіть: ");
-    string choice = Console.ReadLine() ?? "";
-    switch (choice)
-    {
-        case "1": clinic.Appointments.DisplayList(clinic.Appointments.GetUrgent()); break;
-        case "2": clinic.Appointments.DisplayList(clinic.Appointments.GetSpecialist()); break;
-        case "3": clinic.Appointments.DisplayList(clinic.Appointments.GetRegular()); break;
-    }
-}
-```
-
-### Що перевірити
-
-Запусти і відкрий `3. Записи → 8. За типом → 1. Термінові`. Якщо seed data завантажено правильно — побачиш тільки `UrgentAppointment` з написом "Терміновий (гострий головний біль)" і ціною × 1.5.
-
-### Ключові спостереження
-
-- `a.GetDescription()` в `DisplayAppointment` — це поліморфний виклик. Без `virtual`/`override` всі рядки виглядали б однаково.
-- `a.GetCost()` — аналогічно, кожен тип повертає іншу суму без жодного `if`.
-- `is UrgentAppointment` у циклі — це runtime-перевірка фактичного типу об'єкта, не типу посилання.
-
-### Коміт
-
-```bash
-git add src/Managers/AppointmentManager.cs src/Program.cs
-git commit -m "Lab08 Task04: GetUrgent/GetSpecialist/GetRegular, AppointmentsByTypeMenu, show type in list"
-```
-
----
-
-## Завдання 5 — відкрита проблема: комбінації типів ⭐⭐⭐⭐
-
-### Умова
-
-Керівник клініки каже: "Ми хочемо VIP-знижку 20% для всіх трьох типів прийомів. Тобто VIP-терміновий = базова ціна × 1.5 × 0.8. VIP-консультація = базова × 1.3 × 0.8."
-
-Студент пробує додати `VipUrgentAppointment : UrgentAppointment` — але `GetDescription()` в `UrgentAppointment` **sealed**, тобто `override` забороняється. А `SpecialistAppointment` взагалі **sealed class**.
-
-### Що потрібно дослідити
-
-1. Спробуй успадкувати від `SpecialistAppointment`. Яка помилка компілятора? Що вона означає?
-2. Спробуй успадкувати від `UrgentAppointment` і `override GetDescription()`. Яка помилка?
-3. Підрахуй: якщо додати VIP-варіант кожного типу — скільки нових класів потрібно? А якщо ще є "дитячий" тариф і "пенсійний"?
-
-### Що реалізувати
-
-Запропонуй і реалізуй один із підходів:
-
-**Варіант А — поле-модифікатор у базовому класі:**
-```csharp
-// В Appointment:
-public decimal DiscountFactor { get; set; } = 1.0m;
-public override decimal GetCost() => (decimal)DurationMinutes * 10m * DiscountFactor;
-// У підкласах: base.GetCost() вже враховує знижку
-```
-
-**Варіант Б — конструктор з коефіцієнтом:**
-```csharp
-public class UrgentAppointment : Appointment
-{
-    private readonly decimal _factor;
-    public UrgentAppointment(..., decimal factor = 1.5m) : base(...) { _factor = factor; }
-    public override decimal GetCost() => base.GetCost() * _factor;
-}
-// Тоді: new UrgentAppointment(1, 1, date, factor: 1.5m * 0.8m)
-```
-
-Обери варіант, реалізуй, і напиши коментар чому саме цей підхід.
 
 ### Підказки
 
-1. Жоден варіант не є "правильним" — є компроміси. Варіант А простіший, Варіант Б гнучкіший.
-2. Ця проблема — класичний Open/Closed Principle: клас відкритий до розширення, закритий до модифікації. У Lab 21 (SOLID) ти повернешся до цього коду.
-3. Подумай: що якщо замість `decimal` передавати `Func<decimal, decimal> applyDiscount`? Що це дає?
-4. [Composition over inheritance](https://en.wikipedia.org/wiki/Composition_over_inheritance)
+1. **Відбір за типом — двопрохідний патерн** (як `GetByPatient`): перший прохід рахує, скільки записів підходить, другий заповнює масив точного розміру. Умова — перевірка типу через `is` (Лаба 06).
+2. **`is` перевіряє тип об'єкта, а не змінної.** У масиві `Appointment[]` лежать об'єкти різних підкласів, і `is UrgentAppointment` це розрізнить.
+3. **У `DisplayAppointment` — жодного `if` за типом.** Опис і ціну дають віртуальні методи, кожен підклас повертає своє. Перевірка `is` потрібна лише для *відбору* в `GetUrgent()` тощо, а не для виводу.
+4. **Пункт `8` уже зайнятий** (Лаба 07 — «Скасувати всі записи пацієнта»), тому новий пункт — `9`.
+
+📖 Документація:
+- [Оператор `is`](https://learn.microsoft.com/dotnet/csharp/language-reference/operators/is)
+- [Перевірка типу й приведення](https://learn.microsoft.com/dotnet/csharp/language-reference/operators/type-testing-and-cast)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| `GetUrgent` / `GetSpecialist` / `GetRegular` | `GetSuites` / `GetCorporate` / `GetStandard` | `GetPrivate` / `GetEvents` / `GetRegular` | `GetOnline` / `GetIntensive` / `GetRegular` | `GetPremium` / `GetLongTerm` / `GetBasic` | `GetDigital` / `GetResearch` / `GetRegular` | `GetPersonal` / `GetGroup` / `GetRegular` |
 
 ### Коміт
 
 ```bash
-git add -A
-git commit -m "Lab08 Task04: explore sealed limitations, implement discount modifier approach"
+git add ClinicApp/Managers/AppointmentManager.cs ClinicApp/Program.cs
+git commit -m "Lab08 Task04"
+```
+
+---
+
+## Задача 5 (опційна). VIP-знижка для всіх типів ⭐⭐⭐⭐
+
+### Умова
+
+Керівник клініки просить VIP-знижку 20% для будь-якого типу прийому: VIP-терміновий коштує `базова × 1.5 × 0.8`, VIP-консультація — `базова × 1.3 × 0.8`.
+
+Перша думка — підклас `VipUrgentAppointment : UrgentAppointment`. Перевірте її: спробуйте створити такий клас і перевизначити в ньому `GetDescription()`, а також успадкуватись від `SpecialistAppointment`. Подивіться, що скаже компілятор, і **приберіть ці спроби** — вони не мають потрапити в коміт.
+
+Порахуйте: якщо для кожного з трьох типів робити VIP-підклас, скільки класів буде? А якщо додати ще дитячий і пенсійний тарифи? Висновок: знижку треба реалізувати **не через нові підкласи**.
+
+**Що реалізувати:** один із двох підходів (на вибір):
+
+- **Варіант А — множник знижки в `Appointment`.** Властивість зі знижковим множником (за замовчуванням `1`), яку враховує базова ціна. Підкласи нічого не змінюють — їхній `base.GetCost()` уже містить знижку.
+- **Варіант Б — коефіцієнт у конструкторі підкласу.** Кожен підклас отримує свій множник параметром конструктора зі значенням за замовчуванням (`1.5` для термінового, `1.3` для консультації), тож VIP-запис створюється з множником `1.5 × 0.8`.
+
+Над реалізацією залиште коментар: який варіант обрано і чому.
+
+### Специфікація
+
+| Запис (30 хв, базова ціна 300 грн) | Без знижки | VIP (−20%) |
+|------------------------------------|-----------|-----------|
+| Звичайний | 300.00 | 240.00 |
+| Терміновий | 450.00 | 360.00 |
+| Консультація | 390.00 | 312.00 |
+
+### Підказки
+
+1. **Жоден варіант не «єдино правильний».** А простіший і працює для всіх типів одразу; Б гнучкіший, але знижку доводиться враховувати при створенні кожного запису.
+2. **Варіант А:** базова ціна в `Appointment` множиться на множник знижки. Метод у `Appointment` лишається `virtual` — `override` у самому базовому класі не пишуть.
+3. **Варіант Б:** коефіцієнт зберігайте в полі лише для читання (`readonly`), яке задає конструктор.
+4. **Це приклад принципу «відкритий для розширення, закритий для змін»** (Open/Closed). У Лабі 22 (SOLID) ви повернетесь до цієї ідеї зі стратегіями ціноутворення.
+
+📖 Документація:
+- [Поля `readonly`](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/readonly)
+- [Композиція замість успадкування](https://en.wikipedia.org/wiki/Composition_over_inheritance)
+
+### Адаптація до вашого домену
+
+| Клініка | Готель | Ресторан | Університет | Прокат авто | Бібліотека | Спортзал |
+|---------|--------|----------|-------------|-------------|------------|---------|
+| VIP-знижка 20% | знижка постійного гостя | знижка за кількість гостей | знижка-стипендія | знижка за довгу оренду | пільговий читач | сімейний абонемент |
+
+### Коміт
+
+```bash
+git add ClinicApp/Models/
+git commit -m "Lab08 Task05"
 ```
 
 ---
 
 ## Структура проєкту наприкінці лаби
 
-Так має виглядати `ClinicApp/`, коли всі завдання виконано:
+Так має виглядати `ClinicApp/`, коли виконано Задачі 1–4 (Задача 5 — опційна, її позначки нижче):
 
 ```text
 oop-course/                             ← гілка Lab-08 (після злиття — main)
@@ -429,19 +415,19 @@ oop-course/                             ← гілка Lab-08 (після зли
 ├── oop-course.sln
 └── ClinicApp/
     ├── ClinicApp.csproj
-    ├── Program.cs                      ✏
+    ├── Program.cs                      ✏ Т3 Т4
     ├── Clinic.cs
     ├── Enums/  (3 файли)
     ├── Models/
-    │   ├── Appointment.cs              ✏
-    │   ├── RegularAppointment.cs       🆕
-    │   ├── SpecialistAppointment.cs    🆕
-    │   ├── UrgentAppointment.cs        🆕
+    │   ├── Appointment.cs              ✏ Т1 Т5
+    │   ├── RegularAppointment.cs       🆕 Т1
+    │   ├── UrgentAppointment.cs        🆕 Т2  ✏ Т5
+    │   ├── SpecialistAppointment.cs    🆕 Т2  ✏ Т5
     │   └── … ще 7 файлів без змін
     ├── Managers/
     │   ├── PatientManager.cs
     │   ├── DoctorManager.cs
-    │   ├── AppointmentManager.cs       ✏
+    │   ├── AppointmentManager.cs       ✏ Т3 Т4
     │   ├── GrowablePatientManager.cs
     │   ├── MedicalRecordManager.cs
     │   └── BillingManager.cs
@@ -449,56 +435,54 @@ oop-course/                             ← гілка Lab-08 (після зли
     └── Interfaces/  (3 файли)
 ```
 
-**Легенда:** 🆕 — новий файл · ✏ — змінено вміст. Файли без позначки лишились такими, як були після попередньої лаби. Рядок «… ще N файлів без змін» — стислий запис незмінених файлів теки.
+**Легенда:** 🆕 — новий файл · ✏ — змінено вміст · Т*n* — номер задачі, у якій ви працюєте з файлом. Файли без позначки лишились такими, як були після Лаби 07. У Задачі 5 змінюється або `Appointment.cs` (варіант А), або підкласи (варіант Б).
 
-Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливі теки та те, що саме створюється й змінюється.
+Назви файлів наведено для домену «клініка»; у власному домені назви ваші — важливо, що саме створюється й змінюється.
 
 ---
 
 ## Перевірка перед здачею
 
 ```bash
-cd src
-dotnet build
-dotnet run
+dotnet build ClinicApp
+dotnet run --project ClinicApp
 ```
 
 Переконайтесь, що:
 
 - [ ] Структура проєкту збігається зі схемою вище
-- [ ] `Appointment[] arr = { new RegularAppointment(...), new UrgentAppointment(...), new SpecialistAppointment(...) }` — компілюється
-- [ ] Цикл `for` по `arr` виводить різні рядки для кожного типу — без `if`/`switch`
-- [ ] `UrgentAppointment.GetCost()` повертає більше за `RegularAppointment.GetCost()` при однаковій тривалості
-- [ ] `SpecialistAppointment.GetCost()` теж більше за базовий
-- [ ] Спроба `class X : SpecialistAppointment` → помилка компіляції (sealed class)
-- [ ] `Appointment ref = new UrgentAppointment(...)` → `ref.GetPriority()` повертає `3`, не `1`
-- [ ] `UrgentAppointment ref = new UrgentAppointment(...)` → `ref.GetPriority()` повертає `1`
-- [ ] `BookUrgent()` і `BookSpecialist()` додають записи в `AppointmentManager`
-- [ ] Список записів тепер показує тип і вартість кожного прийому
-- [ ] `3. Записи → 8. За типом → 1. Термінові` — виводить тільки `UrgentAppointment`
-- [ ] `3. Записи → 8. За типом → 2. Консультації` — виводить тільки `SpecialistAppointment`
-- [ ] `3. Записи → 8. За типом → 3. Звичайні` — виводить тільки `RegularAppointment`
+- [ ] Проєкт компілюється без помилок і попереджень (зокрема без попередження про приховування `GetPriority`)
+- [ ] Список записів показує тип і вартість кожного прийому
+- [ ] Терміновий прийом дорожчий за звичайний у 1.5 раза, консультація — у 1.3 раза (за однакової тривалості)
+- [ ] Демонстрація в `Program.cs`: через змінну `Appointment` — пріоритет `3`, через `UrgentAppointment` — `1`
+- [ ] «Записи» → `9` → кожен із трьох варіантів показує записи лише свого типу
+- [ ] У `DisplayAppointment` немає `if` / `switch` за типом запису
+- [ ] *(Експеримент, не для коміту)* спроба успадкуватись від `SpecialistAppointment` дає помилку компіляції
+- [ ] У коді немає `List<T>`, `Dictionary<,>`, LINQ
 
 ---
 
 ## Питання для самоперевірки
 
-1. Що таке поліморфізм? Яку роль відіграє `virtual`/`override` у його реалізації?
-2. Навіщо `new` якщо він не дає поліморфізму? Коли `new` може бути корисним?
-3. Що означає `sealed` на класі? Що означає `sealed` на методі? Чим вони відрізняються?
-4. `base.GetCost()` в `UrgentAppointment` — що конкретно він викликає? Що повернеться якщо `DurationMinutes = 30`?
-5. Чому зберігати `UrgentAppointment` в масиві `Appointment[]` — це нормально? Що при цьому відбувається з типом?
-6. Якщо додати четвертий тип прийому `EmergencyAppointment : Appointment` — які файли треба змінити? Чи треба змінювати `AppointmentManager.DisplayList()`?
-7. (Бонус) Яка різниця між поліморфізмом через `virtual`/`override` (Lab 08) і поліморфізмом через `interface` (Lab 07)? Коли обираєш одне, коли інше?
+1. Що таке поліморфізм? Яку роль у ньому відіграють `virtual` і `override`?
+2. Тип змінної `Appointment`, об'єкт — `UrgentAppointment`. Чому `GetDescription()` повертає опис термінового прийому, а `GetPriority()` — `3`?
+3. Навіщо модифікатор `new`, якщо він не дає поліморфізму? Коли він може бути корисним?
+4. Чим `sealed` на класі відрізняється від `sealed override` на методі?
+5. Що повертає `base.GetCost()` в `UrgentAppointment` для запису на 30 хвилин? Чому краще викликати `base`, ніж повторити формулу?
+6. Щоб додати четвертий тип прийому, які файли доведеться змінити? Чи зміниться `DisplayAppointment`?
+7. Поліморфізм через `virtual` / `override` (ця лаба) і через інтерфейс (Лаба 07) — коли що обирати?
 
 ---
 
-## Злиття
+## Статус гілки
+
+Після всіх завдань (кожне — окремий коміт `Lab08 TaskNN` на гілці `Lab-08`):
 
 ```bash
+git push -u origin Lab-08
 git checkout main
 git merge --no-ff Lab-08 -m "Merge Lab-08: Polymorphism"
 git push
 ```
 
-> Наступна лаба: `git checkout -b Lab-09`
+> Наступна лаба: `git checkout main` → `git checkout -b Lab-09`.
