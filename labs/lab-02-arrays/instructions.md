@@ -24,7 +24,7 @@
 ```text
 oop-course/                          ← гілка main
 ├── .gitignore
-└── oop-course.sln
+└── oop-course.slnx
 ```
 
 Вигляд проєкту **наприкінці** лаби — у розділі «Структура проєкту наприкінці лаби» перед перевіркою.
@@ -33,7 +33,7 @@ oop-course/                          ← гілка main
 
 ## Крок 1. Проєкт для Лаби 02
 
-Рішення `oop-course.sln` і `.gitignore` вже створені в Лабі 01 (Крок 0). Тут —
+Рішення `oop-course.slnx` і `.gitignore` вже створені в Лабі 01 (Крок 0). Тут —
 лише нова гілка й новий проєкт.
 
 ```bash
@@ -44,7 +44,7 @@ dotnet new console -o Lab02 --name Lab02
 dotnet sln add Lab02/Lab02.csproj
 dotnet run --project Lab02          # має вивести Hello, World!
 
-git add oop-course.sln Lab02/
+git add oop-course.slnx Lab02/
 git commit -m "Lab02: project"
 ```
 
@@ -767,7 +767,7 @@ git commit -m "Lab02 Task08"
 ```text
 oop-course/                          ← гілка Lab-02 (у main НЕ зливається)
 ├── .gitignore
-├── oop-course.sln                      ✏ Крок 1
+├── oop-course.slnx                     ✏ Крок 1
 └── Lab02/
     ├── Lab02.csproj                    🆕 Крок 1
     ├── Program.cs                      🆕 Крок 1   ✏ Т1 Т2 Т3 Т4 Т5 Т6 Т7 Т8

@@ -28,7 +28,7 @@ public Clinic(string name)
 ```text
 oop-course/                                    ← гілка main (після злиття Лаби 21)
 ├── .gitignore
-├── oop-course.sln
+├── oop-course.slnx
 └── ClinicApp/
     ├── ClinicApp.csproj
     ├── Program.cs
@@ -418,7 +418,7 @@ git commit -m "Lab22 Task05"
 ```text
 oop-course/                                    ← гілка Lab-22 (після злиття — main)
 ├── .gitignore
-├── oop-course.sln
+├── oop-course.slnx
 └── ClinicApp/
     ├── ClinicApp.csproj                       ✏ Т4
     ├── Program.cs                             ✏ Т3 Т4 Т5

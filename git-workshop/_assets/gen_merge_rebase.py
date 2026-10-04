@@ -1,18 +1,19 @@
 from PIL import Image, ImageDraw, ImageFont
 
 BG     = (17, 20, 19)
+PANEL  = (20, 26, 24)
 TEXT   = (229, 233, 231)
 MUTED  = (161, 170, 166)
 ACCENT = (118, 199, 173)
 LINE_C = (44, 53, 49)
 WARN   = (240, 160, 75)
+RED    = (215, 110, 110)
 BLUE   = (90, 150, 210)
-DIM    = (80, 100, 95)
+DIM    = (85, 100, 95)
 GREEN2 = (80, 170, 120)
-RED2   = (200, 90, 90)
 PURPLE = (160, 120, 210)
 
-W, H = 1400, 640
+W, H = 1400, 660
 img = Image.new("RGB", (W, H), BG)
 draw = ImageDraw.Draw(img)
 
@@ -24,246 +25,159 @@ FB = r"C:\Windows\Fonts\arialbd.ttf"
 FR = r"C:\Windows\Fonts\arial.ttf"
 FM = r"C:\Windows\Fonts\cour.ttf"
 
-f_title  = font(FB, 24)
-f_head   = font(FB, 16)
-f_body   = font(FR, 13)
-f_small  = font(FR, 12)
-f_sha    = font(FM, 11)
-f_label  = font(FB, 12)
-f_cmd    = font(FM, 12)
-f_tiny   = font(FR, 11)
+f_title = font(FB, 24)
+f_head  = font(FB, 17)
+f_body  = font(FR, 14)
+f_small = font(FR, 12)
+f_node  = font(FB, 13)
+f_label = font(FB, 12)
+f_cmd   = font(FM, 14)
 
-def rr(d, xy, r, fill=None, outline=None, width=1):
-    d.rounded_rectangle(xy, radius=r, fill=fill, outline=outline, width=width)
+def rr(xy, r, fill=None, outline=None, width=1):
+    draw.rounded_rectangle(xy, radius=r, fill=fill, outline=outline, width=width)
 
-def ctext(d, cx, cy, text, fnt, fill):
-    bb = d.textbbox((0,0), text, font=fnt)
-    d.text((cx-(bb[2]-bb[0])//2, cy-(bb[3]-bb[1])//2), text, font=fnt, fill=fill)
+def tsize(text, fnt):
+    bb = draw.textbbox((0, 0), text, font=fnt)
+    return bb[2] - bb[0], bb[3] - bb[1]
 
-def ltext(d, x, cy, text, fnt, fill):
-    bb = d.textbbox((0,0), text, font=fnt)
-    d.text((x, cy-(bb[3]-bb[1])//2), text, font=fnt, fill=fill)
+def ctext(cx, cy, text, fnt, fill):
+    bb = draw.textbbox((0, 0), text, font=fnt)
+    draw.text((cx - (bb[2] - bb[0]) // 2 - bb[0], cy - (bb[3] - bb[1]) // 2 - bb[1]), text, font=fnt, fill=fill)
 
-def circle(d, cx, cy, r, fill, outline=None, width=1):
-    d.ellipse([cx-r,cy-r,cx+r,cy+r], fill=fill, outline=outline, width=width)
+def ltext(x, cy, text, fnt, fill):
+    bb = draw.textbbox((0, 0), text, font=fnt)
+    draw.text((x - bb[0], cy - (bb[3] - bb[1]) // 2 - bb[1]), text, font=fnt, fill=fill)
 
-def commit(cx, cy, r, color, label=None, label_above=True, sha=None, sha_color=None):
-    circle(draw, cx, cy, r, color, outline=BG, width=2)
-    if sha:
-        sy = cy-(r+13) if label_above else cy+(r+4)
-        ctext(draw, cx, sy, sha, f_sha, sha_color or DIM)
-    if label:
-        ly = cy-(r+26) if label_above else cy+(r+18)
-        ctext(draw, cx, ly, label, f_tiny, MUTED)
+def node(x, y, col, name, r=13, txt=BG):
+    draw.ellipse([x - r, y - r, x + r, y + r], fill=col, outline=BG, width=2)
+    ctext(x, y, name, f_node, txt)
+
+def ghost(x, y, name, r=13):
+    draw.ellipse([x - r, y - r, x + r, y + r], fill=BG, outline=DIM, width=2)
+    ctext(x, y, name, f_node, DIM)
+
+def edge(a, b, col, w=3, dashed=False):
+    if not dashed:
+        draw.line([a, b], fill=col, width=w)
+        return
+    (x0, y0), (x1, y1) = a, b
+    n = 14
+    for i in range(0, n, 2):
+        t0, t1 = i / n, (i + 1) / n
+        draw.line([(x0 + (x1 - x0) * t0, y0 + (y1 - y0) * t0), (x0 + (x1 - x0) * t1, y0 + (y1 - y0) * t1)], fill=col, width=2)
+
+def badge(cx, cy, text, col):
+    tw, _ = tsize(text, f_label)
+    rr([cx - tw // 2 - 9, cy - 11, cx + tw // 2 + 9, cy + 11], 5, (22, 28, 26), outline=col, width=1)
+    ctext(cx, cy, text, f_label, col)
+
+def bullets(x, y, items):
+    for i, (txt, col) in enumerate(items):
+        ltext(x, y + i * 22, txt, f_body, col)
 
 # ── Title ─────────────────────────────────────────────────────────────────────
-ctext(draw, W//2, 22, "Git: Merge vs Rebase", f_title, ACCENT)
+ctext(W // 2, 26, "Git: Merge vs Rebase", f_title, ACCENT)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SETUP: "BEFORE" state — horizontal strip at top
-# A ── B ── C ── D  (main, C,D = new)
-#       └── E ── F  (Lab-01, your work)
+# TOP-LEFT: starting situation
 # ══════════════════════════════════════════════════════════════════════════════
-NR = 10    # bigger nodes for clarity
+TX0, TY0, TX1, TY1 = 30, 56, 690, 236
+rr([TX0, TY0, TX1, TY1], 10, PANEL, outline=(55, 85, 68), width=1)
+ltext(TX0 + 20, TY0 + 22, "Вихідна ситуація", f_head, TEXT)
 
-BEF_X0, BEF_Y0, BEF_W, BEF_H = 34, 48, 640, 148
-rr(draw,[BEF_X0,BEF_Y0,BEF_X0+BEF_W,BEF_Y0+BEF_H],8,(20,28,24),outline=LINE_C,width=1)
-ctext(draw,BEF_X0+BEF_W//2,BEF_Y0+14,
-      "Ситуація перед вибором стратегії",f_body,MUTED)
-
-MAIN_Y = BEF_Y0 + 58
-FEAT_Y = BEF_Y0 + 112
-AX,BX,CX,DX = 80,170,260,350
-EX,FX        = 260,350
-
-# lines
-draw.line([(AX-NR,MAIN_Y),(DX+NR,MAIN_Y)],fill=GREEN2,width=3)
-draw.line([(EX-NR,FEAT_Y),(FX+NR,FEAT_Y)],fill=ACCENT,width=3)
-draw.line([(BX+NR,MAIN_Y+NR),(EX-NR,FEAT_Y-NR)],fill=ACCENT,width=2)
-
-for (cx,cy,col,sha,lbl,la) in [
-    (AX,MAIN_Y,GREEN2,"A","Init",    True),
-    (BX,MAIN_Y,GREEN2,"B","",        True),
-    (CX,MAIN_Y,GREEN2,"C","new!",   True),
-    (DX,MAIN_Y,GREEN2,"D","new!",   True),
-    (EX,FEAT_Y,ACCENT,"E","Task01", False),
-    (FX,FEAT_Y,ACCENT,"F","Task02", False),
-]:
-    commit(cx,cy,NR,col,sha=sha,label=lbl,label_above=la)
-
-rr(draw,[AX-16,MAIN_Y-48,AX+50,MAIN_Y-28],5,(26,44,33),outline=GREEN2,width=1)
-ctext(draw,AX+17,MAIN_Y-38,"main",f_label,GREEN2)
-rr(draw,[EX-22,FEAT_Y+24,EX+56,FEAT_Y+42],5,(22,36,30),outline=ACCENT,width=1)
-ctext(draw,EX+17,FEAT_Y+33,"Lab-01",f_label,ACCENT)
-
-# callouts
-ctext(draw,(CX+DX)//2,MAIN_Y-60,"нові коміти main",f_tiny,MUTED)
-draw.line([((CX+DX)//2,MAIN_Y-52),((CX+DX)//2,MAIN_Y-NR-2)],fill=DIM,width=1)
-ctext(draw,(EX+FX)//2,FEAT_Y+56,"ваша робота",f_tiny,MUTED)
-
-# Legend box (right side of BEFORE strip)
-LEG_X = BEF_X0 + BEF_W + 20
-rr(draw,[LEG_X,BEF_Y0,LEG_X+340,BEF_Y0+BEF_H],8,(20,26,24),outline=LINE_C,width=1)
-ctext(draw,LEG_X+170,BEF_Y0+16,"Як синхронізуватись з main?",f_head,MUTED)
-items = [
-    (GREEN2, "Merge —  зберігає топологію ('ромб' у grafі)"),
-    (BLUE,   "Rebase — лінійна історія (E,F перебазовуються)"),
-    (WARN,   "Обидва дають однаковий кінцевий код!"),
-]
-for i,(col,txt) in enumerate(items):
-    iy = BEF_Y0 + 46 + i*30
-    circle(draw, LEG_X+22, iy, 7, col)
-    ltext(draw, LEG_X+40, iy, txt, f_body, col)
-
-MA_Y0 = BEF_Y0 + BEF_H + 18
+MY, FY = TY0 + 80, TY0 + 140
+xa, xb, xc, xd = 110, 220, 330, 440
+edge((xa, MY), (xd, MY), GREEN2)
+edge((xb, MY), (xb + 60, FY), PURPLE)
+edge((xb + 60, FY), (xc + 60, FY), PURPLE)
+for x, n in [(xa, "A"), (xb, "B"), (xc, "C"), (xd, "D")]:
+    node(x, MY, GREEN2, n)
+node(xb + 60, FY, PURPLE, "E")
+node(xc + 60, FY, PURPLE, "F")
+badge(xd + 60, MY, "main", GREEN2)
+badge(xc + 130, FY, "feature", PURPLE)
+ltext(520, FY - 9, "C, D — нові коміти в main,", f_small, MUTED)
+ltext(520, FY + 7, "поки йшла робота над E, F", f_small, MUTED)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VARIANT A — Merge (left panel)
+# TOP-RIGHT: summary
 # ══════════════════════════════════════════════════════════════════════════════
-# Result:
-#   A ── B ── C ── D ── M    ← main (M = merge commit)
-#             └── E ── F ──┘  ← Lab-01
-#
-
-MA_X  = 140
-MA_Y0 = BEF_Y0 + BEF_H + 18
-PAN_W = (W - 80) // 2
-PAN_H = H - MA_Y0 - 16
-
-rr(draw,[MA_X,MA_Y0,MA_X+PAN_W,MA_Y0+PAN_H],10,(19,26,23),outline=(45,75,58),width=2)
-
-A_TITLE_Y = MA_Y0+20
-ctext(draw,MA_X+PAN_W//2, A_TITLE_Y, "git merge main", f_head, GREEN2)
-ctext(draw,MA_X+PAN_W//2, A_TITLE_Y+22,"(або git merge --no-ff Lab-01 після завершення)",f_tiny,MUTED)
-
-# Graph
-GM_Y = MA_Y0 + 80   # main row
-GF_Y = MA_Y0 + 148  # feature row
-
-GBX  = MA_X+45
-step = 82
-GA   = GBX
-GB   = GBX+step
-GC   = GBX+step*2
-GD   = GBX+step*3
-GM_m = GBX+step*4   # merge commit on main
-GE   = GC
-GF   = GD
-
-# main line
-draw.line([(GA-NR,GM_Y),(GM_m+NR,GM_Y)],fill=GREEN2,width=2)
-# feature line
-draw.line([(GE-NR,GF_Y),(GF+NR,GF_Y)],fill=ACCENT,width=2)
-# diagonal: GB → GE
-draw.line([(GB+NR,GM_Y+NR),(GE-NR,GF_Y-NR)],fill=ACCENT,width=2)
-# diagonal: GF → merge (GM_m)
-draw.line([(GF+NR,GF_Y-NR),(GM_m-NR,GM_Y+NR)],fill=ACCENT,width=2)
-
-# merge commit node (special)
-circle(draw,GM_m,GM_Y,NR+3,GREEN2,outline=ACCENT,width=2)
-ctext(draw,GM_m,GM_Y-32,"Merge\ncommit",f_sha,GREEN2)
-ctext(draw,GM_m,GM_Y-54,"M",f_sha,MUTED)
-
-for (cx,cy,col,sha) in [(GA,GM_Y,GREEN2,"A"),(GB,GM_Y,GREEN2,"B"),
-                         (GC,GM_Y,GREEN2,"C"),(GD,GM_Y,GREEN2,"D"),
-                         (GE,GF_Y,ACCENT,"E"),(GF,GF_Y,ACCENT,"F")]:
-    commit(cx,cy,NR,col,sha=sha,label_above=(cy==GM_Y))
-
-# Labels
-rr(draw,[GA-12,GM_Y-52,GA+48,GM_Y-34],5,(26,44,33),outline=GREEN2,width=1)
-ctext(draw,GA+18,GM_Y-43,"main",f_label,GREEN2)
-rr(draw,[GE-22,GF_Y+22,GE+50,GF_Y+40],5,(22,36,30),outline=ACCENT,width=1)
-ctext(draw,GE+14,GF_Y+31,"Lab-01",f_label,ACCENT)
-
-# Pros/cons
-PC_Y = GF_Y + 56
-pros = ["+ Зберігає точну історію гілки",
-        "+ Видно коли саме злиття відбулось",
-        "+ Безпечно для спільних гілок"]
-cons = ["- Граф ускладнюється з часом",
-        "- git log виглядає 'брудним'"]
-
-for i,t in enumerate(pros):
-    ltext(draw, MA_X+18, PC_Y+i*20, t, f_small, GREEN2)
-for i,t in enumerate(cons):
-    ltext(draw, MA_X+18, PC_Y+len(pros)*20+8+i*20, t, f_small, RED2)
-
-# When to use box
-WU_Y = MA_Y0+PAN_H-52
-rr(draw,[MA_X+14,WU_Y,MA_X+PAN_W-14,WU_Y+38],6,(22,36,28),outline=(50,85,60),width=1)
-ctext(draw,MA_X+PAN_W//2,WU_Y+14,"В курсі — ЗАВЖДИ merge --no-ff",f_body,ACCENT)
-ctext(draw,MA_X+PAN_W//2,WU_Y+30,"(злиття лаби в main по завершенню)",f_tiny,MUTED)
+SX0, SX1 = 710, W - 30
+rr([SX0, TY0, SX1, TY1], 10, PANEL, outline=(55, 85, 68), width=1)
+ltext(SX0 + 20, TY0 + 22, "Як об'єднати гілки?", f_head, TEXT)
+bullets(SX0 + 20, TY0 + 58, [
+    ("●  Merge — додає merge-коміт, історія лишається як була", GREEN2),
+    ("●  Rebase — переписує E, F поверх D як нові коміти E', F'", BLUE),
+    ("●  Код у результаті однаковий, різниться лише історія", MUTED),
+    ("●  У курсі — тільки  git merge --no-ff", WARN),
+])
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VARIANT B — Rebase (right panel)
+# BOTTOM: merge | rebase
 # ══════════════════════════════════════════════════════════════════════════════
-# Result:
-#   A ── B ── C ── D ── E' ── F'   ← main / Lab-01 (linear!)
-# E', F' = перезаписані коміти з новим SHA
+BY0, BY1 = 256, H - 20
+LX0, LX1 = 30, 690
+RX0, RX1 = 710, W - 30
 
-RB_X  = MA_X + PAN_W + 20
-rr(draw,[RB_X,MA_Y0,RB_X+PAN_W,MA_Y0+PAN_H],10,(19,22,30),outline=(45,60,110),width=2)
+# ── MERGE ─────────────────────────────────────────────────────────────────────
+rr([LX0, BY0, LX1, BY1], 10, (19, 26, 22), outline=(60, 100, 75), width=2)
+ctext((LX0 + LX1) // 2, BY0 + 24, "git merge", f_head, GREEN2)
+ctext((LX0 + LX1) // 2, BY0 + 46, "git checkout main  →  git merge --no-ff feature", f_cmd, MUTED)
 
-B_TITLE_Y = MA_Y0+20
-ctext(draw,RB_X+PAN_W//2, B_TITLE_Y, "git rebase main", f_head, BLUE)
-ctext(draw,RB_X+PAN_W//2, B_TITLE_Y+22,"перебазовує коміти Lab-01 поверх нового main",f_tiny,MUTED)
+MY2, FY2 = BY0 + 110, BY0 + 170
+xa, xb, xc, xd, xm = 90, 190, 290, 390, 510
+edge((xa, MY2), (xm, MY2), GREEN2)
+edge((xb, MY2), (xb + 60, FY2), PURPLE)
+edge((xb + 60, FY2), (xc + 60, FY2), PURPLE)
+edge((xc + 60, FY2), (xm, MY2), PURPLE)
+for x, n in [(xa, "A"), (xb, "B"), (xc, "C"), (xd, "D")]:
+    node(x, MY2, GREEN2, n)
+node(xb + 60, FY2, PURPLE, "E")
+node(xc + 60, FY2, PURPLE, "F")
+node(xm, MY2, ACCENT, "M", r=17)
+badge(xm + 70, MY2, "main", GREEN2)
+ltext(xm + 30, MY2 - 34, "merge-коміт", f_small, ACCENT)
+ltext(xm + 30, MY2 - 20, "(2 батьки: D і F)", f_small, MUTED)
 
-# Graph — linear
-RL_Y  = MA_Y0 + 104   # single line
-RBX   = RB_X+40
-rstep = 76
+bullets(LX0 + 30, BY0 + 230, [
+    ("+  Жоден існуючий коміт не змінюється", GREEN2),
+    ("+  Видно, де гілка відійшла і де повернулась", GREEN2),
+    ("+  Безпечно для гілок, які вже на GitHub", GREEN2),
+    ("−  Граф з «ромбами» складніший", RED),
+])
+rr([LX0 + 16, BY1 - 54, LX1 - 16, BY1 - 14], 6, (24, 40, 30), outline=(60, 100, 75))
+ctext((LX0 + LX1) // 2, BY1 - 34, "Так курс зливає кожну лабу в main", f_body, ACCENT)
 
-RA,RB,RC,RD,RE2,RF2 = [RBX+i*rstep for i in range(6)]
+# ── REBASE ────────────────────────────────────────────────────────────────────
+rr([RX0, BY0, RX1, BY1], 10, (18, 22, 30), outline=(55, 85, 150), width=2)
+ctext((RX0 + RX1) // 2, BY0 + 24, "git rebase", f_head, BLUE)
+ctext((RX0 + RX1) // 2, BY0 + 46, "git checkout feature  →  git rebase main", f_cmd, MUTED)
 
-# main line
-draw.line([(RA-NR,RL_Y),(RF2+NR,RL_Y)],fill=GREEN2,width=2)
+ox = RX0 - 30 + 50
+xa, xb, xc, xd, xe, xf = ox + 30, ox + 120, ox + 210, ox + 300, ox + 390, ox + 480
+edge((xa, MY2), (xd, MY2), GREEN2)
+edge((xd, MY2), (xf, MY2), BLUE)
+edge((xb, MY2), (xb + 60, FY2), DIM, dashed=True)
+edge((xb + 60, FY2), (xc + 60, FY2), DIM, dashed=True)
+for x, n in [(xa, "A"), (xb, "B"), (xc, "C"), (xd, "D")]:
+    node(x, MY2, GREEN2, n)
+node(xe, MY2, BLUE, "E'")
+node(xf, MY2, BLUE, "F'")
+ghost(xb + 60, FY2, "E")
+ghost(xc + 60, FY2, "F")
+badge(xd, MY2 - 34, "main", GREEN2)
+badge(xf + 70, MY2, "feature", BLUE)
+ltext(xc + 90, FY2, "старі E, F — більше не в жодній гілці", f_small, DIM)
+ctext((xe + xf) // 2, MY2 + 30, "нові SHA", f_small, BLUE)
 
-for (cx,col,sha,orig) in [
-    (RA,GREEN2,"A",""), (RB,GREEN2,"B",""), (RC,GREEN2,"C","new!"),
-    (RD,GREEN2,"D","new!"),
-    (RE2,BLUE,"E'",""), (RF2,BLUE,"F'",""),
-]:
-    commit(cx,RL_Y,NR,col,sha=sha,label=orig,label_above=True)
-
-# Annotate E' and F' — rebased (new SHA)
-ctext(draw,RE2,RL_Y+26,"= E (новий SHA)",f_sha,BLUE)
-ctext(draw,RF2,RL_Y+26,"= F (новий SHA)",f_sha,BLUE)
-
-# "Until" arrow showing where E,F were
-ghost_y = RL_Y + 70
-draw.line([(RD+NR,RL_Y+NR),(RE2-NR,ghost_y-NR)],fill=DIM,width=1)
-draw.line([(RE2-NR,ghost_y),(RF2+NR,ghost_y)],fill=DIM,width=1)
-commit(RE2,ghost_y,NR-2,DIM,sha="E",label_above=False)
-commit(RF2,ghost_y,NR-2,DIM,sha="F",label_above=False)
-ctext(draw,(RE2+RF2)//2,ghost_y+26,"старі E,F — видалені",f_tiny,DIM)
-
-# Labels
-rr(draw,[RA-12,RL_Y-52,RA+48,RL_Y-34],5,(26,36,48),outline=GREEN2,width=1)
-ctext(draw,RA+18,RL_Y-43,"main",f_label,GREEN2)
-rr(draw,[RE2-38,RL_Y-52,RE2+50,RL_Y-34],5,(20,28,44),outline=BLUE,width=2)
-ctext(draw,RE2+6,RL_Y-43,"Lab-01",f_label,BLUE)
-
-# Pros/cons
-PC2_Y = ghost_y + 46
-pros2 = ["+ Лінійна, чиста історія",
-         "+ git log без 'ромбів'",
-         "+ Простіше читати blame"]
-cons2 = ["- Змінює SHA комітів (переписує)"]
-warn2 =  "! НІКОЛИ не rebase спільних гілок"
-
-STEP2 = 18
-for i,t in enumerate(pros2):
-    ltext(draw, RB_X+18, PC2_Y+i*STEP2, t, f_small, GREEN2)
-off = len(pros2)*STEP2+6
-for i,t in enumerate(cons2):
-    ltext(draw, RB_X+18, PC2_Y+off+i*STEP2, t, f_small, RED2)
-ltext(draw, RB_X+18, PC2_Y+off+len(cons2)*STEP2+6, warn2, f_small, WARN)
-
-# When to use box
-WU2_Y = MA_Y0+PAN_H-52
-rr(draw,[RB_X+14,WU2_Y,RB_X+PAN_W-14,WU2_Y+38],6,(22,28,42),outline=(40,65,120),width=1)
-ctext(draw,RB_X+PAN_W//2,WU2_Y+14,"Rebase — для прибирання локальних комітів",f_body,BLUE)
-ctext(draw,RB_X+PAN_W//2,WU2_Y+30,"до PR або перед злиттям (інтерактивний: -i)",f_tiny,MUTED)
+bullets(RX0 + 30, BY0 + 230, [
+    ("+  Лінійна історія без «ромбів»", BLUE),
+    ("−  E', F' — нові коміти з новими SHA", RED),
+    ("−  Запушену гілку після rebase треба force-push", RED),
+    ("−  У інших копіях репозиторію історія «ламається»", RED),
+])
+rr([RX0 + 16, BY1 - 54, RX1 - 16, BY1 - 14], 6, (22, 28, 44), outline=(55, 85, 150))
+ctext((RX0 + RX1) // 2, BY1 - 34, "Ніколи не роби rebase гілки, яку вже запушив", f_body, WARN)
 
 out = r"C:\Users\Yurii\source\repos\OOP-Tomka-CourseForHardCoders\git-workshop\_assets\merge-vs-rebase.png"
 img.save(out, "PNG")

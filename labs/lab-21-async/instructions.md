@@ -26,7 +26,7 @@ var patients = await context.Patients.ToListAsync();   // потік ВІЛЬН�
 ```text
 oop-course/                                    ← гілка main (після злиття Лаби 20)
 ├── .gitignore
-├── oop-course.sln
+├── oop-course.slnx
 └── ClinicApp/
     ├── ClinicApp.csproj
     ├── Program.cs
@@ -460,7 +460,7 @@ git commit -m "Lab21 Task06"
 ```text
 oop-course/                                    ← гілка Lab-21 (після злиття — main)
 ├── .gitignore
-├── oop-course.sln
+├── oop-course.slnx
 └── ClinicApp/
     ├── ClinicApp.csproj
     ├── Program.cs                             ✏ Т1 Т3 Т4 Т5 Т6
