@@ -8,7 +8,7 @@ import BackToTop from "@/components/BackToTop.astro";
 const labs = await getLabs();
 const lectures = await getLectures();
 const currentPath = pathWithoutBase(Astro.url.pathname);
-const lectureGroups = lectures.reduce<Array<{ title: string; items: Array<{ href: string; number: string; title: string; active: boolean }> }>>((groups, lecture) => {
+const lectureGroups = lectures.reduce<Array<{ chapter: number; title: string; items: Array<{ href: string; number: string; title: string; active: boolean }> }>>((groups, lecture) => {
   const lastGroup = groups[groups.length - 1];
   const lecturePath = `/lectures/${lecture.slug}/`;
   const sourceItems = [
@@ -20,12 +20,12 @@ const lectureGroups = lectures.reduce<Array<{ title: string; items: Array<{ href
     },
   ];
 
-  if (lastGroup?.title === lecture.chapterTitle) {
+  if (lastGroup && lastGroup.chapter === lecture.chapter) {
     lastGroup.items.push(...sourceItems);
     return groups;
   }
 
-  groups.push({ title: lecture.chapterTitle, items: sourceItems });
+  groups.push({ chapter: lecture.chapter, title: lecture.chapterTitle, items: sourceItems });
   return groups;
 }, []);
 ---

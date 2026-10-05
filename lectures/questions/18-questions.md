@@ -1,6 +1,6 @@
 ---
 chapter: 18
-chapterTitle: "Розділ 18. Файлова система та потоки"
+chapterTitle: "Розділ 18. Робота з файловою системою"
 type: self-assessment
 ---
 

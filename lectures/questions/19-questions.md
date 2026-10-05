@@ -1,6 +1,6 @@
 ---
 chapter: 19
-chapterTitle: "Розділ 19. Серіалізація JSON та XML"
+chapterTitle: "Розділ 19. Серіалізація та десеріалізація. JSON та XML"
 type: self-assessment
 ---
 

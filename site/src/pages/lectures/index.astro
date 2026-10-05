@@ -5,15 +5,15 @@ import { getLectures } from "@/data/course";
 import { sitePath } from "@/utils/paths";
 
 const lectures = await getLectures();
-const lectureGroups = lectures.reduce<Array<{ title: string; lectures: typeof lectures }>>((groups, lecture) => {
+const lectureGroups = lectures.reduce<Array<{ chapter: number; title: string; lectures: typeof lectures }>>((groups, lecture) => {
   const lastGroup = groups[groups.length - 1];
 
-  if (lastGroup?.title === lecture.chapterTitle) {
+  if (lastGroup && lastGroup.chapter === lecture.chapter) {
     lastGroup.lectures.push(lecture);
     return groups;
   }
 
-  groups.push({ title: lecture.chapterTitle, lectures: [lecture] });
+  groups.push({ chapter: lecture.chapter, title: lecture.chapterTitle, lectures: [lecture] });
   return groups;
 }, []);
 

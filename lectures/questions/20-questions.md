@@ -1,6 +1,6 @@
 ---
 chapter: 20
-chapterTitle: "Розділ 20. Принципи SOLID"
+chapterTitle: "Розділ 20. SOLID Принципи"
 type: self-assessment
 ---
 

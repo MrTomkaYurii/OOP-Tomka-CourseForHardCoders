@@ -51,5 +51,9 @@ site/public/runner/
 tools/docx-export/node_modules/
 output/lectures/node_modules/
 
+# Python
+__pycache__/
+*.pyc
+
 # Generated output files
 output/
