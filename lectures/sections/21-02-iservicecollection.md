@@ -408,13 +408,15 @@ services.AddTransient<IAppointmentValidator, PatientInsuranceValidator>();
 Методи `TryAddSingleton`, `TryAddScoped`, `TryAddTransient` реєструють сервіс **тільки якщо** такого ServiceType ще немає в колекції. Це корисно для бібліотек, що хочуть надати реалізацію «за замовчуванням», але не перезаписувати ту, що встановив користувач:
 
 ```csharp
-// У бібліотеці:
-services.TryAddSingleton<IPatientRepository, DefaultPatientRepository>();
-
-// Якщо користувач вже зареєстрував свій:
+// Program.cs: користувач спершу реєструє свою реалізацію
 services.AddSingleton<IPatientRepository, CustomPatientRepository>();
-// → DefaultPatientRepository ніколи не буде використано
+
+// …потім викликає метод розширення бібліотеки, усередині якого:
+services.TryAddSingleton<IPatientRepository, DefaultPatientRepository>();
+// → IPatientRepository вже є, TryAdd нічого не додає: у колекції один дескриптор
 ```
+
+Порядок тут принциповий. Якщо поміняти рядки місцями (спершу `TryAdd` бібліотеки, потім `Add` користувача), `TryAdd` спрацює — колекція ще порожня, — і в ній опиняться **обидва** дескриптори. `GetService<IPatientRepository>()` поверне `CustomPatientRepository` (остання реєстрація), але `GetServices<IPatientRepository>()` чи `IEnumerable<IPatientRepository>` у конструкторі отримають обидві реалізації, і `DefaultPatientRepository` все ж буде створено. Обидва сценарії перевірено на .NET 10.
 
 ![Реєстрація та розпізнавання сервісів у IServiceCollection](_assets/21-02/service-registration.png)
 
@@ -422,9 +424,19 @@ services.AddSingleton<IPatientRepository, CustomPatientRepository>();
 
 Реальний `ServiceProvider` у .NET підтримує опцію `ValidateOnBuild = true`. При увімкненні вона перевіряє при `BuildServiceProvider()`:
 - чи не є якийсь зареєстрований сервіс невирішуваним (залежність не зареєстрована)
-- чи немає «captive dependencies» (Singleton залежить від Scoped — помилка, бо Scoped живе коротше)
+- чи немає «captive dependencies» (Singleton залежить від Scoped — помилка, бо Scoped живе коротше) — **але лише разом з `ValidateScopes = true`**. Сам `ValidateOnBuild` перевіряє тільки, чи можна побудувати кожен сервіс; область видимості перевіряє `ValidateScopes`, яка також забороняє брати Scoped-сервіс з кореневого провайдера.
 
-У Development-середовищі Generic Host автоматично вмикає ці перевірки. В Production — вимикає заради продуктивності.
+```csharp
+var provider = services.BuildServiceProvider(new ServiceProviderOptions
+{
+    ValidateOnBuild = true,   // незадоволені залежності — виняток уже тут
+    ValidateScopes  = true    // Singleton ← Scoped — теж виняток під час Build()
+});
+```
+
+Перевірка на .NET 10: з одним лише `ValidateOnBuild` пара «Singleton залежить від Scoped» будується без помилки; з обома опціями `BuildServiceProvider` кидає `AggregateException` з описом проблемного дескриптора.
+
+У Development-середовищі Generic Host автоматично вмикає обидві перевірки. В Production — вимикає заради швидшого старту, тож помилки реєстрації варто ловити тестом, що будує контейнер з обома опціями.
 
 ## Підсумок
 

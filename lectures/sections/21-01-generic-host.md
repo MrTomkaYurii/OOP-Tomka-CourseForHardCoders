@@ -146,10 +146,24 @@ await host.RunAsync();
 
 `Host.CreateDefaultBuilder()` — це фабричний метод, що автоматично налаштовує:
 - завантаження `appsettings.json` та `appsettings.{Environment}.json`
-- читання змінних середовища з префіксом `DOTNET_`
+- читання змінних середовища: з префіксом `DOTNET_` — для конфігурації самого хоста (середовище, кореневий каталог), а **всі** змінні середовища без префікса — для конфігурації застосунку (`IConfiguration`)
+- User Secrets — лише в середовищі `Development`
 - читання аргументів командного рядка
-- базове логування в консоль та Debug
-- встановлення кореневого каталогу додатку
+- логування в консоль, Debug та EventSource (на Windows — ще й EventLog)
+- встановлення кореневого каталогу додатку (поточний каталог)
+- у середовищі `Development` — перевірку контейнера під час `Build()` (`ValidateOnBuild` і `ValidateScopes`, див. 21.2–21.3)
+
+Починаючи з .NET 7, поряд із цим «callback»-стилем є і лінійний API — `Host.CreateApplicationBuilder(args)`, який повертає `HostApplicationBuilder` з властивостями `Services`, `Configuration` і `Logging`. Його налаштовують звичайними інструкціями без вкладених лямбд — так само, як `WebApplication.CreateBuilder` у веб-проєктах, — і саме його використовують сучасні шаблони Worker Service:
+
+```csharp
+var builder = Host.CreateApplicationBuilder(args);
+builder.Services.AddSingleton<IPatientRepository, InMemoryPatientRepository>();
+builder.Services.AddHostedService<AppointmentReminderService>();
+using IHost host = builder.Build();
+await host.RunAsync();
+```
+
+Обидва варіанти будують той самий `IHost` з однаковими налаштуваннями за замовчуванням; відрізняється лише стиль конфігурування.
 
 ## Реалізуємо спрощений хост «з нуля»
 
@@ -434,15 +448,21 @@ class Program
 Розуміння порядку є критичним для коректної роботи:
 
 **Запуск:**
-1. `IHostBuilder.Build()` — збирається DI-контейнер, перевіряється реєстрація
+1. `IHostBuilder.Build()` — збирається DI-контейнер; у середовищі `Development` ще й перевіряється, чи всі зареєстровані сервіси можна створити (у `Production` ця перевірка вимкнена, і помилка реєстрації проявиться лише при першому запиті сервісу)
 2. `IHost.StartAsync()` — послідовно викликає `StartAsync()` у кожного `IHostedService` у порядку реєстрації
-3. Хост входить у стан «running» і чекає сигналу зупинки
+3. Після старту всіх служб `IHostApplicationLifetime` сповіщає підписників `ApplicationStarted`; хост входить у стан «running» і чекає сигналу зупинки
+
+Важлива деталь щодо `BackgroundService`: його `StartAsync` запускає `ExecuteAsync` і повертає керування, щойно той дійде до першого справжнього `await`. Тому довгий синхронний код на початку `ExecuteAsync` (до першого `await`) блокує запуск усіх наступних служб.
 
 **Shutdown** (при `Ctrl+C`, `SIGTERM` або явному виклику `StopAsync()`):
 1. `IHostApplicationLifetime` сповіщає підписників `ApplicationStopping`
 2. `IHost.StopAsync()` — послідовно викликає `StopAsync()` у кожного `IHostedService` **у зворотному порядку**
 3. `IHostApplicationLifetime` сповіщає підписників `ApplicationStopped`
-4. DI-контейнер диспозиться — викликається `Dispose()` на всіх `IDisposable` singleton-сервісах
+4. DI-контейнер диспозиться — викликається `Dispose()` на всіх `IDisposable`-об'єктах, які створив кореневий контейнер (singleton-сервіси і transient-сервіси, отримані з кореня). Об'єкти, передані готовими через `AddSingleton(instance)`, контейнер **не** звільняє — ними володіє той, хто їх створив
+
+На весь shutdown хост дає обмежений час — `HostOptions.ShutdownTimeout`, за замовчуванням 30 секунд (до .NET 6 — 5 секунд). Служба, що не встигла завершити `StopAsync`, отримує скасування токена, і хост продовжує зупинку без неї.
+
+Наведений порядок перевірено на .NET 10 для двох служб `A` і `B`, зареєстрованих саме в такому порядку: `A start → B start → ApplicationStarted → ApplicationStopping → B stop → A stop → ApplicationStopped → Dispose`.
 
 Зворотний порядок shutdown є навмисним і важливим: перший зупинений сервіс може залежати від ресурсів, що надають пізніше зупинені сервіси. Наприклад, `EmailSender` (зупиняється першим) може надсилати `Shutdown notification` через `SmtpClient` (зупиняється останнім).
 
@@ -453,7 +473,7 @@ class Program
 | | Generic Host | WebApplication |
 |---|---|---|
 | Тип додатку | будь-який | ASP.NET Core |
-| NuGet пакет | `Microsoft.Extensions.Hosting` | `Microsoft.AspNetCore.App` |
+| Підключення | NuGet-пакет `Microsoft.Extensions.Hosting` | спільний фреймворк `Microsoft.AspNetCore.App` (SDK `Microsoft.NET.Sdk.Web`) |
 | HTTP pipeline | немає | є (middleware) |
 | Запуск | `host.RunAsync()` | `app.RunAsync()` |
 | IServiceCollection | `ConfigureServices()` | `builder.Services` |

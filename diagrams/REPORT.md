@@ -506,3 +506,46 @@ Electron тримали pipe відкритим); `setup-linux.sh` ставит�
 | 20.6 | «контейнер сам конструює об'єкти з залежностями», а приклад `SimpleContainer` цього не робить | пояснено обмеження навчальної моделі (`new()`, ручне конструювання) і що робить справжній `ServiceCollection` (впровадження через конструктор, часи життя, `Dispose`); додано фрагмент, перевірений на .NET 10 |
 
 Усі 27 повних прикладів розділу запущено — ✓.
+
+
+# Розділ 21 «Generic Host та Dependency Injection»
+
+4 схеми перероблено пайплайном `diagrams/`. Попередні версії вже були перемальовані HTML-генератором
+(`lectures/_assets/diagram-generators/21-generic-host`, рендер через headless Edge); ці PNG перенесено в
+`Архив/` з суфіксом `-html` (`host-architecture-html.png` тощо), бо там уже лежать найстаріші оригінали з тими ж
+іменами. **HTML-генератор не видалено** — він лишається як історія і для порівняння.
+
+| § | Схема | Що було не так на старій схемі |
+|---|-------|-------------------------------|
+| 21.1 | `host-architecture` | чотири вигадані фонові служби (DatabaseMigrator, ReportScheduler, HealthCheckService) — у лекції лише AppointmentReminderService; IHostApplicationLifetime приписано «запуск і зупинку IHostedService» — це робить сам хост, lifetime лише сповіщає (Started/Stopping/Stopped); «валідація при старті» — лише в Development; не показано подій і таймауту зупинки. Тепер — код лекції, три ролі, порядок подій, перевірений на .NET 10 (A,B start → Started → Stopping → B,A stop → Stopped → Dispose; ShutdownTimeout 30 с). |
+| 21.2 | `service-registration` | INotificationService зареєстровано фабрикою (у лекції — за типом); у ServiceDescriptor одночасно ImplementationType і ImplementationFactory (вони взаємовиключні; ImplementationInstance не показано); Scoped «знищується після HTTP-запиту» у консольному розділі; немає правил «остання реєстрація/GetServices», TryAdd і валідації. Тепер — три способи реєстрації з лекції, дескриптор «одне з трьох», правила розпізнавання й валідації — перевірено на .NET 10. |
+| 21.3 | `service-lifetimes` | «Singleton → Transient — пастка» без пояснення, що контейнер це дозволяє; про Dispose нічого (а лекція помилялась саме тут); Scoped прив'язано до HTTP-запитів. Тепер — сітка екземплярів 2 scope × 2 запити (перевірено ReferenceEquals), таблиця Dispose (у т. ч. AddSingleton(obj) не звільняється, Transient з кореня — до зупинки), captive із зазначенням, що виняток — лише з ValidateScopes. |
+| 21.4 | `options-pattern` | ClinicOptions і секція «Clinic» замість AppointmentOptions/«Appointments» з лекції; «IOptions зчитується один раз при запуску» (насправді при першому .Value); текст виходив за рамку блока Configure<T>(); «перераховується для кожного HTTP-запиту» у консольному розділі. Тепер — ланцюжок джерела → IConfiguration → клас і таблиця реальної поведінки при зміні файлу 20→50 (експеримент з reloadOnChange). |
+
+Факти схем перевірено окремими програмами на .NET 10 з пакетами `Microsoft.Extensions.*` 10.x (у перевірочний
+проєкт генератора NuGet не підключається, тому блоки коду схем мають `check: skip`, а поведінку зафіксовано
+пробними запусками): порядок подій хоста, `ShutdownTimeout`, TryAdd в обох порядках, `GetService`/`GetRequiredService`,
+`ValidateOnBuild` vs `ValidateScopes`, циклічна залежність, `ReferenceEquals` екземплярів у scope, Dispose для
+scope/кореня/`AddSingleton(obj)`, час життя `ILogger<>`, перезавантаження `IOptions*` після зміни файлу, `ValidateOnStart`.
+
+**Виправлено в тексті лекцій 21.x:**
+
+| § | Було | Стало |
+|---|------|-------|
+| 21.1 | `CreateDefaultBuilder` читає «змінні середовища з префіксом `DOTNET_`» | `DOTNET_` — лише для конфігурації хоста; для застосунку — **всі** змінні; додано User Secrets (Development), повний список логерів, валідацію в Development, `Host.CreateApplicationBuilder` (.NET 7+) |
+| 21.1 | `Build()` «перевіряє реєстрацію» | лише в Development |
+| 21.1 | порядок старту без `ApplicationStarted`; не сказано про `BackgroundService` | додано подію й особливість `ExecuteAsync` до першого `await` |
+| 21.1 | Dispose «на всіх singleton» | ще й transient з кореня; `AddSingleton(obj)` не звільняється; `ShutdownTimeout` 30 с; перевірений порядок подій |
+| 21.1 | WebApplication — «NuGet пакет `Microsoft.AspNetCore.App`» | це спільний фреймворк (SDK `Microsoft.NET.Sdk.Web`) |
+| 21.2 | приклад TryAdd: бібліотека першою, тоді «Default ніколи не використано» | у такому порядку реєструються обидва (`GetServices` поверне обидва); приклад переставлено, пояснено обидва сценарії |
+| 21.2 | `ValidateOnBuild` ловить captive dependency | лише разом з `ValidateScopes` |
+| 21.3 | Transient знищується «одразу після використання»; «контейнер не зберігає посилань» | disposable-transient звільняє scope, що його створив; контейнер тримає на них посилання |
+| 21.3 | «для root-scope `Dispose()` не викликається» | викликається, але лише при зупинці — тому витік |
+| 21.3 | `DbContext` на запит «гарантує одну транзакцію» | спільний трекер змін; транзакція — на кожен `SaveChanges`, ширша — явно |
+| 21.3 | Scoped поза scope «кидає виняток» | лише з `ValidateScopes`, інакше тихо стає Singleton |
+| 21.3 | `ILogger<T>` як приклад Transient | `ILogger<>` реєструється як Singleton |
+| 21.3 | Singleton «може залежати лише від Singleton» | Transient дозволено (із застереженням) |
+| 21.4 | `IOptions` «зчитується один раз при запуску» | при першому `.Value`; додано експеримент із перезавантаженням і правило вибору, іменовані — лише Snapshot/Monitor |
+| 21.4 | фрагмент валідації: клас вище інструкцій (CS8803), без пакета; русизм «позволяє» | порядок виправлено, вказано пакет `…Options.DataAnnotations`, пояснено `ValidateOnStart` (перевірено) |
+
+Усі 6 повних прикладів розділу запущено — ✓.
