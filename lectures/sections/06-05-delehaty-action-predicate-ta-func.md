@@ -244,6 +244,28 @@ Func<double, string> CreateRangeCheck(double low, double high)
 
 ![Механізм замикання: захоплення лексичного оточення](_assets/06-05/closure-lifecycle.png)
 
+### Пастка: замикання в циклі
+
+Замикання захоплює **змінну**, а не її значення на момент створення лямбди. Найчастіше це проявляється в циклах. Змінна циклу `for` оголошена один раз на весь цикл, тому всі лямбди, створені всередині, захоплюють ту саму змінну і після завершення циклу бачать її останнє значення:
+
+```csharp run
+using System;
+using System.Collections.Generic;
+
+var forChecks = new List<Func<string>>();
+for (int i = 0; i < 3; i++)
+    forChecks.Add(() => $"палата {i}");
+
+var foreachChecks = new List<Func<string>>();
+foreach (var ward in new[] { 0, 1, 2 })
+    foreachChecks.Add(() => $"палата {ward}");
+
+foreach (var f in forChecks)     Console.WriteLine($"for:     {f()}");     // палата 3 — тричі
+foreach (var f in foreachChecks) Console.WriteLine($"foreach: {f()}");     // палата 0, 1, 2
+```
+
+Цикл `foreach` з C# 5 створює нову змінну на кожну ітерацію, тому там пастки немає. Для `for` виправлення просте — скопіювати значення в локальну змінну всередині тіла: `int copy = i; forChecks.Add(() => $"палата {copy}");`. Перевірено на .NET 10: `for` дає «палата 3» тричі, `foreach` — 0, 1, 2.
+
 Скорочений запис через каррінг (ланцюг лямбд):
 
 ```csharp run
