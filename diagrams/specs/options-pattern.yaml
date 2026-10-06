@@ -1,0 +1,54 @@
+# Лекція 21.4 «Options Pattern — типізована конфігурація з IOptions<T>»
+# Оригінал: lectures/_assets/21-04/Архив/options-pattern-html.png
+# (HTML-генератор: lectures/_assets/diagram-generators/21-generic-host)
+id: options-pattern
+title: "Options Pattern: конфігурація → типізований клас"
+subtitle: "Три інтерфейси відрізняються тим, коли бачать зміну appsettings.json (експеримент на .NET 10)"
+
+types: [IConfiguration, AppointmentOptions, AppointmentService, IOptions, IOptionsSnapshot, IOptionsMonitor]
+
+body:
+  - panel:
+      heading: "Звідки беруться значення"
+      children:
+        - hchain:
+            nodes:
+              - {title: "джерела", sub: ["appsettings.json → {Environment}.json", "→ User Secrets → змінні → CLI"]}
+              - {title: "IConfiguration", via: "наступне перекриває", sub: ["ключ «Appointments:MaxPerDay»"]}
+              - {title: "AppointmentOptions", via: "Configure<T>(section)", kind: box_accent, sub: ["MaxPerDay = 20"]}
+  - row:
+      gap: 24
+      children:
+        - box:
+            title: "Споживач не знає про IConfiguration"
+            check: skip
+            code: |
+              class AppointmentService
+              {
+                  private readonly AppointmentOptions _opts;
+                  public AppointmentService(
+                      IOptions<AppointmentOptions> opts)
+                      => _opts = opts.Value;
+              }
+            notes: ["типізовано, без magic strings;", "у тесті — `Options.Create(new AppointmentOptions())`"]
+        - panel:
+            heading: "MaxPerDay у файлі змінено: 20 → 50"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["що читаємо", "реєстрація", "бачимо"]
+                  groups:
+                    - rows:
+                        - ["IOptions<T>.Value",              "Singleton", "`20` — [[назавжди]]"]
+                        - ["IOptionsSnapshot<T>.Value",      "Scoped",    "`20` у старому scope"]
+                        - ["",                               "",          "`50` у [[новому]] scope"]
+                        - ["IOptionsMonitor<T>.CurrentValue", "Singleton", "`50` одразу"]
+                        - ["IOptionsMonitor<T>.OnChange(…)",  "",          "колбек з `50`"]
+              - text:
+                  text:
+                    - "Іменовані (`Get(\"Marketing\")`) — лише через Snapshot або Monitor."
+                    - "`IOptionsSnapshot` у Singleton — captive dependency."
+
+publish:
+  dark: ../lectures/_assets/21-04/options-pattern.png
+  bw: ../lectures/_assets/21-04/book/options-pattern.png
