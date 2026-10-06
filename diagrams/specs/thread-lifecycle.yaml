@@ -1,0 +1,84 @@
+# Лекція 15.1 «Введення у багатопоточність. Клас Thread»
+# Оригінал: lectures/_assets/15-01/Архив/thread-lifecycle.png
+id: thread-lifecycle
+title: "Стани потоку (ThreadState) і переходи"
+subtitle: "Потік стартує один раз, може багато разів блокуватися й прокидатися, а завершується разом зі своїм методом"
+
+types: [Thread, ThreadState, Monitor, ThreadInterruptedException, ThreadStateException, PlatformNotSupportedException]
+
+body:
+  - panel:
+      heading: "Основний шлях"
+      children:
+        - hchain:
+            equal: true
+            nodes:
+              - { title: "Unstarted", sub: ["`new Thread(Work)`"] }
+              - { title: "Running", sub: ["виконується або чекає ядра"], kind: box_accent, via: "Start()" }
+              - { title: "Stopped", sub: ["повторний `Start()` —", "`ThreadStateException`"], via: "метод завершився / виняток" }
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Блокування і пробудження"
+            children:
+              - hchain:
+                  equal: true
+                  nodes:
+                    - { title: "Running", kind: box_accent, sub: ["працює"] }
+                    - { title: "WaitSleepJoin", sub: ["не отримує процесор"], via: "блокується", back: "прокидається" }
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["блокується через", "прокидається, коли"]
+                  groups:
+                    - rows:
+                        - ["`Thread.Sleep(ms)`",        "минув час"]
+                        - ["`other.Join()`",            "`other` завершився"]
+                        - ["`lock` зайнятий іншим",     "lock звільнено"]
+                        - ["`Monitor.Wait(obj)`",       "`Monitor.Pulse(obj)`"]
+                        - ["будь-що з переліченого",    "`Interrupt()` → [[`ThreadInterruptedException`]] у потоці"]
+
+  - panel:
+      heading: "Що варто знати"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["`Interrupt()`",            "не зупиняє, а будить винятком — потік сам вирішує, чи завершитися"]
+                  - ["`Abort()`",                "у .NET Core / .NET 5+ — `PlatformNotSupportedException`"]
+                  - ["`Background`",             "прапорець: `Background, WaitSleepJoin`"]
+                  - ["`Running` = 0",            "тому комбінації «`Running | …`» не буває"]
+                  - ["цикл без `Sleep`",          "стан `Running`, хоч потік і «чекає»"]
+        - note:
+            kind: box_accent
+            text:
+              - "Зупиняти потік — лише кооперативно:"
+              - "прапорець або `CancellationToken` (16.5)"
+
+check:
+  usings: [System, System.Threading]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var t = new Thread(() => Thread.Sleep(200)); Eq(t.ThreadState, ThreadState.Unstarted);
+    t.Start(); Thread.Sleep(50); Eq(t.ThreadState, ThreadState.WaitSleepJoin);
+    t.IsBackground = true; Eq(t.ThreadState, ThreadState.Background | ThreadState.WaitSleepJoin);
+    #pragma warning disable SYSLIB0006
+    try { t.Abort(); Eq(0, 1); } catch (PlatformNotSupportedException) { }
+    #pragma warning restore SYSLIB0006
+    t.Join(); Eq(t.ThreadState & ThreadState.Stopped, ThreadState.Stopped);
+    try { t.Start(); Eq(0, 1); } catch (ThreadStateException) { }
+    object g = new(); Thread w = null!;
+    lock (g) { w = new Thread(() => { lock (g) { } }); w.Start(); Thread.Sleep(50); Eq(w.ThreadState, ThreadState.WaitSleepJoin); }
+    w.Join();
+    bool caught = false; var y = new Thread(() => { try { Thread.Sleep(5000); } catch (ThreadInterruptedException) { caught = true; } });
+    y.Start(); Thread.Sleep(50); y.Interrupt(); y.Join(); Eq(caught, true);
+    Eq((int)ThreadState.Running, 0);
+
+publish:
+  dark: ../lectures/_assets/15-01/thread-lifecycle.png
+  bw: ../lectures/_assets/15-01/book/thread-lifecycle.png
