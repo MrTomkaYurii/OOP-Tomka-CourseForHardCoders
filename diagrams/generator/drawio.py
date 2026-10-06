@@ -106,7 +106,9 @@ def find_drawio() -> list[str]:
                          "(див. diagrams/CLAUDE.md, «Оточення»).")
     cmd = [exe]
     if sys.platform.startswith("linux"):
-        cmd += ["--no-sandbox", "--disable-gpu"]
+        # контейнери (хмара, CI, Docker): без sandbox-у Chromium, без GPU, і /dev/shm
+        # замалий (64 МБ) — без --disable-dev-shm-usage рендерер падає
+        cmd += ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
         if not os.environ.get("DISPLAY") and shutil.which("xvfb-run"):
             cmd = ["xvfb-run", "-a"] + cmd
     return cmd
