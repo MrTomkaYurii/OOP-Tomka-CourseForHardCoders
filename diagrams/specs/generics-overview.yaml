@@ -1,0 +1,60 @@
+# Лекція 4.8 «Узагальнення»
+# Оригінал: lectures/_assets/04-08/Архив/generics-overview.png
+id: generics-overview
+title: "Узагальнений клас: один шаблон — різні типи"
+subtitle: "MedicalRecord<T> замість object Id: без упаковки й без приведень, помилка типу — під час компіляції"
+
+types: [MedicalRecord]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Без узагальнень"
+            kind: box_muted
+            check: skip
+            code: |
+              class MedicalRecord
+              {
+                  public object Id { get; }
+              }
+              int id = (int)record.Id;   // unboxing + cast
+            notes: ["`int` → `object` — [[упаковка]] в купу;", "помилка типу — `InvalidCastException` у runtime"]
+        - box:
+            title: "З узагальненням"
+            kind: box_accent
+            check: skip
+            code: |
+              class MedicalRecord<T>
+              {
+                  public T Id { get; }
+              }
+              int id = record.Id;        // без приведення
+            notes: ["для `T = int` поле — справжній `int`;", "помилка типу — CS0029 при компіляції"]
+  - panel:
+      heading: "Закриті типи (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["вираз", "результат"]
+            groups:
+              - rows:
+                  - ["new MedicalRecord<int>(1001, \"Гіпертонія\").Id",      "`1001`"]
+                  - ["new MedicalRecord<string>(\"P-001\", \"Бронхіт\").Id", "`\"P-001\"`"]
+                  - ["typeof(MedicalRecord<int>) == typeof(MedicalRecord<string>)", "`false`"]
+                  - ["typeof(MedicalRecord<>).IsGenericTypeDefinition", "`true`"]
+        - text:
+            text: ["Кожен закритий тип має [[власні]] статичні поля; для value-типів JIT генерує окремий код, для посилальних — спільний."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  types: |
+    class MedicalRecord<T> { public T Id { get; } public string Description { get; } public MedicalRecord(T id, string d) { Id = id; Description = d; } }
+
+publish:
+  dark: ../lectures/_assets/04-08/generics-overview.png
+  bw: ../lectures/_assets/04-08/book/generics-overview.png

@@ -1,0 +1,39 @@
+# Лекція 4.5 «Відмінність перевизначення та приховування методів»
+# Оригінал: lectures/_assets/04-05/Архив/vmt-vs-static.png
+id: vmt-vs-static
+title: "Таблиця віртуальних методів і статична прив'язка"
+subtitle: "Person p = new Doctor(); p.Print() — override знаходить метод через таблицю типу об'єкта, new прив'язується під час компіляції"
+
+types: [Person, Doctor]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "override — пізнє зв'язування"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "об'єкт у купі", sub: ["заголовок → [[тип]] `Doctor`"]}
+                    - {title: "таблиця методів Doctor", sub: ["слот Print → `Doctor.Print`"]}
+                    - {title: "виконується Doctor.Print()", kind: box_accent, sub: ["IL: `callvirt`"]}
+        - panel:
+            heading: "new — раннє зв'язування"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "тип змінної", sub: ["`Person p` — відомо компілятору"]}
+                    - {title: "метод обрано при компіляції", sub: ["`Person.Print` (слот Doctor — новий)"]}
+                    - {title: "виконується Person.Print()", kind: box_accent, sub: ["тип об'єкта не впливає"]}
+  - note:
+      text:
+        - "Таблицю методів будує не компілятор C#, а [[середовище виконання]] (CLR) під час завантаження типу; вона одна на тип, кожен об'єкт посилається на неї."
+        - "Навіть невіртуальні методи екземпляра C# викликає через `callvirt` — заради перевірки на `null`."
+
+publish:
+  dark: ../lectures/_assets/04-05/vmt-vs-static.png
+  bw: ../lectures/_assets/04-05/book/vmt-vs-static.png
