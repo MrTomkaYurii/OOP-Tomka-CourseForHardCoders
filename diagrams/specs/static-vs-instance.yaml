@@ -1,0 +1,76 @@
+# Лекція 18.2 «Класи FileInfo та DirectoryInfo»
+# Оригінал: lectures/_assets/18-02/Архив/static-vs-instance.png
+id: static-vs-instance
+title: "File чи FileInfo: статичний і обʼєктний підхід"
+subtitle: "File щоразу звертається до диска за шляхом-рядком; FileInfo — обʼєкт, що кешує метадані після першого читання"
+
+types: [File, FileInfo, Directory, DirectoryInfo, Path, DateTime, StreamWriter]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "File / Directory — шлях-рядок"
+            children:
+              - box:
+                  code: |
+                    bool ok = File.Exists(path);
+                    DateTime t = File.GetLastWriteTime(path);
+                    long size = new FileInfo(path).Length;
+                  notes:
+                    - "кожен виклик — новий запит до файлової"
+                    - "системи; розміру в `File` немає"
+        - panel:
+            heading: "FileInfo / DirectoryInfo — обʼєкт"
+            children:
+              - box:
+                  kind: box_accent
+                  code: |
+                    var fi = new FileInfo(path);   // диска не торкається
+                    bool ok2 = fi.Exists;          // читає метадані
+                    long size2 = fi.Length;        // з кешу
+                  notes:
+                    - "метадані читаються [[один раз]] і кешуються"
+
+  - panel:
+      heading: "Кеш FileInfo: коли дані застарівають"
+      children:
+        - hchain:
+            equal: true
+            nodes:
+              - { title: "fi.Length → 12", code: true, sub: ["кеш заповнено"] }
+              - { title: "AppendAllText(…)", code: true, sub: ["інший код дописав", "3 байти"], via: "потім" }
+              - { title: "fi.Length → 12", code: true, kind: box_muted, sub: ["[[застаріле]] значення"] }
+              - { title: "fi.Refresh()", code: true, kind: box_accent, sub: ["`fi.Length` → 15"], via: "" }
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["`fi.MoveTo(dst)`",           "оновлює `fi.FullName` — обʼєкт «їде» за файлом"]
+                  - ["`fi.Delete()`",              "сам очищує кеш: `fi.Exists` → `false`"]
+                  - ["`dirInfo.GetFiles()`",       "`FileInfo[]` з метаданими; `Directory.GetFiles` — `string[]`"]
+                  - ["коли що",                    "одна дія — `File`; кілька дій чи метадані — `FileInfo`"]
+
+check:
+  usings: [System, System.IO]
+  context: |
+    var dir = Directory.CreateTempSubdirectory("med");
+    string path = Path.Combine(dir.FullName, "card.txt");
+    File.WriteAllText(path, "P001;I10.9;A"); // 12 байтів
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(size2, 12L);
+    File.AppendAllText(path, "abc"); Eq(fi.Length, 12L); fi.Refresh(); Eq(fi.Length, 15L);
+    var none = new FileInfo(Path.Combine(dir.FullName, "new.txt")); Eq(none.Exists, false);
+    File.WriteAllText(none.FullName, "x"); Eq(none.Exists, false); none.Refresh(); Eq(none.Exists, true);
+    none.Delete(); Eq(none.Exists, false);
+    fi.MoveTo(Path.Combine(dir.FullName, "moved.txt")); Eq(fi.Name, "moved.txt");
+    Eq(dir.GetFiles()[0] is FileInfo, true);
+    dir.Delete(true);
+
+publish:
+  dark: ../lectures/_assets/18-02/static-vs-instance.png
+  bw: ../lectures/_assets/18-02/book/static-vs-instance.png

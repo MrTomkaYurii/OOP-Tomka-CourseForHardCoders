@@ -1,0 +1,77 @@
+# Лекція 18.3 «Stream та FileStream»
+# Оригінал: lectures/_assets/18-03/Архив/stream-class-hierarchy.png
+id: stream-class-hierarchy
+title: "Ієрархія Stream у .NET"
+subtitle: "Один абстрактний контракт байтового потоку; конкретні класи — сховища або обгортки над іншим потоком"
+
+types: [Stream, FileStream, MemoryStream, NetworkStream, BufferedStream, GZipStream, CryptoStream, StreamReader, StreamWriter, BinaryReader, SeekOrigin, NotSupportedException]
+
+body:
+  - panel:
+      heading: "abstract class Stream — байти"
+      children:
+        - kv:
+            check: skip
+            columns: ["можливість", "члени", "якщо не підтримується"]
+            groups:
+              - rows:
+                  - ["читання",       "`CanRead`, `Read(buf, off, n)`, `ReadByte()`", "`NotSupportedException`"]
+                  - ["запис",         "`CanWrite`, `Write(…)`, `WriteByte(b)`, `Flush()`", "`NotSupportedException`"]
+                  - ["позиціонування", "`CanSeek`, `Position`, `Length`, `Seek(off, SeekOrigin)`", "`NotSupportedException`"]
+                  - ["асинхронно",    "`ReadAsync`, `WriteAsync`, `CopyToAsync`", ""]
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Сховища: де лежать байти"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["клас", "джерело", "CanSeek"]
+                  groups:
+                    - rows:
+                        - ["FileStream",    "файл на диску",   "`true`"]
+                        - ["MemoryStream",  "масив у памʼяті", "`true`"]
+                        - ["NetworkStream", "сокет TCP",       "[[`false`]]"]
+        - panel:
+            heading: "Обгортки (декоратори) над іншим Stream"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["клас", "що додає", "CanSeek"]
+                  groups:
+                    - rows:
+                        - ["BufferedStream", "буфер",                 "як у внутрішнього"]
+                        - ["GZipStream",     "стиснення",             "`false`"]
+                        - ["CryptoStream",   "шифрування",            "`false`"]
+        - panel:
+            heading: "Не Stream!"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["клас", "працює з"]
+                  groups:
+                    - rows:
+                        - ["StreamReader / Writer", "текстом (18.4)"]
+                        - ["BinaryReader / Writer", "типами (18.5)"]
+              - note:
+                  text:
+                    - "Окремі класи, що [[читають з]]"
+                    - "`Stream`, а не його нащадки"
+
+check:
+  usings: [System, System.IO, System.IO.Compression, System.Security.Cryptography, System.Net.Sockets]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var ms = new MemoryStream(); Eq(ms.CanSeek, true);
+    var gz = new GZipStream(ms, CompressionMode.Compress, true); Eq(gz.CanSeek, false);
+    try { _ = gz.Position; Eq(0, 1); } catch (NotSupportedException) { }
+    Eq(typeof(Stream).IsAssignableFrom(typeof(CryptoStream)) && typeof(Stream).IsAssignableFrom(typeof(NetworkStream)) && typeof(Stream).IsAssignableFrom(typeof(BufferedStream)), true);
+    Eq(typeof(Stream).IsAssignableFrom(typeof(StreamReader)), false); Eq(typeof(Stream).IsAssignableFrom(typeof(BinaryReader)), false);
+    Eq(new BufferedStream(new MemoryStream()).CanSeek, true);
+
+publish:
+  dark: ../lectures/_assets/18-03/stream-class-hierarchy.png
+  bw: ../lectures/_assets/18-03/book/stream-class-hierarchy.png
