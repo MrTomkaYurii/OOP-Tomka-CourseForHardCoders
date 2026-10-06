@@ -213,7 +213,7 @@ using System.Collections.Generic;
 
 Console.WriteLine("=== Лабораторні показники — Петренко Іван ===");
 Console.WriteLine($"IsValueCreated перед першим зверненням: (перевіряємо через Check)");
-Console.WriteLine("");
+Console.WriteLine();
 
 var results = new[]
 {
