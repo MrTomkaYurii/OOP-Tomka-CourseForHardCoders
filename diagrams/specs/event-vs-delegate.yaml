@@ -1,0 +1,45 @@
+# Лекція 6.3 «Події»
+# Оригінал: lectures/_assets/06-03/Архив/event-vs-delegate.png
+id: event-vs-delegate
+title: "Подія і публічне поле-делегат"
+subtitle: "event — це делегат, до якого ззовні дозволено лише += і -=; помилки перевірено компілятором"
+
+types: [Patient, PatientHandler]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Поле-делегат"
+            kind: box_muted
+            check: skip
+            code: "public PatientHandler? Notify;"
+        - box:
+            title: "Подія"
+            kind: box_accent
+            check: skip
+            code: "public event PatientHandler? Notify;"
+  - panel:
+      heading: "Що може код поза класом Patient"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["операція", "поле-делегат", "подія"]
+            groups:
+              - rows:
+                  - ["`p.Notify += h;` / `-= h;`",  "так", "так"]
+                  - ["`p.Notify = h;`",           "так — [[затирає]] чужих підписників", "CS0070"]
+                  - ["`p.Notify = null;`",        "так", "CS0070"]
+                  - ["`p.Notify(\"…\");`",         "так — будь-хто «видає» подію", "CS0070"]
+                  - ["виклик у похідному класі",  "так", "[[CS0070]] — лише сам клас"]
+        - text:
+            text:
+              - "Похідний клас дає змогу викликати подію через `protected virtual void OnNotify(…)`."
+              - "Аксесори `add`/`remove` дозволяють керувати підпискою, як `get`/`set` — властивістю."
+
+publish:
+  dark: ../lectures/_assets/06-03/event-vs-delegate.png
+  bw: ../lectures/_assets/06-03/book/event-vs-delegate.png

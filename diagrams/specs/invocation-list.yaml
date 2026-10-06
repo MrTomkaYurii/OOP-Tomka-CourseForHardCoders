@@ -1,0 +1,52 @@
+# Лекція 6.1 «Делегати»
+# Оригінал: lectures/_assets/06-01/Архив/invocation-list.png
+id: invocation-list
+title: "Multicast-делегат: список виклику"
+subtitle: "+= і -= не змінюють делегат, а створюють новий; методи викликаються послідовно, по черзі"
+
+types: [AlertHandler]
+
+body:
+  - stack:
+      gap: 24
+      children:
+        - panel:
+            heading: "alert після трьох += (з лекції)"
+            children:
+              - cells:
+                  rows:
+                    - caption: "alert"
+                      cells: ["LogToConsole", "NotifyDoctor", "LogToConsole", "LogToConsole"]
+                      kinds: [box, box, box, box_accent]
+                      top: ["[0]", "[1]", "[2]", "[3]"]
+              - text:
+                  text:
+                    - "`alert(\"…\")` → чотири виклики [[по черзі]] в одному потоці; результат (не `void`) — від [[останнього]] методу; виняток в одному методі зупиняє решту."
+        - panel:
+            heading: "Операції (виконано)"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["операція", "список"]
+                  groups:
+                    - rows:
+                        - ["`a = A; a += B; a += A;`",  "A, B, A"]
+                        - ["`a -= A;`",                 "A, B — знято [[останнє]] входження"]
+                        - ["`a -= C;` (C немає)",       "без змін"]
+                        - ["`all = g1 + g2;`",          "методи g1, потім g2"]
+                        - ["зняли все",                 "`null` → виклик: `NullReferenceException`"]
+                        - ["`a?.Invoke(…)`",            "безпечно при `null`"]
+
+check:
+  usings: [System, System.Linq]
+  asserts: |
+    string log = "";
+    Action a = () => log += "A"; Action A = a; Action B = () => log += "B";
+    Action d = A; d += B; d += A; d -= A; d();
+    if (log != "AB") throw new Exception(log);
+    Func<int> f = () => 1; f += () => 2; if (f() != 2 || f.GetInvocationList().Length != 2) throw new Exception("last");
+
+publish:
+  dark: ../lectures/_assets/06-01/invocation-list.png
+  bw: ../lectures/_assets/06-01/book/invocation-list.png

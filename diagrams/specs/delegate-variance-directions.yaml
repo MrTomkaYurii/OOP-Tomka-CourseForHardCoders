@@ -1,0 +1,68 @@
+# Лекція 6.4 «Коваріантність та контраваріантність делегатів» (файл variance-directions.png;
+# id інший, бо variance-directions уже зайнятий схемою 7.7)
+# Оригінал: lectures/_assets/06-04/Архив/variance-directions.png
+id: delegate-variance-directions
+title: "Узагальнені делегати: out і in"
+subtitle: "EmailNotification : Notification — у який бік можна присвоїти змінну узагальненого делегата"
+
+types: [Notification, EmailNotification, SmsNotification, NotificationBuilder, NotificationReceiver, NotificationConverter]
+
+body:
+  - stack:
+      gap: 16
+      children:
+        - box:
+            title: "out T — коваріантний"
+            kind: box_accent
+            check: skip
+            code: "delegate T NotificationBuilder<out T>(string text);"
+            notes: ["T лише в результаті"]
+        - box:
+            title: "in T — контраваріантний"
+            kind: box_accent
+            check: skip
+            code: "delegate void NotificationReceiver<in T>(T n);"
+            notes: ["T лише в параметрах"]
+        - box:
+            title: "in M, out E — обидва"
+            check: skip
+            code: "delegate E NotificationConverter<in M, out E>(M source);"
+            notes: ["приклад з лекції"]
+  - panel:
+      heading: "Присвоєння (перевірено is)"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["значення типу", "присвоюємо змінній", "можна?"]
+            groups:
+              - rows:
+                  - ["`NotificationBuilder<EmailNotification>`", "`NotificationBuilder<Notification>`", "✓ похідний → базовий"]
+                  - ["`NotificationReceiver<Notification>`", "`NotificationReceiver<EmailNotification>`", "✓ базовий → похідний"]
+                  - ["`Converter<Notification, EmailNotification>`", "`Converter<SmsNotification, Notification>`", "✓ обидва одразу"]
+                  - ["`NotificationBuilder<Notification>`", "`NotificationBuilder<EmailNotification>`", "[[CS0266]] проти `out`"]
+        - text:
+            text: ["`Converter` — скорочено `NotificationConverter`. Без `out`/`in` делегат інваріантний;", "`Func<in T, out TResult>` і `Action<in T>` уже варіантні."]
+
+check:
+  usings: [System]
+  asserts: |
+    object b = (NotificationBuilder<EmailNotification>)(t => new EmailNotification(t));
+    if (!(b is NotificationBuilder<Notification>)) throw new Exception("out");
+    object r = (NotificationReceiver<Notification>)(n => { });
+    if (!(r is NotificationReceiver<EmailNotification>)) throw new Exception("in");
+    object c = (NotificationConverter<Notification, EmailNotification>)(n => new EmailNotification(n.Text));
+    if (!(c is NotificationConverter<SmsNotification, Notification>)) throw new Exception("both");
+    object g = (NotificationBuilder<Notification>)(t => new Notification(t));
+    if (g is NotificationBuilder<EmailNotification>) throw new Exception("against");
+  types: |
+    class Notification { public string Text { get; } public Notification(string t) => Text = t; }
+    class EmailNotification : Notification { public EmailNotification(string t) : base(t) { } }
+    class SmsNotification : Notification { public SmsNotification(string t) : base(t) { } }
+    delegate T NotificationBuilder<out T>(string text);
+    delegate void NotificationReceiver<in T>(T n);
+    delegate E NotificationConverter<in M, out E>(M source);
+
+publish:
+  dark: ../lectures/_assets/06-04/variance-directions.png
+  bw: ../lectures/_assets/06-04/book/variance-directions.png
