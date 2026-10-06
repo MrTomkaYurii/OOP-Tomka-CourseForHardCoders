@@ -108,7 +108,7 @@ registrationDesk.Enqueue("Мельник Г.  — терапевт");
 
 Console.WriteLine($"Черга на реєстрацію: {registrationDesk.Count} осіб");
 Console.WriteLine($"Перший у черзі: {registrationDesk.Peek()}");
-Console.WriteLine();
+Console.WriteLine("");
 
 // Реєстратор обслуговує по одному
 Console.WriteLine("=== Процес реєстрації ===");
