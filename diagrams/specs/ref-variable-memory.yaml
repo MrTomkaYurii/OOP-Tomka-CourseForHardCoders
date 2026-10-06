@@ -1,0 +1,69 @@
+# Лекція 8.5 «Змінні-посилання та повернення посилання»
+# Оригінал: lectures/_assets/08-05/Архив/ref-variable-memory.png
+id: ref-variable-memory
+title: "ref-змінна: друге ім'я тієї самої комірки"
+subtitle: "Копія живе окремо; ref-локаль і ref return дають доступ до оригіналу без копіювання"
+
+types: []
+
+body:
+  - panel:
+      heading: "pulse = 72, потім присвоєння 90 через другу змінну"
+      children:
+        - cells:
+            rows:
+              - caption: "double copy = pulse;"
+                cells: ["pulse: 72", "copy: 90"]
+                kinds: [box, box_muted]
+                note: "дві комірки — pulse не змінився"
+              - caption: "ref double r = ref pulse;"
+                cells: ["pulse = r: 90"]
+                kinds: [box_accent]
+                note: "одна комірка, два імені — pulse = 90"
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "ref return: виправити помилкове вимірювання"
+            check: skip
+            code: |
+              ref double wrong = ref FindReading(readings, 120.0);
+              wrong = 78.0;     // змінено readings[2]
+
+              static ref double FindReading(double[] arr, double v)
+              {
+                  for (int i = 0; i < arr.Length; i++)
+                      if (arr[i] == v) return ref arr[i];
+                  throw new ArgumentException("не знайдено");
+              }
+        - panel:
+            heading: "Що можна повернути через ref"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["елемент масиву, поле класу", "✓"]
+                        - ["статичне поле, `ref`-параметр", "✓"]
+                        - ["`readonly`-поле", "лише як `ref readonly`"]
+                        - ["локальна змінна", "[[✗]] CS8168"]
+                        - ["`out`-параметр", "[[✗]] CS9075 (C# 11+)"]
+                        - ["властивість, константа", "[[✗]] — це не змінна"]
+
+check:
+  usings: [System]
+  asserts: |
+    double pulse = 72.0; double copy = pulse; copy = 90.0;
+    if (pulse != 72.0) throw new Exception("copy");
+    ref double r = ref pulse; r = 90.0;
+    if (pulse != 90.0) throw new Exception("ref");
+    double[] readings = { 68.0, 75.0, 120.0, 72.0, 80.0 };
+    ref double w = ref Find(readings, 120.0); w = 78.0;
+    if (readings[2] != 78.0) throw new Exception("refret");
+    static ref double Find(double[] a, double v) { for (int i = 0; i < a.Length; i++) if (a[i] == v) return ref a[i]; throw new ArgumentException(); }
+
+publish:
+  dark: ../lectures/_assets/08-05/ref-variable-memory.png
+  bw: ../lectures/_assets/08-05/book/ref-variable-memory.png

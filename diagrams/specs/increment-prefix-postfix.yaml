@@ -1,0 +1,60 @@
+# Лекція 8.2 «Визначення інкременту та декременту»
+# Оригінал: lectures/_assets/08-02/Архив/increment-prefix-postfix.png
+id: increment-prefix-postfix
+title: "Префіксний і постфіксний ++: одне визначення, два результати"
+subtitle: "static operator ++ повертає новий об'єкт; різницю між t++ і ++t компілятор будує сам"
+
+types: [BodyTemperature]
+
+body:
+  - box:
+      title: "Одне визначення (immutable update)"
+      kind: box_accent
+      check: skip
+      code: |
+        public static BodyTemperature operator ++(BodyTemperature t)
+            => new BodyTemperature(Math.Round(t.Celsius + 0.1, 1));
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "t2 = t1++   (t1 = 36.6)"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "1 · temp = t1", sub: ["запам'ятати поточний об'єкт"]}
+                    - {title: "2 · t1 = operator ++(temp)", sub: ["t1 → новий об'єкт 36.7"]}
+                    - {title: "3 · результат — temp", kind: box_accent, sub: ["t2 = 36.6 — [[старе]] значення"]}
+        - panel:
+            heading: "t2 = ++t1   (t1 = 36.6)"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "1 · t1 = operator ++(t1)", sub: ["t1 → новий об'єкт 36.7"]}
+                    - {title: "2 · результат — t1", kind: box_accent, sub: ["t2 = 36.7 — [[нове]] значення"]}
+  - note:
+      text:
+        - "Окремим рядком `t1++;` і `++t1;` однакові. Якщо ж `static operator ++` змінить сам параметр-клас, `t2 = t1++` поверне той самий змінений об'єкт — тому параметр не мутують."
+        - "C# 14 дозволяє й екземплярний `public void operator ++()`, що змінює об'єкт на місці."
+
+check:
+  usings: [System]
+  asserts: |
+    var a = new BodyTemperature(36.6); var b = a++;
+    if (b.Celsius != 36.6 || a.Celsius != 36.7) throw new Exception("postfix");
+    var c = new BodyTemperature(36.6); var d = ++c;
+    if (d.Celsius != 36.7 || c.Celsius != 36.7) throw new Exception("prefix");
+  types: |
+    class BodyTemperature
+    {
+        public double Celsius { get; }
+        public BodyTemperature(double c) => Celsius = c;
+        public static BodyTemperature operator ++(BodyTemperature t) => new BodyTemperature(Math.Round(t.Celsius + 0.1, 1));
+    }
+
+publish:
+  dark: ../lectures/_assets/08-02/increment-prefix-postfix.png
+  bw: ../lectures/_assets/08-02/book/increment-prefix-postfix.png
