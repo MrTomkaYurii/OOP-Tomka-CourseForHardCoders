@@ -1,0 +1,61 @@
+# Лекція 20.3 «OCP — принцип відкритості/закритості»
+# Оригінал: lectures/_assets/20-03/Архив/before-ocp.png
+id: before-ocp
+title: "До OCP: switch за типом прийому"
+subtitle: "Новий тип прийому — це правка вже протестованого класу, і не в одному місці"
+
+types: [CostCalculator_Bad, Appointment_Bad, AppointmentType]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "CostCalculator_Bad"
+            children:
+              - box:
+                  check: skip
+                  code: |
+                    public decimal CalculateCost(Appointment_Bad a)
+                    {
+                        switch (a.Type)
+                        {
+                            case AppointmentType.Regular:
+                                return 500m + Math.Max(0, a.DurationMin - 30) * 5m;
+                            case AppointmentType.Urgent:
+                                return 500m * 1.6m;
+                            case AppointmentType.Specialist:
+                                return 1200m;
+                            default:
+                                return 0m;     // VIP уже є в enum…
+                        }
+                    }
+
+                    public string GetTypeName(Appointment_Bad a) => a.Type switch
+                    { … };                     // той самий перелік ще раз
+        - panel:
+            heading: "Що відбувається з новим типом VIP"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["1", "додати `VIP` в `enum AppointmentType`"]
+                        - ["2", "відкрити `CalculateCost` — новий `case`"]
+                        - ["3", "відкрити `GetTypeName` — новий рядок"]
+                        - ["4", "знайти [[всі інші]] `switch` (звіти, білінг)"]
+                        - ["5", "перетестувати Regular, Urgent, Specialist"]
+                    - heading: "після OCP (20.3, далі)"
+                      rows:
+                        - ["1", "написати клас `VipAppointment`"]
+                        - ["—", "старі класи [[не відкриваються]]"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "Забули `case` — компілятор мовчить:"
+                    - "VIP-прийом коштує [[0 грн]] через `default`"
+
+publish:
+  dark: ../lectures/_assets/20-03/before-ocp.png
+  bw: ../lectures/_assets/20-03/book/before-ocp.png

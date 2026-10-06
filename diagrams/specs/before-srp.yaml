@@ -1,0 +1,48 @@
+# Лекція 20.2 «SRP — принцип єдиної відповідальності»
+# Оригінал: lectures/_assets/20-02/Архив/before-srp.png
+id: before-srp
+title: "До SRP: AppointmentManager служить трьом акторам"
+subtitle: "«Причина для зміни» — це людина чи відділ, що вимагає змін; тут їх троє в одному класі"
+
+types: [AppointmentManager_Bad, DateTime]
+
+body:
+  - panel:
+      heading: "class AppointmentManager_Bad"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["код у класі", "відповідальність", "актор — хто вимагає змін"]
+            groups:
+              - rows:
+                  - ["`Book`: перевірка зайнятості лікаря", "правила запису",   "відділ прийому"]
+                  - ["`Cancel`: зміна статусу",             "",                 ""]
+                  - ["`Book`/`Cancel`: INSERT, UPDATE",       "збереження",       "ІТ-відділ: «переходимо на нову БД»"]
+                  - ["`LoadFromDatabase`",                  "",                 ""]
+                  - ["`Book`/`Cancel`: надіслати email",      "сповіщення",       "маркетинг: «SMS замість email»"]
+        - text:
+            text:
+              - "Відповідальності переплетені [[всередині одного методу]] `Book`: правлячи SQL, легко зачепити перевірку слотів."
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            kind: box_accent
+            title: "Наслідки"
+            notes:
+              - "три відділи — три приводи правити один файл;"
+              - "тест правила запису вимагає БД і поштовий сервер;"
+              - "зміна SMS може зламати бронювання (регресія)"
+        - box:
+            title: "SRP — не «один метод»"
+            notes:
+              - "клас може мати 20 методів і одну відповідальність;"
+              - "і 2 методи — `SaveToDatabase` + `SendEmail` —"
+              - "але дві різні причини змін"
+
+publish:
+  dark: ../lectures/_assets/20-02/before-srp.png
+  bw: ../lectures/_assets/20-02/book/before-srp.png
