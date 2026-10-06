@@ -1,0 +1,83 @@
+# Лекція 10.8 «Ітератори та yield return»
+# Оригінал: lectures/_assets/10-08/Архив/yield-lazy-execution.png
+id: yield-lazy-execution
+title: "yield return: ліниве виконання ітератора"
+subtitle: "Тіло методу виконується шматками — від одного yield return до наступного, лише коли споживач кличе MoveNext()"
+
+types: [IEnumerable, IEnumerator, Patient, List]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Ітератор"
+            children:
+              - box:
+                  code: |
+                    IEnumerable<string> Active(List<Patient> all)
+                    {
+                        log.Add("старт");
+                        foreach (var p in all)
+                            if (p.IsActive)
+                                yield return p.Name;
+                        log.Add("кінець");
+                    }
+                  notes:
+                    - "ward: Петренко ✓, Коваль ✗, Сидоренко ✓;"
+                    - "`e` — це `seq.GetEnumerator()`"
+                    - "компілятор робить із методу клас-машину"
+                    - "стану; локальні змінні стають її полями"
+
+        - panel:
+            heading: "Споживач кличе → ітератор робить"
+            children:
+              - flow:
+                  right_code: false
+                  rows:
+                    - { left: "var seq = Active(ward);",  label: "",      right: "тіло [[не виконується]] — лише обʼєкт" }
+                    - { left: "e.MoveNext()  // 1",       label: "true",  right: "«старт», до yield: Current = Петренко" }
+                    - { left: "e.MoveNext()  // 2",       label: "true",  right: "з паузи; Коваля пропускає → Сидоренко" }
+                    - { left: "e.MoveNext()  // 3",       label: "false", right: "цикл скінчився, «кінець»" }
+                    - { left: "e.Dispose()",              label: "",      right: "виконує `finally` ітератора, якщо є" }
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Наслідки лінивості"
+            notes:
+              - "кожен `foreach` запускає тіло [[з початку]];"
+              - "помилка в аргументах — лише на першому `MoveNext()`;"
+              - "дорогий запит — матеріалізуйте `ToList()`"
+        - box:
+            title: "Правила yield"
+            notes:
+              - "`yield break` — дострокове завершення;"
+              - "тип — `IEnumerable<T>`, `IEnumerator<T>`, `IAsyncEnumerable<T>`;"
+              - "не можна: `ref`/`out`-параметри, `yield` у `try` з `catch`"
+
+check:
+  usings: [System, System.Collections.Generic]
+  context: |
+    var log = new List<string>();
+    var ward = new List<Patient> { new("Петренко", true), new("Коваль", false), new("Сидоренко", true) };
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    var e = Active(ward).GetEnumerator();
+    Assert(log.Count == 0, "лінивість");
+    Assert(e.MoveNext() && e.Current == "Петренко" && log.Count == 1, "1");
+    Assert(e.MoveNext() && e.Current == "Сидоренко", "2");
+    Assert(!e.MoveNext() && log[^1] == "кінець", "3");
+    var seq = Active(ward); Assert(log.Count == 2, "seq лінивий");
+    IEnumerable<int> Bad(string s) { if (s == null) throw new ArgumentNullException(nameof(s)); yield return 1; }
+    var b = Bad(null!); bool thrown = false;
+    try { foreach (var _ in b) { } } catch (ArgumentNullException) { thrown = true; }
+    Assert(thrown, "виняток лише при переборі");
+  types: |
+    record Patient(string Name, bool IsActive);
+
+publish:
+  dark: ../lectures/_assets/10-08/yield-lazy-execution.png
+  bw: ../lectures/_assets/10-08/book/yield-lazy-execution.png

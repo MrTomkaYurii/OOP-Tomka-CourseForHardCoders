@@ -51,7 +51,9 @@ public interface IEnumerable<out T> : IEnumerable
 }
 ```
 
-`IEnumerable<T>` відповідає на одне питання: «дай мені перелічувач». Саме цей інтерфейс перевіряє компілятор, коли ви пишете `foreach`. Якщо об'єкт реалізує `IEnumerable<T>` — він допускається до `foreach`.
+`IEnumerable<T>` відповідає на одне питання: «дай мені перелічувач». Реалізація цього інтерфейсу — стандартний і рекомендований спосіб зробити об'єкт придатним для `foreach`, а також для LINQ і всіх методів, що приймають `IEnumerable<T>`.
+
+Строго кажучи, `foreach` працює **за патерном**, а не за інтерфейсом: компілятор шукає публічний метод `GetEnumerator()`, результат якого має метод `bool MoveNext()` і властивість `Current`. Тому `foreach` працює і з класом, який нічого не реалізує, але має такий метод (з C# 9 підходить навіть метод-розширення `GetEnumerator`). Цим користується сам .NET: `List<T>.GetEnumerator()` повертає структуру `List<T>.Enumerator`, а не інтерфейс, — і `foreach` по `List<T>` не виділяє пам'яті в купі. Для масивів компілятор узагалі генерує звичайний цикл `for` з індексом.
 
 Реалізують: `List<T>`, `T[]`, `Queue<T>`, `Stack<T>`, `Dictionary<K,V>`, `ObservableCollection<T>`, `LinkedList<T>` та будь-який власний клас, якому ви додасте цей інтерфейс.
 
@@ -60,12 +62,24 @@ public interface IEnumerable<out T> : IEnumerable
 ```csharp
 public interface IEnumerator<out T> : IDisposable, IEnumerator
 {
-    bool MoveNext();    // перейти до наступного елемента
-    T    Current { get; } // повернути поточний елемент
-    void Reset();       // повернутись на початок (рідко використовується)
-    void Dispose();     // звільнити ресурси
+    T Current { get; }  // повернути поточний елемент (типізовано)
+}
+
+// успадковані члени:
+public interface IEnumerator
+{
+    bool MoveNext();          // перейти до наступного елемента
+    object Current { get; }   // поточний елемент як object
+    void Reset();             // повернутись на початок (рідко використовується)
+}
+
+public interface IDisposable
+{
+    void Dispose();           // звільнити ресурси
 }
 ```
+
+Зверніть увагу: сам `IEnumerator<T>` оголошує **лише** типізовану властивість `Current`. Методи `MoveNext()` і `Reset()` він успадковує від старого негенеричного `IEnumerator` (часів .NET 1.0), а `Dispose()` — від `IDisposable`. Тому клас-перелічувач мусить реалізувати всі чотири члени (плюс негенеричний `object Current`, як у прикладі `RangeEnumerator` нижче). `Reset()` на практиці майже не використовують: перелічувачі, згенеровані з `yield return`, на виклик `Reset()` кидають `NotSupportedException`; для повторного обходу просто беруть новий перелічувач через `GetEnumerator()`.
 
 `IEnumerator<T>` — сам перелічувач. Він зберігає **поточну позицію** всередині колекції. Кожен виклик `MoveNext()` зсуває позицію на один крок і повертає `true`, поки є елементи; коли елементи вичерпані — повертає `false` і цикл `while` завершується.
 
@@ -229,6 +243,7 @@ foreach (string patient in sequence) // ось тепер генератор з�
 ```csharp run
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 int callCount = 0;
 

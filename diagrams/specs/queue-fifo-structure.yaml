@@ -1,0 +1,84 @@
+# Лекція 10.3 «Черга Queue<T>»
+# Оригінал: lectures/_assets/10-03/Архив/queue-fifo-structure.png
+id: queue-fifo-structure
+title: "Queue<T>: FIFO на кільцевому масиві"
+subtitle: "Хто першим став у чергу, той першим вийде; Enqueue пише в tail, Dequeue забирає з head"
+
+types: [Queue, Patient]
+
+body:
+  - panel:
+      heading: "FIFO — перший прийшов, перший вийшов"
+      children:
+        - hchain:
+            nodes:
+              - { title: "Enqueue(\"Бойко\")", code: true, kind: box_muted, sub: ["входить у хвіст"] }
+              - { title: "Мельник", sub: ["4"] }
+              - { title: "Сидоренко", sub: ["3"] }
+              - { title: "Коваль", sub: ["2"] }
+              - { title: "Петренко", sub: ["1 · Peek()"], kind: box_accent }
+              - { title: "Dequeue()", code: true, kind: box_muted, sub: ["→ \"Петренко\""] }
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Усередині: кільцевий буфер, Capacity 8"
+            children:
+              - cells:
+                  rows:
+                    - caption: "старт"
+                      cells: ["·", "·", "Пе", "Ко", "Си", "Ме", "·", "·"]
+                      kinds: [box_muted, box_muted, box_accent, box, box, box, box_muted, box_muted]
+                      top: ["0", "1", "2", "3", "4", "5", "6", "7"]
+                      bottom: ["", "", "head", "", "", "", "tail", ""]
+                    - caption: "Dequeue() ×2"
+                      cells: ["·", "·", "·", "·", "Си", "Ме", "·", "·"]
+                      kinds: [box_muted, box_muted, box_muted, box_muted, box_accent, box, box_muted, box_muted]
+                      bottom: ["", "", "", "", "head", "", "tail", ""]
+                    - caption: "Enqueue ×3"
+                      cells: ["Тк", "·", "·", "·", "Си", "Ме", "Бо", "Ше"]
+                      kinds: [box, box_muted, box_muted, box_muted, box_accent, box, box, box]
+                      bottom: ["", "tail", "", "", "head", "", "", ""]
+              - text:
+                  text:
+                    - "`Dequeue` лише зсуває head — елементи не копіюються, O(1)."
+                    - "tail дійшов до кінця масиву — [[перескакує на індекс 0]]."
+                    - "Буфер повний — новий масив більшого розміру, копія, O(n)."
+
+        - panel:
+            heading: "Методи"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["метод", "складність"]
+                  groups:
+                    - rows:
+                        - ["Enqueue(item)",   "O(1)* амортизовано"]
+                        - ["Dequeue()",       "O(1)"]
+                        - ["Peek()",          "O(1), без видалення"]
+                        - ["TryDequeue(out x)", "O(1), `false` — порожня"]
+                        - ["TryPeek(out x)",  "O(1), `false` — порожня"]
+                        - ["Contains(item)",  "O(n)"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "`Dequeue`/`Peek` на порожній черзі →"
+                    - "[[`InvalidOperationException`]]"
+
+check:
+  usings: [System, System.Collections.Generic]
+  context: |
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    var q = new Queue<string>(new[] { "Петренко", "Коваль", "Сидоренко", "Мельник" });
+    Assert(q.Peek() == "Петренко" && q.Count == 4, "Peek");
+    q.Enqueue("Бойко"); Assert(q.Dequeue() == "Петренко", "FIFO");
+    Assert(q.TryPeek(out var p) && p == "Коваль", "TryPeek");
+    var e = new Queue<string>(); Assert(!e.TryDequeue(out _), "TryDequeue false");
+    try { e.Dequeue(); Assert(false, "Dequeue порожньої"); } catch (InvalidOperationException) { }
+    try { e.Peek(); Assert(false, "Peek порожньої"); } catch (InvalidOperationException) { }
+
+publish:
+  dark: ../lectures/_assets/10-03/queue-fifo-structure.png
+  bw: ../lectures/_assets/10-03/book/queue-fifo-structure.png

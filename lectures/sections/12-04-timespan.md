@@ -162,7 +162,7 @@ foreach (var (name, adm, dis) in records)
     TimeSpan stay = dis - adm;
     total += stay;
     string duration = $"{stay.Days} д. {stay.Hours} год.";
-    Console.WriteLine($"{name,-22} {adm:dd.MM.yy,12} {dis:dd.MM.yy,12} {duration}");
+    Console.WriteLine($"{name,-22} {adm,12:dd.MM.yy} {dis,12:dd.MM.yy} {duration}");
 }
 
 Console.WriteLine(new string('-', 65));
@@ -193,7 +193,7 @@ int totalCycles = 6;
 Console.WriteLine("=== Розклад хіміотерапії ===");
 Console.WriteLine($"Перший прийом: {firstVisit:dd.MM.yyyy HH:mm}");
 Console.WriteLine($"Цикл:          {(int)treatmentCycle.TotalDays} днів");
-Console.WriteLine();
+Console.WriteLine("");
 
 Console.WriteLine($"{"Цикл",-6} {"Дата",12} {"День тижня",-12}");
 Console.WriteLine(new string('-', 32));
@@ -201,7 +201,7 @@ Console.WriteLine(new string('-', 32));
 DateTime current = firstVisit;
 for (int i = 1; i <= totalCycles; i++)
 {
-    Console.WriteLine($"{i,-6} {current:dd.MM.yyyy,12} {current.DayOfWeek,-12}");
+    Console.WriteLine($"{i,-6} {current,12:dd.MM.yyyy} {current.DayOfWeek,-12}");
     current += treatmentCycle;
 }
 

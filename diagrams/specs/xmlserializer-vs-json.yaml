@@ -1,0 +1,64 @@
+# Лекція 19.5 «XmlSerializer»
+# Оригінал: lectures/_assets/19-05/Архив/xmlserializer-vs-json.png
+id: xmlserializer-vs-json
+title: "XmlSerializer чи JsonSerializer"
+subtitle: "Ті самі дані, різні правила: вимоги до класу, імена, колекції й обробка помилок"
+
+types: [XmlSerializer, JsonSerializer, Patient]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "XML — 78 байтів"
+            check: skip
+            code: |
+              <patient id="PT-1">
+                <fullName>Petrenko</fullName>
+                <age>45</age>
+              </patient>
+        - box:
+            title: "JSON — 44 байти"
+            check: skip
+            kind: box_accent
+            code: |
+              {"id":"PT-1","fullName":"Petrenko","age":45}
+
+  - panel:
+      heading: "Порівняння"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["", "XmlSerializer", "JsonSerializer"]
+            groups:
+              - rows:
+                  - ["клас",                  "`public`, конструктор без параметрів", "будь-який; є параметризовані конструктори"]
+                  - ["властивість без `set`", "пропускається",                       "[[записується]], при читанні ігнорується"]
+                  - ["атрибут чи елемент",    "`[XmlAttribute]` / `[XmlElement]`",   "лише властивості"]
+                  - ["невідоме поле",         "ігнорується (є подія `UnknownElement`)", "ігнорується"]
+                  - ["регістр імен",          "[[завжди]] чутливий",                 "чутливий; `PropertyNameCaseInsensitive`"]
+                  - ["поліморфізм",           "`[XmlInclude]` + `xsi:type`",         "`[JsonDerivedType]` + `$type`"]
+                  - ["схема й інструменти",   "XSD, XSLT, XPath, SOAP",              "JSON Schema"]
+                  - ["де",                    "держреєстри, HL7 CDA, легасі",        "REST API, конфігурації"]
+
+check:
+  usings: [System, System.IO, System.Text, System.Text.Json, System.Xml, System.Xml.Serialization]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var p = new Patient { Id = "PT-1", Name = "Petrenko", Age = 45 };
+    var ns = new XmlSerializerNamespaces(); ns.Add("", "");
+    var sw = new StringWriter(); using (var xw = XmlWriter.Create(sw, new XmlWriterSettings { OmitXmlDeclaration = true, Indent = true, NewLineChars = "\n" })) new XmlSerializer(typeof(Patient)).Serialize(xw, p, ns);
+    Eq(sw.ToString(), "<patient id=\"PT-1\">\n  <fullName>Petrenko</fullName>\n  <age>45</age>\n</patient>"); Eq(Encoding.UTF8.GetByteCount(sw.ToString()), 78);
+    string json = JsonSerializer.Serialize(new { id = "PT-1", fullName = "Petrenko", age = 45 }); Eq(json.Length, 44);
+    var x = (Patient)new XmlSerializer(typeof(Patient)).Deserialize(new StringReader("<patient><FullName>X</FullName></patient>"))!; Eq(x.Name, "");
+  types: |
+    [XmlRoot("patient")]
+    public class Patient { [XmlAttribute("id")] public string Id { get; set; } = ""; [XmlElement("fullName")] public string Name { get; set; } = ""; [XmlElement("age")] public int Age { get; set; } }
+
+publish:
+  dark: ../lectures/_assets/19-05/xmlserializer-vs-json.png
+  bw: ../lectures/_assets/19-05/book/xmlserializer-vs-json.png

@@ -1,0 +1,67 @@
+# Лекція 20.5 «ISP — принцип розподілу інтерфейсів»
+# Оригінал: lectures/_assets/20-05/Архив/before-isp.png
+id: before-isp
+title: "До ISP: «жирний» інтерфейс IClinicService"
+subtitle: "Три групи методів для трьох різних клієнтів — і кожен клас мусить реалізувати всі дев'ять"
+
+types: [IClinicService, ReceptionDesk, AnalyticsModule, NotImplementedException]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - box:
+            title: "Один інтерфейс на всіх"
+            kind: box_accent
+            check: skip
+            code: |
+              interface IClinicService
+              {
+                  // 1 · пацієнти
+                  void   AddPatient(string name);
+                  void   RemovePatient(int id);
+                  string FindPatient(int id);
+                  // 2 · записи на прийом
+                  void BookAppointment(…);
+                  void CancelAppointment(int id);
+                  int  GetAppointmentCount(string doctor);
+                  // 3 · звіти
+                  string GeneratePdfReport();
+                  string ExportToCsv();
+                  void   SendReportByEmail(string to);
+              }
+        - panel:
+            heading: "Хто що реалізує насправді"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["група", "ReceptionDesk", "AnalyticsModule"]
+                  groups:
+                    - rows:
+                        - ["1 · пацієнти", "✓ логіка",   "[[заглушки]] ×3"]
+                        - ["2 · прийоми",  "✓ логіка",   "[[заглушки]] ×3"]
+                        - ["3 · звіти",    "[[заглушки]] ×3", "✓ логіка"]
+              - note:
+                  text:
+                    - "заглушка = `throw new NotImplementedException()`"
+              - text:
+                  text:
+                    - "`desk.GeneratePdfReport()` компілюється — тип обіцяє звіт,"
+                    - "а в runtime летить [[`NotImplementedException`]]."
+                    - "Зміна групи 3 змушує перекомпілювати й ReceptionDesk."
+
+check:
+  usings: [System]
+  asserts: |
+    IClinicService desk = new ReceptionDesk();
+    bool t = false;
+    try { desk.GeneratePdfReport(); } catch (NotImplementedException) { t = true; }
+    if (!t) throw new Exception("no throw");
+  types: |
+    interface IClinicService { string GeneratePdfReport(); }
+    class ReceptionDesk : IClinicService { public string GeneratePdfReport() => throw new NotImplementedException("Не наша відповідальність"); }
+
+publish:
+  dark: ../lectures/_assets/20-05/before-isp.png
+  bw: ../lectures/_assets/20-05/book/before-isp.png

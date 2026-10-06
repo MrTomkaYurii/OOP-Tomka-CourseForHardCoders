@@ -38,11 +38,11 @@ async Task HandleButtonClickAsync()
     Console.WriteLine("[UI] Пацієнта зареєстровано успішно");
 }
 
-// Демонстрація проблеми async void: виняток губиться
-async void DangerousAsyncVoid()
+// Демонстрація проблеми async void: його неможливо дочекатися
+async void FireAndForget()
 {
-    await Task.Delay(50);
-    throw new InvalidOperationException("Ця помилка НЕ буде перехоплена зовні!");
+    await Task.Delay(100);
+    Console.WriteLine("[async void] Збереження завершилось — але ніхто на це не чекав");
 }
 
 // Правильна версія — async Task, виняток можна перехопити
@@ -53,17 +53,10 @@ async Task SafeAsyncTask()
 }
 
 // Демонстрація
-Console.WriteLine("=== async void: виняток не перехоплюється ===");
-try
-{
-    DangerousAsyncVoid(); // виняток виникне, але try/catch його НЕ впіймає
-    await Task.Delay(200); // чекаємо завершення
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Цей рядок НІКОЛИ не виконається: {ex.Message}");
-}
-Console.WriteLine("async void: виняток пройшов повз catch");
+Console.WriteLine("=== async void: дочекатися неможливо ===");
+FireAndForget(); // повертає void — немає Task, нічого await-ити
+Console.WriteLine("[Main] Іду далі, хоча збереження ще триває");
+await Task.Delay(200); // лише «вгадуємо» час — справжнього способу дочекатися немає
 
 Console.WriteLine("\n=== async Task: виняток перехоплюється ===");
 try
@@ -76,7 +69,20 @@ catch (InvalidOperationException ex)
 }
 ```
 
-Ключове правило: **ніколи не використовуйте `async void` поза обробниками подій**. `async void`-метод не можна очікувати, не можна обробити його виняток ззовні, не можна перевірити його стан. Це «запустив і забув» у найгіршому сенсі.
+З винятками все ще гірше. Виняток з `async void`-методу не потрапляє ні в `try/catch` навколо виклику (метод уже повернув керування), ні в жоден `Task`. Його повторно кидає той `SynchronizationContext`, у якому метод почав роботу: у WPF/WinForms — у циклі повідомлень UI-потоку (його можна перехопити лише глобальним обробником на кшталт `Application.DispatcherUnhandledException`), а в консольній програмі чи ASP.NET Core контексту немає, тож виняток кидається на потоці пулу як необроблений — і **процес аварійно завершується**. Тому приклад вище не кидає виняток з `async void`: інакше програма просто впала б.
+
+```csharp
+async void Dangerous()
+{
+    await Task.Delay(50);
+    throw new InvalidOperationException("Збій збереження");
+}
+
+try { Dangerous(); }                 // try/catch тут НЕ допоможе:
+catch (Exception) { /* ніколи */ }   // у консолі весь процес завершиться
+```
+
+Ключове правило: **ніколи не використовуйте `async void` поза обробниками подій**. А в самих обробниках подій тіло варто повністю обгортати в `try/catch`. `async void`-метод не можна очікувати, не можна обробити його виняток ззовні, не можна перевірити його стан. Це «запустив і забув» у найгіршому сенсі.
 
 ## async Task — операція без результату
 
@@ -282,7 +288,7 @@ class FakeRepository : IPatientRepository
 
 | Тип | Коли використовувати | Awaitable | Перехоплення помилок | Алокація |
 |-----|---------------------|-----------|---------------------|---------|
-| `async void` | Тільки EventHandler | Ні | Ні (глобально) | Немає |
+| `async void` | Тільки EventHandler | Ні | Ні: падіння процесу або глобальний обробник UI | Немає (Task) |
 | `async Task` | Операція без результату | Так | Так | Task |
 | `async Task<T>` | Операція з результатом | Так | Так | Task |
 | `async ValueTask<T>` | Hot path з частим sync-шляхом | Так (1 раз) | Так | Немає (sync) |

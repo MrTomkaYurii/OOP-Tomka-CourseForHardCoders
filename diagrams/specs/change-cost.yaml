@@ -1,0 +1,68 @@
+# Лекція 20.1 «Вступ до SOLID»
+# Оригінал: lectures/_assets/20-01/Архив/change-cost.png
+id: change-cost
+title: "Ціна однієї зміни"
+subtitle: "Змінили формат рядка журналу прийомів: де доведеться правити код"
+
+types: [ClinicManager, AppointmentLog, LogEntry, IAppointmentLog]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Без принципів: формат «вшито» скрізь"
+            children:
+              - box:
+                  check: skip
+                  code: |
+                    // "2026-06-11|Петренко|Коваль|Active"
+                    string[] p = e.Split('|');
+                  notes:
+                    - "кожен метод сам розбирає рядок"
+              - kv:
+                  check: skip
+                  columns: ["місце", "що зламається"]
+                  groups:
+                    - rows:
+                        - ["Book",                 "[[запис]] у старому форматі"]
+                        - ["CountByDoctor",        "рахує не той стовпчик"]
+                        - ["ExportReport",         "звіт з переплутаними полями"]
+                        - ["HasActiveAppointment", "не знаходить активних"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "1 рішення → 4 правки; пропустиш одну —"
+                    - "помилка вилізе в іншому модулі (крихкість)"
+        - panel:
+            heading: "З інкапсуляцією: формат знає один клас"
+            children:
+              - box:
+                  check: skip
+                  code: |
+                    class AppointmentLog
+                    {
+                        // лише тут: формат рядка
+                        string Format(LogEntry e) => …;
+                        LogEntry Parse(string s) => …;
+                    }
+                  notes:
+                    - "решта коду працює з `LogEntry`"
+              - kv:
+                  check: skip
+                  columns: ["місце", "що змінюється"]
+                  groups:
+                    - rows:
+                        - ["AppointmentLog",       "`Format` і `Parse`"]
+                        - ["CountByDoctor",        "нічого"]
+                        - ["ExportReport",         "нічого"]
+                        - ["HasActiveAppointment", "нічого"]
+              - note:
+                  text:
+                    - "1 рішення → 1 клас; решта [[не чіпається]]"
+                    - "і не перетестовується"
+
+publish:
+  dark: ../lectures/_assets/20-01/change-cost.png
+  bw: ../lectures/_assets/20-01/book/change-cost.png

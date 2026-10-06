@@ -179,7 +179,7 @@ List Dictionary Action Func EventHandler Task Attribute
 
 _TOKEN = re.compile(r"""
     (?P<comment>//.*$)
-  | (?P<string>\$?@?"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)')
+  | (?P<string>\$*"{3,}.*?"{3,}|\$?@?"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)')
   | (?P<number>\b0x[0-9A-Fa-f_]+\b|\b\d[\d_]*(?:\.\d+)?[fFdDmMuUlL]?\b)
   | (?P<ident>@?[A-Za-z_][A-Za-z0-9_]*)
   | (?P<ws>\s+)

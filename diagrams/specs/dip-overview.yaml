@@ -1,0 +1,56 @@
+# Лекція 20.6 «DIP — принцип інверсії залежностей»
+# Оригінал: lectures/_assets/20-06/Архив/dip-overview.png
+id: dip-overview
+title: "DIP: стрілка залежності розвертається"
+subtitle: "Без DIP бізнес-логіка тримається за SQL; з DIP і логіка, і SQL залежать від інтерфейсу, яким володіє логіка"
+
+types: [AppointmentService_Bad, AppointmentService, SqlAppointmentRepository, InMemoryAppointmentRepository, IAppointmentRepository]
+
+body:
+  - panel:
+      heading: "Без DIP: верхній рівень → нижній"
+      children:
+        - hchain:
+            equal: true
+            nodes:
+              - {title: "AppointmentService_Bad", sub: ["бізнес-правило: ≤ 10 записів"]}
+              - {title: "SqlAppointmentRepository", via: "new …()", kind: box_muted, sub: ["деталь: SQL"]}
+        - text:
+            text: ["`new` усередині сервісу: тест без SQL-сервера неможливий, перехід на іншу БД — [[переписати сервіс]]."]
+  - panel:
+      heading: "З DIP: обидва рівні → абстракція"
+      children:
+        - hchain:
+            equal: true
+            nodes:
+              - {title: "AppointmentService", sub: ["отримує репозиторій", "через конструктор"]}
+              - {title: "IAppointmentRepository", via: "залежить", kind: box_accent, sub: ["Save · GetByDoctor", "CountByDoctor"]}
+              - {title: "реалізації", fwd: false, back: "реалізують", sub: ["`SqlAppointmentRepository`", "`InMemoryAppointmentRepository`"]}
+        - text:
+            text: ["Інтерфейс описує [[потреби логіки]] — тому деталі підлаштовуються під неї, а не навпаки."]
+  - panel:
+      heading: "Що змінилось"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["задача", "без DIP", "з DIP"]
+            groups:
+              - rows:
+                  - ["юніт-тест", "потрібен SQL-сервер", "`new AppointmentService(new InMemoryAppointmentRepository())`"]
+                  - ["нова БД",   "переписати сервіс",   "новий клас `: IAppointmentRepository`"]
+                  - ["хто створює репозиторій", "сам сервіс (`new`)", "той, хто збирає програму (DI)"]
+
+check:
+  usings: [System]
+  asserts: |
+    var s = new AppointmentService(new InMemoryAppointmentRepository());
+    if (!s.Book("A", "D")) throw new Exception("book");
+  types: |
+    interface IAppointmentRepository { void Save(string p, string d); int CountByDoctor(string d); }
+    class InMemoryAppointmentRepository : IAppointmentRepository { int n; public void Save(string p, string d) => n++; public int CountByDoctor(string d) => n; }
+    class AppointmentService { readonly IAppointmentRepository _r; public AppointmentService(IAppointmentRepository r) => _r = r; public bool Book(string p, string d) { if (_r.CountByDoctor(d) >= 10) return false; _r.Save(p, d); return true; } }
+
+publish:
+  dark: ../lectures/_assets/20-06/dip-overview.png
+  bw: ../lectures/_assets/20-06/book/dip-overview.png

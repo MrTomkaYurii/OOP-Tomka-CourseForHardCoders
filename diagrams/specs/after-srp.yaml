@@ -1,0 +1,73 @@
+# Лекція 20.2 «SRP — принцип єдиної відповідальності»
+# Оригінал: lectures/_assets/20-02/Архив/after-srp.png
+id: after-srp
+title: "Після SRP: кожна вісь змін — окремий клас"
+subtitle: "Три класи не знають одне про одного; порядок дій тримає координатор"
+
+types: [ClinicCoordinator, AppointmentService, AppointmentRepository, AppointmentNotifier, DateTime]
+
+body:
+  - box:
+      kind: box_accent
+      title: "ClinicCoordinator — лише порядок кроків"
+      check: skip
+      code: |
+        public void Book(string patient, string doctor, DateTime time)
+        {
+            if (!_service.Book(patient, doctor, time)) return;   // правило
+            _repo.Save(patient, doctor, time);                   // збереження
+            _notifier.SendConfirmation(patient, doctor, time);   // сповіщення
+        }
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "AppointmentService"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - rows:
+                        - ["Book(…)",        "`bool`, без БД і email"]
+                        - ["Cancel(…)",      "`bool`"]
+                        - ["CountActive(d)", "`int`"]
+              - note:
+                  text:
+                    - "актор: відділ прийому"
+                    - "тест — без інфраструктури"
+        - panel:
+            heading: "AppointmentRepository"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - rows:
+                        - ["Save(…)",         "INSERT"]
+                        - ["UpdateStatus(…)", "UPDATE"]
+              - note:
+                  text:
+                    - "актор: ІТ-відділ"
+                    - "нова БД — правимо лише тут"
+        - panel:
+            heading: "AppointmentNotifier"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - rows:
+                        - ["SendConfirmation(…)", "лист"]
+                        - ["SendCancellation(p)", "лист"]
+              - note:
+                  text:
+                    - "актор: маркетинг"
+                    - "SMS — правимо лише тут"
+
+  - text:
+      text:
+        - "Наступний крок — залежність координатора від інтерфейсів, а не класів (DIP, 20.6): тоді й координатор тестується без БД."
+
+publish:
+  dark: ../lectures/_assets/20-02/after-srp.png
+  bw: ../lectures/_assets/20-02/book/after-srp.png

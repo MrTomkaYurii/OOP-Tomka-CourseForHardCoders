@@ -63,12 +63,12 @@ catch (InvalidOperationException ex)
 using System;
 using System.Threading.Tasks;
 
-// НЕБЕЗПЕЧНО: async void — виняток не можна перехопити ззовні
+// НЕБЕЗПЕЧНО: async void — якби тут був throw, try/catch ззовні не допоміг би
 async void DangerousFireAndForget()
 {
     await Task.Delay(50);
-    Console.WriteLine("[Dangerous] Зараз кину виняток...");
-    throw new Exception("Ця помилка НЕ перехоплюється через try/catch зовні!");
+    Console.WriteLine("[Dangerous] У цей момент Main уже вийшов з try — ловити нема кому");
+    // throw new Exception("..."); — у консолі такий виняток аварійно завершив би процес
 }
 
 // ПРАВИЛЬНО: async Task — виняток «зберігається» у Task і розгортається при await
@@ -93,16 +93,19 @@ catch (Exception ex)
 Console.WriteLine("\n=== async void: try/catch НЕ допомагає ===");
 try
 {
-    DangerousFireAndForget(); // виняток виникне ПІСЛЯ того, як ми вийдемо з try
-    await Task.Delay(200);    // чекаємо, щоб виняток мав час виникнути
+    DangerousFireAndForget(); // повертає керування одразу — до того, як метод щось зробить
+    Console.WriteLine("[Main] Вийшли з виклику, метод ще працює");
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Цей рядок НІКОЛИ не виконається: {ex.Message}");
+    Console.WriteLine($"Цей catch не побачив би винятку з async void: {ex.Message}");
 }
+await Task.Delay(200);
 
-Console.WriteLine("async void виняток пройшов повз catch — в реальному застосунку це крашить програму");
+Console.WriteLine("Виняток з async void пройшов би повз catch — у консолі й ASP.NET Core це падіння процесу");
 ```
+
+Чому приклад не кидає виняток насправді? Тому що в консольному застосунку немає `SynchronizationContext`: виняток з `async void` повторно кидається на потоці пулу як необроблений, і процес аварійно завершується, — до наступного рядка програма просто не дійшла б. У WPF/WinForms такий виняток потрапляє в цикл повідомлень UI і завершує застосунок, якщо його не перехопить глобальний обробник.
 
 Правило абсолютне: **ніколи не використовуйте `async void` поза обробниками подій**. Якщо вам потрібна операція «запустив і забув» без очікування — збережіть Task у змінну (і переконайтесь, що виняток десь оброблюється):
 
@@ -216,7 +219,7 @@ try
 }
 catch { }
 
-Console.WriteLine();
+Console.WriteLine("");
 
 // Випадок з помилкою
 try
@@ -275,7 +278,7 @@ using System.Threading.Tasks;
 TaskScheduler.UnobservedTaskException += (sender, args) =>
 {
     Console.WriteLine($"[Global] Необроблений виняток у Task: {args.Exception.InnerException?.Message}");
-    args.SetObserved(); // позначаємо як оброблений — не крашить застосунок
+    args.SetObserved(); // позначаємо як оброблений (з .NET 4.5 процес і так не падає)
 };
 
 // Запускаємо Task без await — виняток залишиться необробленим
@@ -293,7 +296,7 @@ GC.WaitForPendingFinalizers();
 Console.WriteLine("[Main] Продовжую роботу після глобального перехоплення");
 ```
 
-`UnobservedTaskException` спрацьовує, коли Task з необробленим винятком збирається GC. Це остання лінія захисту, але покладатись на неї як на основний механізм обробки помилок — погана практика.
+`UnobservedTaskException` спрацьовує, коли Task з необробленим винятком збирається GC (тому момент спрацювання непередбачуваний і в прикладі його доводиться провокувати `GC.Collect()`). Починаючи з .NET Framework 4.5, «забутий» виняток задачі за замовчуванням **не** завершує процес — подія лише дає змогу його залогувати; `SetObserved()` позначає виняток як оброблений. Натомість `AppDomain.CurrentDomain.UnhandledException` дозволяє лише залогувати необроблений виняток потоку (зокрема з `async void`) — скасувати падіння процесу він не може. Це остання лінія захисту, але покладатись на неї як на основний механізм обробки помилок — погана практика.
 
 ## Типові помилки та їх рішення
 

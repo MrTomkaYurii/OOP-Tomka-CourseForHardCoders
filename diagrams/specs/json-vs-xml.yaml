@@ -1,0 +1,62 @@
+# Лекція 19.6 «XPath та вибір між JSON і XML»
+# Оригінал: lectures/_assets/19-06/Архив/json-vs-xml.png
+id: json-vs-xml
+title: "JSON чи XML"
+subtitle: "Обидва описують дерево даних; різняться синтаксисом, типами значень і екосистемою"
+
+types: [JsonSerializer, XDocument]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "JSON"
+            kind: box_accent
+            check: skip
+            code: |
+              {
+                "id": "PT-1",
+                "age": 45,
+                "active": true,
+                "diagnoses": ["I10", "E11"]
+              }
+            notes:
+              - "типи: рядок, число, `true`/`false`, `null`,"
+              - "масив, обʼєкт; коментарів немає"
+        - box:
+            title: "XML"
+            check: skip
+            code: |
+              <patient id="PT-1" active="true">
+                <!-- типи — лише текст; схема XSD -->
+                <age>45</age>
+                <diagnoses>
+                  <diagnosis>I10</diagnosis>
+                  <diagnosis>E11</diagnosis>
+                </diagnoses>
+              </patient>
+            notes:
+              - "атрибути, коментарі, простори імен;"
+              - "масив — повторення елемента"
+
+  - panel:
+      heading: "Коли що"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["", "JSON", "XML"]
+            groups:
+              - rows:
+                  - ["типи значень",       "вбудовані: `45` — число",             "[[лише текст]]: `\"45\"` → `(int)el`"]
+                  - ["схема",              "JSON Schema (необовʼязкова)",           "XSD, валідація при читанні"]
+                  - ["запити",             "`JsonDocument`, JSONPath",               "XPath, XSLT, LINQ to XML"]
+                  - ["змішаний вміст",     "ні",                                     "так: текст і теги впереміш"]
+                  - ["медицина",           "HL7 FHIR (JSON і XML)",                  "HL7 v3, CDA, FHIR XML"]
+                  - ["за замовчуванням",   "REST API, конфіг `appsettings.json`",    "SOAP, Office Open XML, `.csproj`"]
+
+publish:
+  dark: ../lectures/_assets/19-06/json-vs-xml.png
+  bw: ../lectures/_assets/19-06/book/json-vs-xml.png

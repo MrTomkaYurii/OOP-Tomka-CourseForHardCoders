@@ -100,7 +100,7 @@ using (BinaryReader br = new BinaryReader(File.OpenRead(path), Encoding.UTF8))
     Console.WriteLine($"Пульс:         {pulse.ToString()} уд/хв");
     Console.Write($"ЕКГ ({ecgLength.ToString()} байт): ");
     foreach (byte b in ecgSample) Console.Write($"{b.ToString("X2")} ");
-    Console.WriteLine();
+    Console.WriteLine("");
     
     // Перевірка: CanRead після кінця файлу
     Console.WriteLine($"\nПрочитано до кінця: {(br.BaseStream.Position == br.BaseStream.Length).ToString()}");
@@ -129,7 +129,7 @@ using (BinaryWriter bw = new BinaryWriter(File.Create(path)))
     bw.Write(100L);         // long   — 8 байт
     bw.Write(3.14f);        // float  — 4 байти
     bw.Write(2.718281828);  // double — 8 байт
-    bw.Write('A');          // char   — 2 байти (Unicode)
+    bw.Write('A');          // char   — 1 байт (UTF-8: 'A'; кирилиця — 2)
     bw.Write("Hello");      // string — 1(len) + 5 байт
 }
 
@@ -158,7 +158,7 @@ File.Delete(path);
 | `bool` | `ReadBoolean()` | 1 байт |
 | `byte` | `ReadByte()` | 1 байт |
 | `sbyte` | `ReadSByte()` | 1 байт |
-| `char` | `ReadChar()` | 2 байти (Unicode) |
+| `char` | `ReadChar()` | 1–3 байти — за кодуванням `BinaryWriter` (UTF-8 за замовчуванням) |
 | `short` | `ReadInt16()` | 2 байти |
 | `ushort` | `ReadUInt16()` | 2 байти |
 | `int` | `ReadInt32()` | 4 байти |
@@ -178,9 +178,9 @@ using System;
 using System.IO;
 using System.Text;
 
-// Структура: id(4) + name(20) + glucose(8) + pulse(2) = 34 байти на запис
-const int RECORD_SIZE = 34;
-const int NAME_SIZE   = 20;
+// Структура: id(4) + name(32) + glucose(8) + pulse(2) = 46 байтів на запис
+const int RECORD_SIZE = 46;
+const int NAME_SIZE   = 32; // у БАЙТАХ: кирилиця в UTF-8 займає 2 байти на літеру
 
 string path = Path.Combine(Path.GetTempPath(), "vitals_index.bin");
 
@@ -200,9 +200,9 @@ using (BinaryWriter bw = new BinaryWriter(File.Create(path), Encoding.UTF8))
     {
         bw.Write(id);
         
-        // Ім'я фіксованої ширини — доповнення пробілами або обрізання
+        // Ім'я фіксованої ширини в байтах: UTF-8 байти імені, решта — нулі
         byte[] nameBytes = new byte[NAME_SIZE];
-        byte[] encoded   = Encoding.UTF8.GetBytes(name.PadRight(NAME_SIZE));
+        byte[] encoded   = Encoding.UTF8.GetBytes(name);
         Array.Copy(encoded, nameBytes, Math.Min(encoded.Length, NAME_SIZE));
         bw.Write(nameBytes);
         
@@ -220,7 +220,7 @@ using (BinaryReader br = new BinaryReader(File.OpenRead(path), Encoding.UTF8))
     br.BaseStream.Seek(offset, SeekOrigin.Begin);
     
     int    id      = br.ReadInt32();
-    string name    = Encoding.UTF8.GetString(br.ReadBytes(NAME_SIZE)).Trim();
+    string name    = Encoding.UTF8.GetString(br.ReadBytes(NAME_SIZE)).TrimEnd('\0');
     double glucose = br.ReadDouble();
     short  pulse   = br.ReadInt16();
     
@@ -237,7 +237,7 @@ using (BinaryReader br = new BinaryReader(File.OpenRead(path), Encoding.UTF8))
     for (int i = 0; i < count; i++)
     {
         int    rid    = br.ReadInt32();
-        string rname  = Encoding.UTF8.GetString(br.ReadBytes(NAME_SIZE)).Trim();
+        string rname  = Encoding.UTF8.GetString(br.ReadBytes(NAME_SIZE)).TrimEnd('\0');
         double rglu   = br.ReadDouble();
         short  rpulse = br.ReadInt16();
         string alert  = (rglu > 7.0 || rpulse > 100) ? " [!]" : "";
@@ -247,6 +247,8 @@ using (BinaryReader br = new BinaryReader(File.OpenRead(path), Encoding.UTF8))
 
 File.Delete(path);
 ```
+
+Зверніть увагу на ширину поля імені. Попередня версія цього прикладу доповнювала ім'я пробілами до 20 **символів** (`PadRight(20)`) і копіювала перші 20 **байтів** UTF-8. Для латиниці це те саме, але кожна кирилична літера в UTF-8 займає 2 байти, тож «Петренко І.О.» (30 байтів) обрізалося до «Петренко І.», а розріз міг припасти навіть на середину літери. Правило для бінарних форматів: ширину текстового поля задають у байтах, з запасом на найдовше ім'я, а невикористані байти заповнюють нулями.
 
 ## Практичний сценарій: бінарний архів ЕКГ
 

@@ -1,0 +1,60 @@
+# Лекція 10.6 «Клас ObservableCollection<T>»
+# Оригінал: lectures/_assets/10-06/Архив/observablecollection-event-flow.png
+id: observablecollection-event-flow
+title: "ObservableCollection<T>: подія на кожну зміну"
+subtitle: "Колекція сама повідомляє підписників, що змінилось; UI (WPF, MAUI) перемальовує лише змінене"
+
+types: [ObservableCollection, NotifyCollectionChangedEventArgs, NotifyCollectionChangedAction, Patient]
+
+body:
+  - panel:
+      heading: "Від виклику методу до реакції"
+      children:
+        - hchain:
+            nodes:
+              - { title: "ward.Add(p)", code: true, sub: ["будь-яка зміна"] }
+              - { title: "CollectionChanged", code: true, sub: ["подія"], kind: box_accent, via: "генерує" }
+              - { title: "(sender, e) => …", code: true, sub: ["`e.Action`, `e.NewItems`"], via: "викликає" }
+              - { title: "UI / журнал", sub: ["оновити лише змінене"], via: "" }
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Що отримує обробник у NotifyCollectionChangedEventArgs"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["виклик", "Action", "NewItems", "OldItems", "індекси"]
+                  groups:
+                    - rows:
+                        - ["ward.Add(p)",       "`Add`",     "`[p]`",   "`null`",      "`NewStartingIndex` = кінець"]
+                        - ["ward.Insert(0, p)", "`Add`",     "`[p]`",   "`null`",      "`NewStartingIndex` = 0"]
+                        - ["ward.Remove(p)",    "`Remove`",  "`null`",  "`[p]`",       "`OldStartingIndex` = де був"]
+                        - ["ward[0] = q",       "`Replace`", "`[q]`",   "`[old]`",     "обидва = 0"]
+                        - ["ward.Move(1, 0)",   "`Move`",    "`[x]`",   "`[x]`",       "старий 1 → новий 0"]
+                        - ["ward.Clear()",      "`Reset`",   "`null`",  "[[`null`]]",  "видалених не передає"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "Після `Clear()` обробник не знає, що саме видалено: `OldItems` = `null` — колекцію перечитують цілком."
+
+check:
+  usings: [System, System.Collections.Generic, System.Collections.ObjectModel, System.Collections.Specialized]
+  context: |
+    var ward = new ObservableCollection<string> { "Петренко", "Коваль" };
+    var log = new List<NotifyCollectionChangedEventArgs>();
+    ward.CollectionChanged += (s, e) => log.Add(e);
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    ward.Add("Сидоренко"); var a = log[^1];
+    Assert(a.Action == NotifyCollectionChangedAction.Add && a.OldItems == null && a.NewStartingIndex == 2, "Add");
+    ward.Insert(0, "Бойко"); Assert(log[^1].NewStartingIndex == 0, "Insert");
+    ward.Remove("Коваль"); var r = log[^1]; Assert(r.Action == NotifyCollectionChangedAction.Remove && r.NewItems == null && r.OldStartingIndex == 2, "Remove");
+    ward[0] = "Ткач"; var rp = log[^1]; Assert(rp.Action == NotifyCollectionChangedAction.Replace && (string)rp.OldItems![0]! == "Бойко" && rp.NewStartingIndex == 0 && rp.OldStartingIndex == 0, "Replace");
+    ward.Move(1, 0); var m = log[^1]; Assert(m.Action == NotifyCollectionChangedAction.Move && m.OldStartingIndex == 1 && m.NewStartingIndex == 0 && m.NewItems![0] == m.OldItems![0], "Move");
+    ward.Clear(); var c = log[^1]; Assert(c.Action == NotifyCollectionChangedAction.Reset && c.OldItems == null && c.NewItems == null, "Reset");
+
+publish:
+  dark: ../lectures/_assets/10-06/observablecollection-event-flow.png
+  bw: ../lectures/_assets/10-06/book/observablecollection-event-flow.png

@@ -322,6 +322,68 @@ class Chain(Node):
         c.model.equal_width.append([n.rect_id for n in self.nodes])
 
 
+class HChain(Node):
+    """Горизонтальний ланцюжок блоків (вузли списку, конвеєр, стани). Між сусідами —
+    стрілка вправо з підписом над нею; за `back` — ще й зворотна стрілка вліво з підписом
+    під нею (двозвʼязний список). Висоти блоків однакові, стрілки однієї довжини; зайва
+    ширина розподіляється між блоками, залишок — центрує ланцюжок."""
+
+    def __init__(self, nodes: list[Box], vias: list[Line | None], backs: list[Line | bool | None],
+                 equal=False, fwds=None):
+        self.nodes, self.vias, self.backs, self.equal = nodes, vias, backs, equal
+        self.fwds = fwds or [True] * len(nodes)   # fwds[i] = False — без стрілки вправо до nodes[i]
+
+    def _dims(self, c):
+        ws = [n.measure(c)[0] for n in self.nodes]
+        if self.equal:
+            ws = [max(ws)] * len(ws)
+        labs = [l.w(c) for l in self.vias + self.backs if isinstance(l, Line)]
+        aw = max(ARROW_MIN, snap(max(labs) + 2 * LABEL_PAD) if labs else 0)
+        lh = TYPE_SCALE["small"][1]
+        two = any(self.backs)
+        need = 2 * (lh + 4) + 16 if two else 0
+        bh = max(max(n.measure(c)[1] for n in self.nodes), snap(need))
+        return ws, aw, bh
+
+    def measure(self, c):
+        ws, aw, bh = self._dims(c)
+        return sum(ws) + aw * (len(ws) - 1), bh
+
+    def place(self, c, x, y, w, h, parent):
+        ws, aw, bh = self._dims(c)
+        n = len(ws)
+        extra = w - (sum(ws) + aw * (n - 1))
+        if extra > 0:   # зайве — пропорційно природній ширині (рівні блоки лишаються рівними)
+            tot = sum(ws)
+            ws = [v + int(extra * v / tot // GRID) * GRID for v in ws]
+        x += snap((w - (sum(ws) + aw * (n - 1))) / 2) if extra > 0 else 0
+        two = any(self.backs)
+        fy, by = (y + bh / 2 - 8, y + bh / 2 + 8) if two else (y + bh / 2, None)
+        fwd, bwd = [], []
+        prev, px = None, 0
+        for node, w_, via, back, f in zip(self.nodes, ws, self.vias, self.backs, self.fwds):
+            if prev:
+                x = px + aw
+            node.place(c, x, y, w_, bh, parent)
+            if prev:
+                if f:
+                    lid = None
+                    if via:
+                        lid = c.text(px, fy - via.lh - 2, aw, via.runs, via.style, parent, "center")
+                    fwd.append(c.edge(prev.rect_id, node.rect_id, (px, fy), (px + aw, fy),
+                                      (1, (fy - y) / bh), (0, (fy - y) / bh), lid))
+                if back:
+                    lid = None
+                    if isinstance(back, Line):
+                        lid = c.text(px, by + 2, aw, back.runs, back.style, parent, "center")
+                    bwd.append(c.edge(node.rect_id, prev.rect_id, (px + aw, by), (px, by),
+                                      (0, (by - y) / bh), (1, (by - y) / bh), lid))
+            prev, px = node, x + w_
+        if self.equal:
+            c.model.equal_width.append([n.rect_id for n in self.nodes])
+        c.model.arrow_groups += [g for g in (fwd, bwd) if g]
+
+
 class Flow(Node):
     """Ряди «блок → (підпис) → блок». Ліві блоки однакової ширини, праві — теж,
     стрілки однакової довжини, строго горизонтальні; підпис над стрілкою по центру."""
@@ -600,6 +662,23 @@ class Builder:
             if via:
                 self._check(item.get("check"), via.strip("`"))
         return Chain(nodes, vias)
+
+    def n_hchain(self, v):
+        nodes, vias, backs = [], [], []
+        for item in v["nodes"]:
+            if item.get("lines") and item.get("lines_check", "stmt") == "stmt":
+                self.cs += [normalize_line(x) for x in str(item["lines"]).rstrip("\n").split("\n")]
+            nodes.append(Box(kind=item.get("kind", "box"),
+                             title=self.line(item["title"], "boxtitle", "boxtitle", code=item.get("code", False))
+                             if item.get("title") else None,
+                             code=self.code_lines(item.get("lines")),
+                             notes=self.note_lines(item.get("sub")), valign="middle",
+                             align=v.get("align", "center")))
+            via, back = item.get("via"), item.get("back")
+            vias.append(self.line(via, "label", "small") if via else None)
+            backs.append(self.line(back, "label", "small") if isinstance(back, str) else bool(back))
+        return HChain(nodes, vias, backs, equal=v.get("equal", False),
+                      fwds=[item.get("fwd", True) for item in v["nodes"]])
 
     def n_flow(self, v):
         rows = []

@@ -1,0 +1,76 @@
+# Лекція 18.4 «StreamReader та StreamWriter»
+# Оригінал: lectures/_assets/18-04/Архив/text-stream-flow.png
+id: text-stream-flow
+title: "Текстові потоки: StreamWriter і StreamReader"
+subtitle: "Обгортка над Stream: рядки ↔ символи ↔ байти через Encoding; між ними — буфер"
+
+types: [StreamWriter, StreamReader, FileStream, Encoding, TextWriter, TextReader, StringReader, StringWriter]
+
+body:
+  - panel:
+      heading: "Запис: `sw.WriteLine(\"Петренко\")`"
+      children:
+        - hchain:
+            nodes:
+              - { title: "string", sub: ["`\"Петренко\"`"] }
+              - { title: "StreamWriter", sub: ["буфер символів"], via: "WriteLine" }
+              - { title: "Encoding.GetBytes", code: true, sub: ["UTF-8: 16 байтів"], kind: box_accent, via: "Flush" }
+              - { title: "FileStream", sub: ["буфер байтів → ОС"], via: "Write(bytes)" }
+        - text:
+            text:
+              - "Поки не було `Flush()` / `Dispose()` (або `AutoFlush = true`), рядок лежить у буфері і [[файл ще порожній]]."
+
+  - panel:
+      heading: "Читання: `sr.ReadLine()`"
+      children:
+        - hchain:
+            nodes:
+              - { title: "FileStream", sub: ["байти з файлу"] }
+              - { title: "Encoding.GetString", code: true, sub: ["BOM визначає кодування"], kind: box_accent, via: "Read(bytes)" }
+              - { title: "StreamReader", sub: ["буфер символів"], via: "" }
+              - { title: "string?", code: true, sub: ["`null` — кінець файлу"], via: "ReadLine" }
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Методи читання"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - rows:
+                        - ["ReadLine()",   "рядок без `\\n`; `null` у кінці"]
+                        - ["ReadToEnd()",  "решту файлу цілком"]
+                        - ["Read()",       "символ як `int`; `-1` у кінці"]
+                        - ["Peek()",       "наступний символ без зсуву"]
+        - panel:
+            heading: "Спільні абстракції"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - rows:
+                        - ["TextReader",   "`StreamReader`, `StringReader`"]
+                        - ["TextWriter",   "`StreamWriter`, `StringWriter`"]
+              - note:
+                  text:
+                    - "Метод з параметром `TextReader` однаково"
+                    - "читає файл і рядок у памʼяті (тести)"
+
+check:
+  usings: [System, System.IO, System.Text]
+  context: |
+    var p = Path.GetTempFileName();
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(Encoding.UTF8.GetByteCount("Петренко"), 16);
+    var sw = new StreamWriter(p); sw.WriteLine("Петренко"); Eq(new FileInfo(p).Length, 0L); sw.Dispose(); Eq(new FileInfo(p).Length > 0, true);
+    using (var sr = new StreamReader(p)) { Eq(sr.Peek(), (int)'П'); Eq(sr.ReadLine(), "Петренко"); Eq(sr.ReadLine(), (string?)null); Eq(sr.Read(), -1); }
+    Eq(typeof(TextReader).IsAssignableFrom(typeof(StringReader)), true);
+    File.Delete(p);
+
+publish:
+  dark: ../lectures/_assets/18-04/text-stream-flow.png
+  bw: ../lectures/_assets/18-04/book/text-stream-flow.png

@@ -1,0 +1,108 @@
+# Лекція 11.5 «Регулярні вирази»
+# Оригінал: lectures/_assets/11-05/Архив/regex-syntax-and-api.png
+id: regex-syntax-and-api
+title: "Регулярні вирази: синтаксис і API класу Regex"
+subtitle: "Шаблон описує форму рядка; Regex перевіряє, знаходить, витягує групи й замінює"
+
+types: [Regex, Match, MatchCollection, RegexOptions]
+
+body:
+  - panel:
+      heading: "Шаблон коду МКХ-10: `@\"^[A-Z]\\d{2}(\\.?\\d)?$\"`"
+      children:
+        - hchain:
+            nodes:
+              - { title: "^", sub: ["початок рядка"] }
+              - { title: "[A-Z]", sub: ["одна велика літера"], kind: box_accent }
+              - { title: "\\d{2}", sub: ["рівно 2 цифри"], kind: box_accent }
+              - { title: "(\\.?\\d)?", sub: ["необовʼязково: крапка?", "і ще одна цифра"] }
+              - { title: "$", sub: ["кінець рядка"] }
+        - kv:
+            check: "Eq(Regex.IsMatch({}, icd), {v});"
+            columns: ["рядок", "IsMatch", "чому"]
+            groups:
+              - rows:
+                  - ["\"I10.9\"", "`true`",  "повна форма"]
+                  - ["\"K25\"",   "`true`",  "група `(…)?` необовʼязкова"]
+                  - ["\"I109\"",  "`true`",  "крапка теж необовʼязкова — `\\.?`"]
+                  - ["\"i10\"",   "`false`", "мала літера; `IgnoreCase` — дозволив би"]
+                  - ["\"I10.\"",  "`false`", "після крапки немає цифри"]
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Синтаксис"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - heading: "символи"
+                      rows:
+                        - [".",              "будь-який, крім `\\n`"]
+                        - ["\\d  \\w  \\s",  "цифра, словесний (і кирилиця), пробіл"]
+                        - ["\\D  \\W  \\S",  "заперечення"]
+                        - ["[abc]  [A-Z]",   "один із / діапазон"]
+                        - ["\\b",            "межа слова (нульової ширини)"]
+                    - heading: "квантифікатори"
+                      rows:
+                        - ["*  +  ?",        "0+, 1+, 0 або 1 — [[жадібні]]"]
+                        - ["{3}  {2,4}",     "рівно 3 / від 2 до 4"]
+                        - ["*?  +?",         "ліниві — якомога менше"]
+                    - heading: "групи і перевірки"
+                      rows:
+                        - ["(…)  (?<icd>…)", "група / іменована група"]
+                        - ["(?=…)  (?<=…)",  "lookahead / lookbehind"]
+                        - ["a|b",            "альтернатива"]
+
+        - panel:
+            heading: "API Regex"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["виклик", "результат"]
+                  groups:
+                    - heading: "`note = \"Діаг I10.9, J45.0\"`, `code = @\"[A-Z]\\d{2}\\.?\\d?\"`"
+                      rows:
+                        - ["Regex.Match(note, code).Value",   "`\"I10.9\"` — перший збіг"]
+                        - ["Regex.Match(note, code).Index",   "`5`"]
+                        - ["Regex.Match(\"-\", code).Success", "`false`; `Value` = `\"\"`"]
+                        - ["Regex.Matches(note, code).Count", "`2`"]
+                        - ["Regex.Replace(\"+38 (067) 12\", @\"\\D\", \"\")", "`\"3806712\"`"]
+                        - ["Regex.Match(\"<b>т</b>\", \"<.+?>\").Value", "`\"<b>\"`; жадібний `<.+>` — усе"]
+                        - ["Regex.IsMatch(\"код I10.9\", @\"\\bI10\\b\")", "`true` — між `0` і `.` є межа"]
+              - box:
+                  title: "Шаблон для гарячого шляху"
+                  check: skip                       # поле класу — перевірено в types
+                  code: |
+                    static readonly Regex IcdRe =
+                        new(@"^[A-Z]\d{2}(\.?\d)?$", RegexOptions.Compiled,
+                            TimeSpan.FromSeconds(1));    // захист від зависання
+                  notes:
+                    - "Regex — потокобезпечний; з .NET 7 — ще `[GeneratedRegex]`"
+                    - "(код на етапі компіляції) і `RegexOptions.NonBacktracking`"
+
+check:
+  usings: [System, System.Text.RegularExpressions]
+  context: |
+    string icd = @"^[A-Z]\d{2}(\.?\d)?$";
+    string code = @"[A-Z]\d{2}\.?\d?";
+    string note = "Діаг I10.9, J45.0";
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(H.IcdRe.IsMatch("I10.9"), true);
+    Eq(Regex.Match("-", code).Value, "");
+    Eq(Regex.Match("<b>т</b>", "<.+>").Value, "<b>т</b>");
+    Eq(Regex.IsMatch("Іван", @"^\w+$"), true);
+
+  types: |
+    class H {
+        public static readonly Regex IcdRe =
+            new(@"^[A-Z]\d{2}(\.?\d)?$", RegexOptions.Compiled,
+                TimeSpan.FromSeconds(1));
+    }
+
+publish:
+  dark: ../lectures/_assets/11-05/regex-syntax-and-api.png
+  bw: ../lectures/_assets/11-05/book/regex-syntax-and-api.png

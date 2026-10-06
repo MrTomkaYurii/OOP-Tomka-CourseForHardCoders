@@ -1,0 +1,69 @@
+# Лекція 21.3 «Часи життя сервісів — Singleton, Scoped, Transient»
+# Оригінал: lectures/_assets/21-03/Архив/service-lifetimes-html.png
+# (HTML-генератор: lectures/_assets/diagram-generators/21-generic-host)
+id: service-lifetimes
+title: "Singleton, Scoped, Transient: скільки екземплярів і хто їх звільняє"
+subtitle: "Два scope, у кожному два запити GetService<T>(); номер — який саме екземпляр повернув контейнер (перевірено на .NET 10)"
+
+types: [AppConfiguration, ClinicUnitOfWork, PatientValidator, AppointmentService, IServiceScopeFactory, ClinicDbContext, InvalidOperationException]
+
+body:
+  - panel:
+      heading: "Які екземпляри повертає контейнер"
+      children:
+        - cells:
+            rows:
+              - caption: "Singleton · AppConfiguration"
+                cells: ["#1", "#1", "#1", "#1"]
+                kinds: [box_accent, box_muted, box_muted, box_muted]
+                top: ["scope 1", "scope 1", "scope 2", "scope 2"]
+                note: "один на контейнер"
+              - caption: "Scoped · ClinicUnitOfWork"
+                cells: ["#1", "#1", "#2", "#2"]
+                kinds: [box_accent, box_muted, box_accent, box_muted]
+                note: "один на scope"
+              - caption: "Transient · PatientValidator"
+                cells: ["#1", "#2", "#3", "#4"]
+                kinds: [box_accent, box_accent, box_accent, box_accent]
+                note: "новий щоразу"
+        - note:
+            text: ["виділено — щойно створений екземпляр; пунктир — повернуто вже наявний"]
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Хто викликає Dispose()"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["час життя", "коли звільняється"]
+                  groups:
+                    - rows:
+                        - ["Singleton", "`Dispose()` кореневого провайдера"]
+                        - ["", "[[крім]] `AddSingleton(obj)` — ваш об'єкт"]
+                        - ["Scoped", "кінець scope"]
+                        - ["Transient", "кінець scope, що його створив"]
+                        - ["", "з кореня — [[лише при зупинці]]: витік"]
+        - panel:
+            heading: "Captive dependency"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["залежність", "наслідок"]
+                  groups:
+                    - rows:
+                        - ["Singleton ← Scoped", "[[`InvalidOperationException`]]*"]
+                        - ["Singleton ← Transient", "дозволено, але стає «вічним»"]
+                        - ["Scoped з кореня", "[[`InvalidOperationException`]]*"]
+              - text:
+                  text:
+                    - "* лише з `ValidateScopes` (Development);"
+                    - "без неї — тихий баг зі спільним станом."
+                    - "Вихід: `IServiceScopeFactory.CreateScope()`."
+
+publish:
+  dark: ../lectures/_assets/21-03/service-lifetimes.png
+  bw: ../lectures/_assets/21-03/book/service-lifetimes.png

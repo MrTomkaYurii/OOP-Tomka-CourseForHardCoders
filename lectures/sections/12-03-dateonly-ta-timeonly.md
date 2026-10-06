@@ -72,7 +72,7 @@ Console.WriteLine(date.Month);      // 6
 Console.WriteLine(date.Day);        // 11
 Console.WriteLine(date.DayOfWeek);  // Thursday
 Console.WriteLine(date.DayOfYear);  // 162
-Console.WriteLine(date.DayNumber);  // 738931
+Console.WriteLine(date.DayNumber);  // 739777
 ```
 
 ### Методи DateOnly
@@ -102,7 +102,7 @@ int daysBetween = end.DayNumber - start.DayNumber; // 17
 DateOnly date = new DateOnly(2026, 6, 11);
 
 Console.WriteLine(date.ToShortDateString()); // 11.06.2026
-Console.WriteLine(date.ToLongDateString());  // 11 червня 2026 р.
+Console.WriteLine(date.ToLongDateString());  // четвер, 11 червня 2026 р.
 Console.WriteLine(date.ToString("yyyy-MM-dd")); // 2026-06-11
 
 // Комбінування з часом → DateTime
@@ -182,6 +182,9 @@ TimeOnly mid  = start.AddMinutes(30);  // 09:30
 // AddHours з переповненням через 24:00 не кидає виняток — обертається
 TimeOnly night = new TimeOnly(23, 0);
 TimeOnly next  = night.AddHours(2);    // 01:00 (наступний день)
+
+// Скільки разів перейшли через північ — через out-параметр
+TimeOnly next2 = night.AddHours(2, out int wrappedDays); // 01:00, wrappedDays = 1
 ```
 
 **`IsBetween`** — перевірка, чи потрапляє час у проміжок. Корисно для перевірки, чи прийом проводиться в межах робочого часу:
@@ -193,6 +196,8 @@ TimeOnly appoint   = new TimeOnly(10, 30);
 
 bool inWork = appoint.IsBetween(workStart, workEnd); // true
 ```
+
+Інтервал у `IsBetween` **півідкритий**: початок входить, кінець — ні. `new TimeOnly(17, 0).IsBetween(workStart, workEnd)` дає `false`, тож сусідні зміни 07:00–15:00 і 15:00–23:00 не перетинаються — рівно 15:00 належить лише другій. Якщо початок більший за кінець, інтервал вважається таким, що проходить через північ: `new TimeOnly(1, 0).IsBetween(new TimeOnly(23, 0), new TimeOnly(7, 0))` — `true` (нічна зміна).
 
 **Конвертація:**
 
@@ -248,7 +253,7 @@ foreach (var (name, birth) in patients)
 {
     int age = today.Year - birth.Year;
     if (birth > today.AddYears(-age)) age--;
-    Console.WriteLine($"{name,-22} {birth:dd.MM.yyyy,12} {age,5}");
+    Console.WriteLine($"{name,-22} {birth,12:dd.MM.yyyy} {age,5}");
 }
 
 Console.WriteLine("\n=== Розклад прийомів — комбінування DateOnly + TimeOnly ===");
@@ -268,7 +273,7 @@ foreach (var (d, t) in schedule)
 {
     bool inWork = t.IsBetween(workStart, workEnd);
     DateTime appoint = d.ToDateTime(t);
-    Console.WriteLine($"{d:dd.MM.yyyy,-14}{t:HH:mm,-8}{(inWork ? "Так" : "Ні")}");
+    Console.WriteLine($"{d,-14:dd.MM.yyyy}{t,-8:HH:mm}{(inWork ? "Так" : "Ні")}");
 }
 ```
 

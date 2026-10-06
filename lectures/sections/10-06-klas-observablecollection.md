@@ -11,7 +11,7 @@ source: "../_combined/67-klas-observablecollection.md"
 
 `List<T>`, `Queue<T>`, `Dictionary<K,V>` — всі ці колекції ефективно зберігають і організовують дані. Але жодна з них **не повідомляє** зовнішній код про те, що щось змінилось. Якщо хтось додав пацієнта до списку — UI-компонент, що відображає цей список, нічого про це не знатиме і не перемалює себе.
 
-Клас `ObservableCollection<T>` з простору імен `System.Collections.ObjectModel` вирішує саме цю задачу. За своїми методами він ідентичний `List<T>` (індексований доступ, `Add`, `Remove`, `Insert`, `Move`), але кожна зміна колекції генерує **подію `CollectionChanged`**. Будь-який підписник може відреагувати: перемалювати UI, зберегти лог, синхронізувати стан.
+Клас `ObservableCollection<T>` з простору імен `System.Collections.ObjectModel` вирішує саме цю задачу. За базовими операціями він схожий на `List<T>` (індексований доступ, `Add`, `Remove`, `Insert`, а також власний `Move`), але кожна зміна колекції генерує **подію `CollectionChanged`**. Ідентичним `List<T>` він не є: `ObservableCollection<T>` успадковується від `Collection<T>` і не має `AddRange`, `Sort`, `Find`, `FindAll`, `RemoveAll`, `BinarySearch` — їх доводиться реалізовувати циклом (кожен виклик тоді дає окрему подію) або через LINQ. Будь-який підписник може відреагувати: перемалювати UI, зберегти лог, синхронізувати стан.
 
 `ObservableCollection<T>` є базою для прив'язки даних у WPF, MAUI, Xamarin. Якщо ви прив'язуєте колекцію до `ListView` чи `DataGrid` — майже завжди потрібна саме `ObservableCollection<T>`.
 
@@ -22,6 +22,9 @@ source: "../_combined/67-klas-observablecollection.md"
 - `Action` — тип зміни: `Add`, `Remove`, `Replace`, `Move`, `Reset`.
 - `NewItems` — список доданих або нових елементів (для `Add`, `Replace`).
 - `OldItems` — список видалених або замінених елементів (для `Remove`, `Replace`).
+- `NewStartingIndex` / `OldStartingIndex` — позиції, куди додано і звідки видалено (для `Move` — обидві).
+
+Для `Move` обидва списки містять той самий переміщений елемент. Для `Reset`, який генерує `Clear()`, і `NewItems`, і `OldItems` дорівнюють `null`: обробник не дізнається, що саме видалено, і має перечитати колекцію цілком. Окрім `CollectionChanged`, колекція реалізує `INotifyPropertyChanged` і повідомляє про зміну властивостей `Count` та індексатора (`"Item[]"`) — саме на це реагує прив'язка даних у WPF/MAUI.
 
 ![ObservableCollection<T> — сповіщення про зміни](_assets/10-06/observablecollection-event-flow.png)
 
@@ -47,7 +50,7 @@ var fromInit = new ObservableCollection<string>
 
 ## Доступ до елементів та методи
 
-`ObservableCollection<T>` надає ті самі операції, що й `List<T>`:
+`ObservableCollection<T>` надає основні операції `List<T>` — індексатор, перебір, додавання й видалення:
 
 ```csharp
 var patients = new ObservableCollection<string> { "Петренко І.", "Коваль М." };

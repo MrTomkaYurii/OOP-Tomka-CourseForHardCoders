@@ -1,0 +1,84 @@
+# Лекція 18.3 «Stream та FileStream»
+# Оригінал: lectures/_assets/18-03/Архив/filemode-fileaccess.png
+id: filemode-fileaccess
+title: "FileStream: FileMode, FileAccess, FileShare"
+subtitle: "Що зробити з файлом, що дозволено нам і що дозволено іншим, поки файл відкритий"
+
+types: [FileStream, FileMode, FileAccess, FileShare, IOException, FileNotFoundException, ArgumentException]
+
+body:
+  - panel:
+      heading: "FileMode — що робити з файлом"
+      children:
+        - kv:
+            check: skip
+            columns: ["FileMode", "файл існує", "файлу немає", "позиція"]
+            groups:
+              - rows:
+                  - ["Create",       "обрізає до 0",       "створює",                 "0"]
+                  - ["CreateNew",    "`IOException`",      "створює",                 "0"]
+                  - ["Open",         "відкриває",          "`FileNotFoundException`", "0"]
+                  - ["OpenOrCreate", "відкриває",          "створює",                 "0"]
+                  - ["Truncate",     "обрізає до 0",       "`FileNotFoundException`", "0"]
+                  - ["Append",       "відкриває",          "створює",                 "[[кінець]]; лише `Write`"]
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "FileAccess — що можна нам"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["значення", "CanRead / CanWrite"]
+                  groups:
+                    - rows:
+                        - ["Read",      "`true` / `false`"]
+                        - ["Write",     "`false` / `true`"]
+                        - ["ReadWrite", "`true` / `true`"]
+              - note:
+                  text:
+                    - "`Append` + `Read` → `ArgumentException`;"
+                    - "`Create` + `Read` теж"
+        - panel:
+            heading: "FileShare — що можна іншим"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["значення", "інші можуть"]
+                  groups:
+                    - rows:
+                        - ["None",      "нічого — їм `IOException`"]
+                        - ["Read",      "читати"]
+                        - ["ReadWrite", "читати й писати"]
+                        - ["Delete",    "видаляти"]
+
+  - box:
+      title: "Повна форма"
+      kind: box_accent
+      code: |
+        using var fs = new FileStream(path, FileMode.OpenOrCreate,
+            FileAccess.ReadWrite, FileShare.Read, bufferSize: 4096);
+      notes:
+        - "`Dispose` наприкінці `using`: `Flush()` буфера в ОС і закриття; на фізичний диск гарантовано — `fs.Flush(flushToDisk: true)`"
+
+check:
+  usings: [System, System.IO]
+  context: |
+    var dir = Directory.CreateTempSubdirectory("med"); string path = Path.Combine(dir.FullName, "log.bin");
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    fs.Write(new byte[] { 1, 2, 3 }); fs.Flush(flushToDisk: true); fs.Dispose();
+    try { new FileStream(path, FileMode.CreateNew).Dispose(); Eq(0, 1); } catch (IOException) { }
+    string none = Path.Combine(dir.FullName, "none");
+    try { new FileStream(none, FileMode.Open).Dispose(); Eq(0, 1); } catch (FileNotFoundException) { }
+    try { new FileStream(none, FileMode.Truncate).Dispose(); Eq(0, 1); } catch (FileNotFoundException) { }
+    using (var a = new FileStream(path, FileMode.Append)) { Eq(a.Position, 3L); Eq(a.CanRead, false); }
+    try { new FileStream(path, FileMode.Append, FileAccess.Read).Dispose(); Eq(0, 1); } catch (ArgumentException) { }
+    try { new FileStream(path, FileMode.Create, FileAccess.Read).Dispose(); Eq(0, 1); } catch (ArgumentException) { }
+    using (var t = new FileStream(path, FileMode.Truncate)) Eq(t.Length, 0L);
+    dir.Delete(true);
+
+publish:
+  dark: ../lectures/_assets/18-03/filemode-fileaccess.png
+  bw: ../lectures/_assets/18-03/book/filemode-fileaccess.png

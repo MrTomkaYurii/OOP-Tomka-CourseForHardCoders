@@ -1,0 +1,78 @@
+# Лекція 20.4 «LSP — принцип підстановки Ліскової»
+# Оригінал: lectures/_assets/20-04/Архив/lsp-correct.png
+id: lsp-correct
+title: "LSP дотримано: кожен тип обіцяє лише те, що виконає"
+subtitle: "Читання і редагування — різні контракти; архівний запис просто не реалізує другий"
+
+types: [IMedicalRecord, IEditableMedicalRecord, ActiveRecord, ArchivedRecord]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Мінімальний контракт — для всіх"
+            kind: box_accent
+            check: skip
+            code: |
+              interface IMedicalRecord
+              {
+                  int Id { get; }
+                  int PatientId { get; }
+                  DateTime Date { get; }
+                  string GetSummary();
+              }
+        - box:
+            title: "Розширений — лише для змінюваних"
+            check: skip
+            code: |
+              interface IEditableMedicalRecord
+                  : IMedicalRecord
+              {
+                  void AddDiagnosis(string code);
+                  void UpdateNotes(string notes);
+              }
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "ActiveRecord"
+            check: skip
+            code: "class ActiveRecord : IEditableMedicalRecord"
+            notes: ["читає і редагує — виконує обидва контракти"]
+        - box:
+            title: "ArchivedRecord"
+            check: skip
+            code: "class ArchivedRecord : IMedicalRecord"
+            notes: ["лише читає — і чесно цього не приховує"]
+  - panel:
+      heading: "Клієнти просять рівно те, що їм потрібно"
+      children:
+        - kv:
+            check: skip
+            columns: ["виклик", "результат"]
+            groups:
+              - rows:
+                  - ["DisplayRecord(active)",          "✓ `ActiveRecord #1, пацієнт #101, …`"]
+                  - ["DisplayRecord(archived)",        "✓ `[АРХІВ] Хронічна гіпертонія`"]
+                  - ["EditRecord(active, \"J06.9\")",   "✓ діагноз додано"]
+                  - ["EditRecord(archived, \"I10\")",   "[[`CS1503`]] — помилка [[компіляції]], не runtime"]
+
+check:
+  usings: [System]
+  asserts: |
+    IMedicalRecord a = new ArchivedRecord();
+    if (a.GetSummary() != "[АРХІВ] Хронічна гіпертонія") throw new Exception("sum");
+    if (typeof(IEditableMedicalRecord).IsAssignableFrom(typeof(ArchivedRecord))) throw new Exception("lsp");
+    if (!typeof(IEditableMedicalRecord).IsAssignableFrom(typeof(ActiveRecord))) throw new Exception("act");
+  types: |
+    interface IMedicalRecord { string GetSummary(); }
+    interface IEditableMedicalRecord : IMedicalRecord { void AddDiagnosis(string code); }
+    class ActiveRecord : IEditableMedicalRecord { public string GetSummary() => ""; public void AddDiagnosis(string c) { } }
+    class ArchivedRecord : IMedicalRecord { public string GetSummary() => "[АРХІВ] Хронічна гіпертонія"; }
+
+publish:
+  dark: ../lectures/_assets/20-04/lsp-correct.png
+  bw: ../lectures/_assets/20-04/book/lsp-correct.png

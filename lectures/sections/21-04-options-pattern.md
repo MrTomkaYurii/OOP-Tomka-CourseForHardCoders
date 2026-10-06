@@ -94,9 +94,11 @@ class AppointmentService
 | `IOptionsSnapshot<T>` | при кожному Scoped | Scoped | перезавантаження при зміні файлу |
 | `IOptionsMonitor<T>` | реактивно (колбек) | Singleton | hot reload, повідомлення про зміни |
 
-`IOptions<T>` реєструється як Singleton: значення зчитується один раз при запуску.
+`IOptions<T>` реєструється як Singleton: значення обчислюється один раз — при першому зверненні до `.Value` — і далі не змінюється, навіть якщо файл перезавантажено.
 `IOptionsSnapshot<T>` — Scoped: якщо файл конфігурації змінився між двома HTTP-запитами, другий запит отримає нові значення.
 `IOptionsMonitor<T>` — Singleton, але надає метод `OnChange(Action<T>)` для реакції на зміни в реальному часі.
+
+Експеримент на .NET 10 (файл `appsettings.json` з `reloadOnChange: true`, значення `MaxPerDay` змінено з 20 на 50 під час роботи): `IOptions<T>.Value` і далі повертає 20; `IOptionsSnapshot<T>` у вже відкритому scope — 20, у новому scope — 50; `IOptionsMonitor<T>.CurrentValue` — одразу 50, а колбек `OnChange` отримав нове значення. Звідси й правило вибору: `IOptions` — для налаштувань, що не змінюються без перезапуску; `IOptionsSnapshot` — для Scoped-сервісів, яким потрібне узгоджене значення в межах запиту (у Singleton його ін'єктувати не можна — captive dependency); `IOptionsMonitor` — для Singleton і фонових служб, що мають реагувати на зміни. Іменовані налаштування (`Get(name)`) доступні лише через `IOptionsSnapshot` і `IOptionsMonitor`; `IOptions<T>.Value` завжди повертає варіант за замовчуванням.
 
 ## Реалізуємо Options Pattern «з нуля»
 
@@ -389,7 +391,14 @@ class Program
 Реальний `IOptions` підтримує валідацію через Data Annotations або кастомний `IValidateOptions<T>`. Це дозволяє перевірити конфігурацію при запуску і не запускати додаток з некоректними налаштуваннями:
 
 ```csharp
+// NuGet: Microsoft.Extensions.Options.DataAnnotations (для ValidateDataAnnotations)
 using System.ComponentModel.DataAnnotations;
+
+// У реєстрації:
+builder.Services.AddOptions<DatabaseOptions>()
+        .Bind(builder.Configuration.GetSection("Database"))
+        .ValidateDataAnnotations()     // перевірка через атрибути
+        .ValidateOnStart();            // перевірити під час host.StartAsync(), а не при першому .Value
 
 class DatabaseOptions
 {
@@ -400,15 +409,11 @@ class DatabaseOptions
     [Range(1, 1000)]
     public int MaxConnections { get; set; } = 10;
 }
-
-// У реєстрації:
-services.AddOptions<DatabaseOptions>()
-        .Bind(configuration.GetSection("Database"))
-        .ValidateDataAnnotations()     // перевірка через атрибути
-        .ValidateOnStart();            // викид виключення при запуску, якщо невалідно
 ```
 
-Це позволяє уникнути ситуацій, коли додаток запускається, але падає через відсутнє або некоректне значення конфігурації через кілька хвилин роботи.
+Без `ValidateOnStart()` валідація теж працює, але «ліниво»: `OptionsValidationException` вилетить лише тоді, коли хтось уперше звернеться до `.Value`, — можливо, через години роботи. З `ValidateOnStart()` той самий виняток кидає вже `host.StartAsync()` (перевірено на .NET 10 з порожньою секцією `Database`), і некоректно налаштований додаток просто не стартує.
+
+Це дозволяє уникнути ситуацій, коли додаток запускається, але падає через відсутнє або некоректне значення конфігурації через кілька хвилин роботи.
 
 ## Named Options
 

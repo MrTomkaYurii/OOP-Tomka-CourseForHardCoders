@@ -6,6 +6,7 @@ import html
 import os
 import shutil
 import subprocess
+import tempfile
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -120,6 +121,11 @@ def export(src: Path, fmt: str, out: Path, scale: int = 2):
         args += ["-s", str(scale)]
     if fmt == "pdf":
         args += ["--crop"]
-    r = subprocess.run(find_drawio() + args + [str(src)], capture_output=True, text=True, timeout=180)
-    if r.returncode != 0 or not out.exists():
-        raise RuntimeError(f"draw.io export {fmt} failed: {r.stdout}\n{r.stderr}")
+    # вивід — у тимчасовий файл, не в pipe: на Linux дочірні процеси Electron (dbus,
+    # crashpad) успадковують pipe і тримають його відкритим — communicate() зависає
+    with tempfile.TemporaryFile("w+", encoding="utf-8", errors="replace") as log:
+        rc = subprocess.run(find_drawio() + args + [str(src)], stdout=log, stderr=subprocess.STDOUT,
+                            stdin=subprocess.DEVNULL, timeout=180).returncode
+        log.seek(0)
+        if rc != 0 or not out.exists():
+            raise RuntimeError(f"draw.io export {fmt} failed: {log.read()[-2000:]}")

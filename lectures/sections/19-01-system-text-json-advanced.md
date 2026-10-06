@@ -73,7 +73,7 @@ if (root.TryGetProperty("processedAt", out JsonElement ts))
     Console.WriteLine($"\nОброблено: {ts.GetDateTimeOffset():yyyy-MM-dd HH:mm}");
 ```
 
-`JsonDocument` реалізує `IDisposable` — завжди використовуйте `using`. Внутрішньо він рентить пам'ять з пулу (`ArrayPool<byte>`), і `Dispose` повертає її назад. Без `Dispose` пам'ять буде затримана до наступного GC.
+`JsonDocument` реалізує `IDisposable` — завжди використовуйте `using`. Внутрішньо він орендує буфер із пулу (`ArrayPool<byte>`), і `Dispose` повертає його назад. Без `Dispose` збирач сміття колись звільнить пам'ять, але пул її вже не отримає, тож під навантаженням виникатимуть зайві алокації. Не менш важливо: `JsonElement`, отримані з документа, після `Dispose` стають недійсними (звернення кидає `ObjectDisposedException`) — якщо елемент потрібен довше, викличте `element.Clone()`. А для DOM, який треба **змінювати**, з .NET 6 є окреме API `JsonNode` / `JsonObject` (`System.Text.Json.Nodes`).
 
 ### TryGetProperty та перевірка типів
 
@@ -422,20 +422,12 @@ foreach (var (source, items) in summary)
 - **NativeAOT / trimming**: рефлексія несумісна з AOT-компіляцією та агресивним видаленням невикористаного коду
 - **Розмір застосунку**: рефлексивний код не trimmed компілятором
 
-**JSON Source Generators** (.NET 6+) вирішують усе це: ви оголошуєте `JsonSerializerContext` — і компілятор генерує весь серіалізаційний код на **етапі компіляції**, без рефлексії під час виконання.
+**JSON Source Generators** (.NET 6+; у файлових застосунках .NET 10 з увімкненим AOT — фактично єдиний спосіб, розділ 18.6) вирішують усе це: ви оголошуєте `JsonSerializerContext` — і компілятор генерує весь серіалізаційний код на **етапі компіляції**, без рефлексії під час виконання.
 
 ```csharp run
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-// Налаштовуємо Source Generator для наших типів
-[JsonSerializable(typeof(PatientRecord))]
-[JsonSerializable(typeof(DiagnosisEntry))]
-[JsonSourceGenerationOptions(
-    WriteIndented = true,
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-partial class MedicalJsonContext : JsonSerializerContext { }
 
 // Використання: замість JsonSerializer.Serialize(obj) →
 //                         JsonSerializer.Serialize(obj, context.TypeName)
@@ -463,6 +455,14 @@ Console.WriteLine($"\n=== Parsed back ===");
 Console.WriteLine($"ID: {parsed?.PatientId}, Вік: {parsed?.Age}");
 Console.WriteLine($"Діагнозів: {parsed?.Diagnoses?.Length ?? 0}");
 
+// Налаштовуємо Source Generator для наших типів (оголошення типів — після top-level коду)
+[JsonSerializable(typeof(PatientRecord))]
+[JsonSerializable(typeof(DiagnosisEntry))]
+[JsonSourceGenerationOptions(
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+partial class MedicalJsonContext : JsonSerializerContext { }
+
 class PatientRecord
 {
     public string  PatientId { get; set; } = "";
@@ -483,7 +483,7 @@ class DiagnosisEntry
 | Режим | Продуктивність | NativeAOT | Зручність |
 |-------|--------------|-----------|----------|
 | Reflection (за замовчуванням) | Помірна | ✗ | ★★★★★ |
-| Source Generators | **Швидший** (~2–3x) | ✓ | ★★★★ |
+| Source Generators | **Швидший** (передусім старт: немає рефлексії при першому виклику; виграш залежить від типу) | ✓ | ★★★★ |
 
 Для нових проектів на .NET 7+ та особливо для AOT-сценаріїв (мобільні застосунки, мікросервіси з швидким стартом) рекомендується Source Generators.
 
@@ -496,26 +496,27 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-// === НЕБЕЗПЕЧНО: масовий запис через JsonInclude ===
-// JsonInclude відкриває ВСІ поля для серіалізації/десеріалізації,
-// включно з внутрішніми (IsAdmin, PasswordHash тощо)
+// Вхідний JSON від клієнта — зловмисник додав поле isAdmin
+var web = new JsonSerializerOptions(JsonSerializerDefaults.Web); // camelCase, без урахування регістру
 
+// === НЕБЕЗПЕЧНО: десеріалізуємо запит прямо в доменну модель ===
+string maliciousJson = """{"name":"Петренко","isAdmin":true}""";
+var user = JsonSerializer.Deserialize<DangerousUser>(maliciousJson, web)!;
+Console.WriteLine($"Ім'я: {user.Name}, IsAdmin: {user.IsAdmin}"); // True — КРИТИЧНА УРАЗЛИВІСТЬ!
+
+// === ПРАВИЛЬНО: окремий вхідний DTO без полів безпеки ===
+string safeJson = """{"fullName":"Коваль Марія","age":45,"isAdmin":true}""";
+var request = JsonSerializer.Deserialize<CreatePatientRequest>(safeJson, web)!;
+Console.WriteLine($"\nБезпечно: {request.FullName}, {request.Age.ToString()}р. (isAdmin просто нікуди записати)");
+
+// Доменна модель: будь-яка публічна властивість із set заповнюється з JSON
 class DangerousUser
 {
     public string Name { get; set; } = "";
-    
-    [JsonInclude]
-    public bool IsAdmin { get; set; } = false; // ← зловмисник може передати "isAdmin": true!
-    
-    [JsonInclude]  
-    public string PasswordHash { get; set; } = ""; // ← витік хешу паролю
+    public bool IsAdmin { get; set; } = false;      // ← зловмисник може передати "isAdmin": true
+    public string PasswordHash { get; set; } = "";  // ← і підмінити хеш пароля
 }
 
-string maliciousJson = """{"name":"Петренко","isAdmin":true,"passwordHash":"evil_hash"}""";
-var user = JsonSerializer.Deserialize<DangerousUser>(maliciousJson)!;
-Console.WriteLine($"Ім'я: {user.Name}, IsAdmin: {user.IsAdmin}"); // IsAdmin = true — КРИТИЧНА УРАЗЛИВІСТЬ!
-
-// === ПРАВИЛЬНО: використовуйте окремі DTO для вхідних/вихідних даних ===
 class CreatePatientRequest
 {
     public string FullName { get; init; } = "";
@@ -529,14 +530,12 @@ class PatientResponse
     public string FullName  { get; init; } = "";
     // PasswordHash, internal fields — НЕМА у вихідному DTO
 }
-
-string safeJson = """{"fullName":"Коваль Марія","age":45,"isAdmin":true}""";
-var request = JsonSerializer.Deserialize<CreatePatientRequest>(safeJson)!;
-Console.WriteLine($"\nБезпечно: {request.FullName}, {request.Age}р. (IsAdmin ігнорується)");
 ```
 
 Правила безпечної десеріалізації:
 - **Окремі DTO** для вхідних і вихідних даних — `Request` не містить полів безпеки, `Response` не містить внутрішніх полів
 - **`[JsonIgnore]`** для полів, що ніколи не мають надходити від клієнта
+
+Зверніть увагу: уразливість виникає не через якийсь «небезпечний» атрибут, а сама собою — `JsonSerializer` заповнює **будь-яку** публічну властивість із сеттером, ім'я якої збігається з полем JSON (а з `JsonSerializerDefaults.Web`, як в ASP.NET Core, — ще й без урахування регістру). Атрибут `[JsonInclude]` на публічній властивості нічого не змінює: він потрібен лише для полів і властивостей з непублічним сеттером. Попередня версія прикладу позначала `IsAdmin` атрибутом `[JsonInclude]` і читала JSON без опцій — через чутливість до регістру `"isAdmin"` взагалі не потрапляв у `IsAdmin`, тож приклад виводив `False` і уразливості не демонстрував.
 - **Валідація після десеріалізації**: перевіряйте діапазони значень, обов'язкові поля, допустимі enum-значення
 - **`MaxDepth`** у `JsonSerializerOptions` обмежує глибину вкладеності (захист від атак через переповнення стека)

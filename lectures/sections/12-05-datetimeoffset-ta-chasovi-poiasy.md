@@ -98,10 +98,10 @@ else
 using System;
 
 // Поточний час зі зсувом Local
-DateTimeOffset now = DateTimeOffset.Now;        // Kind=Local + offset
+DateTimeOffset now = DateTimeOffset.Now;        // локальний час + зсув поясу сервера
 DateTimeOffset utc = DateTimeOffset.UtcNow;     // UTC, offset = +00:00
 
-// Явно задати: час 14:30 з зсувом +02:00 (Київ, зима)
+// Явно задати: час 14:30 зі зсувом +03:00 (Київ, літо)
 DateTimeOffset appointment = new DateTimeOffset(
     2026, 6, 11, 14, 30, 0,
     TimeSpan.FromHours(3)); // літній час UTC+3
@@ -113,6 +113,8 @@ DateTimeOffset dto = new DateTimeOffset(dt, off);
 
 Console.WriteLine(appointment); // 11.06.2026 14:30:00 +03:00
 ```
+
+У `DateTimeOffset` немає властивості `Kind` — замість неї є явний зсув `Offset`. Конструктор `new DateTimeOffset(dt, offset)` перевіряє узгодженість: якщо `dt.Kind == DateTimeKind.Utc`, зсув мусить бути нульовим, а для `Local` — дорівнювати зсуву поясу сервера; інакше — `ArgumentException`.
 
 ### Властивості DateTimeOffset
 
@@ -141,7 +143,10 @@ DateTimeOffset kyiv   = new DateTimeOffset(2026, 6, 11, 14, 30, 0, TimeSpan.From
 DateTimeOffset london = new DateTimeOffset(2026, 6, 11, 11, 30, 0, TimeSpan.FromHours(0));
 
 Console.WriteLine(kyiv == london); // true — той самий момент у UTC
+Console.WriteLine(kyiv.EqualsExact(london)); // false — момент той самий, але зсуви різні
 ```
+
+Якщо ж потрібно, щоб збігалися і момент, і зсув (наприклад, перевірка, що запис не «переїхав» в інший пояс), використовують метод `EqualsExact`.
 
 Саме це робить `DateTimeOffset` надійним для зберігання в базі даних: порівняння дат між записами з різних серверів дає коректний результат.
 
@@ -158,17 +163,19 @@ Console.WriteLine(local.DisplayName); // (UTC+02:00) Helsinkі, Kyiv, Riga, Sofi
 TimeZoneInfo utcZone = TimeZoneInfo.Utc;
 
 // Конкретний пояс за ID (крос-платформений ID IANA або Windows ID)
-TimeZoneInfo kyivTz = TimeZoneInfo.FindSystemTimeZoneById("FLE Standard Time"); // Windows
-// або "Europe/Kiev" на Linux/macOS
+TimeZoneInfo kyivTz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Kyiv"); // IANA
+// Windows-ID: "FLE Standard Time"
 ```
+
+Ідентифікатори поясів бувають двох видів: Windows-ID (`"FLE Standard Time"`) і IANA-ID (`"Europe/Kyiv"`). Починаючи з .NET 6, обидва види працюють на всіх платформах: .NET сам перетворює один на інший за допомогою даних ICU. Але є нюанс із Києвом: 2022 року база IANA перейменувала `Europe/Kiev` на `Europe/Kyiv`, а сучасні дистрибутиви Linux (наприклад, Ubuntu 24.04) постачають старі назви лише в окремому пакеті `tzdata-legacy`. Без нього і `"Europe/Kiev"`, і `"FLE Standard Time"` (який відображається саме на стару назву) кидають `TimeZoneNotFoundException`. Надійний вибір — `"Europe/Kyiv"`, а для коду, що має працювати будь-де, — `TimeZoneInfo.TryFindSystemTimeZoneById` (.NET 8+) із запасним варіантом.
 
 ### Конвертація між поясами
 
 ```csharp
 DateTime utcTime = new DateTime(2026, 6, 11, 11, 30, 0, DateTimeKind.Utc);
 
-TimeZoneInfo kyivTz   = TimeZoneInfo.FindSystemTimeZoneById("FLE Standard Time");
-TimeZoneInfo berlinTz = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+TimeZoneInfo kyivTz   = TimeZoneInfo.FindSystemTimeZoneById("Europe/Kyiv");
+TimeZoneInfo berlinTz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Berlin");
 
 DateTime kyivTime   = TimeZoneInfo.ConvertTimeFromUtc(utcTime, kyivTz);
 DateTime berlinTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, berlinTz);
@@ -183,7 +190,7 @@ Console.WriteLine($"Берлін: {berlinTime:HH:mm}"); // 13:30 (UTC+2)
 `TimeZoneInfo` автоматично враховує перехід на літній і зимовий час (DST — Daylight Saving Time). Метод `IsDaylightSavingTime(dt)` дозволяє перевірити, чи діє в даний момент літній час:
 
 ```csharp
-TimeZoneInfo kyivTz = TimeZoneInfo.FindSystemTimeZoneById("FLE Standard Time");
+TimeZoneInfo kyivTz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Kyiv");
 
 DateTime summer = new DateTime(2026, 7, 1);   // літо — UTC+3
 DateTime winter = new DateTime(2026, 12, 1);  // зима — UTC+2
@@ -200,7 +207,7 @@ Console.WriteLine($"Зима offset: {kyivTz.GetUtcOffset(winter)}"); // +02:00
 
 1. **Зберігати у БД UTC або DateTimeOffset.UtcNow** — ніколи `DateTime.Now`, оскільки локальний час залежить від сервера і може дати неправильний порядок подій при міграції або масштабуванні.
 
-2. **Для аудит-журналів** (коли пацієнт надійшов, коли прийнятий лікар) — `DateTimeOffset.UtcNow`, оскільки він зберігає і UTC-значення і локальний offset.
+2. **Для аудит-журналів** (коли пацієнт надійшов, коли прийнятий лікар) — `DateTimeOffset`. Якщо важливий лише момент — `DateTimeOffset.UtcNow` (зсув завжди `+00:00`); якщо потрібно знати ще й місцевий час події — `DateTimeOffset.Now`, який зберігає зсув поясу, де подію зафіксовано.
 
 3. **Для парсингу вводу від користувача** — завжди `TryParseExact` з явно вказаним форматом і `CultureInfo.InvariantCulture`.
 
@@ -266,7 +273,7 @@ Console.WriteLine(new string('-', 55));
 for (int i = 0; i < eventTimes.Length; i++)
 {
     DateTimeOffset ev = eventTimes[i];
-    Console.WriteLine($"{eventLabels[i],-22} {ev.DateTime:HH:mm,10} {ev.UtcDateTime:HH:mm,8}  {ev.Offset:hh\\:mm}");
+    Console.WriteLine($"{eventLabels[i],-22} {ev.DateTime,10:HH:mm} {ev.UtcDateTime,8:HH:mm}  {ev.ToString("zzz")}");
 }
 
 Console.WriteLine("\n=== UTC-момент: порівняння між поясами ===");

@@ -1,0 +1,98 @@
+# Лекція 16.4 «Клас Parallel»
+# Оригінал: lectures/_assets/16-04/Архив/parallel-vs-sequential.png
+id: parallel-vs-sequential
+title: "Послідовно чи Parallel: чотири обстеження"
+subtitle: "Незалежні дії Parallel виконує на кількох потоках пулу; загальний час — найдовша дія, а не сума"
+
+types: [Parallel, ParallelLoopState, ParallelLoopResult, ParallelOptions, AggregateException]
+
+body:
+  - panel:
+      heading: "Послідовно — 1150 мс"
+      children:
+        - hchain:
+            nodes:
+              - { title: "кров", sub: ["300 мс"] }
+              - { title: "ЕКГ", sub: ["250 мс"] }
+              - { title: "рентген", sub: ["400 мс"] }
+              - { title: "УЗД", sub: ["200 мс"] }
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Parallel.Invoke(Blood, Ecg, XRay, Ultrasound) — ≈ 400 мс, ×2,9"
+            children:
+              - cells:
+                  rows:
+                    - caption: "кров"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box, box, box_muted, box_muted]
+                      top: ["0", "50", "100", "150", "200", "250", "300", "350"]
+                    - caption: "ЕКГ"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box, box_muted, box_muted, box_muted]
+                    - caption: "рентген"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box_accent, box_accent, box_accent, box_accent, box_accent, box_accent, box_accent, box_accent]
+                      note: "найдовша дія = загальний час"
+                    - caption: "УЗД"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box_muted, box_muted, box_muted, box_muted]
+              - text:
+                  text:
+                    - "Рядки — потоки пулу (і [[сам викликаючий потік]]),"
+                    - "а не закріплені ядра; `Invoke` повертається,"
+                    - "коли завершились усі дії."
+        - panel:
+            heading: "Коли не прискорює"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["дуже коротке тіло",       "планування дорожче за роботу"]
+                        - ["спільний стан + `lock`",  "ітерації стають у чергу"]
+                        - ["залежність від попередньої", "паралелити нічого"]
+                        - ["очікування I/O",          "краще `async`/`await` (розд. 17)"]
+                    - heading: "і ще"
+                      rows:
+                        - ["дій більше, ніж ядер",    "вони чергуються на потоках"]
+                        - ["порядок виконання",       "[[не гарантується]]"]
+                        - ["`Thread.Sleep` у прикладах", "лише імітація роботи —"]
+                        - ["",                        "ядро в цей час не зайняте"]
+
+  - panel:
+      heading: "Parallel.For / ForEach: керування"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["виклик", "результат"]
+            groups:
+              - rows:
+                  - ["`state.Break()` на i = 30",  "ітерації < 30 доробляться; `LowestBreakIteration` = 30"]
+                  - ["`state.Stop()`",             "зупинка якнайшвидше; `LowestBreakIteration` = `null`"]
+                  - ["обидва",                     "`ParallelLoopResult.IsCompleted` = `false`"]
+                  - ["`MaxDegreeOfParallelism = 2`", "не більше 2 ітерацій одночасно; −1 — без обмежень"]
+                  - ["виняток в ітераціях",        "[[усі]] збираються в `AggregateException`"]
+
+check:
+  usings: [System, System.Threading, System.Threading.Tasks]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var sw = System.Diagnostics.Stopwatch.StartNew();
+    Parallel.Invoke(() => Thread.Sleep(300), () => Thread.Sleep(250), () => Thread.Sleep(400), () => Thread.Sleep(200));
+    Eq(sw.ElapsedMilliseconds < 1000, true);
+    var r = Parallel.For(0, 100, (i, s) => { if (i == 30) s.Break(); }); Eq(r.IsCompleted, false); Eq(r.LowestBreakIteration, (long?)30);
+    var r2 = Parallel.For(0, 100, (i, s) => { if (i == 30) s.Stop(); }); Eq(r2.IsCompleted, false); Eq(r2.LowestBreakIteration, (long?)null);
+    Eq(new ParallelOptions().MaxDegreeOfParallelism, -1);
+    try { Parallel.For(0, 10, i => { if (i % 3 == 0) throw new InvalidOperationException(); }); } catch (AggregateException e) { Eq(e.InnerExceptions.Count >= 1, true); }
+    int main = Environment.CurrentManagedThreadId; bool usedMain = false;
+    Parallel.For(0, 20, i => { if (Environment.CurrentManagedThreadId == main) usedMain = true; Thread.Sleep(5); }); Eq(usedMain, true);
+
+publish:
+  dark: ../lectures/_assets/16-04/parallel-vs-sequential.png
+  bw: ../lectures/_assets/16-04/book/parallel-vs-sequential.png

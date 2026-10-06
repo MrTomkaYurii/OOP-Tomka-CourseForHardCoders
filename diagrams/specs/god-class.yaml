@@ -1,0 +1,45 @@
+# Лекція 20.1 «Вступ до SOLID»
+# Оригінал: lectures/_assets/20-01/Архив/god-class.png
+id: god-class
+title: "God Class: ClinicManager знає все"
+subtitle: "Один клас — шість незалежних причин для зміни; будь-яка правка ризикує зачепити решту"
+
+types: [ClinicManager, List, DateTime]
+
+body:
+  - panel:
+      heading: "class ClinicManager — 800+ рядків у реальному проєкті"
+      children:
+        - kv:
+            check: skip
+            columns: ["методи", "відповідальність", "хто вимагає змін"]
+            groups:
+              - rows:
+                  - ["AddPatient, RemovePatient, AddDoctor", "дані пацієнтів і лікарів", "реєстратура"]
+                  - ["BookAppointment",                      "розклад прийомів",         "завідувач відділення"]
+                  - ["SendEmailNotification",                "сповіщення",               "«тепер SMS замість email»"]
+                  - ["SaveToFile",                           "зберігання",               "«переходимо на базу даних»"]
+                  - ["GenerateReport",                       "звіти",                    "МОЗ змінило формат"]
+                  - ["CalculateBilling",                     "рахунки",                  "бухгалтерія, нові тарифи"]
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            kind: box_accent
+            title: "Чому це погано"
+            notes:
+              - "тест бронювання тягне SMTP і файлову систему;"
+              - "бронювання не перевикористати без усього класу;"
+              - "шість людей правлять один файл — конфлікти злиття"
+        - box:
+            title: "Звідки береться"
+            notes:
+              - "«тут уже є доступ до даних — допишу сюди»;"
+              - "кожна правка мала, сума — [[технічний борг]];"
+              - "лікування — SRP (20.2): клас на одну причину"
+
+publish:
+  dark: ../lectures/_assets/20-01/god-class.png
+  bw: ../lectures/_assets/20-01/book/god-class.png
