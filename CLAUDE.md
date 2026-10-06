@@ -17,7 +17,7 @@ dark → `lectures/_assets/NN-NN/`, bw → `…/book/`, оригінал і ст
 Старий підхід (PNG через PIL-скрипт у теці розділу) більше не використовується.
 
 Linux / хмара: перед першим запуском `bash diagrams/setup-linux.sh`. Готовий промпт для
-хмарної сесії «рисунки одного розділу» — `diagrams/CLOUD_PROMPT.md`.
+хмарної сесії (рисунки розділів 10–21, відновлюваний) — `diagrams/CLOUD_PROMPT.md`.
 
 ## Лекції (`lectures/sections/*.md`)
 
