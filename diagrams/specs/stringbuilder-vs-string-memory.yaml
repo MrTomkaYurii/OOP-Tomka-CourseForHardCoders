@@ -11,7 +11,7 @@ body:
       gap: 24
       children:
         - panel:
-            heading: "string s = \"\"; s += x — у циклі"
+            heading: "`string s = \"\"; s += x` — у циклі"
             children:
               - cells:
                   rows:
