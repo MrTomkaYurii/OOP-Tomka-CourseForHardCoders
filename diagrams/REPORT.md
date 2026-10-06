@@ -383,3 +383,49 @@ Electron тримали pipe відкритим); `setup-linux.sh` ставит�
 | 17.6 | «продюсер і споживач можуть мати різну швидкість» | генератор чекає на споживача (pull); незалежний темп — `Channel<T>`; `DisposeAsync`, LINQ у .NET 10 |
 
 Усі 41 повний приклад розділу запущено — ✓.
+
+
+---
+
+# Розділ 18 «Робота з файлами»
+
+12 схем перероблено пайплайном `diagrams/`; старі PNG — у `Архив/`. Ще 6 PNG у теках 18-03…18-05, на які лекції не
+посилаються (`directory-traversal`, `file-operations`, `filestream-overview`, `stream-hierarchy`, `buffering-flow`,
+`try-with-resources` — остання навіть з Java-термінологією), перенесено в `Архив/` без перемальовування.
+
+| § | Схема | Що було не так на старій схемі |
+|---|-------|-------------------------------|
+| 18.1 | `static-classes-overview` | нижній ряд плашок скопійовано зі схеми 17.2 («Тільки обробники подій (EventHandler)», «Hot path…») — до файлової системи не стосується; не показано пасток Path.Combine з абсолютною частиною, Directory.Delete без recursive, поведінки File.Delete. |
+| 18.1 | `path-anatomy` | усі написи англійською; не показано, що результат Path залежить від ОС (на Linux «C:\…» — просто імʼя файлу), що GetExtension повертає крапку і "" без розширення; AltDirectorySeparatorChar подано як «cross-platform» (на Linux обидва — /). |
+| 18.2 | `static-vs-instance` | «перевірка прав доступу ONE TIME / при кожному виклику» — це опис CAS-перевірок .NET Framework, у .NET Core/5+ їх немає; File.Exists подано як «відкрити → перевірити → закрити» (файл не відкривається). Реальна різниця — кеш метаданих і Refresh(), показано на перевіреному прикладі. |
+| 18.2 | `fileinfo-properties` | нижній ряд плашок знову скопійовано зі схеми 17.2 (EventHandler, Hot path…); Extension віднесено лише до FileInfo, хоча вона в FileSystemInfo; не сказано, що Parent кореня — null. |
+| 18.3 | `stream-class-hierarchy` | StreamReader/BinaryReader не розмежовано зі Stream (часта плутанина — вони не нащадки); не сказано, що непідтримувана операція кидає NotSupportedException; декоратори GZip/Crypto не мають CanSeek; «using гарантує Flush()+Close()» без уточнення, що Flush пише в ОС, а не на диск. |
+| 18.3 | `filemode-fileaccess` | нижній ряд плашок знову скопійовано зі схеми 17.2; не показано, що Append дозволяє лише Write (Append/Create + Read → ArgumentException); бракувало Flush(flushToDisk: true). |
+| 18.4 | `text-stream-flow` | Flush()/Dispose() показано після «file.txt» — насправді саме Flush переносить дані з буфера у файл; місце Encoding (між буфером символів і байтовим потоком) не показано; бракувало TextReader/TextWriter і повернення null у кінці. |
+| 18.4 | `encoding-comparison` | «UTF-16: фіксовані 2 байти» суперечить сусідній клітинці з сурогатною парою; не показано BOM — а лекція помилково стверджує, що Encoding.UTF8 пише без BOM (насправді 3 байти EF BB BF при явній передачі); Windows-1251 потребує CodePages. |
+| 18.5 | `binary-vs-text-storage` | лише абстрактні «плюси/мінуси» без жодного реального байта; приклад «07 00 00 00 …» без пояснення порядку байтів. Тепер — ті самі значення в тексті й побайтово (little-endian), перевірено. |
+| 18.5 | `binary-record-layout` | розкладка PatientRecord (17 + N байтів) не відповідала коду лекції (id + name[20] + glucose + pulse = 34 байти) і була змінної довжини — Seek за O(1) з нею неможливий; не показано формулу зсуву. |
+| 18.6 | `json-serialization-flow` | загальний цикл без жодного реального JSON; не показано, що імена за замовчуванням — як у C# (PascalCase), null пишеться, enum — число, читання чутливе до регістру. Тепер — перевірений вихід із опціями і без. |
+| 18.6 | `json-attributes` | [JsonInclude] описано як «non-public setter/property» без поля; немає [JsonRequired]/[JsonPropertyOrder] і їхньої поведінки; не показано результату серіалізації. |
+
+Перевірено в `asserts`: поведінка `Path` на Linux, `File.Delete`/`Directory.Delete`, кеш `FileInfo` і `Refresh`,
+усі `FileMode` та заборонені комбінації з `FileAccess`, `CanSeek` декораторів, розміри UTF-8/UTF-16 і BOM, побайтовий
+вміст `BinaryWriter` (little-endian), розміри `char`/`decimal`/`string`, вихід `JsonSerializer` з опціями й атрибутами.
+
+**Виправлено в тексті лекцій 18.x:**
+
+| § | Було | Стало |
+|---|------|-------|
+| 18.1 | `File` — «атомарні операції» | самодостатні, але не атомарні; атомарна заміна — `File.Move(…, overwrite)`/`File.Replace` |
+| 18.2 | `FileInfo` — «одноразова авторизація, права перевіряються один раз» | це CAS .NET Framework; у .NET Core права перевіряє ОС при кожному відкритті; реальна перевага — кеш метаданих |
+| 18.3 | runnable-приклад копіювання падав з `IOException` (`using var` тримав файл відкритим) | `using`-блоки + пояснення про `FileShare.Read` і незакритий буфер |
+| 18.3 | `Flush()` «гарантує запис на фізичний диск» | лише в ОС; на носій — `Flush(flushToDisk: true)` |
+| 18.4 | «`Encoding.UTF8` у .NET 5+ не додає BOM» | явний `Encoding.UTF8` пише BOM (`EF BB BF`); без BOM — без кодування або `new UTF8Encoding(false)` |
+| 18.5 | `char` у `BinaryWriter` — «2 байти (Unicode)» | 1–3 байти за кодуванням (UTF-8) |
+| 18.5 | запис з іменем `PadRight(20)` символів → 20 байтів: «Петренко І.О.» обрізалось до «Петренко І.» | поле 32 байти, нулі, `TrimEnd('\0')`; пояснено ширину в байтах |
+| 18.6 | `System.Text.Json` «у .NET 5+» | з .NET Core 3.0; поведінка за замовчуванням (PascalCase, null, enum-число, регістр, `\u`-екранування) |
+| 18.6 | — | у файлових застосунках .NET 10 рефлексійна серіалізація вимкнена (AOT) — `#:property PublishAot=false` |
+
+Усі 48 повних прикладів розділу запущено — ✓ (приклади з JSON — з `#:property PublishAot=false`, як пояснено в 18.6).
+
+Генератор: токенізатор C# підсвічує raw-рядки `"""…"""` (C# 11) цілим рядком.

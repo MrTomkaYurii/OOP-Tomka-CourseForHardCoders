@@ -156,7 +156,7 @@ Console.WriteLine($"Вміст файлу:\n{content}");
 File.Delete(path);
 ```
 
-`Flush()` гарантує, що буферизовані дані записані на фізичний диск. Для критичних даних (медичні журнали, транзакції) — викликайте `Flush()` після кожного запису. При звичайних ситуаціях `using` / `Dispose` автоматично виконає `Flush` і `Close`.
+`Flush()` передає вміст внутрішнього буфера `FileStream` операційній системі — після цього дані переживуть аварійне завершення **програми**. Але ОС теж кешує записи в пам'яті, тож при збої живлення вони ще можуть загубитися. Гарантію запису на фізичний носій дає лише перевантаження `Flush(flushToDisk: true)` — воно повільніше, бо чекає на диск. Для критичних даних (медичні журнали, транзакції) — викликайте `Flush()` після кожного запису. При звичайних ситуаціях `using` / `Dispose` автоматично виконає `Flush` і `Close`.
 
 ### Паралельний доступ: FileShare
 
@@ -227,28 +227,34 @@ const int BUFFER_SIZE = 4096;
 byte[] buffer = new byte[BUFFER_SIZE];
 int totalCopied = 0;
 
-using FileStream src = File.OpenRead(srcPath);
-using FileStream dst = File.Create(dstPath);
-
-int bytesRead;
-while ((bytesRead = src.Read(buffer, 0, buffer.Length)) > 0)
+// using-блоки: файли закриються одразу після копіювання — до перевірки й повторного відкриття
+using (FileStream src = File.OpenRead(srcPath))
+using (FileStream dst = File.Create(dstPath))
 {
-    dst.Write(buffer, 0, bytesRead);
-    totalCopied += bytesRead;
+    int bytesRead;
+    while ((bytesRead = src.Read(buffer, 0, buffer.Length)) > 0)
+    {
+        dst.Write(buffer, 0, bytesRead);
+        totalCopied += bytesRead;
+    }
 }
 
 Console.WriteLine($"Скопійовано: {totalCopied.ToString()} байт");
 Console.WriteLine($"Файли ідентичні: {(new FileInfo(dstPath).Length == srcFi.Length).ToString()}");
 
 // Альтернатива: Stream.CopyTo — вбудований метод копіювання між потоками
-using FileStream src2 = File.OpenRead(srcPath);
-using FileStream dst2 = File.Create(dstPath);
-src2.CopyTo(dst2, bufferSize: 4096);
+using (FileStream src2 = File.OpenRead(srcPath))
+using (FileStream dst2 = File.Create(dstPath))
+{
+    src2.CopyTo(dst2, bufferSize: 4096);
+}
 Console.WriteLine("CopyTo: теж по шматках, теж ефективно");
 
 File.Delete(srcPath);
 File.Delete(dstPath);
 ```
+
+Зверніть увагу на `using`-блоки у прикладі. Оголошення `using FileStream dst = ...;` (без фігурних дужок) закриває потік лише в кінці всього методу. Якби тут стояли такі оголошення, спроба вдруге відкрити `dstPath` через `File.Create` завершилась би `IOException` («файл використовується іншим процесом»): `FileStream` за замовчуванням відкривається з `FileShare.Read`, тобто іншим дозволено лише читати. До того ж перевірка довжини незакритого файлу могла б показати не всі байти — частина ще лежала б у буфері. Тому потоки, з якими робота завершена, закривайте одразу — блоком `using (...) { }`.
 
 `Stream.CopyTo(Stream destination, int bufferSize)` — вбудований метод для копіювання між будь-якими потоками: з файлу у файл, з файлу у мережу, з HTTP-відповіді у файл. Внутрішньо він теж читає по шматках вказаного розміру.
 

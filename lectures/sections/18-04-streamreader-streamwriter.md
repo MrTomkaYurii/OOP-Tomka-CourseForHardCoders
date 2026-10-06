@@ -29,7 +29,7 @@ using System.Text;
 string path = Path.Combine(Path.GetTempPath(), "patient_log.txt");
 
 // Варіант 1: конструктор з рядком шляху (автоматично створює FileStream)
-// Encoding.UTF8 — без BOM (Byte Order Mark). Для UTF-8 з BOM: new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)
+// Encoding.UTF8 передано явно — файл почнеться з BOM (EF BB BF). Без BOM: new UTF8Encoding(false)
 using (StreamWriter sw = new StreamWriter(path, append: false, encoding: Encoding.UTF8))
 {
     sw.WriteLine("=== Журнал прийомів пацієнтів ===");
@@ -127,7 +127,7 @@ foreach (string p in new[] { utf8Path, utf16Path, asciiPath })
     File.Delete(p);
 ```
 
-**Рекомендація для нових застосунків**: завжди використовуйте `Encoding.UTF8` — це стандарт де-факто для текстових файлів у сучасних системах. `Encoding.UTF8` у .NET 5+ не додає BOM (Byte Order Mark) за замовчуванням, що сумісно з усіма платформами.
+**Рекомендація для нових застосунків**: використовуйте UTF-8 — це стандарт де-факто для текстових файлів у сучасних системах. Тут є тонкість щодо BOM (Byte Order Mark — мітки кодування на початку файлу). Якщо кодування **не вказано** (`new StreamWriter(path)`, `File.WriteAllText(path, text)`), .NET пише UTF-8 **без** BOM. Але статична властивість `Encoding.UTF8` має преамбулу, тож при явній передачі `Encoding.UTF8` у `StreamWriter` чи `File.WriteAllText` файл почнеться з трьох байтів `EF BB BF`. Більшість програм це розуміє, але деякі інструменти Linux і парсери CSV сприймають BOM як частину першого поля. Тому для файлів без BOM передавайте `new UTF8Encoding(false)` або просто не вказуйте кодування.
 
 ## StreamReader — читання тексту з потоку
 
