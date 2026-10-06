@@ -206,23 +206,33 @@ Console.WriteLine("Програма вважає, що дані збережен
 Console.WriteLine("\n=== Правильно: логувати і перекидати або обробляти явно ===");
 try
 {
-    SaveRecord(patientData);
+    SaveWithLogging(patientData); // логує і перекидає
 }
 catch (InvalidOperationException ex)
 {
-    Console.WriteLine($"[ПОМИЛКА ЗБЕРЕЖЕННЯ] {ex.Message}");
-    // у реальному коді: logger.Error(ex), повернути false/Result, або throw
-    throw; // перекидаємо, щоб вище знали про помилку
+    // верхній рівень знає, що робити: повідомити користувача, повторити спробу тощо
+    Console.WriteLine($"[ВЕРХНІЙ РІВЕНЬ] Запис не збережено: {ex.Message}");
 }
-catch (Exception ex)
+
+void SaveWithLogging(string data)
 {
-    Console.WriteLine($"[КРИТИЧНА ПОМИЛКА] {ex.GetType().Name}: {ex.Message}");
-    throw;
+    try
+    {
+        SaveRecord(data);
+    }
+    catch (InvalidOperationException ex)
+    {
+        Console.WriteLine($"[ПОМИЛКА ЗБЕРЕЖЕННЯ] {ex.Message}");
+        // у реальному коді: logger.Error(ex)
+        throw; // перекидаємо, щоб вище знали про помилку
+    }
 }
 
 void SaveRecord(string data) =>
     throw new InvalidOperationException($"З'єднання з БД втрачено під час запису {data}.");
 ```
+
+Зверніть увагу: `throw;` має сенс лише тоді, коли вище є хтось, хто перехопить виняток. Якщо перекинути його з верхнього рівня програми, вона аварійно завершиться — тому в прикладі перекидання винесено в метод `SaveWithLogging`, а остаточна обробка — на верхньому рівні.
 
 Правила:
 - **Ніколи не залишайте `catch` порожнім** у виробничому коді — принаймні логуйте виняток
@@ -262,7 +272,7 @@ foreach (string r in records)
 }
 ```
 
-Якщо поставити `catch (Exception ex)` першим — він перехопить усе, і специфічні блоки ніколи не виконаються. Компілятор попередить про недосяжний код.
+Якщо поставити `catch (Exception ex)` першим — він перехопить усе, і специфічні блоки ніколи не виконаються. Компілятор цього не допустить: такий порядок — **помилка компіляції** CS0160 («попередній catch уже перехоплює всі винятки цього або базового типу»), а не попередження (перевірено на .NET 10).
 
 ## Підсумок
 
