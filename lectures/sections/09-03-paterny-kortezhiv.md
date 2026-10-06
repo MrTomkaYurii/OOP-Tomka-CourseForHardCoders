@@ -23,7 +23,7 @@ source: "../_combined/58-paterny-kortezhiv.md"
 }
 ```
 
-Компілятор створює тимчасовий `ValueTuple<string, string>` з переданих значень і зіставляє його з кожним arm. Це той самий `ValueTuple` з розділу 8.9 — лише використаний не для зберігання і передачі, а як ключ для перемикання. Жодної магії: синтаксис `(a, b) switch` — це `switch` над кортежем.
+Логічно це `switch` над кортежем — тим самим `ValueTuple` з розділу 8.9, лише використаним не для зберігання і передачі, а як ключ для перемикання. Але фізично компілятор **не створює** кортеж: коли в `switch` стоїть кортежний літерал `(a, b)`, він обчислює елементи в тимчасові змінні й порівнює кожну позицію напряму. Це перевірено на .NET 10 аналізом IL методу зі `(specialty, shift) switch` — інструкції `newobj ValueTuple` там немає. Тож кортежний патерн нічого не коштує в пам'яті й працює так само швидко, як вкладені `if`.
 
 ## Вкладені патерни в позиціях кортежу
 
@@ -92,8 +92,8 @@ using System;
 Console.WriteLine(GetTreatment(120, 35));  // норма, молодий
 Console.WriteLine(GetTreatment(145, 60));  // підвищений, похилий
 Console.WriteLine(GetTreatment(180, 45));  // гіпертонічний криз
-Console.WriteLine(GetTreatment(90,  25));  // гіпотонія, молодий
-Console.WriteLine(GetTreatment(100, 75));  // гіпотонія, похилий
+Console.WriteLine(GetTreatment(85,  25));  // гіпотонія, молодий
+Console.WriteLine(GetTreatment(85,  75));  // гіпотонія, похилий
 
 string GetTreatment(int systolic, int age) => (systolic, age) switch
 {
@@ -120,7 +120,7 @@ string GetTreatment(int systolic, int age) => (systolic, age) switch
 
 ## Вичерпність (exhaustiveness)
 
-Компілятор аналізує, чи всі можливі комбінації значень покриті. Якщо ні і відсутній `_` — попередження (warning). У switch expression це важливо: якщо жоден arm не збігається — кидається `MatchFailedException` у runtime.
+Компілятор аналізує, чи всі можливі комбінації значень покриті. Якщо ні і відсутній `_` — попередження (warning). У switch expression це важливо: якщо жоден arm не збігається — кидається `System.Runtime.CompilerServices.SwitchExpressionException` у runtime (перевірено на .NET 10; винятку `MatchFailedException` у .NET немає). Для `double` компілятор вимагає покрити навіть `double.NaN` — без `_` буде попередження CS8509.
 
 Тому для кортежних патернів **завжди** завершуйте switch arm-ом `_` або логічно повним набором умов, що покривають всі випадки.
 
