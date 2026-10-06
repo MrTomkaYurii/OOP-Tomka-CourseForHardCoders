@@ -129,13 +129,14 @@ while (reader.ReadToFollowing("patient"))
     // ReadElementContentAsString — читає текст і просуває позицію за EndElement
     string name = reader.ReadElementContentAsString();
 
-    reader.ReadToNextSibling("age");
+    // reader вже стоїть на <age>: ReadElementContentAsString перейшов за </name>
+    // до наступного вузла. ReadToNextSibling("age") тут пропустив би поточний <age>!
     int age = reader.ReadElementContentAsInt();
 
     Console.WriteLine($"  [{id}] {name}, {age.ToString()} р. ({ward})");
 
-    // Читаємо всі diagnosis для цього пацієнта
-    while (reader.ReadToNextSibling("diagnosis"))
+    // Читаємо всі diagnosis для цього пацієнта: reader уже на першому <diagnosis>
+    while (reader.NodeType == XmlNodeType.Element && reader.Name == "diagnosis")
     {
         string code = reader.GetAttribute("code") ?? "";
         string text = reader.ReadElementContentAsString();
@@ -154,8 +155,8 @@ foreach (string diag in allDiagnoses)
 | `Read()` | Наступний вузол; `false` = кінець |
 | `ReadToFollowing("name")` | Перемотати до наступного елемента з назвою |
 | `ReadToDescendant("name")` | Перемотати до першого дочірнього |
-| `ReadToNextSibling("name")` | Перемотати до сусіднього на тому ж рівні |
-| `ReadElementContentAsString()` | Прочитати текст і перейти за `</tag>` |
+| `ReadToNextSibling("name")` | Перемотати до **наступного** сусіда з назвою (поточний вузол не перевіряється!) |
+| `ReadElementContentAsString()` | Прочитати текст і перейти за `</tag>` — на наступний вузол |
 | `ReadElementContentAsInt()` | Те саме для `int` |
 | `ReadElementContentAsDouble()` | Те саме для `double` |
 | `GetAttribute("name")` | Атрибут поточного Element-вузла |

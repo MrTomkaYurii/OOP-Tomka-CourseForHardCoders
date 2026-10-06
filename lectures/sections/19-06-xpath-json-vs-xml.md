@@ -127,8 +127,9 @@ Console.WriteLine($"\nАктивні пацієнти: {active?.Count.ToString()
 XmlNode? lastPatient = doc.SelectSingleNode("/clinic/patient[last()]");
 Console.WriteLine($"Останній пацієнт: {lastPatient?["name"]?.InnerText}");
 
-int? total = (int?)doc.CreateNavigator()?.Evaluate("count(/clinic/patient)");
-Console.WriteLine($"Всього пацієнтів: {total?.ToString()}");
+// Evaluate повертає object: для числових виразів XPath 1.0 це завжди double
+double total = (double)doc.CreateNavigator()!.Evaluate("count(/clinic/patient)");
+Console.WriteLine($"Всього пацієнтів: {total.ToString()}");
 ```
 
 ## XPath у XDocument (System.Xml.XPath)
@@ -263,7 +264,7 @@ string xml = """
 Console.WriteLine($"JSON: {json.Length.ToString()} символів");
 Console.WriteLine($"XML:  {xml.Length.ToString()} символів");
 Console.WriteLine($"XML більший на: {((xml.Length - json.Length) * 100.0 / json.Length).ToString("F0")}%");
-Console.WriteLine();
+Console.WriteLine("");
 
 // Порівняння за критеріями
 Console.WriteLine("Критерій              JSON         XML");
