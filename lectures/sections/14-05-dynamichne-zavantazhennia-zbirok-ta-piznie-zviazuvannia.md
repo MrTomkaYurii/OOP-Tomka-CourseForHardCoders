@@ -234,7 +234,7 @@ foreach (var plugin in plugins)
     Console.WriteLine($"Плагін: {plugin.Name} — {plugin.Description}");
     AnalysisResult result = plugin.Analyze(records);
     Console.WriteLine($"  Результат: {result.Summary}");
-    Console.WriteLine();
+    Console.WriteLine("");
 }
 
 // ===================== Контракти =====================
@@ -307,7 +307,7 @@ foreach (var plugin in scanner.Plugins)
 {
     Console.WriteLine($"=== {plugin.ReportName} ===");
     plugin.GenerateReport(patients);
-    Console.WriteLine();
+    Console.WriteLine("");
 }
 
 Console.WriteLine("=== PluginScanner статистика ===");

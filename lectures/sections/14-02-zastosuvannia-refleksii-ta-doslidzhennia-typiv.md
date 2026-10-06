@@ -223,7 +223,7 @@ Console.WriteLine("=== GetMembers() — публічні + успадкован�
 foreach (var m in t.GetMembers())
     Console.WriteLine($"  [{m.MemberType,-11}] {m.Name,-30} (з {m.DeclaringType!.Name})");
 
-Console.WriteLine();
+Console.WriteLine("");
 Console.WriteLine("=== GetFields(NonPublic|Instance) — приватні поля + BackingField ===");
 var allFields = t.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
 foreach (var f in allFields)
@@ -233,7 +233,7 @@ foreach (var f in allFields)
     Console.WriteLine($"  {f.Name}{tag}  ({f.FieldType.Name})");
 }
 
-Console.WriteLine();
+Console.WriteLine("");
 Console.WriteLine("=== DeclaredOnly — тільки власні члени ===");
 var declared = t.GetMembers(BindingFlags.DeclaredOnly | BindingFlags.Public
                            | BindingFlags.NonPublic | BindingFlags.Instance);

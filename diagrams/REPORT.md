@@ -309,3 +309,41 @@ Electron тримали pipe відкритим); `setup-linux.sh` ставит�
 | 15.7 | іменований `Semaphore` «між процесами»; runnable-приклад падав на Linux/macOS | іменований — лише Windows (`PlatformNotSupportedException`); приклад з `OperatingSystem.IsWindows()` |
 
 Усі 36 повних прикладів розділу запущено — ✓ (один «приклад» з одним рядком `using` — не програма).
+
+
+---
+
+# Розділ 16 «Task Parallel Library»
+
+6 схем перероблено пайплайном `diagrams/`; старі PNG — у `Архив/`.
+
+| § | Схема | Що було не так на старій схемі |
+|---|-------|-------------------------------|
+| 16.1 | `thread-vs-task` | лише маркери без коду; «Thread — немає скасування/результату» без пояснення, як їх роблять; не сказано головне про винятки (у Thread — падіння процесу, у Task — AggregateException) і що потоки пулу фонові; TaskCreationOptions.LongRunning для довгих операцій. |
+| 16.1 | `task-lifecycle` | «Task.Run() → WaitingForActivation» хибно (Task.Run(Action) одразу WaitingToRun; WaitingForActivation — ContinueWith, Task.Run(async), async-методи); стрілка «Running → Cancel() → Canceled» хибна (Cancel() не зупиняє задачу; Canceled — лише після OperationCanceledException з токеном або скасування до старту); діагональні стрілки. |
+| 16.2 | `nested-tasks` | смуги часу без шкали; не сказано, що Task.Run ігнорує AttachedToParent (DenyChildAttach), про стан WaitingForChildrenToComplete і вкладений AggregateException (Flatten). |
+| 16.3 | `continuation-chain` | лише чотири підписані блоки без коду і результатів; не показано, що продовження за замовчуванням стартує й після помилки, умовні TaskContinuationOptions і що невиконана умова дає Canceled. |
+| 16.4 | `parallel-vs-sequential` | рядки підписані «Core 1–4» — Parallel не закріплює дії за ядрами (це потоки пулу, серед них і викликаючий); не показано Break/Stop, MaxDegreeOfParallelism, збирання винятків в AggregateException. |
+| 16.5 | `cancellation-flow` | м'яке скасування (return) вело в стан Canceled — насправді RanToCompletion (лекція пише правильно); не сказано, що без передачі токена в Task.Run задача стає Faulted, а не Canceled; Register, CancelAfter, зв'язані токени не показано. |
+
+Перевірено в `asserts`: статуси `Created`/`WaitingToRun`/`WaitingForActivation`/`WaitingForChildrenToComplete`/`Canceled`/`Faulted`,
+`AttachedToParent` з `Task.Run` і `StartNew`, вкладені `AggregateException`, продовження після помилки, `Break`/`Stop`, участь
+викликаючого потоку в `Parallel.For`, порядок `Register`, `Parallel` + токен → `OperationCanceledException`.
+
+**Виправлено в тексті лекцій 16.x:**
+
+| § | Було | Стало |
+|---|------|-------|
+| 16.1 | `Task.Run()` → стан `WaitingForActivation` | `Task.Run(() => …)` → `WaitingToRun`; `WaitingForActivation` — продовження, `Task.Run(async …)`, `async`-методи; додано `WaitingForChildrenToComplete` |
+| 16.1 | `Canceled` — «скасовано через `CancellationToken`» | лише `OperationCanceledException` з токеном задачі або скасування до старту; `Cancel()` сам не зупиняє |
+| 16.1 | виняток «кидається при доступі до `Task.Exception`» | читання `Exception` не кидає; `Wait`/`Result` — `AggregateException`, `await` — сам виняток |
+| 16.2 | — | `Task.Run` ігнорує `AttachedToParent` (`DenyChildAttach`); вкладений `AggregateException` і `Flatten()` |
+| 16.3 | помилка «підіймається вгору» ланцюгом | продовження без опцій стартує й після помилки; виняток поширюється лише через `prev.Result`/`Wait` |
+| 16.4 | `Parallel.For` вигідний лише від «кількох мілісекунд» на ітерацію | діапазонне розбиття — вигідно вже з мікросекунд; вимірювати |
+| 16.4 | — | викликаючий потік бере участь; винятки всіх ітерацій — в одному `AggregateException` |
+| 16.5 | `Thread.Abort()` «вилучено з .NET 5+» | метод є, але кидає `PlatformNotSupportedException` |
+| 16.5 | обробники `Register` — «у порядку реєстрації» | у зворотному порядку; після скасування — одразу |
+| 16.5 | — | без передачі токена в `Task.Run` задача стає `Faulted`, а не `Canceled` |
+
+Усі 37 повних прикладів розділу запущено — ✓. У розділах 10–16 також прибрано `Console.WriteLine()` без аргументу з відступом
+(вимога Blazor-раннера).
