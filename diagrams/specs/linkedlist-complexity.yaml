@@ -1,0 +1,65 @@
+# Лекція 10.2 «Двозвʼязаний список LinkedList<T>»
+# Оригінал: lectures/_assets/10-02/Архив/linkedlist-complexity.png
+id: linkedlist-complexity
+title: "LinkedList<T> чи List<T>: складність операцій"
+subtitle: "LinkedList виграє на початку списку й біля відомого вузла; List — у доступі за індексом і в пам'яті"
+
+types: [LinkedList, LinkedListNode, List]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Порівняння операцій"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["операція", "List<T>", "LinkedList<T>", "чому"]
+                  groups:
+                    - heading: "доступ і пошук"
+                      rows:
+                        - ["елемент за індексом",  "O(1)",     "немає `[i]`",  "LinkedList — лише обхід від `First`"]
+                        - ["`Contains`, пошук значення", "O(n)", "O(n)",       "обидва — повний перебір"]
+                        - ["обхід `foreach`",      "O(n)",     "O(n)",         "обидва `IEnumerable<T>`"]
+                    - heading: "кінець списку"
+                      rows:
+                        - ["додати в кінець",      "O(1)*",    "O(1)",         "`Add` / `AddLast`; * амортизовано"]
+                        - ["видалити останній",    "O(1)",     "O(1)",         "`RemoveAt(Count - 1)` / `RemoveLast`"]
+                    - heading: "початок і середина"
+                      rows:
+                        - ["додати на початок",    "O(n)",     "[[O(1)]]",     "List зсуває всі елементи"]
+                        - ["видалити перший",      "O(n)",     "[[O(1)]]",     "`RemoveAt(0)` / `RemoveFirst`"]
+                        - ["вставка біля вузла",   "O(n)",     "[[O(1)]]",     "якщо вузол уже є в змінній"]
+                        - ["вставка за значенням", "O(n)",     "O(n)",         "LinkedList спершу шукає `Find`"]
+                    - heading: "памʼять"
+                      rows:
+                        - ["на один елемент",      "сам елемент", "обʼєкт-вузол", "+ `Next`, `Previous`, `List`, заголовок"]
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - note:
+            kind: box_accent
+            text:
+              - "LinkedList — коли часто додаєте чи видаляєте"
+              - "на початку або біля збереженого вузла"
+        - note:
+            text:
+              - "Усе інше — `List<T>`: щільний масив, кеш"
+              - "процесора, індекс, менше памʼяті"
+
+check:
+  usings: [System, System.Collections.Generic]
+  context: |
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    var l = new List<int> { 1, 2, 3 }; l.RemoveAt(l.Count - 1); Assert(l.Count == 2, "RemoveAt(Count-1)");
+    var ll = new LinkedList<int>(new[] { 1, 2, 3 }); ll.RemoveLast(); ll.RemoveFirst(); Assert(ll.First!.Value == 2, "RemoveFirst/Last");
+    Assert(ll.First.List == ll, "вузол знає список");
+
+publish:
+  dark: ../lectures/_assets/10-02/linkedlist-complexity.png
+  bw: ../lectures/_assets/10-02/book/linkedlist-complexity.png

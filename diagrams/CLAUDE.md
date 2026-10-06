@@ -96,6 +96,10 @@ body:                             # вузли зверху вниз
         - chain: { align: left,                                           # кроки з кодом — left
                    nodes: [ {title: "1 · крок", lines: "var x = 1;", sub: ["примітка"]},
                             {title: B, via: "GetX()", check: "_ = a.{};", kind: box_accent} ] }
+        - hchain: { equal: false, align: center,                          # горизонтальний ланцюжок:
+                   nodes: [ {title: "null", code: true, kind: box_muted},   # вузли списку, конвеєр,
+                            {title: A, sub: ["First"], fwd: false, back: "Previous"},  # стани
+                            {title: B, via: "Next", back: "Previous", lines: "код"} ] }
         - flow:  { caption: "…", check: "_ = {};", right_code: false,   # праворуч — текст
                    rows: [ {left: "t.GetMethods()", label: "опц.", right: "масив методів"} ] }
         - kv:    { check: "_ = {};", columns: ["ключ", "значення", "…"],  # N колонок, заголовок опц.
@@ -119,6 +123,12 @@ check:                            # перевірка коду зі схеми
 publish:                          # куди копіювати PNG при --publish (від diagrams/)
   dark: ../lectures/_assets/NN-NN/my-diagram.png
 ```
+
+`hchain` — блоки в ряд зі стрілками вправо (`via` — підпис над стрілкою **до** цього вузла,
+`fwd: false` — без неї); `back` — ще й зворотна стрілка вліво з підписом під нею
+(двозвʼязний список). Висоти блоків рівні, стрілки однієї довжини, зайва ширина ділиться
+між блоками пропорційно; `equal: true` — рівні ширини. `lines`/`code` вузлів перевіряються,
+як у `chain`.
 
 У тексті `` `…` `` — інлайн-код (підсвічується); `[[…]]` — роль `changed` (виділити головне)
 і в коді, і в прозі: `` `[[FieldAccessException]]` ``, `[[за замовчуванням]]`, `` [[`null`]] ``. Блоки `code:` і `lines:` ланцюжка
