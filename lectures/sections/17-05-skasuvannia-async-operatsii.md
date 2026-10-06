@@ -56,7 +56,7 @@ catch (OperationCanceledException)
 }
 ```
 
-`Task.Delay(ms, token)` — async-версія затримки зі скасуванням. Коли токен скасовується, `Task.Delay` кидає `OperationCanceledException` одразу, не чекаючи завершення таймера.
+`Task.Delay(ms, token)` — async-версія затримки зі скасуванням. Коли токен скасовується, `Task.Delay` кидає `TaskCanceledException` (нащадок `OperationCanceledException`) одразу, не чекаючи завершення таймера. Тому в `catch` краще вказувати базовий `OperationCanceledException` — він перехопить обидва.
 
 ## Перевірка токену між операціями
 
@@ -295,7 +295,7 @@ catch (OperationCanceledException)
 
 ## Стан Task після скасування
 
-Async-метод, скасований через `OperationCanceledException`, переходить у стан `Canceled` — якщо токен, що спричинив виняток, був переданий у Task при його старті. Якщо ж виняток кинутий від **іншого** токену (не того, що у Task), стан буде `Faulted`:
+Тут важливо розрізняти два випадки. Задача **`async`-методу** переходить у стан `Canceled`, якщо з методу вилетів будь-який `OperationCanceledException` — незалежно від того, який токен його спричинив. Натомість задача, створена через **`Task.Run(work, token)`**, стає `Canceled` лише тоді, коли виняток пов'язаний з тим самим `token`, що переданий у `Task.Run`; виняток від **іншого** токена (або токен не передано другим аргументом) дасть стан `Faulted`. Приклад нижче показує другий, «правильний» варіант з `Task.Run`:
 
 ```csharp run
 using System;
