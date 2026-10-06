@@ -1,0 +1,50 @@
+# Лекція 3.1 «Класи та об'єкти»
+# Оригінал: lectures/_assets/03-01/Архив/reference-semantics.png
+id: reference-semantics
+title: "Дві змінні — один об'єкт"
+subtitle: "Patient b = a; копіює посилання, а не об'єкт — зміна через b видна через a"
+
+types: [Patient]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - stack:
+            gap: 16
+            children:
+              - box: {title: "Patient a", check: skip, code: "посилання → об'єкт"}
+              - box: {title: "Patient b = a;", check: skip, code: "те саме посилання"}
+        - box:
+            title: "об'єкт Patient у купі"
+            kind: box_accent
+            check: skip
+            code: |
+              Name = "Олена Коваль"
+              Age  = 32 → 99
+            notes: ["один на обидві змінні"]
+  - panel:
+      heading: "Вивід runnable-прикладу (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["після `b.Age = 99`", "результат"]
+            groups:
+              - rows:
+                  - ["a.Age",                "`99`"]
+                  - ["ReferenceEquals(a, b)", "`true`"]
+        - text:
+            text: ["Для `int x = y;` і структур копіюється саме значення — див. 3.4."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    Patient a = new Patient { Name = "Олена Коваль", Age = 32 };
+    Patient b = a; b.Age = 99;
+  types: |
+    class Patient { public string Name = "Невідомий"; public int Age; }
+
+publish:
+  dark: ../lectures/_assets/03-01/reference-semantics.png
+  bw: ../lectures/_assets/03-01/book/reference-semantics.png

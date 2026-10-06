@@ -1,0 +1,60 @@
+# Лекція 3.4 «Структури»
+# Оригінал: lectures/_assets/03-04/Архив/struct-copy-semantics.png
+id: struct-copy-semantics
+title: "Struct — тип значення: присвоєння копіює всі поля"
+subtitle: "BloodPressure bp2 = bp1; — дві незалежні копії; для класу це було б одне посилання"
+
+types: [BloodPressure, BloodPressureClass]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "struct BloodPressure"
+            children:
+              - cells:
+                  rows:
+                    - caption: "bp1"
+                      cells: ["120", "80"]
+                      top: ["systolic", "diastolic"]
+                    - caption: "bp2"
+                      cells: ["145", "80"]
+                      kinds: [box_accent, box]
+              - text:
+                  text: ["`bp2.systolic = 145` — [[bp1 не змінився]]."]
+        - panel:
+            heading: "якби це був клас"
+            children:
+              - hchain:
+                  nodes:
+                    - {title: "r1, r2", sub: ["два посилання"]}
+                    - {title: "один об'єкт", via: "", kind: box_accent, sub: ["systolic = 145"]}
+              - text:
+                  text: ["`r2.systolic = 145` — `r1.systolic` теж 145."]
+  - panel:
+      heading: "Перевірено виконанням"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["bp1.systolic після bp2.systolic = 145", "результат"]
+            groups:
+              - rows:
+                  - ["StructCopy()", "`120`"]
+                  - ["ClassCopy()", "`145`"]
+                  - ["(new BloodPressure(120, 80) with { systolic = 145 }).diastolic", "`80`"]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    int StructCopy() { var a = new BloodPressure(120, 80); var b = a; b.systolic = 145; return a.systolic; }
+    int ClassCopy() { var a = new BloodPressureClass(); var b = a; b.systolic = 145; return a.systolic; }
+  types: |
+    struct BloodPressure { public int systolic; public int diastolic; public BloodPressure(int s, int d) { systolic = s; diastolic = d; } }
+    class BloodPressureClass { public int systolic = 120; public int diastolic = 80; }
+
+publish:
+  dark: ../lectures/_assets/03-04/struct-copy-semantics.png
+  bw: ../lectures/_assets/03-04/book/struct-copy-semantics.png
