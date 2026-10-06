@@ -232,8 +232,14 @@ def rich(s: str, base_role: str, extra_types: set[str], code: bool = False) -> l
     if code:
         return tokenize_cs(normalize_code(s), extra_types)
     runs = []
+    s = re.sub(r"\[\[`([^`]+)`\]\]", lambda m: "`[[" + m.group(1) + "]]`", s)   # [[`код`]] = `[[код]]`
     for i, part in enumerate(s.split("`")):
         if not part:
             continue
-        runs += tokenize_cs(normalize_code(part), extra_types) if i % 2 else [(normalize_prose(part), base_role)]
+        if i % 2:
+            runs += tokenize_cs(normalize_code(part), extra_types)
+        else:  # у прозі [[…]] — теж роль changed (виділення головного)
+            for j, frag in enumerate(re.split(r"\[\[(.+?)\]\]", part)):
+                if frag:
+                    runs.append((normalize_prose(frag), "changed" if j % 2 else base_role))
     return _merge(runs)

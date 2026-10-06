@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from .core import GRID, TYPE_SCALE, Metrics, Theme, rich, snap
@@ -432,6 +433,84 @@ class KV(Node):
         c.model.equal_width.append(ids)
 
 
+class Cells(Node):
+    """Ряди комірок пам'яті: підпис ліворуч (код), комірки однакової ширини на всіх рядах,
+    необов'язкові підписи над/під кожною коміркою (індекси) і примітка праворуч.
+    Комірка може мати свій вид (box_accent — виділений діапазон, box_muted — копія/стале)."""
+
+    CELL_H = 40
+    GAP = 8          # між комірками
+    CAP_GAP = 16     # між підписом і комірками / комірками і приміткою
+    ROW_GAP = 16
+
+    def __init__(self, rows):
+        self.rows = rows   # [{caption: Line|None, cells: [Line], kinds: [str], top: [Line]|None,
+                           #   bottom: [Line]|None, note: Line|None}]
+        self.rect_id = None
+
+    def _cw(self, c):
+        ws = [l.w(c) for r in self.rows for l in r["cells"]]
+        for r in self.rows:
+            for key in ("top", "bottom"):
+                ws += [l.w(c) for l in (r.get(key) or []) if l]
+        return snap(max(ws) + 2 * 12)
+
+    def _capw(self, c):
+        return max((r["caption"].w(c) for r in self.rows if r.get("caption")), default=0)
+
+    def _row_h(self, r):
+        h = self.CELL_H
+        for key in ("top", "bottom"):
+            if r.get(key):
+                h += max(l.lh for l in r[key] if l) + 4
+        return h
+
+    def measure(self, c):
+        cw, capw = self._cw(c), self._capw(c)
+        cap = snap(capw + self.CAP_GAP) if capw else 0
+        w = 0
+        for r in self.rows:
+            n = len(r["cells"])
+            rw = cap + n * cw + (n - 1) * self.GAP
+            if r.get("note"):
+                rw += self.CAP_GAP + r["note"].w(c)
+            w = max(w, rw)
+        h = sum(self._row_h(r) for r in self.rows) + self.ROW_GAP * (len(self.rows) - 1)
+        return snap(w), snap(h)
+
+    def place(self, c, x, y, w, h, parent):
+        cw, capw = self._cw(c), self._capw(c)
+        cap = snap(capw + self.CAP_GAP) if capw else 0
+        groups = []
+        for r in self.rows:
+            ty = y
+            top = r.get("top")
+            if top:
+                ty += max(l.lh for l in top if l) + 4
+            if r.get("caption"):
+                cl = r["caption"]
+                c.text(x, ty + (self.CELL_H - cl.lh) / 2, capw, cl.runs, cl.style, parent)
+            ids = []
+            for i, cell in enumerate(r["cells"]):
+                cx = x + cap + i * (cw + self.GAP)
+                kind = (r.get("kinds") or [])[i] if i < len(r.get("kinds") or []) else "box"
+                rid = c.rect(cx, ty, cw, self.CELL_H, kind, parent)
+                ids.append(rid)
+                c.text(cx, ty + (self.CELL_H - cell.lh) / 2, cw, cell.runs, cell.style, rid, "center")
+                if top and i < len(top) and top[i]:
+                    c.text(cx, y, cw, top[i].runs, top[i].style, parent, "center")
+                bot = r.get("bottom")
+                if bot and i < len(bot) and bot[i]:
+                    c.text(cx, ty + self.CELL_H + 4, cw, bot[i].runs, bot[i].style, parent, "center")
+            if r.get("note"):
+                nl = r["note"]
+                nx = x + cap + len(r["cells"]) * (cw + self.GAP) - self.GAP + self.CAP_GAP
+                c.text(nx, ty + (self.CELL_H - nl.lh) / 2, x + w - nx, nl.runs, nl.style, parent)
+            groups.append(ids)
+            y += self._row_h(r) + self.ROW_GAP
+        c.model.equal_width.append([i for g in groups for i in g])
+
+
 # ─── Розбір специфікації ─────────────────────────────────────────────────────
 class SpecError(Exception):
     pass
@@ -538,6 +617,21 @@ class Builder:
             return Stack([TextBlock(self.note_lines(v["caption"])), flow], gap=8)
         return flow
 
+    def n_cells(self, v):
+        rows = []
+        for r in v["rows"]:
+            lab = lambda xs, role="muted": [self.line(str(t), role, "small") if t not in (None, "") else None for t in xs] if xs else None
+            rows.append({
+                "caption": self.line(r["caption"], style="code", code=True) if r.get("caption") else None,
+                "cells": [self.line(str(t), style="code", code=r.get("code", False)) if r.get("code")
+                          else self.line(str(t), "text", "text") for t in r["cells"]],
+                "kinds": r.get("kinds"),
+                "top": lab(r.get("top")),
+                "bottom": lab(r.get("bottom")),
+                "note": self.line(r["note"], "muted", "small") if r.get("note") else None,
+            })
+        return Cells(rows)
+
     def n_kv(self, v):
         groups = []
         tmpl = v.get("check")
@@ -548,7 +642,11 @@ class Builder:
             for r in g["rows"]:
                 k, *vals = r
                 if key_code and k:
-                    self._check(g.get("check", tmpl), k)   # група може перевизначити (напр. skip для сигнатур)
+                    t = g.get("check", tmpl)                # група може перевизначити (напр. skip для сигнатур)
+                    if t and "{v}" in t and vals:           # {v} — перший `код` зі значення (без пояснень)
+                        m = re.search(r"`([^`]+)`", str(vals[0]))
+                        t = t.replace("{v}", (m.group(1) if m else str(vals[0])).replace("[[", "").replace("]]", ""))
+                    self._check(t, k)
                 key = self.line(k, style="code", code=True) if key_code else self.line(k, "text", "small")
                 rows.append([key] + [self.line(x, "text", "small") for x in vals])
             groups.append((head, rows))

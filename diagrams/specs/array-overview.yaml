@@ -1,0 +1,91 @@
+# Лекція 13.4 «Клас Array»
+# Оригінал: lectures/_assets/13-04/Архив/array-overview.png
+id: array-overview
+title: "Клас Array: сортування, пошук, копіювання"
+subtitle: "Статичні методи для будь-якого масиву T[]; більшість змінює масив на місці"
+
+body:
+  - row:
+      gap: 24
+      children:
+        # ── 1. Сортування й пошук ─────────────────────────────────────────
+        - panel:
+            heading: "Сортування і пошук"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["метод", "що робить", "складність"]
+                  groups:
+                    - heading: "сортування — на місці"
+                      rows:
+                        - ["Array.Sort(arr)",            "за `IComparable<T>`",           "O(n log n)"]
+                        - ["Array.Sort(arr, (a, b) => …)", "за власним порівнянням",     "O(n log n)"]
+                        - ["Array.Sort(keys, items)",    "сортує `keys`, `items` — разом", "O(n log n)"]
+                        - ["Array.Reverse(arr)",         "розвертає порядок",             "O(n)"]
+                    - heading: "пошук — що повертає, якщо не знайдено"
+                      rows:
+                        - ["Array.IndexOf(arr, x)",      "індекс або `-1`",                 "O(n)"]
+                        - ["Array.BinarySearch(arr, x)", "від'ємне `~позиція`; [[лише відсортований]]", "O(log n)"]
+                        - ["Array.Find(arr, pred)",      "[[`default(T)`]]: `0`, `null`…",  "O(n)"]
+                        - ["Array.FindIndex(arr, pred)", "індекс або `-1`",                 "O(n)"]
+                        - ["Array.FindAll(arr, pred)",   "новий масив, можливо порожній",   "O(n)"]
+                        - ["Array.Exists / TrueForAll",  "`bool`: хоч один / усі",          "O(n)"]
+
+        # ── 2. Копіювання та Resize ───────────────────────────────────────
+        - stack:
+            gap: 24
+            children:
+              - panel:
+                  heading: "Array.Resize створює новий масив"
+                  children:
+                    - cells:
+                        rows:
+                          - caption: "a, b → "
+                            cells: [P1, P2, P3]
+                            note: "до: обидві змінні — на один масив"
+                          - caption: "a → "
+                            cells: [P1, P2, P3, "null", "null"]
+                            kinds: [box_accent, box_accent, box_accent, box_accent, box_accent]
+                            note: "Resize(ref a, 5): новий масив"
+                          - caption: "b → "
+                            cells: [P1, P2, P3]
+                            kinds: [box_muted, box_muted, box_muted]
+                            note: "старий масив, Length = 3"
+                    - note:
+                        text:
+                          - "`ref` оновлює лише змінну `a`; інші посилання (`b`) і далі"
+                          - "вказують на старий масив. Часто міняєте розмір — `List<T>`"
+              - panel:
+                  heading: "Копіювання і заповнення"
+                  children:
+                    - kv:
+                        check: skip
+                        groups:
+                          - rows:
+                              - ["Array.Copy(src, dst, n)",    "перші `n` елементів"]
+                              - ["(T[])arr.Clone()",           "поверхнева копія масиву"]
+                              - ["Array.Fill(arr, x)",         "заповнити значенням `x`"]
+                              - ["Array.Clear(arr)",           "`0` / `null` (.NET 6+)"]
+
+check:
+  usings: [System]
+  context: |
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    int[] sorted = [1, 3, 5];
+    Assert(Array.BinarySearch(sorted, 4) == ~2 && Array.IndexOf(sorted, 4) == -1, "BinarySearch/IndexOf");
+    Assert(Array.Find(sorted, x => x > 10) == 0 && Array.Find(new string[] { "a" }, s => s == "z") is null, "Find default");
+    Assert(Array.FindIndex(sorted, x => x > 10) == -1 && Array.FindAll(sorted, x => x > 10).Length == 0, "FindIndex/FindAll");
+    int[] keys = [3, 1, 2]; string[] items = ["C", "A", "B"];
+    Array.Sort(keys, items); Assert(string.Join("", items) == "ABC", "Sort(keys, items)");
+    string?[] a = ["P1", "P2", "P3"]; var b = a;
+    Array.Resize(ref a, 5);
+    Assert(a.Length == 5 && a[3] is null && b.Length == 3 && !ReferenceEquals(a, b), "Resize");
+    var src = new System.Text.StringBuilder[] { new("x") }; var cl = (System.Text.StringBuilder[])src.Clone();
+    Assert(!ReferenceEquals(src, cl) && ReferenceEquals(src[0], cl[0]), "Clone поверхнева");
+    int[] f = new int[3]; Array.Fill(f, 7); Assert(f[2] == 7, "Fill"); Array.Clear(f); Assert(f[0] == 0, "Clear");
+    int[] dst = new int[2]; Array.Copy(sorted, dst, 2); Assert(dst[1] == 3, "Copy");
+
+publish:
+  dark: ../lectures/_assets/13-04/array-overview.png
+  bw: ../lectures/_assets/13-04/book/array-overview.png
