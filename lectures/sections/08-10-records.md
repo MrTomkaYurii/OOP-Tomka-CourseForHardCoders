@@ -37,7 +37,7 @@ public record Patient(string Name, int Age);
 
 **`Deconstruct`** — дозволяє декомпозицію `var (name, age) = patient;`.
 
-**`<Clone>()`** — внутрішній метод для підтримки оператора `with`.
+**`<Clone>$()`** — метод копіювання для підтримки оператора `with`. Ім'я з символами `<>` і `$` недоступне з C#, тому викликати його напряму не можна. Крім того, компілятор генерує `EqualityContract` і `PrintMembers` (про них нижче).
 
 ## Модифікатор init
 
@@ -103,7 +103,7 @@ var updated  = original with { Age = 46 }; // новий об'єкт; Name = "І
 
 `original` при цьому не змінюється. Це ключова особливість: замість того, щоб мутувати об'єкт, ми отримуємо новий з оновленими даними. Такий підхід — «незмінні дані + нові версії» — є основою функціонального програмування і безпечний при роботі з кількома потоками.
 
-Внутрішньо `with` викликає `<Clone>()` і потім встановлює `init`-властивості через ініціалізатор. Оператор `with` працює тільки з `record` — для звичайних класів він недоступний.
+Внутрішньо `with` для record class викликає `<Clone>$()` і потім встановлює `init`-властивості через ініціалізатор. З C# 10 `with` працює також з будь-якими **структурами** (у тому числі `record struct` і кортежами `ValueTuple`) та **анонімними типами** — для них копія створюється простим копіюванням значення. Для звичайних класів `with` недоступний.
 
 ## Структурна рівність
 
@@ -197,7 +197,7 @@ public record ClinicPatient(string Name, int Age, string Diagnosis) : MedicalPer
 
 ## record struct vs record class
 
-Починаючи з C# 10, кортежний тип `record` можна визначити і як структуру:
+Починаючи з C# 10, тип `record` можна визначити і як структуру:
 
 ```csharp
 public record struct BloodPressure(int Systolic, int Diastolic);
@@ -207,7 +207,7 @@ public record struct BloodPressure(int Systolic, int Diastolic);
 
 | Характеристика | `record class` | `record struct` | `readonly record struct` |
 |---|---|---|---|
-| Тип даних | reference (heap) | value (stack) | value (stack) |
+| Тип даних | reference (купа) | value (там, де змінна) | value (там, де змінна) |
 | Null | може бути null | ні | ні |
 | Mутабельність (позиційні) | init — immutable | set — **mutable** | init — immutable |
 | Успадкування | так | ні | ні |
@@ -230,7 +230,7 @@ public readonly record struct BloodPressure(int Systolic, int Diastolic);
 | Передача між методами | ✓ | ✗ (тільки object) | ✓ | ✓ |
 | Структурна рівність | ✓ (авто) | ✓ (авто) | ✓ (авто) | ✗ (потрібно визначити) |
 | Immutable | ✓ (init) | ✓ | ✗ (мутабельні) | ✓ (потрібно визначити) |
-| `with` | ✓ | ✗ | ✗ | ✗ |
+| `with` | ✓ | ✓ (C# 10) | ✓ (C# 10, структура) | ✗ |
 | Успадкування | ✓ (class) | ✗ | ✗ | ✓ |
 | ToString (стан) | ✓ (авто) | ✓ (авто) | ✓ (авто) | ✗ (потрібно визначити) |
 | Boilerplate | мінімальний | немає | немає | максимальний |
