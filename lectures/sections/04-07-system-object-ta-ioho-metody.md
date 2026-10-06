@@ -9,7 +9,7 @@ source: "../_combined/24-system-object-ta-ioho-metody.md"
 
 ## 4.7. Клас System.Object та його методи
 
-Усі класи в .NET — як вбудовані (`int`, `string`, `DateTime`), так і ті, що ми створюємо самостійно — є похідними від класу `System.Object`. Навіть якщо ми не вказуємо `Object` як базовий, компілятор додає це успадкування неявно. Це означає, що кожен об'єкт у C# гарантовано має чотири методи: `ToString()`, `GetHashCode()`, `Equals()` та `GetType()`.
+Усі типи в .NET — як вбудовані (`int`, `string`, `DateTime`), так і ті, що ми створюємо самостійно — є похідними від класу `System.Object`. Для структур (`int`, `DateTime`) успадкування непряме: вони походять від `System.ValueType`, а той — від `Object`. Навіть якщо ми не вказуємо `Object` як базовий, компілятор додає це успадкування неявно. Це означає, що кожен об'єкт у C# гарантовано має чотири публічні методи екземпляра: `ToString()`, `GetHashCode()`, `Equals()` та `GetType()`. Перші три — віртуальні, їх можна перевизначати; `GetType()` — ні. Окрім них, `Object` має статичні `Equals(a, b)` і `ReferenceEquals(a, b)` та захищені `MemberwiseClone()` і `Finalize()`.
 
 ![Методи System.Object доступні у кожному класі](_assets/04-07/object-methods.png)
 
