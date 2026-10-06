@@ -66,25 +66,33 @@ CLR нічого не додає» (`GetMembers(NonPublic)` → 0 членів, 
 `[Serializable]` — лише для застарілої бінарної серіалізації; вигадані `[Singleton]`/
 `[Scoped]` у «DI scanning» замінено реальними атрибутами ASP.NET Core / xUnit / EF Core.
 
-## ⚠ Помилки в ТЕКСТІ лекцій (не виправлено — потрібне ваше рішення)
+## Помилки в тексті лекцій — виправлено
 
-1. **14.4**, «const vs readonly»: «Спроба `SetValue` на `const` або `readonly` кидає
-   `FieldAccessException`» — для `readonly` поля екземпляра це не так, запис працює.
-2. **14.4**, «init-only setter»: «`SetValue` все одно кидає `FieldAccessException`» —
-   неправда, `SetValue` на `init`-властивості спрацьовує; відповідно розділ «Обхід через
-   backing field» описує непотрібний обхід.
-3. **14.3**, таблиця Invoke vs Activator: «Приватний конструктор — не підтримує без явного
-   ctor» — `Activator.CreateInstance(type, nonPublic: true)` створює через приватний
-   конструктор без параметрів.
-4. **14.3**: «`.cctor` … не може бути викликаний через `Invoke`» — неточно; правильніше
-   «запускає CLR; викликати вручну не слід».
-5. **14.5**: «`Assembly.Load(name)` — з кешу або GAC» — у .NET Core/5+ GAC немає.
-6. **14.6**: «Усі `MemberInfo`-нащадки — `Type`, …, `ParameterInfo`» — `ParameterInfo` не
-   є `MemberInfo` (API атрибутів у нього такий самий, але ієрархія інша).
-7. **14.3/14.4**: «виконує security-check» при Invoke — застаріле (CAS прибрано в .NET Core).
+Кожен факт перевірено кодом на .NET 10; усі 13 повних прикладів розділу компілюються й
+виконуються після правок. Теорію не скорочено — виправлені місця розширено поясненнями.
 
-Єдина правка лекцій: 14.4 «відповідає **п'яти** крокам з діаграми» → «трьом крокам»,
-бо текст прямо посилається на нову схему.
+1. **14.4**, const vs readonly: «`SetValue` на `readonly` кидає `FieldAccessException`» →
+   таблицю доповнено колонкою `SetValue`; пояснено, чому `readonly` екземпляра записується,
+   а `static readonly` (.NET Core 3.0+) і `const` — ні; прибрано вигаданий «хак з
+   `RuntimeFieldHandle`».
+2. **14.4**, init-only: «`SetValue` кидає `FieldAccessException`» → `SetValue` працює;
+   пояснено модифікатор `IsExternalInit`, як відрізнити `init` від `set`; прибрано
+   непотрібний «обхід через backing field» і хибну згадку Moq/NSubstitute.
+3. **14.4**, приклад ObjectCloner: `FormatterServices` (застарілий, SYSLIB0050) →
+   `RuntimeHelpers.GetUninitializedObject`; виправлено «єдиний легальний спосіб обійти init».
+4. **14.3**, Activator: «приватний конструктор не підтримує» → `nonPublic: true` для
+   безпараметрового, `MissingMethodException` для решти.
+5. **14.3**, `.cctor`: «не може бути викликаний через `Invoke`» → викликати можна, але CLR
+   повторно його не виконує; додано `Type.TypeInitializer`.
+6. **14.3**, «security-check» при `Invoke` і таблиця з наносекундами для .NET 8 → відносна
+   вартість, пояснення, звідки вона береться, порада міряти BenchmarkDotNet; CAS у .NET
+   Core немає.
+7. **14.3**, `FormatterServices.GetUninitializedObject` → `RuntimeHelpers…` з поясненням.
+8. **14.5**, `Assembly.Load` «з GAC» → у .NET Core/5+ GAC немає; додано, де саме шукає.
+9. **14.6**, «`ParameterInfo` — нащадок `MemberInfo`» → спільний інтерфейс
+   `ICustomAttributeProvider`; додано пастки `inherit` для `PropertyInfo`/`EventInfo` та
+   інтерфейсів.
+10. **14.4**: «п'ять кроків з діаграми» → «три кроки» (нова схема).
 
 ## Генератор: що додано під час розділу
 

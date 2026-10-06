@@ -23,12 +23,14 @@ source: "../_combined/88-dynamichne-zavantazhennia-zbirok-ta-piznie-zviazuvannia
 
 | Метод | Коли використовувати |
 |-------|---------------------|
-| `Assembly.Load(name)` | завантаження за AssemblyName з кешу або GAC |
-| `Assembly.LoadFrom(path)` | завантаження з файлу; CLR вирішує залежності |
-| `Assembly.LoadFile(path)` | завантаження ізольовано, без резолюції залежностей |
+| `Assembly.Load(name)` | завантаження за ім'ям збірки (`AssemblyName` або рядок) через контекст за замовчуванням |
+| `Assembly.LoadFrom(path)` | завантаження з файлу в контекст за замовчуванням; залежності CLR шукає поруч |
+| `Assembly.LoadFile(path)` | завантаження у **окремий** контекст, без резолюції залежностей |
 | `Assembly.GetEntryAssembly()` | стартова збірка (`Program.cs`) |
 | `Assembly.GetCallingAssembly()` | збірка, що викликала поточний метод |
 | `Assembly.GetExecutingAssembly()` | збірка, де виконується поточний код |
+
+**Де шукає `Assembly.Load`.** У .NET Framework за ім'ям збірки CLR шукав також у глобальному кеші збірок (GAC). У .NET Core і .NET 5+ **GAC немає**: `Assembly.Load(name)` шукає серед збірок застосунку (перелік у файлі `.deps.json`) і спільних бібліотек платформи, тобто в контексті завантаження за замовчуванням.
 
 **`LoadFrom` vs `LoadFile`:** `LoadFrom` реєструє шлях у CLR-завантажувачі і CLR може знайти залежності автоматично. `LoadFile` завантажує файл **ізольовано** — якщо збірка залежить від `SomeLib.dll`, CLR її не знайде автоматично. Тому `LoadFile` зазвичай використовують лише для інспекції метаданих.
 

@@ -125,7 +125,7 @@ public class PatientController { }
 
 ## Читання атрибутів через рефлексію
 
-Усі `MemberInfo`-нащадки — `Type`, `MethodInfo`, `PropertyInfo`, `FieldInfo`, `ParameterInfo`, а також `Assembly` — підтримують один і той самий API читання атрибутів:
+Один і той самий API читання атрибутів підтримують усі нащадки `MemberInfo` — `Type`, `MethodInfo`, `ConstructorInfo`, `PropertyInfo`, `FieldInfo`, `EventInfo`, — а також класи, що **не** є `MemberInfo`, але теж можуть нести атрибути: `ParameterInfo` (атрибути параметрів), `Assembly` і `Module` (атрибути рівня збірки, `[assembly: …]`). Об'єднує їх спільний інтерфейс `ICustomAttributeProvider`:
 
 | Метод | Що повертає |
 |-------|-------------|
@@ -138,6 +138,18 @@ public class PatientController { }
 Параметр `inherit` у `GetCustomAttributes(bool)`:
 - `true` — шукати атрибут і в базових класах (для методів і класів)
 - `false` — тільки на цьому конкретному елементі
+
+**Дві пастки параметра `inherit`:**
+
+1. Для **`PropertyInfo` і `EventInfo`** методи екземпляра `GetCustomAttributes(inherit)` та `IsDefined(type, inherit)` **ігнорують** `inherit: true` — атрибут з `virtual`-властивості базового класу на `override`-властивості нащадка не знайдеться. Щоб урахувати успадкування, використовують статичні методи класу `Attribute`:
+
+   ```csharp
+   PropertyInfo prop = typeof(InpatientRecord).GetProperty("Bmi")!;
+   prop.GetCustomAttributes(typeof(ValidationRangeAttribute), true);           // [] — inherit ігнорується
+   Attribute.GetCustomAttributes(prop, typeof(ValidationRangeAttribute), true); // [ValidationRange] — знайдено
+   ```
+
+2. Атрибути, поставлені на **інтерфейс**, не переходять на клас, що його реалізує, — незалежно від `inherit` і `Inherited` (див. вище).
 
 ```csharp
 Type t = typeof(PatientRecord);

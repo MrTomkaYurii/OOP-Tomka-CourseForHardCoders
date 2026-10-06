@@ -38,14 +38,14 @@ source: "../_combined/87-doslidzhennia-poliv-ta-vlastyvostei-za-dopomohoiu-refle
 
 Обидва ключових слова задають поля, значення яких не змінюється — але механізм різний, і рефлексія це чітко розрізняє:
 
-| Модифікатор | `IsLiteral` | `IsInitOnly` | Примітки |
-|-------------|-------------|--------------|----------|
-| `const` | `true` | `false` | значення вбудоване в IL; завжди `static` логічно |
-| `readonly` | `false` | `true` | може бути instance або static |
-| `static readonly` | `false` | `true` + `IsStatic=true` | поєднання обох |
-| Звичайне поле | `false` | `false` | — |
+| Модифікатор | `IsLiteral` | `IsInitOnly` | `SetValue` | Примітки |
+|-------------|-------------|--------------|------------|----------|
+| `const` | `true` | `false` | `FieldAccessException` | значення вбудоване в IL; завжди `static` логічно |
+| `static readonly` | `false` | `true` + `IsStatic=true` | `FieldAccessException` | після ініціалізації типу змінити не можна |
+| `readonly` (екземпляра) | `false` | `true` | **працює** | `readonly` — обмеження компілятора, не рефлексії |
+| Звичайне поле | `false` | `false` | працює | — |
 
-Для **`const`**-поля `GetValue(null)` повертає вбудоване значення (аргумент `obj` ігнорується — поле не прив'язане до екземпляра). Спроба `SetValue` на `const` або `readonly` кидає `FieldAccessException`:
+Для **`const`**-поля `GetValue(null)` повертає вбудоване значення (аргумент `obj` ігнорується — поле не прив'язане до екземпляра). Записати його неможливо в принципі: значення `const` компілятор **копіює** в IL кожного місця використання, тож у пам'яті немає комірки, яку можна було б змінити. Тому `SetValue` на `const` кидає `FieldAccessException`:
 
 ```csharp
 FieldInfo maxAgeField = typeof(PatientRecord)
@@ -59,7 +59,20 @@ Console.WriteLine($"MaxAge = {val}"); // MaxAge = 150
 maxAgeField.SetValue(null, 200); // кидає!
 ```
 
-Є один спосіб обійти захист `readonly` (але не `const`) — через хак з `RuntimeFieldHandle` чи встановлення через IL-генерацію. У реальних проєктах це вважається небезпечним патерном і застосовується тільки в тестових фреймворках для заміни залежностей.
+З `readonly`-полями ситуація інша, і вона часто дивує. Ключове слово `readonly` — це обіцянка, яку перевіряє **компілятор C#**: він не дозволить написати присвоєння поза конструктором. Але рефлексія працює вже на рівні CLR, тож для `readonly`-поля **екземпляра** `SetValue` спрацьовує без жодних хаків:
+
+```csharp
+// у класі PatientRecord: private readonly double _weight;
+FieldInfo weight = typeof(PatientRecord)
+    .GetField("_weight", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+Console.WriteLine(weight.IsInitOnly);   // True — поле readonly
+weight.SetValue(patient, 82.5);         // працює: значення змінено
+```
+
+Винятком є **`static readonly`**-поля: починаючи з .NET Core 3.0, після того як статичний конструктор типу відпрацював, CLR забороняє їх змінювати — `SetValue` кидає `FieldAccessException`. Причина в оптимізації: JIT має право вбудувати значення `static readonly` у машинний код як константу, і зміна поля після цього призвела б до неузгодженого стану.
+
+Практичний висновок: `readonly` захищає від помилок у **вашому** коді, але не від рефлексії. Якщо бібліотека чи серіалізатор має доступ до об'єкта через рефлексію, він технічно може змінити його `readonly`-поля. Робити так у продакшн-коді не варто — це руйнує інваріанти класу; такий прийом трапляється хіба що в тестових інструментах і десеріалізаторах.
 
 ## Клас PropertyInfo
 
@@ -89,30 +102,33 @@ Console.WriteLine(prop.GetMethod!.IsPublic);   // true
 Console.WriteLine(prop.SetMethod!.IsPublic);   // true (але init-only)
 ```
 
-### init-only setter (C# 9) — прихована пастка
+### init-only setter (C# 9) — обмеження лише для компілятора
 
-C# 9 ввів `init`-аксесор: `public string Name { get; init; }`. Рефлексія показує `CanWrite = true`, бо setter технічно існує. Але `SetValue` все одно кидає `FieldAccessException`, оскільки init-setter позначений атрибутом `[IsExternalInit]` і компілятор дозволяє його виклик лише з конструктора або ініціалізатора об'єкта.
+C# 9 ввів `init`-аксесор: `public string Name { get; init; }`. Такий аксесор — це звичайний метод-setter (`set_Name`), у сигнатурі якого компілятор залишає спеціальну позначку — обов'язковий модифікатор `IsExternalInit`. Компілятор C#, побачивши цю позначку, дозволяє викликати setter лише з конструктора або ініціалізатора об'єкта (`new PatientRecord { Name = "…" }`). А от для рефлексії й CLR це звичайний setter.
+
+Тому рефлексія показує `CanWrite = true`, і `SetValue` **справді записує** значення — навіть після того, як об'єкт уже створено:
 
 ```csharp
 PropertyInfo nameProp = typeof(PatientRecord).GetProperty("FullName")!;
-Console.WriteLine(nameProp.CanWrite); // true — вводить в оману!
+Console.WriteLine(nameProp.CanWrite); // True — setter існує
 
 var patient = new PatientRecord("Іван Коваль", new DateTime(1980, 1, 1));
 
-// Кидає FieldAccessException:
-nameProp.SetValue(patient, "Петро Мельник");
+nameProp.SetValue(patient, "Петро Мельник"); // працює
+Console.WriteLine(patient.FullName);         // Петро Мельник
 ```
 
-**Обхід**: знайти backing field і записати напряму через `FieldInfo.SetValue`:
+Так само працює і запис у приховане backing-поле властивості (`<FullName>k__BackingField`): компілятор позначає його як `readonly` (`IsInitOnly = true`), але, як ми бачили вище, для полів екземпляра це не заважає `FieldInfo.SetValue`.
+
+Як відрізнити `init` від звичайного `set`, якщо це потрібно (наприклад, генератору документації)? Перевірити модифікатор у сигнатурі setter-а:
 
 ```csharp
-FieldInfo? backing = typeof(PatientRecord)
-    .GetField("<FullName>k__BackingField",
-              BindingFlags.NonPublic | BindingFlags.Instance);
-backing?.SetValue(patient, "Петро Мельник");
+bool isInit = nameProp.SetMethod?.ReturnParameter
+    .GetRequiredCustomModifiers()
+    .Any(m => m.Name == "IsExternalInit") ?? false;
 ```
 
-Цей підхід використовується в тестових фреймворках (Moq, NSubstitute) для підміни значень `init`-властивостей під час налаштування тестових об'єктів. У продакшн-коді це вважається антипатерном — краще переробити дизайн.
+Отже, `init`, як і `readonly`, — це гарантія **компілятора** для звичайного коду, а не захист від рефлексії. Серіалізатори (наприклад, `System.Text.Json`) якраз користуються цим, щоб заповнювати `init`-властивості під час десеріалізації. У прикладному коді змінювати `init`-властивості через рефлексію після створення об'єкта — антипатерн: це порушує задум автора класу, який розраховував на незмінність.
 
 ## Workflow GetValue і SetValue
 
@@ -326,15 +342,14 @@ public static class ObjectCloner<T> where T : class
     public static T Clone(T source)
     {
         // Створюємо порожній об'єкт без виклику конструктора
-        T target = (T)System.Runtime.Serialization.FormatterServices
-            .GetUninitializedObject(typeof(T));
+        T target = (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
 
         foreach (var field in Fields)
         {
             object? val = field.GetValue(source);
 
-            // init-only (IsInitOnly) — записуємо через поле, а не setter
-            // readonly та init-only поля: IsInitOnly=true
+            // readonly-поля і backing-поля init-властивостей мають IsInitOnly=true,
+            // але для полів екземпляра SetValue все одно працює
             // Для value-типів та рядків shallow copy достатньо
             field.SetValue(target, val);
         }
@@ -363,4 +378,4 @@ public static class ObjectCloner<T> where T : class
 }
 ```
 
-`ObjectCloner<T>` демонструє реальну техніку клонування через рефлексію: `FormatterServices.GetUninitializedObject` обходить конструктор (критично для `init`-властивостей, де конструктор може бути незрозумілим), `IsLiteral` фільтрує `const`-поля (вони не копіюються, бо належать типу, а не екземпляру), а `IsInitOnly` документує, що backing-поля `init`-властивостей все одно записуються через `FieldInfo.SetValue` — це єдиний легальний спосіб обійти init-обмеження після конструктора.
+`ObjectCloner<T>` демонструє реальну техніку клонування через рефлексію: `RuntimeHelpers.GetUninitializedObject` створює об'єкт в обхід конструктора (не потрібно знати, які аргументи йому передати; старий аналог `FormatterServices.GetUninitializedObject` позначено застарілим), `IsLiteral` фільтрує `const`-поля (вони не копіюються, бо належать типу, а не екземпляру), а копіювання на рівні полів автоматично охоплює і backing-поля `init`-властивостей: хоча вони мають `IsInitOnly = true`, для полів екземпляра `FieldInfo.SetValue` працює. Копіювати саме поля, а не властивості, тут правильно: так ми не викликаємо логіку setter-ів і отримуємо точну копію стану.
