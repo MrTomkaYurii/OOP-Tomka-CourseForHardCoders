@@ -1,0 +1,82 @@
+# Лекція 7.1 «Визначення інтерфейсів»
+# Оригінал: lectures/_assets/07-01/Архив/interface-anatomy.png
+id: interface-anatomy
+title: "Анатомія інтерфейсу: що може і що не може містити"
+subtitle: "Інтерфейс описує поведінку, а не стан; усе з верхньої таблиці компілюється на .NET 10"
+
+types: [IDiagnosable, Patient]
+
+body:
+  - stack:
+      gap: 24
+      children:
+        - panel:
+            heading: "Може містити"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["член", "приклад", "з версії"]
+                  groups:
+                    - rows:
+                        - ["метод",              "`void RunDiagnostics();`",              "C# 1"]
+                        - ["властивість",        "`string DiagnosisCode { get; set; }`",  "C# 1"]
+                        - ["індексатор",         "`string this[int i] { get; }`",          "C# 1"]
+                        - ["подія",              "`event DiagnosisHandler OnDiagnosed;`",  "C# 1"]
+                        - ["вкладений тип",      "`delegate void DiagnosisHandler(…);`",   "C# 8"]
+                        - ["метод з тілом",      "`void Log() => …;`",                     "C# 8"]
+                        - ["константа",          "`const int MaxSeverityLevel = 5;`",      "C# 8"]
+                        - ["статичне поле",      "`static int DiagnosisCount;`",           "C# 8"]
+                        - ["[[статичний конструктор]]", "`static IDiagnosable() { … }`",   "C# 8"]
+                        - ["`private` / `protected` член", "`private void Helper() { … }`", "C# 8"]
+                        - ["`static abstract` член", "`static abstract int Max { get; }`", "C# 11"]
+        - panel:
+            heading: "Не може містити"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["член", "приклад"]
+                  groups:
+                    - rows:
+                        - ["поле екземпляра",  "`int _severity;`"]
+                        - ["конструктор екземпляра", "`IDiagnosable() { }`"]
+                        - ["деструктор",       "`~IDiagnosable() { }`"]
+                        - ["автовластивість зі станом", "`int X { get; set; } = 1;`"]
+              - note:
+                  text:
+                    - "Члени без модифікатора — [[`public`]];"
+                    - "сам інтерфейс без модифікатора — `internal`."
+
+check:
+  usings: [System]
+  asserts: |
+    Patient p = new Patient(); IDiagnosable d = p; d.Log();
+    if (IDiagnosable.DiagnosisCount != 1 || IDiagnosable.MaxSeverityLevel != 5) throw new Exception("static");
+  types: |
+    interface IDiagnosable
+    {
+        const int MaxSeverityLevel = 5;
+        static int DiagnosisCount;
+        static IDiagnosable() { DiagnosisCount = 0; }
+        void RunDiagnostics();
+        string DiagnosisCode { get; set; }
+        string this[int i] { get; }
+        delegate void DiagnosisHandler(string message);
+        event DiagnosisHandler OnDiagnosed;
+        void Log() { Helper(); RunDiagnostics(); }
+        private void Helper() => DiagnosisCount++;
+        static abstract int Max { get; }
+    }
+    class Patient : IDiagnosable
+    {
+        public void RunDiagnostics() { }
+        public string DiagnosisCode { get; set; } = "";
+        public string this[int i] => "";
+        public event IDiagnosable.DiagnosisHandler? OnDiagnosed;
+        public static int Max => 5;
+    }
+
+publish:
+  dark: ../lectures/_assets/07-01/interface-anatomy.png
+  bw: ../lectures/_assets/07-01/book/interface-anatomy.png

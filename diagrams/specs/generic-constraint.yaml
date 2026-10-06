@@ -1,0 +1,49 @@
+# Лекція 7.5 «Інтерфейси в узагальненнях»
+# Оригінал: lectures/_assets/07-05/Архив/generic-constraint.png
+id: generic-constraint
+title: "Інтерфейси як обмеження: where T : IExaminable, IPrintable"
+subtitle: "Компілятор пропускає лише типи, що реалізують обидва інтерфейси — перевірка до запуску програми"
+
+types: [IExaminable, IPrintable, IClinicWorker, Doctor, Nurse, Cardiologist, ClinicReporter]
+
+body:
+  - box:
+      title: "Обмеження"
+      kind: box_accent
+      check: skip
+      code: |
+        class ClinicReporter<T> where T : IExaminable, IPrintable
+        {
+            public void Report(T item) { item.Examine(); item.Print(); }  // членів T видно завдяки обмеженню
+        }
+      notes: ["інтерфейсів у `where` — скільки завгодно; базовий клас — один і першим"]
+  - panel:
+      heading: "Кандидати для T"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["тип", "реалізує", "ClinicReporter<T>"]
+            groups:
+              - rows:
+                  - ["`Doctor`",       "`IExaminable`, `IPrintable`",                  "✓"]
+                  - ["`Nurse`",        "лише `IExaminable`",                           "[[CS0311]] — помилка компіляції"]
+                  - ["`Cardiologist`", "`IClinicWorker : IExaminable, IPrintable`",    "✓ — через успадкований інтерфейс"]
+                  - ["`IClinicWorker`", "сам інтерфейс",                               "✓ — інтерфейс теж підходить як T"]
+
+check:
+  usings: [System]
+  asserts: |
+    var r1 = new ClinicReporter<Doctor>(); var r2 = new ClinicReporter<Cardiologist>(); var r3 = new ClinicReporter<IClinicWorker>();
+  types: |
+    interface IExaminable { void Examine(); }
+    interface IPrintable { void Print(); }
+    interface IClinicWorker : IExaminable, IPrintable { }
+    class Doctor : IExaminable, IPrintable { public void Examine() { } public void Print() { } }
+    class Nurse : IExaminable { public void Examine() { } }
+    class Cardiologist : IClinicWorker { public void Examine() { } public void Print() { } }
+    class ClinicReporter<T> where T : IExaminable, IPrintable { public void Report(T item) { item.Examine(); item.Print(); } }
+
+publish:
+  dark: ../lectures/_assets/07-05/generic-constraint.png
+  bw: ../lectures/_assets/07-05/book/generic-constraint.png
