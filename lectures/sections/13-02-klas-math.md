@@ -101,7 +101,7 @@ Console.WriteLine(Math.Sign(3.7));  //  1
 
 Це корисно, коли потрібно визначити **напрям відхилення** від норми без знання абсолютної величини. Наприклад: `Math.Sign(actual - norm)` повертає `+1` якщо показник вище норми, `-1` якщо нижче, `0` якщо рівний.
 
-`Math.CopySign(magnitude, sign)` (.NET 6+) повертає число з абсолютним значенням `magnitude` і знаком `sign`:
+`Math.CopySign(magnitude, sign)` (.NET Core 3.0+) повертає число з абсолютним значенням `magnitude` і знаком `sign`:
 
 ```csharp
 Console.WriteLine(Math.CopySign(5.0, -1.0)); // -5
@@ -151,7 +151,7 @@ Console.WriteLine(Math.Pow(10, -2));  // 0.01
 double bmi = weight / Math.Pow(heightMeters, 2); // зріст у квадраті
 ```
 
-`Math.Cbrt(x)` (.NET 5+) — кубічний корінь. На відміну від `Math.Pow(x, 1.0/3.0)`, коректно обробляє від'ємні числа:
+`Math.Cbrt(x)` (.NET Core 2.1+) — кубічний корінь. На відміну від `Math.Pow(x, 1.0/3.0)`, коректно обробляє від'ємні числа:
 
 ```csharp
 Console.WriteLine(Math.Cbrt(27));  // 3

@@ -23,9 +23,10 @@ source: "../_combined/80-klas-convert.md"
 
 ```csharp run
 using System;
+using System.Globalization;
 
 int    age    = int.Parse("67");
-double weight = double.Parse("82.5");
+double weight = double.Parse("82.5", CultureInfo.InvariantCulture); // крапка — див. нижче
 bool   active = bool.Parse("True");
 
 Console.WriteLine($"Вік: {age}, Вага: {weight}, Активний: {active}");
@@ -110,18 +111,35 @@ int bad = Convert.ToInt32("abc"); // FormatException!
 Convert.ToInt32(3_000_000_000L); // OverflowException — не вміщується в int
 ```
 
-Це **безпечніша** поведінка, ніж `(int)3_000_000_000L`, який мовчки дасть некоректний результат через переповнення.
+Це **безпечніша** поведінка, ніж явне приведення `(int)`. Якщо значення відоме компілятору (константа), `(int)3_000_000_000L` просто не скомпілюється (помилка CS0221). Але якщо число приходить у змінній, приведення мовчки дасть некоректний результат:
+
+```csharp
+long big = 3_000_000_000L;
+int wrapped = (int)big;   // -1294967296 — старші біти відкинуто, без жодного попередження
+```
+
+Для дробових чисел поведінка `(int)` інша: починаючи з .NET 9, значення `double` поза межами `int` «насичується» до `int.MaxValue` або `int.MinValue`, а `NaN` стає `0` (раніше результат залежав від процесора). `Convert.ToInt32` в обох випадках кидає `OverflowException` і не дає помилці пройти непоміченою.
 
 ## Перетворення рядків: Convert.ToString та Convert.ToXxx
 
-`Convert.ToString(object value)` перетворює будь-яке значення в рядок. Принципова відмінність від виклику `.ToString()` безпосередньо — коректна обробка `null`:
+`Convert.ToString(object value)` перетворює будь-яке значення в рядок. Принципова відмінність від виклику `.ToString()` безпосередньо — коректна обробка `null`: виклик `x.ToString()` для `x == null` кидає `NullReferenceException`, а `Convert.ToString` — ні.
+
+Але тут є тонкість: у `Convert.ToString` **багато перевантажень**, і результат для `null` залежить від того, яке з них обере компілятор. Перевантаження для `object` повертає порожній рядок, а перевантаження для `string` — повертає `null` як є:
 
 ```csharp
-string s1 = Convert.ToString(null);   // "" — порожній рядок, не виняток
-string s2 = null?.ToString();         // null — не рядок
+object? diagnosis = null;
+string? s1 = Convert.ToString(diagnosis);  // "" — перевантаження ToString(object)
+
+string? note = null;
+string? s2 = Convert.ToString(note);       // null — перевантаження ToString(string)!
+
+string? s3 = Convert.ToString(null);       // null — для літерала null компілятор
+                                           // обирає найконкретніше: ToString(string)
+
+string? s4 = diagnosis?.ToString();        // null — оператор ?. не викликає метод для null
 ```
 
-Якщо поле пацієнта необов'язкове і може бути `null`, `Convert.ToString` дозволяє отримати рядок для відображення без додаткової перевірки `if (x != null)`.
+Якщо поле пацієнта необов'язкове, має тип `object` і може бути `null`, `Convert.ToString` дозволяє отримати рядок для відображення без додаткової перевірки `if (x != null)`. Для змінних типу `string` надійніше явно задати значення за замовчуванням: `note ?? ""`.
 
 `Convert.ToDateTime(string)` перетворює рядок у `DateTime`, орієнтуючись на поточну культуру. Для надійного парсингу з явним форматом краще використовувати `DateTime.ParseExact` або `DateTime.TryParseExact` (розд. 12.2).
 
@@ -187,6 +205,7 @@ object d = Convert.ChangeType("3.14", typeof(double));
 
 ```csharp run
 using System;
+using System.Globalization;
 
 Console.WriteLine("=== Зчитування даних пацієнта з рядків ===");
 
@@ -200,8 +219,8 @@ string diagnosisRaw = null; // необов'язкове поле
 
 // Convert для гарантовано коректних рядків
 int    age     = Convert.ToInt32(ageRaw);
-double weight  = Convert.ToDouble(weightRaw);
-double height  = Convert.ToDouble(heightRaw);
+double weight  = Convert.ToDouble(weightRaw, CultureInfo.InvariantCulture);
+double height  = Convert.ToDouble(heightRaw, CultureInfo.InvariantCulture);
 bool   active  = Convert.ToBoolean(activeRaw == "1" ? "True" : "False");
 string diag    = Convert.ToString(diagnosisRaw); // "" якщо null
 
@@ -247,6 +266,7 @@ foreach (var s in inputs)
 
 ```csharp run
 using System;
+using System.Globalization;
 using System.Text;
 
 Console.WriteLine("=== Base64: медичний ідентифікатор ===");
@@ -281,7 +301,7 @@ Type[]   types  = { typeof(int), typeof(double), typeof(bool), typeof(string) };
 
 for (int i = 0; i < keys.Length; i++)
 {
-    object result = Convert.ChangeType(values[i], types[i]);
+    object result = Convert.ChangeType(values[i], types[i], CultureInfo.InvariantCulture);
     Console.WriteLine($"  {keys[i],-8}: \"{values[i],-14}\" -> {result,-16} ({result.GetType().Name})");
 }
 ```
