@@ -55,6 +55,9 @@ $SUDO apt-get install -y -qq --no-install-recommends \
 say ".NET 10 SDK"
 if command -v dotnet >/dev/null 2>&1 && dotnet --list-sdks | grep -q '^10\.'; then
     echo "вже є: $(dotnet --version)"
+elif $SUDO apt-get install -y -qq dotnet-sdk-10.0 >/dev/null 2>&1; then
+    # пакет Ubuntu: працює й тоді, коли мережева політика блокує хости Microsoft
+    echo "з apt: $(dotnet --version)"
 else
     curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
     bash /tmp/dotnet-install.sh --channel 10.0 --install-dir "$HOME/.dotnet" >/dev/null
