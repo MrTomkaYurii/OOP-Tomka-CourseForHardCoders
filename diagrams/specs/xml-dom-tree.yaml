@@ -1,0 +1,74 @@
+# Лекція 19.2 «XML-формат та XmlDocument»
+# Оригінал: lectures/_assets/19-02/Архив/xml-dom-tree.png
+id: xml-dom-tree
+title: "XML і DOM-дерево XmlDocument"
+subtitle: "XmlDocument читає документ цілком і будує дерево вузлів XmlNode; атрибути — окремі вузли, але не діти елемента"
+
+types: [XmlDocument, XmlNode, XmlElement, XmlAttribute, XmlNodeType, XmlText]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "XML"
+            children:
+              - box:
+                  check: skip
+                  code: |
+                    <?xml version="1.0" encoding="utf-8"?>
+                    <!-- Медична картка -->
+                    <patientRecord>
+                      <patient id="PT-1001" status="active">
+                        <name>Петренко Іван</name>
+                        <ward>Терапія</ward>
+                      </patient>
+                      <diagnoses>
+                        <diagnosis code="I10">Гіпертонія</diagnosis>
+                      </diagnoses>
+                    </patientRecord>
+              - note:
+                  text:
+                    - "Один корінь; теги закриваються в порядку відкриття;"
+                    - "регістр важливий: `<Name>` ≠ `<name>`"
+        - panel:
+            heading: "Дерево вузлів (doc.ChildNodes)"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["вузол", "NodeType", "у коді"]
+                  groups:
+                    - rows:
+                        - ["#document",             "Document",    "`doc`"]
+                        - ["├ xml",                 "XmlDeclaration", "`doc.FirstChild`"]
+                        - ["├ #comment",            "Comment",     ""]
+                        - ["└ patientRecord",       "Element",     "`doc.DocumentElement`"]
+                        - ["   ├ patient",          "[[Element]]", "`root[\"patient\"]`"]
+                        - ["   │  @id, @status",    "Attribute",   "`.Attributes[\"id\"]`"]
+                        - ["   │  ├ name",          "Element",     ""]
+                        - ["   │  │  └ #text",      "Text",        "`\"Петренко Іван\"`"]
+                        - ["   │  └ ward → #text",  "Element → Text", ""]
+                        - ["   └ diagnoses",        "Element",     ""]
+                        - ["      └ diagnosis",     "Element",     "`@code` + `#text`"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "`patient.ChildNodes.Count` = 2 — атрибути туди [[не входять]];"
+                    - "`patient.InnerText` = `\"Петренко ІванТерапія\"` — весь текст нащадків"
+
+check:
+  usings: [System, System.Xml]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var doc = new XmlDocument();
+    doc.LoadXml("<?xml version=\"1.0\" encoding=\"utf-8\"?><!-- Медична картка --><patientRecord><patient id=\"PT-1001\" status=\"active\"><name>Петренко Іван</name><ward>Терапія</ward></patient><diagnoses><diagnosis code=\"I10\">Гіпертонія</diagnosis></diagnoses></patientRecord>");
+    Eq(doc.FirstChild!.NodeType, XmlNodeType.XmlDeclaration); Eq(doc.ChildNodes[1]!.NodeType, XmlNodeType.Comment);
+    var p = doc.DocumentElement!["patient"]!;
+    Eq(p.ChildNodes.Count, 2); Eq(p.Attributes!["id"]!.Value, "PT-1001"); Eq(p.Attributes["id"]!.NodeType, XmlNodeType.Attribute);
+    Eq(p["name"]!.FirstChild!.NodeType, XmlNodeType.Text); Eq(p.InnerText, "Петренко ІванТерапія");
+    Eq(doc.DocumentElement["Patient"], (XmlElement?)null);
+
+publish:
+  dark: ../lectures/_assets/19-02/xml-dom-tree.png
+  bw: ../lectures/_assets/19-02/book/xml-dom-tree.png
