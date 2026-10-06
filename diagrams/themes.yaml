@@ -1,0 +1,93 @@
+# Палітри схем курсу. Кольори задаються ТІЛЬКИ тут; специфікації схем
+# оперують ролями (ui.* та syntax.*), а не кольорами.
+#
+# shapes: panel      — великі розділи схеми (рамка-акцент)
+#         box        — звичайний блок усередині розділу
+#         box_accent — головне поняття схеми (одне-два на схему)
+#         box_muted  — примітка / другорядне (пунктир)
+# ui:     ролі тексту інтерфейсу схеми
+# syntax: ролі підсвітки C# (одна роль = один колір на всій схемі)
+
+font: JetBrains Mono
+
+themes:
+  dark:            # сайт tomka.space: темний фон, м'ятні рамки й заголовки
+    bg: "#111413"
+    shapes:
+      panel:      { fill: "#161b19", stroke: "#76c7ad", width: 2 }
+      box:        { fill: "#1c2220", stroke: "#4a5a54", width: 1 }
+      box_accent: { fill: "#1a2622", stroke: "#76c7ad", width: 2 }
+      box_muted:  { fill: "#161b19", stroke: "#7d8a85", width: 1, dashed: true }
+    arrow: { color: "#a1aaa6", width: 1.5 }
+    ui:
+      title:    { color: "#76c7ad", bold: true }
+      subtitle: { color: "#a1aaa6" }
+      heading:  { color: "#76c7ad", bold: true }
+      boxtitle: { color: "#e5e9e7", bold: true }
+      text:     { color: "#e5e9e7" }
+      muted:    { color: "#a1aaa6" }
+      label:    { color: "#a1aaa6", italic: true }
+      tag:      { color: "#a1aaa6", italic: true }
+    syntax:
+      plain:   { color: "#e5e9e7" }
+      keyword: { color: "#8fb8f0" }
+      type:    { color: "#76c7ad" }
+      method:  { color: "#e8cf8a" }
+      string:  { color: "#e9a77c" }
+      number:  { color: "#b8d7a3" }
+      comment: { color: "#93a29b", italic: true }
+      changed: { color: "#f0c977", bold: true, underline: true }
+
+  light:           # друк на білому / світла тема: той самий характер, темніші відтінки
+    bg: "#ffffff"
+    shapes:
+      panel:      { fill: "#f7faf9", stroke: "#2e8b6f", width: 2 }
+      box:        { fill: "#ffffff", stroke: "#9fb1aa", width: 1 }
+      box_accent: { fill: "#eef7f3", stroke: "#2e8b6f", width: 2 }
+      box_muted:  { fill: "#f7faf9", stroke: "#6b7a74", width: 1, dashed: true }
+    arrow: { color: "#4f5b56", width: 1.5 }
+    ui:
+      title:    { color: "#1f6f57", bold: true }
+      subtitle: { color: "#4f5b56" }
+      heading:  { color: "#1f6f57", bold: true }
+      boxtitle: { color: "#17201c", bold: true }
+      text:     { color: "#17201c" }
+      muted:    { color: "#4f5b56" }
+      label:    { color: "#4f5b56", italic: true }
+      tag:      { color: "#4f5b56", italic: true }
+    syntax:
+      plain:   { color: "#17201c" }
+      keyword: { color: "#1d4fb0" }
+      type:    { color: "#16735a" }
+      method:  { color: "#7f4d00" }
+      string:  { color: "#a03d0c" }
+      number:  { color: "#4c6b14" }
+      comment: { color: "#5b6863", italic: true }
+      changed: { color: "#b42318", bold: true, underline: true }
+
+  bw:              # ч/б друк: лише чорний/сірий/білий; зміст — жирністю, курсивом, пунктиром, товщиною
+    bg: "#ffffff"
+    shapes:
+      panel:      { fill: "#ffffff", stroke: "#000000", width: 2 }
+      box:        { fill: "#ffffff", stroke: "#000000", width: 1 }
+      box_accent: { fill: "#ffffff", stroke: "#000000", width: 3 }
+      box_muted:  { fill: "#ffffff", stroke: "#000000", width: 1, dashed: true }
+    arrow: { color: "#000000", width: 1.5 }
+    ui:
+      title:    { color: "#000000", bold: true }
+      subtitle: { color: "#333333" }
+      heading:  { color: "#000000", bold: true }
+      boxtitle: { color: "#000000", bold: true }
+      text:     { color: "#000000" }
+      muted:    { color: "#333333" }
+      label:    { color: "#333333", italic: true }
+      tag:      { color: "#333333", italic: true }
+    syntax:
+      plain:   { color: "#000000" }
+      keyword: { color: "#000000", bold: true }
+      type:    { color: "#000000" }
+      method:  { color: "#000000" }
+      string:  { color: "#000000" }
+      number:  { color: "#000000" }
+      comment: { color: "#444444", italic: true }
+      changed: { color: "#000000", bold: true, underline: true }

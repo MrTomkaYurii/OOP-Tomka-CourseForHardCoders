@@ -1,0 +1,157 @@
+# Лекція 14.2 «Застосування рефлексії та дослідження типів»
+# Оригіналу немає: лекція посилалася на _assets/14-02/binding-flags.png, якого не існувало.
+id: binding-flags
+title: "GetMembers і BindingFlags: які члени бачить рефлексія"
+subtitle: "BindingFlags — перелік-прапорець [Flags]: умови комбінуються через |"
+
+types: [MedicalRecord, PatientRecord, BindingFlags]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - stack:
+            gap: 24
+            children:
+              # ── 1. Як скласти фільтр ───────────────────────────────────
+              - panel:
+                  heading: "Як скласти фільтр"
+                  children:
+                    - row:
+                        gap: 16
+                        equal: true
+                        children:
+                          - box:
+                              title: "1 · доступ — хоча б один"
+                              code: |
+                                BindingFlags.Public
+                                BindingFlags.NonPublic
+                              check: skip
+                              notes: ["`NonPublic`: private, protected,", "internal"]
+                          - box:
+                              title: "2 · рівень — хоча б один"
+                              code: |
+                                BindingFlags.Instance
+                                BindingFlags.Static
+                              check: skip
+                              notes: ["`Static`: static-поля і методи,", "а також `const`"]
+                    - row:
+                        gap: 16
+                        equal: true
+                        children:
+                          - box:
+                              title: "3 · уточнення — за потреби"
+                              code: |
+                                DeclaredOnly     // без успадкованих
+                                FlattenHierarchy // + static бази
+                                IgnoreCase       // регістр імені
+                              check: skip
+                          - box:
+                              kind: box_accent
+                              title: "Пастка"
+                              notes:
+                                - "`GetMembers()` без аргументів ="
+                                - "`Public | Instance | Static`."
+                                - "Явні прапорці — CLR нічого"
+                                - "не додає: `GetMembers(NonPublic)`"
+                                - "→ 0 членів"
+              # ── 2. Типові комбінації ───────────────────────────────────
+              - panel:
+                  heading: "Типові комбінації"
+                  children:
+                    - flow:
+                        caption: "префікс `BindingFlags.` опущено (`using static`)"
+                        check: "_ = t.GetMembers({});"
+                        right_code: false
+                        rows:
+                          - { left: "Public | Instance",                     right: "публічні + успадковані" }
+                          - { left: "NonPublic | Instance",                  right: "private-поля, backing-поля" }
+                          - { left: "DeclaredOnly | Public | Instance",      right: "лише з цього класу" }
+                          - { left: "Public | Static",                       right: "публічні статичні" }
+                          - { left: "Public | NonPublic | Instance | Static", right: "усе, крім private бази" }
+
+        - stack:
+            gap: 24
+            children:
+              # ── 3. Що знаходить рефлексія ──────────────────────────────
+              - panel:
+                  heading: "Що знаходить рефлексія"
+                  children:
+                    - box:
+                        code: |
+                          class MedicalRecord
+                          {
+                              public string GetSummary() => "...";
+                          }
+                          class PatientRecord : MedicalRecord
+                          {
+                              public string FullName { get; set; } = "";
+                              private double _bmi;
+                          }
+                        check: skip
+                    - kv:
+                        columns: ["член", "вид", "потрібні прапорці"]
+                        groups:
+                          - rows:
+                              - ["FullName",                  "Property",    "`Public | Instance`"]
+                              - ["get_FullName",              "Method",      "`Public | Instance`"]
+                              - ["<FullName>k__BackingField", "Field",       "`NonPublic | Instance`"]
+                              - ["_bmi",                      "Field",       "`NonPublic | Instance`"]
+                              - ["GetSummary",                "Method",      "успадкований: без `DeclaredOnly`"]
+                              - [".ctor",                     "Constructor", "`Public | Instance`"]
+                    - note:
+                        text:
+                          - "автовластивість = властивість + 2 методи-аксесори"
+                          - "+ приховане поле, згенероване компілятором"
+              # ── 4. DeclaringType / ReflectedType ───────────────────────
+              - panel:
+                  heading: "DeclaringType чи ReflectedType"
+                  children:
+                    - box:
+                        code: |
+                          MethodInfo m = t.GetMethod("GetSummary")!;
+                          Type? d = m.DeclaringType; // MedicalRecord
+                          Type? r = m.ReflectedType; // PatientRecord
+                        notes:
+                          - "Declaring — де метод написано; Reflected — через"
+                          - "який тип його отримано. З `DeclaredOnly` — збігаються"
+
+check:
+  usings: [System, System.Reflection, "static System.Reflection.BindingFlags", Med]
+  context: |
+    Type t = typeof(PatientRecord);
+  asserts: |
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+    bool Has(string name, BindingFlags f) => Array.Exists(t.GetMembers(f), x => x.Name == name);
+    Assert(d == typeof(MedicalRecord) && r == typeof(PatientRecord), "Declaring/Reflected");
+    Assert(t.GetMembers(NonPublic).Length == 0, "NonPublic без Instance → 0");
+    Assert(Has("FullName", Public | Instance) && Has("get_FullName", Public | Instance), "FullName/get_FullName");
+    Assert(Has("<FullName>k__BackingField", NonPublic | Instance) && !Has("<FullName>k__BackingField", Public | Instance), "backing field");
+    Assert(Has("_bmi", NonPublic | Instance), "_bmi");
+    Assert(Has("GetSummary", Public | Instance) && !Has("GetSummary", DeclaredOnly | Public | Instance), "GetSummary успадкований");
+    Assert(Has(".ctor", Public | Instance), ".ctor");
+    Assert(Has("Secret", NonPublic | Instance) == false, "private базового класу не видно");
+    Assert(Array.Exists(t.GetMembers(), x => x.Name == "Count"), "GetMembers() включає Static");
+    Assert(Has("Max", Public | Static), "const видно через Static");
+    Assert(m.DeclaringType == m.ReflectedType == false, "різні без DeclaredOnly");
+  types: |
+    namespace Med
+    {
+        public class MedicalRecord
+        {
+            private int Secret;
+            public string GetSummary() => "..." + Secret;
+        }
+        public class PatientRecord : MedicalRecord
+        {
+            public static int Count;
+            public const int Max = 150;
+            public string FullName { get; set; } = "";
+            private double _bmi;
+            public double Bmi => _bmi;
+        }
+    }
+
+publish:
+  dark: ../lectures/_assets/14-02/binding-flags.png
+  bw: ../lectures/_assets/14-02/book/binding-flags.png

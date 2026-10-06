@@ -57,3 +57,6 @@ __pycache__/
 
 # Generated output files
 output/
+
+# Diagram pipeline: згенеровані .drawio/PNG/PDF і перевірочні C#-проєкти (публікуються в lectures/_assets)
+diagrams/out/

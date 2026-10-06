@@ -1,0 +1,146 @@
+# Лекція 14.4 «Дослідження полів та властивостей за допомогою рефлексії»
+# Оригінал: lectures/_assets/14-04/Архив/fields-properties.png
+id: fields-properties
+title: "FieldInfo і PropertyInfo: читання та запис значень"
+subtitle: "Поле — ділянка пам'яті об'єкта; властивість — пара методів get/set над нею"
+
+types: [PatientRecord, BindingFlags]
+
+body:
+  - row:
+      gap: 24
+      children:
+        # ── 1. FieldInfo ──────────────────────────────────────────────────
+        - panel:
+            heading: "FieldInfo — поле"
+            children:
+              - kv:
+                  check: "_ = f!.{};"
+                  groups:
+                    - heading: "опис"
+                      rows:
+                        - ["Name",       "`\"_bmi\"`, `\"<FullName>k__BackingField\"`"]
+                        - ["FieldType",  "тип поля"]
+                        - ["IsPrivate",  "`private` (є й IsPublic, IsFamily…)"]
+                        - ["IsStatic",   "`static`"]
+                        - ["IsInitOnly", "`readonly`"]
+                        - ["IsLiteral",  "`const` — значення вшите в IL"]
+                    - heading: "дії (сигнатури)"
+                      check: skip
+                      rows:
+                        - ["GetValue(obj)",    "прочитати; `null` для static"]
+                        - ["SetValue(obj, v)", "записати значення"]
+
+        # ── 2. PropertyInfo ───────────────────────────────────────────────
+        - panel:
+            heading: "PropertyInfo — властивість"
+            children:
+              - kv:
+                  check: "_ = pi!.{};"
+                  groups:
+                    - heading: "опис"
+                      rows:
+                        - ["Name",         "`\"FullName\"`"]
+                        - ["PropertyType", "тип значення"]
+                        - ["CanRead",      "є `get`"]
+                        - ["CanWrite",     "є `set` або `init`"]
+                        - ["GetMethod",    "getter як `MethodInfo?`"]
+                        - ["SetMethod",    "setter як `MethodInfo?`"]
+                        - ["GetIndexParameters()", "параметри індексатора"]
+                    - heading: "дії (сигнатури)"
+                      check: skip
+                      rows:
+                        - ["GetValue(obj)",    "викликає `get`"]
+                        - ["SetValue(obj, v)", "викликає `set` / `init`"]
+
+        # ── 3. Порядок дій ────────────────────────────────────────────────
+        - panel:
+            heading: "Порядок дій"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - title: "1 · знайти член"
+                      lines: |
+                        var flags = BindingFlags.NonPublic
+                                  | BindingFlags.Instance;
+                        FieldInfo? f = t.GetField("_bmi", flags);
+                        PropertyInfo? pi = t.GetProperty("FullName");
+                    - title: "2 · прочитати"
+                      lines: |
+                        object? v = f!.GetValue(p); // упаковка double
+                      sub: ["для static-члена замість `obj` — `null`"]
+                    - title: "3 · записати"
+                      kind: box_accent
+                      lines: |
+                        f.SetValue(p, 27.1);
+                        if (pi!.CanWrite) pi.SetValue(p, "Коваль О.");
+
+  # ── 4. Що дозволяє SetValue ───────────────────────────────────────────────
+  - panel:
+      heading: "Що дозволяє SetValue (.NET 5+)"
+      children:
+        - row:
+            gap: 24
+            children:
+              - kv:
+                  key_code: false
+                  columns: ["оголошення", "IsLiteral", "IsInitOnly", "SetValue"]
+                  groups:
+                    - rows:
+                        - ["`public const int MaxAge = 150;`",        "`true`",  "`false`", "`[[FieldAccessException]]`"]
+                        - ["`static readonly int Limit = 3;`",        "`false`", "`true`",  "`[[FieldAccessException]]`"]
+                        - ["`readonly double _weight;`",              "`false`", "`true`",  "працює — `readonly` не захист"]
+                        - ["`string FullName { get; init; }`",        "—",       "—",       "працює — `CanWrite` = `true`"]
+              - stack:
+                  gap: 16
+                  children:
+                    - note:
+                        kind: box_accent
+                        text:
+                          - "`readonly` та `init` захищають від"
+                          - "компілятора, а не від рефлексії"
+                    - note:
+                        text:
+                          - "`const`: `GetValue(null)` повертає"
+                          - "вшите значення — `150`"
+
+check:
+  usings: [System, System.Reflection, Med]
+  context: |
+    Type t = typeof(PatientRecord);
+    var p = new PatientRecord();
+  asserts: |
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+    Assert(v is double d0 && d0 == 18.5 && p.Bmi == 27.1 && p.FullName == "Коваль О.", "get/set");
+    Assert(f.IsPrivate && f.IsInitOnly == false && f.IsLiteral == false, "_bmi");
+    Assert(pi.CanWrite && pi.SetMethod is not null, "init → CanWrite");
+    var all = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+    var cst = t.GetField("MaxAge", all)!; var sro = t.GetField("Limit", all)!; var ro = t.GetField("_weight", all)!;
+    Assert(cst.IsLiteral && !cst.IsInitOnly && (int)cst.GetValue(null)! == 150, "const");
+    Assert(!sro.IsLiteral && sro.IsInitOnly && sro.IsStatic, "static readonly");
+    Assert(!ro.IsLiteral && ro.IsInitOnly, "readonly");
+    try { cst.SetValue(null, 1); Assert(false, "const SetValue"); } catch (FieldAccessException) { }
+    try { sro.SetValue(null, 1); Assert(false, "static readonly SetValue"); } catch (FieldAccessException) { }
+    ro.SetValue(p, 99.0); Assert(p.Weight == 99.0, "readonly SetValue працює");
+    Assert(t.GetField("<FullName>k__BackingField", all) is not null, "backing field name");
+    Assert(t.GetProperty("Item")!.GetIndexParameters().Length == 1, "indexer");
+  types: |
+    namespace Med
+    {
+        public class PatientRecord
+        {
+            public const int MaxAge = 150;
+            static readonly int Limit = 3;
+            private readonly double _weight = 70;
+            private double _bmi = 18.5;
+            public string FullName { get; init; } = "";
+            public double Bmi => _bmi;
+            public double Weight => _weight + Limit * 0;
+            public string this[int i] => FullName;
+        }
+    }
+
+publish:
+  dark: ../lectures/_assets/14-04/fields-properties.png
+  bw: ../lectures/_assets/14-04/book/fields-properties.png
