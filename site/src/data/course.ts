@@ -455,6 +455,26 @@ export async function renderMarkdown(markdown: string, options: { assetPrefix?: 
     return highlighter.codeToHtml(text, { lang: language, theme: "github-dark" });
   };
 
+  // Схеми лекцій мають дві версії: темну (_assets/NN-NN/x.png) і ч/б для книги
+  // (_assets/NN-NN/book/x.png, генерує diagrams/). Якщо ч/б існує — віддаємо обидві,
+  // а CSS показує потрібну за темою сайту. loading="lazy": прихована (display:none)
+  // картинка браузером не завантажується, тож зайвого трафіку немає.
+  const escapeAttr = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  renderer.image = ({ href, title, text }) => {
+    const alt = escapeAttr(text ?? "");
+    const titleAttr = title ? ` title="${escapeAttr(title)}"` : "";
+    const prefix = options.assetPrefix ? `${options.assetPrefix}/` : null;
+    if (prefix && href.startsWith(prefix)) {
+      const rel = href.slice(prefix.length);                        // "13-05/span-overview.png"
+      const bookRel = path.posix.join(path.posix.dirname(rel), "book", path.posix.basename(rel));
+      if (existsSync(path.join(lecturesDir, "_assets", bookRel))) {
+        return `<img class="theme-img theme-img-dark" src="${escapeAttr(href)}" alt="${alt}"${titleAttr} loading="lazy" decoding="async">`
+             + `<img class="theme-img theme-img-light" src="${escapeAttr(prefix + bookRel)}" alt="${alt}"${titleAttr} loading="lazy" decoding="async">`;
+      }
+    }
+    return false; // не схема (скриншоти тощо) — стандартний рендер marked, без змін
+  };
+
   const preparedMarkdown = options.assetPrefix
     ? markdown.replace(/\]\(_assets\/([^)]+)\)/g, `](${options.assetPrefix}/$1)`)
     : markdown;
