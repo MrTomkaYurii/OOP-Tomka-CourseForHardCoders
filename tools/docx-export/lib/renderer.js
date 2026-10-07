@@ -5,7 +5,7 @@
 
 const {
   Paragraph, TextRun, Table, TableRow, TableCell,
-  AlignmentType, BorderStyle, WidthType, ShadingType,
+  AlignmentType, BorderStyle, WidthType, ShadingType, TabStopType, Tab,
 } = require('docx');
 
 const { C, SZ, IND, LS, SP, BD, PAGE, CODE_LABELS } = require('./constants');
@@ -237,15 +237,34 @@ function render(blocks, assetsBase, opts = {}) {
         const codeLines = block.lines.length ? block.lines : [''];
         const last = codeLines.length - 1;
 
+        // Лекції (книга): номери рядків замість синьої смуги — у кожному блоці з 1,
+        // сірі, вирівняні праворуч; між номером і кодом — проміжок. Висячий відступ:
+        // перенесений довгий рядок продовжується під кодом, а не під номерами.
+        // Лабораторні — без змін (синя смуга, без номерів).
+        const numbered = !lab;
+        const digits   = String(codeLines.length).length;
+        const charTw   = Math.round(SZ.CODE / 2 * 0.55 * 20);   // ширина символу Consolas, twips
+        const numColTw = (digits + 2) * charTw;                  // цифри + проміжок 2 символи
+
         codeLines.forEach((codeLine, idx) => {
+          const codeRun = new TextRun({
+            text:  codeLine === '' ? ' ' : codeLine,
+            font:  'Consolas',
+            size:  SZ.CODE,
+            color: C.CODE_TEXT,
+          });
+          const numRuns = numbered ? [
+            new TextRun({ text: String(idx + 1).padStart(digits, ' '), font: 'Consolas',
+                          size: SZ.CODE, color: C.LINE_NUM }),
+            new TextRun({ children: [new Tab()], font: 'Consolas', size: SZ.CODE }),
+          ] : [];
           elems.push(new Paragraph({
             style:    'CodeBlock',
-            children: [new TextRun({
-              text:  codeLine === '' ? ' ' : codeLine,
-              font:  'Consolas',
-              size:  SZ.CODE,
-              color: C.CODE_TEXT,
-            })],
+            children: [...numRuns, codeRun],
+            ...(numbered ? {
+              indent:   { left: numColTw, hanging: numColTw },
+              tabStops: [{ type: TabStopType.LEFT, position: numColTw }],
+            } : {}),
             shading: { type: ShadingType.CLEAR, color: 'auto', fill: C.CODE_BG },
             spacing: {
               before: 0,
@@ -254,7 +273,8 @@ function render(blocks, assetsBase, opts = {}) {
             },
             border: {
               top:    nil(),
-              left:   bdr(BD.ACCENT_W, C.ACCENT),     // 3pt синя смуга
+              left:   numbered ? bdr(BD.CODE_SIDE, C.CODE_BORD)   // лекції: тонка сіра, як решта рамки
+                               : bdr(BD.ACCENT_W, C.ACCENT),     // лаби: 3pt синя смуга
               right:  bdr(BD.CODE_SIDE, C.CODE_BORD),
               bottom: idx === last ? bdr(BD.CODE_SIDE, C.CODE_BORD) : nil(),
             },

@@ -46,6 +46,7 @@ const C = {
   CODE_BG:    'F8F8F8',  // фон блоку коду
   CODE_LBL:   'EBEBEB',  // фон мітки мови
   CODE_BORD:  'CCCCCC',  // рамка блоку коду (сіра)
+  LINE_NUM:   '8C8C8C',  // номери рядків у блоках коду (лекції)
   INLINE_BG:  'F0F0F0',  // фон inline `коду`
 
   // Таблиці
