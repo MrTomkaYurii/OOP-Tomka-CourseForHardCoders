@@ -1,0 +1,37 @@
+# Лекція 1.2 «.NET Framework та сучасний .NET»
+# Оригінал: lectures/_assets/01-02/Архив/dotnet-timeline.png
+id: dotnet-timeline
+title: "Еволюція платформи .NET"
+subtitle: "Дві гілки: .NET Framework (лише Windows) заморожено на 4.8.1; .NET Core став єдиним сучасним .NET"
+
+types: []
+
+body:
+  - panel:
+      heading: ".NET Framework — лише Windows"
+      children:
+        - hchain:
+            equal: true
+            nodes:
+              - {title: "1.0", sub: ["2002", "перший реліз"]}
+              - {title: "4.0", via: "", sub: ["2010"]}
+              - {title: "4.8", via: "", sub: ["2019"]}
+              - {title: "4.8.1", via: "", kind: box_muted, sub: ["2022 · остання", "лише виправлення"]}
+  - panel:
+      heading: ".NET Core → .NET — кросплатформово, відкритий код"
+      children:
+        - hchain:
+            equal: true
+            nodes:
+              - {title: "Core 1.0", sub: ["2016", "перезапуск"]}
+              - {title: "Core 3.1", via: "", sub: ["2019 · LTS"]}
+              - {title: ".NET 5", via: "", sub: ["2020", "без «Core»"]}
+              - {title: ".NET 6", via: "", sub: ["2021 · LTS"]}
+              - {title: ".NET 8", via: "", sub: ["2023 · LTS"]}
+              - {title: ".NET 10", via: "", kind: box_accent, sub: ["2025 · LTS", "поточна"]}
+  - note:
+      text: ["Номер 4 пропустили, щоб не плутати з .NET Framework 4.x. З .NET 5 нова версія виходить щороку в листопаді."]
+
+publish:
+  dark: ../lectures/_assets/01-02/dotnet-timeline.png
+  bw: ../lectures/_assets/01-02/book/dotnet-timeline.png
