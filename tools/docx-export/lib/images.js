@@ -29,7 +29,12 @@ function resolveImagePath(src, assetsBase) {
   if (!src || !assetsBase) return null;
   // Прибираємо "_assets/" якщо є — вже врахований у assetsBase
   const rel = src.replace(/^_assets\//, '');
-  const candidate = path.join(assetsBase, ...rel.split('/'));
+  const parts = rel.split('/');
+  // Книга — ч/б версія схеми (_assets/NN-NN/book/x.png, генерує diagrams/), якщо є;
+  // інакше — оригінал (темна схема сайту або скриншот).
+  const book = path.join(assetsBase, ...parts.slice(0, -1), 'book', parts[parts.length - 1]);
+  if (fs.existsSync(book)) return book;
+  const candidate = path.join(assetsBase, ...parts);
   return fs.existsSync(candidate) ? candidate : null;
 }
 

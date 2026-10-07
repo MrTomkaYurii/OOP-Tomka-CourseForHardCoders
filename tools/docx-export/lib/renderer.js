@@ -17,6 +17,11 @@ const bdr = (size, color) => ({ style: BorderStyle.SINGLE, size, color });
 const nil = ()             => ({ style: BorderStyle.NIL });
 
 // ── Inline-токени → TextRun[] ─────────────────────────────────────────────────
+// Лекції (книга): `інлайн-код` у тексті — тим самим шрифтом і кеглем, що й абзац,
+// без сірої заливки (Times New Roman 10.5). Лабораторні: моноширинний із заливкою —
+// там це шляхи, команди, імена файлів. Перемикається в render() за opts.lab.
+let plainInlineCode = true;
+
 function tokensToRuns(tokens, base) {
   const defaults = { font: 'Times New Roman', size: SZ.BODY, color: C.BODY };
   const out = [];
@@ -35,6 +40,9 @@ function tokensToRuns(tokens, base) {
         out.push(...(tok.children ? tokensToRuns(tok.children, { ...base, bold: true, italics: true })
                                   : [new TextRun({ text: tok.text, ...merged, bold: true, italics: true })])); break;
       case 'code':
+        if (plainInlineCode) {
+          out.push(new TextRun({ text: tok.text, ...merged })); break;
+        }
         out.push(new TextRun({
           text:    tok.text,
           font:    'Consolas',
@@ -74,6 +82,7 @@ function renderChildren(children, assetsBase, opts) {
 // ── Основна функція ───────────────────────────────────────────────────────────
 function render(blocks, assetsBase, opts = {}) {
   const lab = !!opts.lab;
+  plainInlineCode = !lab;
   let inSummary   = false;
   let inQuestions = false;  // true між h1 і наступним chapter
   let numbersIdx  = 0;      // індекс поточного слота нумерованого списку
