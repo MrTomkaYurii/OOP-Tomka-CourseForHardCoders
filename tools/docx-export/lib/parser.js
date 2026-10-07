@@ -157,8 +157,8 @@ function parseBlocks(lines, opts = {}) {
 
     // ── Горизонтальна лінія "---" ────────────────────────────────────────────
     if (HR_RE.test(ln.trim())) {
-      if (!lab) blocks.push({ type: 'para', text: ln.trim(), firstAfterHead: lastWasHead });
-      // у lab-режимі просто пропускаємо
+      // "---" — лише візуальний роздільник у markdown; у Word його пропускаємо
+      // (раніше в лекціях потрапляв у текст як «---», зокрема в блоках питань)
       i++; lastWasHead = false; continue;
     }
 

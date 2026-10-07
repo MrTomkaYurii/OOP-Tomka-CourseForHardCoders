@@ -16,6 +16,12 @@ const { buildImageElems } = require('./images');
 const bdr = (size, color) => ({ style: BorderStyle.SINGLE, size, color });
 const nil = ()             => ({ style: BorderStyle.NIL });
 
+// «Підсумок»: лекції — тонка сіра лінія ліворуч, без заливки; лаби — як було
+const summaryDeco = lab => lab
+  ? { shading: { type: ShadingType.CLEAR, color: 'auto', fill: C.SUMM_BG },
+      border:  { left: bdr(BD.ACCENT_W, C.ACCENT) } }
+  : { border:  { left: bdr(BD.CODE_SIDE, C.SUMM_LINE) } };
+
 // ── Inline-токени → TextRun[] ─────────────────────────────────────────────────
 // Лекції (книга): `інлайн-код` у тексті — тим самим шрифтом і кеглем, що й абзац,
 // без сірої заливки (Times New Roman 10.5). Лабораторні: моноширинний із заливкою —
@@ -192,8 +198,7 @@ function render(blocks, assetsBase, opts = {}) {
           elems.push(new Paragraph({
             style:    'SummaryText',
             children: toRuns(block.text),
-            shading:  { type: ShadingType.CLEAR, color: 'auto', fill: C.SUMM_BG },
-            border:   { left: bdr(BD.ACCENT_W, C.ACCENT) },
+            ...summaryDeco(lab),
           }));
         } else if (lab) {
           // Лабораторні — технічний документ: без абзацного відступу, з відбивкою
@@ -293,7 +298,11 @@ function render(blocks, assetsBase, opts = {}) {
         const colW = Array(nc).fill(base);
         colW[nc - 1] += PAGE.CW - base * nc;  // remainder → остання колонка
 
-        const cellBorder = bdr(BD.TABLE_INN, C.TBL_BORDER);
+        // Лекції (книга) — сірі тони, як блоки коду; лаби — як було (темна шапка)
+        const T = lab
+          ? { head: C.TBL_HEADER, odd: C.TBL_ODD, even: C.TBL_EVEN, border: C.TBL_BORDER, headText: C.WHITE }
+          : { head: C.TBL_G_HEAD, odd: C.TBL_G_ODD, even: C.TBL_G_EVEN, border: C.TBL_G_BORDER, headText: C.BODY };
+        const cellBorder = bdr(BD.TABLE_INN, T.border);
         const allBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
 
         // Широкі таблиці — дрібніший шрифт і вужчі поля клітинок
@@ -312,7 +321,7 @@ function render(blocks, assetsBase, opts = {}) {
               alignment: AlignmentType.LEFT,
               spacing:   { before: 0, after: 0 },
               children:  toRuns(text || '', isHead
-                ? { bold: true, color: C.WHITE, size: szHead }
+                ? { bold: true, color: T.headText, size: szHead }
                 : { size: szBody }),
             })],
           });
@@ -327,15 +336,17 @@ function render(blocks, assetsBase, opts = {}) {
           new TableRow({
             tableHeader: true,
             cantSplit:   true,
-            children: padRow(headerRow).map((c, ci) => mkCell(c, ci, C.TBL_HEADER, true)),
+            children: padRow(headerRow).map((c, ci) => mkCell(c, ci, T.head, true)),
           }),
           ...dataRows.map((row, ri) => new TableRow({
             cantSplit: true,
             children: padRow(row).map((c, ci) =>
-              mkCell(c, ci, ri % 2 === 0 ? C.TBL_ODD : C.TBL_EVEN)),
+              mkCell(c, ci, ri % 2 === 0 ? T.odd : T.even)),
           })),
         ];
 
+        // Відступ перед таблицею (таблиця в Word не має «spacing before»)
+        if (!lab) elems.push(new Paragraph({ children: [], spacing: { before: 0, after: 0, line: 160 } }));
         elems.push(new Table({
           width:        { size: PAGE.CW, type: WidthType.DXA },
           columnWidths: colW,
@@ -356,14 +367,10 @@ function render(blocks, assetsBase, opts = {}) {
           const para = new Paragraph({
             style:     inSummary ? 'SummaryText' : 'ListBullet',
             numbering: { reference: 'bullets', level: 0 },
+            ...(lab ? {} : { alignment: AlignmentType.JUSTIFIED }),
             children:  toRuns(text),
           });
-          if (inSummary) {
-            Object.assign(para, {
-              shading: { type: ShadingType.CLEAR, color: 'auto', fill: C.SUMM_BG },
-              border:  { left: bdr(BD.ACCENT_W, C.ACCENT) },
-            });
-          }
+          if (inSummary) Object.assign(para, summaryDeco(lab));
           elems.push(para);
           elems.push(...renderChildren(children, assetsBase, opts));
         }
@@ -379,6 +386,7 @@ function render(blocks, assetsBase, opts = {}) {
           elems.push(new Paragraph({
             style:     'ListNumber',
             numbering: { reference: ref, level: 0 },
+            ...(lab ? {} : { alignment: AlignmentType.JUSTIFIED }),  // лекції: по ширині (питання тощо)
             children:  toRuns(text),
           }));
           elems.push(...renderChildren(children, assetsBase, opts));
