@@ -1,0 +1,52 @@
+# Лекція 2.16 «Методи»
+# Оригінал: lectures/_assets/02-16/Архив/method-anatomy.png
+id: method-anatomy
+title: "Анатомія методу"
+subtitle: "Тип результату, ім'я, параметри, тіло; повна і скорочена (=>) форми"
+
+types: []
+
+body:
+  - box:
+      title: "string GetDiagnosis(string patientId)"
+      kind: box_accent
+      check: skip
+      code: |
+        string GetDiagnosis(string patientId)    // тип · ім'я · параметри
+        {                                         // тіло
+            if (patientId == "P-001") return "Гіпертонія";
+            return "Невідомо";
+        }
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Частини"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["тип результату", "`string`; `void` — нічого"]
+                        - ["ім'я", "PascalCase, дієслово: `GetDiagnosis`"]
+                        - ["параметри", "`(тип ім'я, …)`, можуть бути порожні"]
+                        - ["тіло", "`{ … }` або `=> вираз;`"]
+        - box:
+            title: "Скорочена форма (C# 6)"
+            check: skip
+            code: |
+              void PrintName(string n)
+                  => Console.WriteLine(n);
+            notes: ["лише для одного виразу;", "визначення ≠ виклик: `PrintName(\"Іван\");`"]
+
+check:
+  usings: [System]
+  asserts: |
+    string GetDiagnosis(string patientId) { if (patientId == "P-001") return "Гіпертонія"; return "Невідомо"; }
+    if (GetDiagnosis("P-001") != "Гіпертонія" || GetDiagnosis("X") != "Невідомо") throw new Exception("m");
+
+publish:
+  dark: ../lectures/_assets/02-16/method-anatomy.png
+  bw: ../lectures/_assets/02-16/book/method-anatomy.png

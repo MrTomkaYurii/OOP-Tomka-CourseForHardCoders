@@ -1,0 +1,50 @@
+# Лекція 2.14 «Масиви»
+# Оригінал: lectures/_assets/02-14/Архив/array-2d.png
+id: array-2d
+title: "Двовимірний масив int[,]"
+subtitle: "schedule — 3 відділення × 4 зміни; доступ schedule[рядок, стовпець]"
+
+types: []
+
+body:
+  - panel:
+      heading: "int[,] schedule (з лекції)"
+      children:
+        - cells:
+            rows:
+              - caption: "рядок 0"
+                cells: ["8", "10", "12", "14"]
+                kinds: [box_accent, box, box, box]
+                top: ["[_,0]", "[_,1]", "[_,2]", "[_,3]"]
+              - caption: "рядок 1"
+                cells: ["9", "11", "13", "15"]
+                kinds: [box, box, box, box]
+              - caption: "рядок 2"
+                cells: ["8", "12", "14", "16"]
+                kinds: [box, box, box, box_accent]
+                note: "3 рядки × 4 стовпці"
+  - panel:
+      heading: "Властивості (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["вираз", "результат"]
+            groups:
+              - rows:
+                  - ["schedule[0, 0]",        "`8`"]
+                  - ["schedule[2, 3]",        "`16`"]
+                  - ["schedule.Rank",         "`2`"]
+                  - ["schedule.GetLength(0)", "`3`"]
+                  - ["schedule.Length",       "`12`"]
+        - text:
+            text: ["Зубчастий `int[][]` — масив масивів різної довжини: `jagged[1][2]`, `jagged[1].Length`."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    int[,] schedule = { { 8, 10, 12, 14 }, { 9, 11, 13, 15 }, { 8, 12, 14, 16 } };
+
+publish:
+  dark: ../lectures/_assets/02-14/array-2d.png
+  bw: ../lectures/_assets/02-14/book/array-2d.png

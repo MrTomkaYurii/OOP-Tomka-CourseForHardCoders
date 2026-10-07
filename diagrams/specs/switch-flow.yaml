@@ -1,0 +1,47 @@
+# Лекція 2.23 «Оператор switch»
+# Оригінал: lectures/_assets/02-23/Архив/switch-flow.png
+id: switch-flow
+title: "Як виконується switch"
+subtitle: "Вираз обчислюється один раз і порівнюється з case по черзі; break виходить зі switch"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      children:
+        - box:
+            title: "Приклад з лекції"
+            check: skip
+            code: |
+              string wardType = "Cardio";
+
+              switch (wardType)
+              {
+                  case "ICU":
+                      Console.WriteLine("Інтенсивна терапія");
+                      break;
+                  case "Surgery":
+                      Console.WriteLine("Хірургія");
+                      break;
+                  [[case "Cardio":]]
+                      Console.WriteLine("Кардіологія");
+                      break;
+                  default:
+                      Console.WriteLine("Загальна палата");
+                      break;
+              }
+        - chain:
+            align: left
+            nodes:
+              - {title: "1 · обчислити вираз", lines: "wardType → \"Cardio\"", lines_check: skip}
+              - {title: "2 · порівняти з case", via: "", lines: "\"ICU\" ✗   \"Surgery\" ✗   \"Cardio\" ✓", lines_check: skip, sub: ["немає збігу → default"]}
+              - {title: "3 · виконати блок", kind: box_accent, via: "збіг", lines: "Console.WriteLine(\"Кардіологія\");", lines_check: skip}
+              - {title: "4 · break — вихід зі switch", via: "", sub: ["без break / return / goto у непорожньому case —", "помилка CS0163: «провалитися» далі не можна"]}
+
+check:
+  usings: [System]
+
+publish:
+  dark: ../lectures/_assets/02-23/switch-flow.png
+  bw: ../lectures/_assets/02-23/book/switch-flow.png

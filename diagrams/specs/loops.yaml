@@ -1,0 +1,84 @@
+# Лекція 2.13 «Цикли»
+# Оригінал: lectures/_assets/02-13/Архив/loops.png
+id: loops
+title: "Чотири цикли C#"
+subtitle: "Де перевіряється умова і скільки разів мінімум виконається тіло"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      children:
+        - stack:
+            gap: 16
+            children:
+              - row:
+                  gap: 16
+                  equal: true
+                  children:
+                    - box:
+                        title: "for"
+                        check: skip
+                        code: |
+                          for (int i = 0; i < n; i++)
+                          {
+                              …
+                          }
+                        notes: ["ініціалізація → умова → тіло → крок", "мінімум 0 разів"]
+                    - box:
+                        title: "while"
+                        check: skip
+                        code: |
+                          while (умова)
+                          {
+                              …
+                          }
+                        notes: ["умова [[до]] тіла", "мінімум 0 разів"]
+              - row:
+                  gap: 16
+                  equal: true
+                  children:
+                    - box:
+                        title: "do … while"
+                        check: skip
+                        code: |
+                          do
+                          {
+                              …
+                          } while (умова);
+                        notes: ["умова [[після]] тіла", "мінімум 1 раз"]
+                    - box:
+                        title: "foreach"
+                        check: skip
+                        code: |
+                          foreach (var t in temps)
+                          {
+                              …
+                          }
+                        notes: ["перебір колекції", "змінна — лише для читання"]
+        - panel:
+            heading: "Керування циклом (виконано)"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - rows:
+                        - ["FirstFever(new[] { 36.6, 38.4, 39.1 })",   "`1`"]
+                        - ["SkipInvalid(new[] { 72, -1, 80, 0, 64 })", "`3`"]
+                        - ["DoWhileRuns(10)",                          "`1`"]
+              - text:
+                  text: ["`break` — вихід з найближчого циклу;", "`continue` — до наступної ітерації;", "`for (;;)` — нескінченний цикл."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    int FirstFever(double[] t) { int idx = -1; for (int i = 0; i < t.Length; i++) { if (t[i] >= 37.5) { idx = i; break; } } return idx; }
+    int SkipInvalid(int[] p) { int n = 0; foreach (var x in p) { if (x <= 0) continue; n++; } return n; }
+    int DoWhileRuns(int dose) { int runs = 0; do { runs++; } while (dose < 5); return runs; }
+
+publish:
+  dark: ../lectures/_assets/02-13/loops.png
+  bw: ../lectures/_assets/02-13/book/loops.png

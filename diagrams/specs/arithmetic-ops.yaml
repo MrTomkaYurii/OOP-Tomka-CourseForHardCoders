@@ -1,0 +1,59 @@
+# Лекція 2.6 «Арифметичні операції»
+# Оригінал: lectures/_assets/02-06/Архив/arithmetic-ops.png
+id: arithmetic-ops
+title: "Арифметичні операції"
+subtitle: "Тип результату визначають операнди; пріоритет і асоціативність — як у математиці"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Бінарні (виконано)"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - rows:
+                        - ["7 / 2",          "`3`"]
+                        - ["7 / 2.0",        "`3.5`"]
+                        - ["(double)7 / 2",  "`3.5`"]
+                        - ["7 % 3",          "`1`"]
+                        - ["-7 % 3",         "`-1`"]
+                        - ["10 / 5 * 2",     "`4`"]
+                        - ["2 + 3 * 4",      "`14`"]
+        - panel:
+            heading: "Інкремент і декремент"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["x = 5; вираз", "значення виразу", "x після"]
+                  groups:
+                    - rows:
+                        - ["Pre()",  "`6`", "6"]
+                        - ["Post()", "`5`", "6"]
+              - text:
+                  text:
+                    - "`++x` — спершу змінює, потім повертає;"
+                    - "`x++` — повертає старе, потім змінює."
+                    - "Окремим рядком різниці немає."
+  - note:
+      text:
+        - "Пріоритет: `x++ x--` → `++x --x` (унарні) → `* / %` → `+ -`; однаковий — зліва направо."
+        - "Ціле ділення на `0` — `DivideByZeroException`, дробове — `∞`."
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    int Pre() { int x = 5; return ++x; }
+    int Post() { int x = 5; return x++; }
+  asserts: |
+    if (!double.IsPositiveInfinity(1.0 / 0)) throw new Exception("inf");
+
+publish:
+  dark: ../lectures/_assets/02-06/arithmetic-ops.png
+  bw: ../lectures/_assets/02-06/book/arithmetic-ops.png
