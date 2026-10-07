@@ -4,7 +4,6 @@ chapterTitle: "Розділ 12. Робота з датами та часом"
 section: 5
 number: "12.5"
 title: "DateTimeOffset та часові пояси"
-source: "../_combined/79-datetimeoffset-ta-chasovi-poiasy.md"
 ---
 
 ## 12.5. DateTimeOffset та часові пояси

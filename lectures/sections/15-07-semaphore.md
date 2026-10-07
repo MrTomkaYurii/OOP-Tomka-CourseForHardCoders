@@ -4,7 +4,6 @@ chapterTitle: "Розділ 15. Багатопоточність"
 section: 7
 number: "15.7"
 title: "Клас Semaphore та SemaphoreSlim"
-source: ""
 ---
 
 ## 15.7. Клас Semaphore та SemaphoreSlim

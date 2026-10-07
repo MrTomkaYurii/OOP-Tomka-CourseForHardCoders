@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 5
 number: "8.5"
 title: "Змінні-посилання та повернення посилання"
-source: "../_combined/50-zminni-posylannia-ta-povernennia-posylannia.md"
 ---
 
 ## 8.5. Змінні-посилання та повернення посилання

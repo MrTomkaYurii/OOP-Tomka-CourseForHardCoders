@@ -4,7 +4,6 @@ chapterTitle: "Розділ 13. Додаткові класи та структ�
 section: 6
 number: "13.6"
 title: "Індекси та діапазони (Index та Range)"
-source: "../_combined/83-indeksy-ta-diapazony.md"
 ---
 
 ## 13.6. Індекси та діапазони (`Index` та `Range`)

@@ -4,8 +4,8 @@
   "description": "Markdown lecture sections → A5 Word document",
   "main": "md-to-docx.js",
   "scripts": {
-    "ch01": "node md-to-docx.js \"../../lectures/sections/01-*.md\" -o \"../../output/lectures/chapter-01.docx\"",
-    "ch02": "node md-to-docx.js \"../../lectures/sections/02-*.md\" -o \"../../output/lectures/chapter-02.docx\"",
+    "book": "node md-to-docx.js --all",
+    "ch01": "node md-to-docx.js \"../../lectures/sections/01-*.md\" \"../../lectures/questions/01-questions.md\" -o output/chapter-01.docx",
     "labs": "node labs-to-docx.js",
     "labs:pdf": "powershell -ExecutionPolicy Bypass -File ./to-pdf-all.ps1"
   },

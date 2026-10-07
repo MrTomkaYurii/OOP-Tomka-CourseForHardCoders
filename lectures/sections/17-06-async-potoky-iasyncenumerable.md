@@ -4,7 +4,6 @@ chapterTitle: "Розділ 17. Асинхронне програмування"
 section: 6
 number: "17.6"
 title: "Асинхронні потоки. IAsyncEnumerable<T>"
-source: ""
 ---
 
 ## 17.6. Асинхронні потоки. IAsyncEnumerable<T>

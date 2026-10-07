@@ -4,7 +4,6 @@ chapterTitle: "Розділ 9. Pattern matching"
 section: 4
 number: "9.4"
 title: "Позиційний патерн"
-source: "../_combined/59-pozytsiinyi-patern.md"
 ---
 
 ## 9.4. Позиційний патерн

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 1
 number: "2.1"
 title: "Структура програми"
-source: "../_migration/source-chunks/02-struktura-programy-zminni-ta-konstanty.md"
 ---
 
 ## 2.1. Структура програми

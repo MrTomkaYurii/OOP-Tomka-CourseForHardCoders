@@ -4,7 +4,6 @@ chapterTitle: "Розділ 15. Багатопоточність"
 section: 6
 number: "15.6"
 title: "Клас Mutex"
-source: ""
 ---
 
 ## 15.6. Клас Mutex

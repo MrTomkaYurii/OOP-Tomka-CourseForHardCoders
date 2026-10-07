@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 9
 number: "4.9"
 title: "Обмеження узагальнень"
-source: "../_combined/26-obmezhennia-uzahalnen.md"
 ---
 
 ## 4.9. Обмеження узагальнень

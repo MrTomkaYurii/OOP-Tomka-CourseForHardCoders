@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 3
 number: "8.3"
 title: "Перевантаження операцій перетворення типів"
-source: "../_combined/48-perevantazhennia-operatsii-peretvorennia-typiv.md"
 ---
 
 ## 8.3. Перевантаження операцій перетворення типів

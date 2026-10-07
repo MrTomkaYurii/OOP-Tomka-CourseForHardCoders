@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 18
 number: "2.18"
 title: "Повернення значення та оператор return"
-source: "../_migration/source-chunks/09-metody-parametry-return.md"
 ---
 
 ## 2.18. Повернення значення та оператор return

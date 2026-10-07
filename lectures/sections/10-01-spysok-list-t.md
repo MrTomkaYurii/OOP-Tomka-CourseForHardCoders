@@ -4,7 +4,6 @@ chapterTitle: "Розділ 10. Колекції"
 section: 1
 number: "10.1"
 title: "Список List<T>"
-source: "../_combined/62-spysok-list-t.md"
 ---
 
 ## 10.1. Список List<T>

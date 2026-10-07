@@ -4,7 +4,6 @@ chapterTitle: "Розділ 6. Делегати, події та лямбди"
 section: 5
 number: "6.5"
 title: "Делегати Action, Predicate та Func"
-source: "../_migration/source-chunks/38-delehaty-action-predicate-ta-func.md"
 ---
 
 ## 6.5. Делегати Action, Predicate та Func

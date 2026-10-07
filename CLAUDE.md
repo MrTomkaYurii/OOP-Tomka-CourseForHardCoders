@@ -1,7 +1,21 @@
 # OOP-Tomka-CourseForHardCoders — правила для Claude
 
-Курс ООП на C# (.NET 10) викладача Юрія Томки: лекції (`lectures/sections/*.md`, сайт
-tomka.space), лабораторні (`labs/`), еталонний проєкт «Клініка» (`src/`), схеми (`diagrams/`).
+Курс ООП на C# (.NET 10) викладача Юрія Томки, сайт tomka.space.
+
+## Структура репозиторію
+
+```
+lectures/     sections/ (147 секцій, 21 розділ), questions/ (питання до розділів),
+              _assets/NN-NN/ (схеми: темні для сайту, book/ — ч/б для книги, Архив/ — старі)
+labs/         інструкції 22 лабораторних (lab-NN-*/instructions.md)
+solutions/    код-розв'язки лаб: Lab01/, Lab02/ (ізольовані завдання), ClinicApp/ (еталон, лаби 03–22)
+git-workshop/ практикум із Git
+concept/      проєктування курсу: COURSE_DESIGN, CONCEPTS_BY_LAB, CODEBASE_STATE, MENU_BY_LAB
+site/         сайт (Astro); runner/ — Blazor-раннер C# для сайту (збирається в CI)
+tools/        diagrams/ (схеми), docx-export/ (книга у Word), code-checker/, structure/
+```
+
+Згенероване (у `.gitignore`): `tools/diagrams/out/`, `tools/docx-export/output/`, `bin/`, `obj/`.
 
 ## Спілкування
 
@@ -11,13 +25,16 @@ tomka.space), лабораторні (`labs/`), еталонний проєкт 
 
 ## Схеми (рисунки) лекцій
 
-Лише через пайплайн `diagrams/` — правила, формат spec і процес у **`diagrams/CLAUDE.md`**
-(прочитати повністю перед роботою). Коротко: `specs/<id>.yaml` → `make.sh <id> --publish`;
-dark → `lectures/_assets/NN-NN/`, bw → `…/book/`, оригінал і старий скрипт → `…/Архив/`.
-Старий підхід (PNG через PIL-скрипт у теці розділу) більше не використовується.
+Лише через пайплайн `tools/diagrams/` — правила, формат spec і процес у
+**`tools/diagrams/CLAUDE.md`** (прочитати повністю перед роботою). Коротко:
+`tools/diagrams/specs/<id>.yaml` → `make.sh <id> --publish`; dark → `lectures/_assets/NN-NN/`,
+bw → `…/book/`, оригінал і старий скрипт → `…/Архив/`. Linux / хмара: спершу
+`bash tools/diagrams/setup-linux.sh`.
 
-Linux / хмара: перед першим запуском `bash diagrams/setup-linux.sh`. Готовий промпт для
-хмарної сесії (рисунки розділів 10–21, відновлюваний) — `diagrams/CLOUD_PROMPT.md`.
+## Книга у Word
+
+`tools/docx-export/`: `npm run book` → `tools/docx-export/output/full-course.docx` (усі розділи
+з питаннями). Правила верстки — `tools/docx-export/style-guide.md`.
 
 ## Лекції (`lectures/sections/*.md`)
 
@@ -38,7 +55,7 @@ Linux / хмара: перед першим запуском `bash diagrams/setu
 6. **Аналіз перед написанням**: таблиця «що є → що покращити», потім текст.
 7. Посилання на схему в тексті («п'ять кроків з діаграми») має відповідати схемі.
 
-## Лабораторні і `src/`
+## Лабораторні і `solutions/ClinicApp/`
 
 - Кожна лаба використовує **лише конструкції з лаб ≤ поточної** — контракт у
   `concept/CONCEPTS_BY_LAB.md` (не лекції!). Generic-колекції — не раніше Lab 09,

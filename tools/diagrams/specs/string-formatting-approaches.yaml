@@ -1,0 +1,110 @@
+# Лекція 11.3 «Форматування та інтерполяція рядків»
+# Оригінал: lectures/_assets/11-03/Архив/string-formatting-approaches.png
+id: string-formatting-approaches
+title: "Форматування рядків: три підходи і специфікатори"
+subtitle: "Той самий результат трьома способами; вигляд чисел залежить від культури (CultureInfo)"
+
+types: [CultureInfo]
+
+body:
+  - panel:
+      heading: "`name = \"Петренко\"`, `age = 67`, `bp = 140.5` → `\"Пацієнт: Петренко, вік: 67, АТ: 140,50\"`"
+      children:
+        - row:
+            gap: 16
+            equal: true
+            children:
+              - box:
+                  title: "Конкатенація +"
+                  code: |
+                    string s1 = "Пацієнт: " + name
+                        + ", вік: " + age
+                        + ", АТ: " + bp.ToString("F2", ua);
+                  notes:
+                    - "весь вираз — один `string.Concat`;"
+                    - "формат — окремо через `ToString`"
+              - box:
+                  title: "string.Format"
+                  code: |
+                    string s2 = string.Format(ua,
+                        "Пацієнт: {0}, вік: {1}, АТ: {2:F2}",
+                        name, age, bp);
+                  notes:
+                    - "шаблон окремо від даних —"
+                    - "зручно для локалізації"
+              - box:
+                  title: "Інтерполяція `$\"…\"`"
+                  kind: box_accent
+                  code: |
+                    string s3 = string.Create(ua,
+                        $"Пацієнт: {name}, вік: {age}, АТ: {bp:F2}");
+                  notes:
+                    - "імена замість номерів; з C# 10 —"
+                    - "[[без]] `string.Format`: `DefaultInterpolatedStringHandler`"
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Специфікатори {значення:формат}"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["вираз", "uk-UA", "InvariantCulture", "що робить"]
+                  groups:
+                    - rows:
+                        - ["{23.7:C2}",     "`\"23,70 ₴\"`",   "`\"¤23.70\"`",     "валюта культури"]
+                        - ["{23:D4}",       "`\"0023\"`",      "`\"0023\"`",       "ціле, нулі зліва"]
+                        - ["{140.567:F2}",  "`\"140,57\"`",    "`\"140.57\"`",     "2 знаки, округлення"]
+                        - ["{12345:N0}",    "`\"12 345\"`",    "`\"12,345\"`",     "роздільник тисяч"]
+                        - ["{0.153:P1}",    "`\"15,3%\"`",     "`\"15.3 %\"`",     "×100 і знак %"]
+                        - ["{12345.6:E2}",  "`\"1,23E+004\"`", "`\"1.23E+004\"`",  "науковий запис"]
+              - text:
+                  text:
+                    - "У uk-UA роздільник тисяч — [[нерозривний пробіл]] U+00A0. Дані для файлів і обміну — завжди `InvariantCulture`."
+
+        - panel:
+            heading: "Ширина і шаблон"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - rows:
+                        - ["$\"|{name,12}|\"",   "`\"|    Петренко|\"`"]
+                        - ["$\"|{name,-12}|\"",  "`\"|Петренко    |\"`"]
+                        - ["$\"|{bp,8:F1}|\"",   "`\"|   140,5|\"`"]
+                    - heading: "довільний шаблон: # — цифра, якщо є"
+                      rows:
+                        - ["{phone:+## (###) ###-##-##}", "`\"+38 (067) 123-45-67\"`"]
+              - note:
+                  text:
+                    - "Ширина — мінімум: довший"
+                    - "рядок [[не обрізається]]"
+
+check:
+  usings: [System, System.Globalization]
+  context: |
+    string name = "Петренко"; int age = 67; double bp = 140.5; long phone = 380671234567;
+    var ua = CultureInfo.GetCultureInfo("uk-UA");
+    var inv = CultureInfo.InvariantCulture;
+    void Eq(string a, string b) { if (a != b) throw new Exception($"Схема бреше: [{a}] != [{b}]"); }
+  asserts: |
+    string want = "Пацієнт: Петренко, вік: 67, АТ: 140,50";
+    Eq(s1, want); Eq(s2, want); Eq(s3, want);
+    string U(FormattableString f) => f.ToString(ua).Replace(' ', ' ');
+    string I(FormattableString f) => f.ToString(inv);
+    Eq(U($"{23.7:C2}"), "23,70 ₴"); Eq(I($"{23.7:C2}"), "¤23.70");
+    Eq(U($"{23:D4}"), "0023");
+    Eq(U($"{140.567:F2}"), "140,57"); Eq(I($"{140.567:F2}"), "140.57");
+    Eq(U($"{12345:N0}"), "12 345"); Eq(I($"{12345:N0}"), "12,345");
+    Eq(U($"{0.153:P1}"), "15,3%"); Eq(I($"{0.153:P1}"), "15.3 %");
+    Eq(U($"{12345.6:E2}"), "1,23E+004"); Eq(I($"{12345.6:E2}"), "1.23E+004");
+    Eq($"|{name,12}|", "|    Петренко|"); Eq($"|{name,-12}|", "|Петренко    |");
+    Eq(U($"|{bp,8:F1}|"), "|   140,5|");
+    Eq($"{phone:+## (###) ###-##-##}", "+38 (067) 123-45-67");
+    Eq($"{name,3}", "Петренко");
+
+publish:
+  dark: ../../lectures/_assets/11-03/string-formatting-approaches.png
+  bw: ../../lectures/_assets/11-03/book/string-formatting-approaches.png

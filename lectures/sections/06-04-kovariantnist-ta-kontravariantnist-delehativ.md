@@ -4,7 +4,6 @@ chapterTitle: "Розділ 6. Делегати, події та лямбди"
 section: 4
 number: "6.4"
 title: "Коваріантність та контраваріантність делегатів"
-source: "../_migration/source-chunks/37-kovariantnist-ta-kontravariantnist-delehativ.md"
 ---
 
 ## 6.4. Коваріантність та контраваріантність делегатів

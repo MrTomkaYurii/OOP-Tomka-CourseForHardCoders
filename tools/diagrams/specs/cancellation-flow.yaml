@@ -1,0 +1,90 @@
+# Лекція 16.5 «Скасування завдань. CancellationToken»
+# Оригінал: lectures/_assets/16-05/Архив/cancellation-flow.png
+id: cancellation-flow
+title: "Кооперативне скасування: CancellationToken"
+subtitle: "Зовнішній код лише просить зупинитися; завдання саме перевіряє токен і вирішує, як завершитися"
+
+types: [CancellationTokenSource, CancellationToken, Task, TaskStatus, OperationCanceledException, TaskCanceledException, AggregateException, Parallel, ParallelOptions]
+
+body:
+  - panel:
+      heading: "Хто що тримає"
+      children:
+        - hchain:
+            nodes:
+              - { title: "CancellationTokenSource", sub: ["керує: `Cancel()`, `CancelAfter()`"], kind: box_accent }
+              - { title: "CancellationToken", sub: ["лише читає стан"], via: "cts.Token" }
+              - { title: "Task.Run(work, token)", code: true, sub: ["токен — і в лямбду, і другим аргументом"], via: "передається" }
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "М'яке: перевірка і return"
+            children:
+              - box:
+                  check: skip                       # нескінченний цикл — перевірено в asserts
+                  code: |
+                    while (!token.IsCancellationRequested)
+                        ProcessNextVital();
+                    SaveLastReading();   // прибрати за собою
+                  notes:
+                    - "стан задачі — [[`RanToCompletion`]]:"
+                    - "зовні не видно, що її скасували;"
+                    - "зручно для циклів моніторингу: перед"
+                    - "виходом зберегти стан, закрити з'єднання"
+        - panel:
+            heading: "Жорстке: виняток"
+            children:
+              - box:
+                  code: |
+                    foreach (var batch in batches)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        Export(batch);
+                    }
+                  notes:
+                    - "стан — `Canceled`; `Wait` → `AggregateException`"
+                    - "з `TaskCanceledException`"
+                    - "токен не передано в `Task.Run` → [[`Faulted`]]"
+
+  - panel:
+      heading: "Корисне"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["`cts.CancelAfter(500)`",              "тайм-аут: сигнал сам через 500 мс"]
+                  - ["`token.Register(callback)`",          "синхронно в потоці `Cancel()`, у [[зворотному]] порядку реєстрації; після скасування — одразу"]
+                  - ["`CreateLinkedTokenSource(a, b)`",     "спрацьовує від будь-якого з токенів"]
+                  - ["`ParallelOptions.CancellationToken`", "`Parallel.For` кидає `OperationCanceledException` (не `AggregateException`)"]
+                  - ["`cts.Dispose()`",                     "особливо для `CancelAfter` і зв'язаних джерел — `using`"]
+
+check:
+  usings: [System, System.Threading, System.Threading.Tasks]
+  context: |
+    var cts = new CancellationTokenSource(); var token = cts.Token;
+    int vitals = 0; void ProcessNextVital() { vitals++; Thread.Sleep(10); } void SaveLastReading() { }
+    int[] batches = new int[50]; void Export(int b) => Thread.Sleep(10);
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var c1 = new CancellationTokenSource(); var t1 = c1.Token;
+    var soft = Task.Run(() => { while (!t1.IsCancellationRequested) Thread.Sleep(10); }, t1);
+    var hard = Task.Run(() => { foreach (var b in batches) { t1.ThrowIfCancellationRequested(); Thread.Sleep(10); } }, t1);
+    var noTok = Task.Run(() => { foreach (var b in batches) { t1.ThrowIfCancellationRequested(); Thread.Sleep(10); } });
+    Thread.Sleep(50); c1.Cancel();
+    try { hard.Wait(); } catch (AggregateException e) { Eq(e.InnerException is TaskCanceledException, true); }
+    try { Task.WaitAll(soft, noTok); } catch { }
+    Eq(soft.Status, TaskStatus.RanToCompletion); Eq(hard.Status, TaskStatus.Canceled); Eq(noTok.Status, TaskStatus.Faulted);
+    var order = ""; var c2 = new CancellationTokenSource(); c2.Token.Register(() => order += "1"); c2.Token.Register(() => order += "2"); c2.Cancel(); Eq(order, "21");
+    var c3 = new CancellationTokenSource(); c3.CancelAfter(50);
+    try { Parallel.For(0, 1000, new ParallelOptions { CancellationToken = c3.Token }, i => Thread.Sleep(10)); Eq(0, 1); } catch (OperationCanceledException) { }
+    var la = new CancellationTokenSource(); var lb = new CancellationTokenSource(); using var linked = CancellationTokenSource.CreateLinkedTokenSource(la.Token, lb.Token);
+    lb.Cancel(); Eq(linked.IsCancellationRequested, true);
+
+publish:
+  dark: ../../lectures/_assets/16-05/cancellation-flow.png
+  bw: ../../lectures/_assets/16-05/book/cancellation-flow.png

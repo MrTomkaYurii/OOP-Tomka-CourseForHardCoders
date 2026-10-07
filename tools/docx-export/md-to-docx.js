@@ -2,8 +2,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // md-to-docx.js — CLI-точка входу
 //
-// Використання:
-//   node md-to-docx.js "lectures/sections/01-*.md" -o output/chapter-01.docx
+// Використання (результати — у tools/docx-export/output/, тека в .gitignore):
+//   node md-to-docx.js --all                       # уся книга: розділи + питання → output/full-course.docx
+//   node md-to-docx.js "../../lectures/sections/01-*.md" -o output/chapter-01.docx
 //   node md-to-docx.js file1.md file2.md -o out.docx [--title "..."] [--assets path]
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -43,7 +44,18 @@ function parseArgs(argv) {
   const opts  = { output: null, title: null, assets: null, files: [] };
 
   for (let i = 0; i < args.length; i++) {
-    if      (args[i] === '-o' || args[i] === '--output') opts.output = args[++i];
+    if      (args[i] === '--all') {
+      // Уся книга: для кожного розділу — його секції, а за ними файл питань
+      const lectures = path.join(__dirname, '..', '..', 'lectures');
+      const chapters = [...new Set(fs.readdirSync(path.join(lectures, 'sections'))
+        .map(f => f.match(/^(\d\d)-/)?.[1]).filter(Boolean))].sort();
+      for (const ch of chapters) {
+        opts.files.push(path.join(lectures, 'sections', `${ch}-*.md`));
+        opts.files.push(path.join(lectures, 'questions', `${ch}-questions.md`));
+      }
+      opts.output ??= path.join(__dirname, 'output', 'full-course.docx');
+    }
+    else if (args[i] === '-o' || args[i] === '--output') opts.output = args[++i];
     else if (args[i] === '--title')  opts.title  = args[++i];
     else if (args[i] === '--assets') opts.assets = args[++i];
     else opts.files.push(args[i]);

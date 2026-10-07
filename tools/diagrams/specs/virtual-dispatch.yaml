@@ -1,0 +1,55 @@
+# Лекція 4.3 «Віртуальні методи та властивості»
+# Оригінал: lectures/_assets/04-03/Архив/virtual-dispatch.png
+id: virtual-dispatch
+title: "Віртуальний виклик: метод обирає реальний тип об'єкта"
+subtitle: "Person[] staff — але p.Print() для кожного елемента виконує реалізацію його фактичного класу"
+
+types: [Person, Patient, Doctor]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - box:
+            title: "Код лекції"
+            check: skip
+            code: |
+              Person[] staff =
+              {
+                  new Person("Сергій Бойко", 52),
+                  new Patient("Іван Петренко", 45, "Гіпертонія"),
+                  new Doctor("Олена Коваль", 38, "Кардіологія"),
+              };
+              foreach (Person p in staff)
+                  p.Print();      // virtual → override
+        - panel:
+            heading: "Що виконується (виконано)"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["елемент", "p.Print()"]
+                  groups:
+                    - rows:
+                        - ["staff[0].Print()", "`\"Person\"`"]
+                        - ["staff[1].Print()", "`\"Patient\"`"]
+                        - ["staff[2].Print()", "`\"Doctor\"`"]
+              - text:
+                  text: ["Тип змінної — `Person` для всіх трьох;", "рішення приймається [[під час виконання]]."]
+  - note:
+      text:
+        - "`override` вимагає `virtual`/`abstract`/`override` у базовому (CS0506),"
+        - "той самий доступ і сигнатуру; `static`-метод не буває `virtual`."
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    Person[] staff = { new Person("Сергій Бойко", 52), new Patient("Іван Петренко", 45, "Гіпертонія"), new Doctor("Олена Коваль", 38, "Кардіологія") };
+  types: |
+    class Person { public string Name { get; set; } = ""; public int Age { get; set; } public Person(string n, int a) { Name = n; Age = a; } public virtual string Print() => "Person"; }
+    class Patient : Person { public string Diagnosis { get; set; } = ""; public Patient(string n, int a, string d) : base(n, a) => Diagnosis = d; public override string Print() => "Patient"; }
+    class Doctor : Person { public string Specialization { get; set; } = ""; public Doctor(string n, int a, string s) : base(n, a) => Specialization = s; public override string Print() => "Doctor"; }
+
+publish:
+  dark: ../../lectures/_assets/04-03/virtual-dispatch.png
+  bw: ../../lectures/_assets/04-03/book/virtual-dispatch.png

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 18. Робота з файловою системо�
 section: 2
 number: "18.2"
 title: "Класи FileInfo та DirectoryInfo"
-source: ""
 ---
 
 ## 18.2. Класи FileInfo та DirectoryInfo

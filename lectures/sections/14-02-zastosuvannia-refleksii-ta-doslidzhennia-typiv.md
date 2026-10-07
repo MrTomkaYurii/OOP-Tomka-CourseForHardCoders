@@ -4,7 +4,6 @@ chapterTitle: "Розділ 14. Рефлексія"
 section: 2
 number: "14.2"
 title: "Застосування рефлексії та дослідження типів"
-source: "../_combined/85-zastosuvannia-refleksii-ta-doslidzhennia-typiv.md"
 ---
 
 ## 14.2. Застосування рефлексії та дослідження типів

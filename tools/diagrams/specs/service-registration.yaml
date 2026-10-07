@@ -1,0 +1,75 @@
+# Лекція 21.2 «IServiceCollection — реєстрація та розпізнавання сервісів»
+# Оригінал: lectures/_assets/21-02/Архив/service-registration-html.png
+# (HTML-генератор: lectures/_assets/diagram-generators/21-generic-host)
+id: service-registration
+title: "IServiceCollection → Build() → IServiceProvider"
+subtitle: "Спершу список рецептів (ServiceDescriptor), потім контейнер, що за ними створює об'єкти; правила перевірено на .NET 10"
+
+types: [IServiceCollection, IServiceProvider, ServiceDescriptor, ServiceLifetime, IPatientRepository, SqlPatientRepository, ICache, IAppointmentValidator, InvalidOperationException, IConfiguration]
+
+body:
+  - panel:
+      heading: "1 · Реєстрація: три способи"
+      children:
+        - kv:
+            check: skip
+            columns: ["services.…", "як створити"]
+            groups:
+              - rows:
+                  - ["AddSingleton<IPatientRepository, SqlPatientRepository>()", "за типом"]
+                  - ["AddSingleton<IPatientRepository>(sp => new SqlPatientRepository(conn))", "фабрика"]
+                  - ["AddSingleton<ICache>(sharedCache)", "готовий екземпляр — [[лише Singleton]]"]
+  - row:
+      gap: 24
+      children:
+        - stack:
+            gap: 24
+            children:
+              - panel:
+                  heading: "Кожен виклик — один ServiceDescriptor"
+                  children:
+                    - kv:
+                        check: skip
+                        groups:
+                          - rows:
+                              - ["ServiceType", "`typeof(IPatientRepository)`"]
+                              - ["ImplementationType", "[[одне з трьох]] — як створити"]
+                              - ["ImplementationFactory", ""]
+                              - ["ImplementationInstance", ""]
+                              - ["Lifetime", "`ServiceLifetime.Singleton`"]
+                    - text:
+                        text: ["`Build()` знімає копію: додане після нього", "провайдер уже не побачить."]
+              - panel:
+                  heading: "Перевірка під час Build()"
+                  children:
+                    - kv:
+                        check: skip
+                        key_code: false
+                        groups:
+                          - rows:
+                              - ["`ValidateOnBuild`", "незадоволені залежності"]
+                              - ["+ `ValidateScopes`", "Singleton ← Scoped (captive)"]
+                    - text:
+                        text: ["У Development хост вмикає [[обидві]]."]
+        - panel:
+            heading: "2 · Розпізнавання"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["запит", "результат"]
+                  groups:
+                    - heading: "незареєстрований T"
+                      rows:
+                        - ["GetService<T>()",          "`null`"]
+                        - ["GetRequiredService<T>()",  "[[`InvalidOperationException`]]"]
+                    - heading: "три реєстрації T"
+                      rows:
+                        - ["GetService<T>()",  "[[остання]]"]
+                        - ["GetServices<T>()", "усі три, у порядку реєстрації"]
+                    - heading: "TryAddSingleton<T, …>()"
+                      rows:
+                        - ["T уже зареєстровано", "реєстрацію [[пропущено]]"]
+
+publish:
+  dark: ../../lectures/_assets/21-02/service-registration.png
+  bw: ../../lectures/_assets/21-02/book/service-registration.png

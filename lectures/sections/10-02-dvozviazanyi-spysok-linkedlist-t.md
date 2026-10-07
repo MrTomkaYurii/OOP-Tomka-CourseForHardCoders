@@ -4,7 +4,6 @@ chapterTitle: "Розділ 10. Колекції"
 section: 2
 number: "10.2"
 title: "Двозв'язаний список LinkedList<T>"
-source: "../_combined/63-dvozviazanyi-spysok-linkedlist-t.md"
 ---
 
 ## 10.2. Двозв'язаний список LinkedList<T>

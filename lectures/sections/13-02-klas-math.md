@@ -4,7 +4,6 @@ chapterTitle: "Розділ 13. Додаткові класи та структ�
 section: 2
 number: "13.2"
 title: "Клас Math"
-source: "../_combined/79-klas-math.md"
 ---
 
 ## 13.2. Клас `Math`

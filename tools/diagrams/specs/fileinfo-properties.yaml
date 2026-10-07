@@ -1,0 +1,81 @@
+# Лекція 18.2 «Класи FileInfo та DirectoryInfo»
+# Оригінал: lectures/_assets/18-02/Архив/fileinfo-properties.png
+id: fileinfo-properties
+title: "FileSystemInfo, FileInfo і DirectoryInfo"
+subtitle: "Спільний абстрактний предок дає імʼя, час і атрибути; нащадки додають своє — розмір і потоки або вміст теки"
+
+types: [FileSystemInfo, FileInfo, DirectoryInfo, FileAttributes, FileStream, StreamReader, StreamWriter, DateTime]
+
+body:
+  - panel:
+      heading: "abstract class FileSystemInfo"
+      children:
+        - kv:
+            check: skip
+            columns: ["член", "що дає", "член", "що дає"]
+            groups:
+              - rows:
+                  - ["Name",          "імʼя без шляху",    "CreationTime",   "час створення"]
+                  - ["FullName",      "повний шлях",       "LastWriteTime",  "останній запис"]
+                  - ["Exists",        "чи існує (кеш!)",   "LastAccessTime", "останній доступ"]
+                  - ["Extension",     "`\".txt\"`, `\"\"`", "Attributes",     "`FileAttributes` (прапорці)"]
+                  - ["Refresh()",     "перечитати кеш",    "Delete()",       "видалити"]
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "FileInfo : FileSystemInfo"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - heading: "властивості"
+                      rows:
+                        - ["Length",        "розмір у байтах"]
+                        - ["Directory",     "`DirectoryInfo` теки"]
+                        - ["DirectoryName", "шлях теки (`string`)"]
+                        - ["IsReadOnly",    "тільки для читання"]
+                    - heading: "методи"
+                      rows:
+                        - ["OpenRead()",    "`FileStream`"]
+                        - ["OpenText()",    "`StreamReader`"]
+                        - ["AppendText()",  "`StreamWriter` у кінець"]
+                        - ["CopyTo(dst)",   "`FileInfo` копії"]
+                        - ["MoveTo(dst)",   "оновлює `FullName`"]
+        - panel:
+            heading: "DirectoryInfo : FileSystemInfo"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - heading: "властивості"
+                      rows:
+                        - ["Parent",        "`DirectoryInfo` вище; у кореня `null`"]
+                        - ["Root",          "корінь диска"]
+                    - heading: "методи"
+                      rows:
+                        - ["Create()",               "без винятку, якщо вже є"]
+                        - ["CreateSubdirectory(n)",  "`DirectoryInfo` нової теки"]
+                        - ["GetFiles(\"*.txt\", opt)", "`FileInfo[]`"]
+                        - ["GetDirectories()",       "`DirectoryInfo[]`"]
+                        - ["GetFileSystemInfos()",   "`FileSystemInfo[]` — і те, і те"]
+                        - ["EnumerateFiles()",       "`IEnumerable<FileInfo>`, ліниво"]
+
+check:
+  usings: [System, System.IO, System.Linq]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var d = Directory.CreateTempSubdirectory("med"); var sub = d.CreateSubdirectory("2026"); File.WriteAllText(Path.Combine(d.FullName, "a.txt"), "x");
+    var all = d.GetFileSystemInfos(); Eq(all.Any(x => x is FileInfo) && all.Any(x => x is DirectoryInfo), true);
+    Eq(sub.Parent!.FullName, d.FullName); Eq(new DirectoryInfo("/").Parent, (DirectoryInfo?)null);
+    var fi = d.GetFiles("*.txt")[0]; Eq(fi.Extension, ".txt"); Eq(fi.Length, 1L); Eq(fi.Directory!.FullName, d.FullName);
+    using (var w = fi.AppendText()) w.Write("y"); fi.Refresh(); Eq(fi.Length, 2L);
+    Eq(typeof(FileSystemInfo).IsAbstract, true);
+    d.Create(); d.Delete(true);
+
+publish:
+  dark: ../../lectures/_assets/18-02/fileinfo-properties.png
+  bw: ../../lectures/_assets/18-02/book/fileinfo-properties.png

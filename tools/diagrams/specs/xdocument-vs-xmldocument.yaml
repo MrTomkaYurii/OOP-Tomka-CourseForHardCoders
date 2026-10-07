@@ -1,0 +1,68 @@
+# Лекція 19.3 «XDocument та LINQ to XML»
+# Оригінал: lectures/_assets/19-03/Архив/xdocument-vs-xmldocument.png
+id: xdocument-vs-xmldocument
+title: "XDocument чи XmlDocument"
+subtitle: "Той самий елемент <patient id=\"PT-1\"><name>Петренко</name></patient> двома API"
+
+types: [XDocument, XElement, XAttribute, XmlDocument, XmlElement]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "XmlDocument (System.Xml, .NET 1.0)"
+            children:
+              - box:
+                  code: |
+                    var doc = new XmlDocument();
+                    XmlElement p = doc.CreateElement("patient");
+                    p.SetAttribute("id", "PT-1");
+                    XmlElement n = doc.CreateElement("name");
+                    n.InnerText = "Петренко";
+                    p.AppendChild(n);
+                    doc.AppendChild(p);
+                  notes:
+                    - "вузли створює лише документ-власник;"
+                    - "кожен — окремим `AppendChild`"
+        - panel:
+            heading: "XElement (System.Xml.Linq, .NET 3.5)"
+            children:
+              - box:
+                  kind: box_accent
+                  code: |
+                    var x = new XElement("patient",
+                        new XAttribute("id", "PT-1"),
+                        new XElement("name", "Петренко"));
+                  notes:
+                    - "вкладені конструктори повторюють"
+                    - "структуру XML; [[документ не потрібен]]"
+
+  - panel:
+      heading: "Порівняння"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["", "XmlDocument", "XDocument / XElement"]
+            groups:
+              - rows:
+                  - ["запити",           "XPath: `SelectNodes(\"//patient\")`",   "LINQ: `Descendants(\"patient\").Where(…)`"]
+                  - ["значення",         "`node.InnerText` (рядок)",              "`(int)el.Element(\"age\")` — явне приведення"]
+                  - ["немає вузла",      "`null`, далі `NullReferenceException`", "`(int?)el.Element(\"x\")` → `null`"]
+                  - ["XPath теж є",      "вбудовано",                             "`using System.Xml.XPath`: `XPathSelectElements`"]
+                  - ["коли",             "легасі-код, XSLT, складний XPath",      "[[новий код]]"]
+
+check:
+  usings: [System, System.Xml, System.Xml.Linq, System.Xml.XPath, System.Linq]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(doc.OuterXml, x.ToString(SaveOptions.DisableFormatting));
+    var a = new XElement("p", new XElement("age", "45")); Eq((int)a.Element("age")!, 45); Eq((int?)a.Element("x"), (int?)null);
+    Eq(new XDocument(a).XPathSelectElements("//age").Count(), 1);
+
+publish:
+  dark: ../../lectures/_assets/19-03/xdocument-vs-xmldocument.png
+  bw: ../../lectures/_assets/19-03/book/xdocument-vs-xmldocument.png

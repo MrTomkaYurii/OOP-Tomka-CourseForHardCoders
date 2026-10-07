@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 6
 number: "8.6"
 title: "Методи розширення"
-source: "../_combined/51-metody-rozshyrennia.md"
 ---
 
 ## 8.6. Методи розширення

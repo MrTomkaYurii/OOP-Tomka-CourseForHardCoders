@@ -4,7 +4,6 @@ chapterTitle: "Розділ 7. Інтерфейси"
 section: 7
 number: "7.7"
 title: "Коваріантність та контраваріантність узагальнених інтерфейсів"
-source: "../_combined/45-kovariantnist-ta-kontravariantnist-uzahalnenykh-interfeisiv.md"
 ---
 
 ## 7.7. Коваріантність та контраваріантність узагальнених інтерфейсів

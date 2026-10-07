@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 21
 number: "2.21"
 title: "Рекурсивні функції"
-source: "../_migration/source-chunks/11-rekursiia-ta-lokalni-funktsii.md"
 ---
 
 ## 2.21. Рекурсивні функції

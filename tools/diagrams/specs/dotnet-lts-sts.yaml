@@ -1,0 +1,39 @@
+# Лекція 1.2 «.NET Framework та сучасний .NET»
+# Оригінал: lectures/_assets/01-02/Архив/dotnet-lts-sts.png (була схема про передачу параметрів in/ref — інша тема)
+id: dotnet-lts-sts
+title: "Типи релізів .NET: LTS і STS"
+subtitle: "Парні версії — LTS, непарні — STS; з .NET 9 STS підтримується 24 місяці (раніше 18)"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "LTS — Long Term Support"
+            kind: box_accent
+            text: ["[[3 роки]] підтримки", "парні номери: 6, 8, 10", "для production і навчання"]
+        - box:
+            title: "STS — Standard Term Support"
+            text: ["[[2 роки]] підтримки (з .NET 9)", "непарні номери: 7, 9, 11", "нові можливості раніше"]
+  - panel:
+      heading: "Версії і кінець підтримки"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["версія", "вихід", "тип", "підтримка до"]
+            groups:
+              - rows:
+                  - [".NET 6",  "листопад 2021", "LTS", "12.11.2024 — завершено"]
+                  - [".NET 7",  "листопад 2022", "STS", "14.05.2024 — завершено"]
+                  - [".NET 8",  "листопад 2023", "LTS", "10.11.2026"]
+                  - [".NET 9",  "листопад 2024", "STS", "10.11.2026 (24 міс.)"]
+                  - ["[[.NET 10]]", "листопад 2025", "LTS", "листопад 2028"]
+                  - [".NET 11", "листопад 2026 (план)", "STS", "листопад 2028"]
+
+publish:
+  dark: ../../lectures/_assets/01-02/dotnet-lts-sts.png
+  bw: ../../lectures/_assets/01-02/book/dotnet-lts-sts.png

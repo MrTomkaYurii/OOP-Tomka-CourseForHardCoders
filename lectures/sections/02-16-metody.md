@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 16
 number: "2.16"
 title: "Методи"
-source: "../_migration/source-chunks/09-metody-parametry-return.md"
 ---
 
 ## 2.16. Методи

@@ -394,7 +394,7 @@ function getLectureSummaries() {
 }
 
 // ── Shiki singleton ────────────────────────────────────────────────────────
-// Світла палітра коду — та сама, що у світлої теми схем (diagrams/themes.yaml → light.syntax),
+// Світла палітра коду — та сама, що у світлої теми схем (tools/diagrams/themes.yaml → light.syntax),
 // щоб код на сайті й на рисунках мав одні кольори. Темна — стандартна github-dark.
 const courseLightTheme = {
   name: "course-light",
@@ -488,7 +488,7 @@ export async function renderMarkdown(markdown: string, options: { assetPrefix?: 
   };
 
   // Схеми лекцій мають дві версії: темну (_assets/NN-NN/x.png) і ч/б для книги
-  // (_assets/NN-NN/book/x.png, генерує diagrams/). Якщо ч/б існує — віддаємо обидві,
+  // (_assets/NN-NN/book/x.png, генерує tools/diagrams/). Якщо ч/б існує — віддаємо обидві,
   // а CSS показує потрібну за темою сайту. loading="lazy": прихована (display:none)
   // картинка браузером не завантажується, тож зайвого трафіку немає.
   const escapeAttr = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");

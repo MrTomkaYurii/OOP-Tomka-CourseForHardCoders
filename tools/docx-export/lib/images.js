@@ -30,7 +30,7 @@ function resolveImagePath(src, assetsBase) {
   // Прибираємо "_assets/" якщо є — вже врахований у assetsBase
   const rel = src.replace(/^_assets\//, '');
   const parts = rel.split('/');
-  // Книга — ч/б версія схеми (_assets/NN-NN/book/x.png, генерує diagrams/), якщо є;
+  // Книга — ч/б версія схеми (_assets/NN-NN/book/x.png, генерує tools/diagrams/), якщо є;
   // інакше — оригінал (темна схема сайту або скриншот).
   const book = path.join(assetsBase, ...parts.slice(0, -1), 'book', parts[parts.length - 1]);
   if (fs.existsSync(book)) return book;

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 9. Pattern matching"
 section: 3
 number: "9.3"
 title: "Патерни кортежів"
-source: "../_combined/58-paterny-kortezhiv.md"
 ---
 
 ## 9.3. Патерни кортежів

@@ -1,0 +1,82 @@
+# Лекція 7.3 «Явна реалізація інтерфейсів»
+# Оригінал: lectures/_assets/07-03/Архив/override-variants.png
+id: override-variants
+title: "Чотири способи змінити реалізацію інтерфейсу в похідному класі"
+subtitle: "BaseRecord : IDiagnosable, SpecialRecord : BaseRecord; результати RunDiagnostics() з runnable-прикладів лекції"
+
+types: [BaseRecord, SpecialRecord, IDiagnosable]
+
+body:
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box:
+            title: "1 · override"
+            check: skip
+            code: |
+              // BaseRecord:
+              public virtual void RunDiagnostics()
+              // SpecialRecord : BaseRecord
+              public override void RunDiagnostics()
+        - box:
+            title: "2 · new"
+            check: skip
+            code: |
+              // SpecialRecord : BaseRecord
+              public new void RunDiagnostics()
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box:
+            title: "3 · new + повторна реалізація"
+            check: skip
+            code: |
+              // SpecialRecord : BaseRecord,
+              //                 IDiagnosable
+              public new void RunDiagnostics()
+        - box:
+            title: "4 · явна реалізація"
+            check: skip
+            code: |
+              // SpecialRecord : BaseRecord,
+              //                 IDiagnosable
+              public new void RunDiagnostics()
+              void IDiagnosable.RunDiagnostics()
+  - panel:
+      heading: "Хто відповідає залежно від типу змінної"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["варіант у SpecialRecord", "BaseRecord r1", "IDiagnosable r2", "SpecialRecord r3"]
+            groups:
+              - rows:
+                  - ["1 · `override` (база `virtual`)",                         "[[Special]]", "[[Special]]", "Special"]
+                  - ["2 · `new` без повторної реалізації",                      "Base",        "Base",        "Special"]
+                  - ["3 · `new` + `: BaseRecord, IDiagnosable`",                "Base",        "[[Special]]", "Special"]
+                  - ["4 · `new` + `void IDiagnosable.RunDiagnostics()`",        "Base",        "[[явна]]",    "Special"]
+        - text:
+            text:
+              - "Повний поліморфізм дає лише `override`. Варіанти 3–4 вимагають знову вказати інтерфейс у списку базових типів:"
+              - "тоді компілятор заново будує відображення методів інтерфейсу для `SpecialRecord`."
+
+check:
+  usings: [System]
+  asserts: |
+    BaseRecord a = new S2(); IDiagnosable b = new S2(); S2 c = new S2();
+    if (a.Run() != "Base" || b.Run() != "Base" || c.Run() != "Special") throw new Exception("v2");
+    BaseRecord a3 = new S3(); IDiagnosable b3 = new S3();
+    if (a3.Run() != "Base" || b3.Run() != "Special") throw new Exception("v3");
+    IDiagnosable b4 = new S4(); if (b4.Run() != "Explicit") throw new Exception("v4");
+  types: |
+    interface IDiagnosable { string Run(); }
+    class BaseRecord : IDiagnosable { public string Run() => "Base"; }
+    class S2 : BaseRecord { public new string Run() => "Special"; }
+    class S3 : BaseRecord, IDiagnosable { public new string Run() => "Special"; }
+    class S4 : BaseRecord, IDiagnosable { public new string Run() => "Special"; string IDiagnosable.Run() => "Explicit"; }
+
+publish:
+  dark: ../../lectures/_assets/07-03/override-variants.png
+  bw: ../../lectures/_assets/07-03/book/override-variants.png

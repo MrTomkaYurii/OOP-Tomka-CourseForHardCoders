@@ -4,7 +4,6 @@ chapterTitle: "Розділ 17. Асинхронне програмування"
 section: 3
 number: "17.3"
 title: "Послідовне та паралельне виконання. Task.WhenAll та Task.WhenAny"
-source: ""
 ---
 
 ## 17.3. Послідовне та паралельне виконання. Task.WhenAll та Task.WhenAny

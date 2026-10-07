@@ -4,7 +4,6 @@ chapterTitle: "Розділ 9. Pattern matching"
 section: 5
 number: "9.5"
 title: "Реляційний та логічний патерни"
-source: "../_combined/60-reliatsiinyi-ta-lohichnyi-paterny.md"
 ---
 
 ## 9.5. Реляційний та логічний патерни

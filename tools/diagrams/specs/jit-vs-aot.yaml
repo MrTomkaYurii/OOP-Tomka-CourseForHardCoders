@@ -1,0 +1,40 @@
+# Лекція 1.4 «JIT-компіляція»
+# Оригінал: lectures/_assets/01-04/Архив/jit-vs-aot.png
+id: jit-vs-aot
+title: "JIT і Native AOT"
+subtitle: "JIT компілює на машині користувача під час роботи; Native AOT (.NET 7+) — заздалегідь, під час публікації"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "JIT — Just-In-Time"
+            text: ["`dotnet publish`", "→ `.dll` з CIL; потрібен .NET runtime", "компіляція під час виконання"]
+        - box:
+            title: "Native AOT — Ahead-Of-Time"
+            kind: box_accent
+            text: ["`<PublishAot>true</PublishAot>`", "→ один нативний файл під ОС/CPU", "runtime і GC вбудовані у файл"]
+  - panel:
+      heading: "Порівняння"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["", "JIT", "Native AOT"]
+            groups:
+              - rows:
+                  - ["старт",                 "розігрів: компіляція методів",   "[[миттєвий]]"]
+                  - ["пам'ять",               "більше (JIT, метадані)",        "менше"]
+                  - ["артефакт",              "одна збірка для всіх ОС",        "окремий файл для кожної ОС/CPU"]
+                  - ["пікова швидкість",      "рівень 1 + Dynamic PGO",         "порівнянна, без профілю виконання"]
+                  - ["рефлексія",             "повна",                          "[[обмежена]]: лише типи, відомі під час збирання"]
+                  - ["динамічний код",        "`Assembly.LoadFrom`, `Reflection.Emit`", "[[не підтримується]]"]
+                  - ["типово для",            "сервери, консоль, десктоп",      "serverless, CLI-утиліти, контейнери"]
+
+publish:
+  dark: ../../lectures/_assets/01-04/jit-vs-aot.png
+  bw: ../../lectures/_assets/01-04/book/jit-vs-aot.png

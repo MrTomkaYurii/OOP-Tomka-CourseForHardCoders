@@ -1,0 +1,49 @@
+# Лекція 5.2 «Блок catch та фільтри винятків»
+# Оригінал: lectures/_assets/05-02/Архив/catch-forms.png
+id: catch-forms
+title: "Форми блоку catch і фільтр when"
+subtitle: "Блоки перевіряються згори вниз; спрацьовує перший, у якого збігся тип і фільтр дав true"
+
+types: [FormatException, OverflowException, Exception]
+
+body:
+  - panel:
+      heading: "Чотири форми"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["синтаксис", "що перехоплює", "доступ до винятку"]
+            groups:
+              - rows:
+                  - ["`catch { … }`",                                  "будь-який виняток",           "ні"]
+                  - ["`catch (FormatException) { … }`",                "цей тип і похідні",            "ні"]
+                  - ["`catch (FormatException ex) { … }`",             "цей тип і похідні",            "`ex.Message`, `ex.StackTrace`…"]
+                  - ["`catch (FormatException ex) when (умова) { … }`", "тип [[і]] умова = `true`",    "так; умова бачить `ex`"]
+  - stack:
+      gap: 24
+      children:
+        - box:
+            title: "ProcessPulse з лекції"
+            check: skip
+            code: |
+              try { int p = int.Parse(input); … }
+              catch (FormatException) when (string.IsNullOrEmpty(input))
+              { Console.WriteLine("Порожній ввід"); }
+              catch (FormatException ex)
+              { Console.WriteLine($"Некоректно: {ex.Message}"); }
+        - panel:
+            heading: "Правила (перевірено на .NET 10)"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["`catch (Exception)` перед `catch (FormatException)`", "помилка [[CS0160]]"]
+                        - ["фільтр `when`", "виконується [[до]] `finally` вкладених рівнів"]
+                        - ["фільтр дав `false`", "пошук іде далі, стек не розкручено"]
+
+publish:
+  dark: ../../lectures/_assets/05-02/catch-forms.png
+  bw: ../../lectures/_assets/05-02/book/catch-forms.png

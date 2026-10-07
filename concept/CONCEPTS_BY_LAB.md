@@ -9,7 +9,7 @@
 > - Теки у репозиторії студента: `Lab01/`, `Lab02/` (тренажери), `ClinicApp/` (осн. проєкт, Лаби 03+).
 > - Гілки: `Lab-01` … `Lab-22`. Лаби 01–02 пушаться, але **не зливаються** в `main`; Лаби 03+ зливаються.
 > - Коміти: `LabXX TaskYY` (без опису).
-> - Еталонний код у цьому репо поки лежить на гілках `feature/*` і в теках `sandbox/`, `src/` — перейменування заплановане окремо.
+> - Еталонний код у цьому репо поки лежить на гілках `feature/*` і в теці `solutions/` (`Lab01/`, `Lab02/`, `ClinicApp/`) — назви тек збігаються з репозиторієм студента.
 > - `<Nullable>enable</Nullable>` увімкнено з Лаби 01; коротке пояснення nullable-типів — у `labs/lab-03-classes` (розділ «Коротко про `null` і тип `T?`»).
 
 ---
@@ -405,17 +405,17 @@
 - `Convert.ChangeType(value, targetType)` — конверсія значення до типу відомого тільки в рантаймі
 
 **Нові файли:**
-- `src/Attributes/RequiredAttribute.cs` — `[Required]`
-- `src/Attributes/MaxLengthAttribute.cs` — `[MaxLength(n)]`
-- `src/Attributes/MinValueAttribute.cs` — `[MinValue(n)]`
-- `src/Enums/TreatmentStatus.cs` — `Planned / Active / Completed / Cancelled`
-- `src/Models/TreatmentPlan.cs` — нова сутність з атрибутами
-- `src/Utils/ValidationResult.cs` — контейнер помилок
-- `src/Utils/ModelValidator.cs` — `static Validate(object)`, `PrintInfo(Type)`
-- `src/Utils/FormBuilder.cs` — `static Build<T>() where T : new()`
-- `src/Managers/TreatmentPlanManager.cs` — CRUD + валідація
-- `src/Clinic.cs` оновлено — `public TreatmentPlanManager TreatmentPlans { get; }`
-- `src/Program.cs` оновлено — пункт меню **9. Плани лікування**
+- `solutions/ClinicApp/Attributes/RequiredAttribute.cs` — `[Required]`
+- `solutions/ClinicApp/Attributes/MaxLengthAttribute.cs` — `[MaxLength(n)]`
+- `solutions/ClinicApp/Attributes/MinValueAttribute.cs` — `[MinValue(n)]`
+- `solutions/ClinicApp/Enums/TreatmentStatus.cs` — `Planned / Active / Completed / Cancelled`
+- `solutions/ClinicApp/Models/TreatmentPlan.cs` — нова сутність з атрибутами
+- `solutions/ClinicApp/Utils/ValidationResult.cs` — контейнер помилок
+- `solutions/ClinicApp/Utils/ModelValidator.cs` — `static Validate(object)`, `PrintInfo(Type)`
+- `solutions/ClinicApp/Utils/FormBuilder.cs` — `static Build<T>() where T : new()`
+- `solutions/ClinicApp/Managers/TreatmentPlanManager.cs` — CRUD + валідація
+- `solutions/ClinicApp/Clinic.cs` оновлено — `public TreatmentPlanManager TreatmentPlans { get; }`
+- `solutions/ClinicApp/Program.cs` оновлено — пункт меню **9. Плани лікування**
 
 **Що з'явиться в меню:** 9. Плани лікування — додавання через FormBuilder, зміна статусу, PrintInfo
 
@@ -453,9 +453,9 @@
 - `event` vs поле `EventHandler<T>?` — різниця в доступі ззовні
 
 **Нові файли:**
-- `src/Events/AppointmentEventArgs.cs`, `PatientEventArgs.cs`, `PaymentEventArgs.cs`, `TreatmentPlanEventArgs.cs`
-- `src/Utils/PatientPassportWriter.cs` — генерує `patients/passport_{id}.txt`
-- `src/Utils/SessionEventTracker.cs` — лічильники + WaitingRoom реакція + `session_summary.txt`
+- `solutions/ClinicApp/Events/AppointmentEventArgs.cs`, `PatientEventArgs.cs`, `PaymentEventArgs.cs`, `TreatmentPlanEventArgs.cs`
+- `solutions/ClinicApp/Utils/PatientPassportWriter.cs` — генерує `patients/passport_{id}.txt`
+- `solutions/ClinicApp/Utils/SessionEventTracker.cs` — лічильники + WaitingRoom реакція + `session_summary.txt`
 
 **Що з'являється:** автоматичне логування, паспорти пацієнтів, алерти `alerts/`, підсумок сесії
 
@@ -515,7 +515,7 @@
 - Фасад-патерн: `ClinicRenderer` ховає Spectre.Console від `Program.cs`
 - SRP: `Program.cs` вирішує "що показати"; `ClinicRenderer` вирішує "як"
 
-**Нова папка:** `src/UI/ClinicRenderer.cs`
+**Нова папка:** `solutions/ClinicApp/UI/ClinicRenderer.cs`
 **Зміни:** `Program.cs` повністю переписано на `ClinicRenderer.*`
 
 ---

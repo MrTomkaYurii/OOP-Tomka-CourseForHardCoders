@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 10
 number: "2.10"
 title: "Явні та неявні перетворення"
-source: "../_migration/source-chunks/06-peretvorennia-typiv.md"
 ---
 
 ## 2.10. Явні та неявні перетворення

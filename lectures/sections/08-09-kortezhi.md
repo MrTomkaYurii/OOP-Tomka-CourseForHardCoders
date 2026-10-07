@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 9
 number: "8.9"
 title: "Кортежі"
-source: "../_combined/54-kortezhi.md"
 ---
 
 ## 8.9. Кортежі

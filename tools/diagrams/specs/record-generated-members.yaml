@@ -1,0 +1,64 @@
+# Лекція 8.10 «Records»
+# Оригінал: lectures/_assets/08-10/Архив/record-generated-members.png
+id: record-generated-members
+title: "Record: один рядок → набір згенерованих членів"
+subtitle: "Позиційний record class дає init-властивості, рівність за значеннями, ToString, Deconstruct і копіювання для with"
+
+types: [Patient]
+
+body:
+  - box:
+      title: "Код розробника — одного рядка достатньо"
+      kind: box_accent
+      check: skip
+      code: "public record Patient(string Name, int Age);"
+      notes: ["`record struct` — позиційні властивості з `set`; `readonly record struct` — знову `init`"]
+  - row:
+      gap: 24
+      children:
+        - box:
+            title: "Згенеровано (спрощено)"
+            check: skip
+            code: |
+              public Patient(string Name, int Age)
+              public string Name { get; init; }
+              public int    Age  { get; init; }
+              protected virtual Type EqualityContract { get; }
+              public virtual bool Equals(Patient? other)
+              public static bool operator ==(Patient?, Patient?)
+              public static bool operator !=(Patient?, Patient?)
+              public override int GetHashCode()
+              public override string ToString()
+              protected virtual bool PrintMembers(StringBuilder b)
+              public virtual Patient <Clone>$()
+              public void Deconstruct(out string Name, out int Age)
+        - panel:
+            heading: "Поведінка (виконано на .NET 10)"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - rows:
+                        - ["p1 == p2",                    "`true`"]
+                        - ["ReferenceEquals(p1, p2)",     "`false`"]
+                        - ["p1.ToString()",               "`\"Patient { Name = Іван, Age = 45 }\"`"]
+                        - ["(p1 with { Age = 46 }).Age",  "`46`"]
+                        - ["p1.Age",                      "`45`"]
+              - text:
+                  text: ["`with` = `<Clone>$` + init-ініціалізатор;", "оригінал не змінюється. Працює й для", "структур та анонімних типів (C# 10),", "але не для звичайних класів."]
+
+check:
+  usings: [System]
+  context: |
+    var p1 = new Patient("Іван", 45);
+    var p2 = new Patient("Іван", 45);
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    if (typeof(Patient).GetMethod("<Clone>$") == null) throw new Exception("Clone");
+  types: |
+    public record Patient(string Name, int Age);
+
+publish:
+  dark: ../../lectures/_assets/08-10/record-generated-members.png
+  bw: ../../lectures/_assets/08-10/book/record-generated-members.png

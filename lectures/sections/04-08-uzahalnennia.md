@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 8
 number: "4.8"
 title: "Узагальнення"
-source: "../_combined/25-uzahalnennia.md"
 ---
 
 ## 4.8. Узагальнення

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 2
 number: "8.2"
 title: "Визначення інкременту та декременту"
-source: "../_combined/47-vyznachennia-inkrementu-ta-dekrementu.md"
 ---
 
 ## 8.2. Визначення інкременту та декременту

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 14. Рефлексія"
 section: 6
 number: "14.6"
 title: "Атрибути у .NET"
-source: "../_combined/89-atrybuty-u-dotnet.md"
 ---
 
 ## 14.6. Атрибути у .NET

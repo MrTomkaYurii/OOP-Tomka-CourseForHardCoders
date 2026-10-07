@@ -4,7 +4,6 @@ chapterTitle: "Розділ 7. Інтерфейси"
 section: 6
 number: "7.6"
 title: "Копіювання об'єктів. Інтерфейс ICloneable"
-source: "../_combined/44-kopiiuvannia-obiektiv-interfeis-icloneable.md"
 ---
 
 ## 7.6. Копіювання об'єктів. Інтерфейс ICloneable

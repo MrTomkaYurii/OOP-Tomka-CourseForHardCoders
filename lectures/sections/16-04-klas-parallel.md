@@ -4,7 +4,6 @@ chapterTitle: "Розділ 16. Паралельне програмування 
 section: 4
 number: "16.4"
 title: "Клас Parallel"
-source: ""
 ---
 
 ## 16.4. Клас Parallel

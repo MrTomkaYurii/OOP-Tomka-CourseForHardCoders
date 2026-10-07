@@ -1,0 +1,35 @@
+# Лекція 1.1 «Роль платформи»
+# Оригінал: lectures/_assets/01-01/Архив/dotnet-ecosystem.png (опечатка «ASP,NET Core»)
+id: dotnet-ecosystem
+title: "Екосистема .NET: типи застосунків"
+subtitle: "Одна мова й одна стандартна бібліотека — різні типи програм; шаблони з dotnet new list (.NET 10 SDK)"
+
+types: []
+
+body:
+  - panel:
+      heading: "Що можна створити"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["тип застосунку", "шаблон", "де працює"]
+            groups:
+              - heading: "основа курсу"
+                rows:
+                  - ["[[консольний застосунок]]",  "`dotnet new console`",  "Windows, Linux, macOS"]
+                  - ["бібліотека класів",          "`dotnet new classlib`", "там, де й застосунок, що її використовує"]
+                  - ["тести xUnit / NUnit / MSTest", "`dotnet new xunit`",  "Windows, Linux, macOS"]
+              - heading: "веб і сервіси"
+                rows:
+                  - ["ASP.NET Core Web API",       "`dotnet new webapi`",   "сервер: Windows, Linux, контейнери"]
+                  - ["Blazor",                      "`dotnet new blazor`",  "сервер + браузер (WebAssembly)"]
+                  - ["фонова служба (Worker)",     "`dotnet new worker`",   "Windows, Linux, контейнери"]
+              - heading: "настільні й мобільні"
+                rows:
+                  - ["WPF / Windows Forms",        "`dotnet new wpf`",      "[[лише Windows]]"]
+                  - [".NET MAUI",                   "`dotnet new maui`",     "Android, iOS, Windows, macOS (потрібен workload)"]
+
+publish:
+  dark: ../../lectures/_assets/01-01/dotnet-ecosystem.png
+  bw: ../../lectures/_assets/01-01/book/dotnet-ecosystem.png

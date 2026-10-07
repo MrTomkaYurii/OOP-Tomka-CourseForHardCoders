@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 11
 number: "2.11"
 title: "Умовні вирази"
-source: "../_migration/source-chunks/07-umovni-vyrazy-ta-cykly.md"
 ---
 
 ## 2.11. Умовні вирази

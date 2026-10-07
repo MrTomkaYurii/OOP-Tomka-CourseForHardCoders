@@ -4,7 +4,6 @@ chapterTitle: "Розділ 9. Pattern matching"
 section: 2
 number: "9.2"
 title: "Патерн властивостей"
-source: "../_combined/57-patern-vlastyvostei.md"
 ---
 
 ## 9.2. Патерн властивостей

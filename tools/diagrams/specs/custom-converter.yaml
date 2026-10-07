@@ -1,0 +1,110 @@
+# Лекція 19.1 «System.Text.Json — поглиблено»
+# Оригінал: lectures/_assets/19-01/Архив/custom-converter.png
+id: custom-converter
+title: "Власний JsonConverter<T>"
+subtitle: "Конвертер повністю перебирає запис і читання одного типу: NormalRange(3.9, 6.1) ↔ рядок \"3.9-6.1\""
+
+types: [JsonConverter, JsonSerializer, JsonSerializerOptions, Utf8JsonReader, Utf8JsonWriter, JsonException, NormalRange, NormalRangeConverter, LabTest, CultureInfo, Type]
+
+body:
+  - panel:
+      heading: "Без конвертера і з ним"
+      children:
+        - kv:
+            check: skip
+            columns: ["Normal = new NormalRange(3.9, 6.1)", "у JSON"]
+            groups:
+              - rows:
+                  - ["за замовчуванням",             "`\"Normal\":{\"Min\":3.9,\"Max\":6.1}`"]
+                  - ["[JsonConverter(typeof(NormalRangeConverter))]", "`\"Normal\":\"3.9-6.1\"`"]
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Клас конвертера"
+            children:
+              - box:
+                  check: skip
+                  code: |
+                    class NormalRangeConverter : JsonConverter<NormalRange>
+                    {
+                        public override NormalRange Read(ref Utf8JsonReader reader,
+                            Type type, JsonSerializerOptions options)
+                        {
+                            string s = reader.GetString()
+                                ?? throw new JsonException("очікувався рядок");
+                            string[] p = s.Split('-');
+                            return new NormalRange(
+                                double.Parse(p[0], CultureInfo.InvariantCulture),
+                                double.Parse(p[1], CultureInfo.InvariantCulture));
+                        }
+
+                        public override void Write(Utf8JsonWriter writer,
+                            NormalRange v, JsonSerializerOptions options)
+                            => writer.WriteStringValue(string.Create(
+                                CultureInfo.InvariantCulture, $"{v.Min}-{v.Max}"));
+                    }
+        - panel:
+            heading: "Правила"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["`Write`",   "пише [[одне]] JSON-значення"]
+                        - ["`Read`",    "`reader` уже на першому токені значення"]
+                        - ["",          "і має дочитати його до кінця"]
+                        - ["погано",    "`throw new JsonException(…)`"]
+                        - ["числа",     "`InvariantCulture`: інакше в uk-UA"]
+                        - ["",          "вийде `\"3,9-6,1\"`"]
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["підключення", "діє на"]
+                  groups:
+                    - rows:
+                        - ["атрибут на властивості",    "цю властивість"]
+                        - ["атрибут на типі",           "усі властивості типу"]
+                        - ["`options.Converters.Add`",  "усю серіалізацію з опціями"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "Пріоритет: атрибут на [[властивості]] →"
+                    - "`Converters` в опціях → атрибут на типі"
+              - note:
+                  text:
+                    - "Для `struct` токен `null` теж приходить"
+                    - "у `Read` — перевірте `JsonTokenType.Null`,"
+                    - "інакше `GetString()` поверне `null`"
+
+check:
+  usings: [System, System.Globalization, System.Text.Json, System.Text.Json.Serialization]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("uk-UA");
+    var t = new LabTest { Normal = new NormalRange(3.9, 6.1), Plain = new NormalRange(3.9, 6.1) };
+    Eq(JsonSerializer.Serialize(t), """{"Normal":"3.9-6.1","Plain":{"Min":3.9,"Max":6.1}}""");
+    Eq(JsonSerializer.Deserialize<LabTest>("""{"Normal":"4-6.5"}""")!.Normal.Max, 6.5);
+    try { JsonSerializer.Deserialize<LabTest>("""{"Normal":5}"""); Eq(0, 1); } catch (JsonException) { } catch (InvalidOperationException) { }
+    try { JsonSerializer.Deserialize<LabTest>("""{"Normal":null}"""); Eq(0, 1); } catch (JsonException e) { Eq(e.Message, "очікувався рядок"); }
+  types: |
+    public struct NormalRange { public double Min { get; } public double Max { get; } public NormalRange(double min, double max) { Min = min; Max = max; } }
+    public class LabTest { [JsonConverter(typeof(NormalRangeConverter))] public NormalRange Normal { get; set; } public NormalRange Plain { get; set; } }
+    class NormalRangeConverter : JsonConverter<NormalRange>
+    {
+        public override NormalRange Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
+        {
+            string s = reader.GetString() ?? throw new JsonException("очікувався рядок");
+            string[] p = s.Split('-');
+            return new NormalRange(double.Parse(p[0], CultureInfo.InvariantCulture), double.Parse(p[1], CultureInfo.InvariantCulture));
+        }
+        public override void Write(Utf8JsonWriter writer, NormalRange v, JsonSerializerOptions options)
+            => writer.WriteStringValue(string.Create(CultureInfo.InvariantCulture, $"{v.Min}-{v.Max}"));
+    }
+
+publish:
+  dark: ../../lectures/_assets/19-01/custom-converter.png
+  bw: ../../lectures/_assets/19-01/book/custom-converter.png

@@ -1,0 +1,75 @@
+# Лекція 8.7 «Часткові класи та методи»
+# Оригінал: lectures/_assets/08-07/Архив/partial-class-merge.png
+id: partial-class-merge
+title: "Часткові класи: кілька файлів — один тип"
+subtitle: "partial — вказівка компілятору; в IL існує один клас Patient з членами всіх частин"
+
+types: [Patient]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - stack:
+            gap: 16
+            children:
+              - box:
+                  title: "PatientBase.cs"
+                  check: skip
+                  code: |
+                    public partial class Patient
+                    {
+                        public string Name { get; }
+                        public int Age { get; }
+                        partial void OnDiagnosisChanged(string d);
+                    }
+              - box:
+                  title: "PatientMedical.cs"
+                  check: skip
+                  code: |
+                    public partial class Patient
+                    {
+                        public string Diagnosis { get; private set; }
+                        partial void OnDiagnosisChanged(string d)
+                            => Console.WriteLine(d);
+                    }
+        - box:
+            title: "Після компіляції — один тип"
+            kind: box_accent
+            check: skip
+            code: |
+              public class Patient
+              {
+                  public string Name { get; }
+                  public int Age { get; }
+                  public string Diagnosis { get; private set; }
+                  private void OnDiagnosisChanged(string d)
+                      => Console.WriteLine(d);
+              }
+            notes: ["без реалізації виклик `OnDiagnosisChanged(…)`", "компілятор просто [[видаляє]]", "", "атрибути й інтерфейси всіх частин", "об'єднуються; базовий клас — в одній", "частині або однаковий у всіх;", "`sealed`/`abstract` в одній частині —", "діє на весь тип"]
+  - panel:
+      heading: "Що може бути partial"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["член", "з версії", "умова"]
+            groups:
+              - rows:
+                  - ["class, struct, interface", "C# 2", "одне ім'я, namespace, збірка"]
+                  - ["`partial void M()`", "C# 3", "без реалізації — виклик зникає"]
+                  - ["метод з доступом / результатом", "C# 9", "реалізація [[обов'язкова]]"]
+                  - ["властивість, індексатор", "C# 13", "оголошення + реалізація"]
+                  - ["конструктор, подія", "C# 14", "оголошення + реалізація"]
+
+check:
+  usings: [System]
+  asserts: |
+    var p = new P2("Іван"); if (p.Name != "Іван") throw new Exception("partial");
+  types: |
+    partial class P2 { public partial string Name { get; } public partial P2(string n); }
+    partial class P2 { private string _n = ""; public partial string Name => _n; public partial P2(string n) { _n = n; } }
+
+publish:
+  dark: ../../lectures/_assets/08-07/partial-class-merge.png
+  bw: ../../lectures/_assets/08-07/book/partial-class-merge.png

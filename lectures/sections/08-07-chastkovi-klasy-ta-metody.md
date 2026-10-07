@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 7
 number: "8.7"
 title: "Часткові класи та методи"
-source: "../_combined/52-chastkovi-klasy-ta-metody.md"
 ---
 
 ## 8.7. Часткові класи та методи

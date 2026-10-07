@@ -4,7 +4,6 @@ chapterTitle: "Розділ 5. Обробка винятків"
 section: 5
 number: "5.5"
 title: "Створення класів винятків"
-source: "../_combined/32-stvorennia-klasiv-vyniatkiv.md"
 ---
 
 ## 5.5. Створення класів винятків

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 19. Серіалізація та десеріалі
 section: 5
 number: "19.5"
 title: "XmlSerializer — атрибутна серіалізація"
-source: ""
 ---
 
 ## 19.5. XmlSerializer — атрибутна серіалізація

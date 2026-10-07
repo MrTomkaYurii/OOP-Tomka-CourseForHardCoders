@@ -4,7 +4,6 @@ chapterTitle: "Розділ 21. Generic Host та Dependency Injection"
 section: 2
 number: "21.2"
 title: "IServiceCollection — реєстрація та розпізнавання сервісів"
-source: ""
 ---
 
 ## 21.2. IServiceCollection — реєстрація та розпізнавання сервісів

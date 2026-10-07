@@ -1,0 +1,78 @@
+# Лекція 7.7 «Коваріантність та контраваріантність узагальнених інтерфейсів»
+# Оригінал: lectures/_assets/07-07/Архив/variance-directions.png
+id: variance-directions
+title: "Коваріантність і контраваріантність"
+subtitle: "Cardiologist : Doctor — у який бік дозволено присвоєння між узагальненими інтерфейсами"
+
+types: [Doctor, Cardiologist, IClinicFactory, IDoctorHandler, IRepository, CardiologistFactory, GeneralDoctorHandler]
+
+body:
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box:
+            title: "out T — коваріантний"
+            kind: box_accent
+            check: skip
+            code: |
+              interface IClinicFactory<out T>
+              {
+                  T Create(string name);
+              }
+            notes: ["T лише виходить (результат)"]
+        - box:
+            title: "in T — контраваріантний"
+            kind: box_accent
+            check: skip
+            code: |
+              interface IDoctorHandler<in T>
+              {
+                  void Handle(T doctor);
+              }
+            notes: ["T лише входить (параметр)"]
+        - box:
+            title: "T — інваріантний"
+            check: skip
+            code: |
+              interface IRepository<T>
+              {
+                  void Save(T item);
+                  T GetById(int id);
+              }
+            notes: ["T і входить, і виходить"]
+  - panel:
+      heading: "Присвоєння (перевірено компілятором і is)"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["присвоєння", "результат", "чому"]
+            groups:
+              - rows:
+                  - ["`IClinicFactory<Doctor> f = new CardiologistFactory();`", "✓", "кардіолог, що вийшов, — теж лікар"]
+                  - ["`IDoctorHandler<Cardiologist> h = new GeneralDoctorHandler();`", "✓", "хто обробляє будь-якого лікаря, обробить і кардіолога"]
+                  - ["`IRepository<Doctor> r = cardioRepo;`", "[[CS0266]]", "інакше `r.Save(new Therapist())`"]
+                  - ["`IEnumerable<object> e = new List<int>();`", "[[CS0266]]", "варіантність лише для [[посилальних]] типів"]
+        - text:
+            text: ["`out`/`in` бувають лише в інтерфейсів і делегатів: `IEnumerable<out T>`, `IComparer<in T>`, `Func<in T, out TResult>`."]
+
+check:
+  usings: [System, System.Collections.Generic]
+  asserts: |
+    object f = new CardiologistFactory(); if (!(f is IClinicFactory<Doctor>)) throw new Exception("out");
+    object h = new GeneralDoctorHandler(); if (!(h is IDoctorHandler<Cardiologist>)) throw new Exception("in");
+    object r = new CardioRepo(); if (r is IRepository<Doctor>) throw new Exception("inv");
+    object l = new List<int>(); if (l is IEnumerable<object>) throw new Exception("value");
+  types: |
+    class Doctor { } class Cardiologist : Doctor { }
+    interface IClinicFactory<out T> { T Create(string name); }
+    interface IDoctorHandler<in T> { void Handle(T doctor); }
+    interface IRepository<T> { void Save(T item); T GetById(int id); }
+    class CardiologistFactory : IClinicFactory<Cardiologist> { public Cardiologist Create(string n) => new Cardiologist(); }
+    class GeneralDoctorHandler : IDoctorHandler<Doctor> { public void Handle(Doctor d) { } }
+    class CardioRepo : IRepository<Cardiologist> { public void Save(Cardiologist c) { } public Cardiologist GetById(int id) => new Cardiologist(); }
+
+publish:
+  dark: ../../lectures/_assets/07-07/variance-directions.png
+  bw: ../../lectures/_assets/07-07/book/variance-directions.png

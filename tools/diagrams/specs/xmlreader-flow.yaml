@@ -1,0 +1,74 @@
+# Лекція 19.4 «XmlReader та XmlWriter»
+# Оригінал: lectures/_assets/19-04/Архив/xmlreader-flow.png
+id: xmlreader-flow
+title: "XmlReader: вузол за вузлом, лише вперед"
+subtitle: "Кожен Read() переходить до наступного вузла; у памʼяті — лише поточний вузол, тож розмір файлу не важливий"
+
+types: [XmlReader, XmlReaderSettings, XmlNodeType, StringReader]
+
+body:
+  - panel:
+      heading: "`<ward><patient id=\"PT-1\"><name>Петренко</name><bed/></patient></ward>`"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["Read() №", "NodeType", "Name", "Value", "Depth", "примітка"]
+            groups:
+              - rows:
+                  - ["1", "`Element`",    "ward",    "",          "0", ""]
+                  - ["2", "`Element`",    "patient", "",          "1", "`AttributeCount` = 1; `GetAttribute(\"id\")` → `\"PT-1\"`"]
+                  - ["3", "`Element`",    "name",    "",          "2", ""]
+                  - ["4", "`Text`",       "",        "Петренко",  "3", "текст — [[окремий вузол]]"]
+                  - ["5", "`EndElement`", "name",    "",          "2", ""]
+                  - ["6", "`Element`",    "bed",     "",          "2", "`IsEmptyElement` = `true` — `EndElement` не буде"]
+                  - ["7", "`EndElement`", "patient", "",          "1", ""]
+                  - ["8", "`EndElement`", "ward",    "",          "0", "наступний `Read()` → `false`"]
+        - text:
+            text:
+              - "Атрибути `Read()` [[не відвідує]]: їх читають `GetAttribute` або `MoveToNextAttribute()` на вузлі `Element`."
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Типовий цикл"
+            children:
+              - box:
+                  check: skip
+                  code: |
+                    var s = new XmlReaderSettings { IgnoreWhitespace = true };
+                    using var r = XmlReader.Create(path, s);
+                    while (r.ReadToFollowing("patient"))
+                    {
+                        string? id = r.GetAttribute("id");
+                        r.ReadToDescendant("name");
+                        string name = r.ReadElementContentAsString();
+                    }
+        - panel:
+            heading: "Методи переходу"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - rows:
+                        - ["ReadToFollowing(n)",  "до наступного `<n>` будь-де"]
+                        - ["ReadToDescendant(n)", "до `<n>` усередині поточного"]
+                        - ["ReadToNextSibling(n)", "до сусіда на тому ж рівні"]
+                        - ["ReadElementContentAsString()", "текст + перехід за `</n>`"]
+                        - ["Skip()",              "пропустити елемент з нащадками"]
+
+check:
+  usings: [System, System.IO, System.Xml]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var xml = "<ward><patient id=\"PT-1\"><name>Петренко</name><bed/></patient></ward>";
+    var log = new System.Collections.Generic.List<string>();
+    using (var r = XmlReader.Create(new StringReader(xml))) while (r.Read()) log.Add($"{r.NodeType}:{r.Name}:{r.Value}:{r.Depth}");
+    Eq(string.Join(" ", log), "Element:ward::0 Element:patient::1 Element:name::2 Text::Петренко:3 EndElement:name::2 Element:bed::2 EndElement:patient::1 EndElement:ward::0");
+    using (var r = XmlReader.Create(new StringReader(xml))) { r.ReadToFollowing("patient"); Eq(r.GetAttribute("id"), "PT-1"); r.ReadToDescendant("name"); Eq(r.ReadElementContentAsString(), "Петренко"); Eq(r.Name, "bed"); Eq(r.IsEmptyElement, true); }
+
+publish:
+  dark: ../../lectures/_assets/19-04/xmlreader-flow.png
+  bw: ../../lectures/_assets/19-04/book/xmlreader-flow.png

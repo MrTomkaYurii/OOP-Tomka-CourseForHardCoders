@@ -1,0 +1,83 @@
+# Лекція 18.6 «System.Text.Json»
+# Оригінал: lectures/_assets/18-06/Архив/json-serialization-flow.png
+id: json-serialization-flow
+title: "JsonSerializer: обʼєкт ↔ JSON"
+subtitle: "Серіалізація перетворює публічні властивості на JSON; десеріалізація створює обʼєкт і заповнює їх за іменами"
+
+types: [JsonSerializer, JsonSerializerOptions, JsonNamingPolicy, JsonIgnoreCondition, JsonStringEnumConverter, Patient, Status, File, FileStream]
+
+body:
+  - panel:
+      heading: "Туди й назад"
+      children:
+        - hchain:
+            nodes:
+              - { title: "new Patient(…)", code: true, sub: ["`Id`, `FullName`, `Status`, `Notes = null`"] }
+              - { title: "JsonSerializer.Serialize(p)", code: true, sub: ["рядок або `Stream`"], kind: box_accent, via: "" }
+              - { title: "JSON", sub: ["файл, HTTP, БД"], via: "" }
+              - { title: "Deserialize<Patient>(json)", code: true, sub: ["`null` для `\"null\"`"], via: "" }
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["виклик", "результат"]
+            groups:
+              - heading: "за замовчуванням: імена як у C#, null пишеться, enum — число"
+                rows:
+                  - ["JsonSerializer.Serialize(p)",          '`"""{"Id":1001,"FullName":"Petrenko","Status":1,"Notes":null}"""`']
+              - heading: "з опціями api (нижче)"
+                rows:
+                  - ["JsonSerializer.Serialize(p, api)",     '`"""{"id":1001,"fullName":"Petrenko","status":"Inpatient"}"""`']
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "JsonSerializerOptions api"
+            children:
+              - box:
+                  code: |
+                    var api = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                        PropertyNameCaseInsensitive = true,
+                        WriteIndented = false
+                    };
+                    api.Converters.Add(new JsonStringEnumConverter());
+              - note:
+                  text:
+                    - "Створюйте один раз і [[використовуйте повторно]] — опції кешують метадані типів"
+        - panel:
+            heading: "Що варто знати"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["серіалізуються",        "публічні властивості; поля — лише з `[JsonInclude]`"]
+                        - ["регістр при читанні",   "[[чутливий]] за замовчуванням"]
+                        - ["невідоме поле JSON",    "ігнорується мовчки"]
+                        - ["`DateTime`",            "ISO 8601: `\"2026-06-11T09:30:00\"`"]
+                        - ["кирилиця",              "екранується `\\u…`; `Encoder` змінює"]
+                        - ["файл",                  "`Serialize(stream, obj)` — без проміжного рядка"]
+                        - ["вбудовано",             "з .NET Core 3.0 (`System.Text.Json`)"]
+
+check:
+  usings: [System, System.Text.Json, System.Text.Json.Serialization]
+  context: |
+    var p = new Patient { Id = 1001, FullName = "Petrenko", Status = Status.Inpatient };
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(JsonSerializer.Deserialize<Patient>("{\"id\":1}")!.Id, 0);
+    Eq(JsonSerializer.Deserialize<Patient>("{\"id\":1}", api)!.Id, 1);
+    Eq(JsonSerializer.Deserialize<Patient>("null"), (Patient?)null);
+    Eq(JsonSerializer.Deserialize<Patient>("{\"Id\":2,\"Extra\":5}")!.Id, 2);
+    Eq(JsonSerializer.Serialize(new DateTime(2026, 6, 11, 9, 30, 0)), "\"2026-06-11T09:30:00\"");
+    Eq(JsonSerializer.Serialize("Ж"), "\"\\u0416\"");
+  types: |
+    public enum Status { Outpatient, Inpatient }
+    public class Patient { public int Id { get; set; } public string FullName { get; set; } = ""; public Status Status { get; set; } public string? Notes { get; set; } }
+
+publish:
+  dark: ../../lectures/_assets/18-06/json-serialization-flow.png
+  bw: ../../lectures/_assets/18-06/book/json-serialization-flow.png

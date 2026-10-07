@@ -4,7 +4,6 @@ chapterTitle: "Розділ 5. Обробка винятків"
 section: 4
 number: "5.4"
 title: "Генерація винятку та оператор throw"
-source: "../_combined/31-heneratsiia-vyniatku-ta-operator-throw.md"
 ---
 
 ## 5.4. Генерація винятку та оператор throw

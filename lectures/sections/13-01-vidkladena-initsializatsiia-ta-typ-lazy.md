@@ -4,7 +4,6 @@ chapterTitle: "Розділ 13. Додаткові класи та структ�
 section: 1
 number: "13.1"
 title: "Відкладена ініціалізація та тип Lazy<T>"
-source: "../_combined/78-vidkladena-initsializatsiia-ta-typ-lazy.md"
 ---
 
 ## 13.1. Відкладена ініціалізація та тип `Lazy<T>`

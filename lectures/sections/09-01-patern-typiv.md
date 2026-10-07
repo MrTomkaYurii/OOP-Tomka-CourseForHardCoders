@@ -4,7 +4,6 @@ chapterTitle: "Розділ 9. Pattern matching"
 section: 1
 number: "9.1"
 title: "Патерн типів"
-source: "../_combined/56-patern-typiv.md"
 ---
 
 ## 9.1. Патерн типів

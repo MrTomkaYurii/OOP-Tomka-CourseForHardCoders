@@ -4,7 +4,6 @@ chapterTitle: "Розділ 18. Робота з файловою системо�
 section: 1
 number: "18.1"
 title: "Класи Path, File та Directory"
-source: ""
 ---
 
 ## 18.1. Класи Path, File та Directory

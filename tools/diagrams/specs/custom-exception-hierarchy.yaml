@@ -1,0 +1,60 @@
+# Лекція 5.5 «Створення класів винятків»
+# Оригінал: lectures/_assets/05-05/Архив/custom-exception-hierarchy.png
+id: custom-exception-hierarchy
+title: "Власні класи винятків клінічної системи"
+subtitle: "Ієрархії з лекції: доменна гілка від Exception і уточнення вбудованого ArgumentException"
+
+types: [Exception, SystemException, ArgumentException, MedicalException, PatientAgeException, DiagnosisException, PatientValidationException]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Доменна гілка (5.5, ієрархія)"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "Exception"}
+                    - {title: "MedicalException", kind: box_accent, sub: ["+ `PatientId`"]}
+                    - {title: "PatientAgeException · DiagnosisException", sub: ["+ `InvalidAge` · + `DiagnosisCode`"]}
+        - panel:
+            heading: "Уточнення вбудованого типу"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "Exception"}
+                    - {title: "SystemException"}
+                    - {title: "ArgumentException"}
+                    - {title: "PatientValidationException", kind: box_accent, sub: ["+ `FieldName`"]}
+  - panel:
+      heading: "Хто що перехоплює (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["вираз", "результат"]
+            groups:
+              - rows:
+                  - ["new PatientAgeException(\"P-1\", -5) is MedicalException",   "`true`"]
+                  - ["new DiagnosisException(\"P-1\", \"X\") is MedicalException",  "`true`"]
+                  - ["new PatientValidationException(\"Age\") is ArgumentException", "`true`"]
+                  - ["new PatientValidationException(\"Age\") is MedicalException", "`false`"]
+        - text:
+            text: ["Рекомендовано три конструктори: `()`, `(message)`, `(message, inner)`; ім'я — на `Exception`."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  types: |
+    class MedicalException : Exception { public string PatientId { get; } public MedicalException(string id, string m) : base(m) => PatientId = id; }
+    class PatientAgeException : MedicalException { public int InvalidAge { get; } public PatientAgeException(string id, int age) : base(id, "age") => InvalidAge = age; }
+    class DiagnosisException : MedicalException { public string DiagnosisCode { get; } public DiagnosisException(string id, string c) : base(id, "diag") => DiagnosisCode = c; }
+    class PatientValidationException : ArgumentException { public string FieldName { get; } public PatientValidationException(string f) : base("bad") => FieldName = f; }
+
+publish:
+  dark: ../../lectures/_assets/05-05/custom-exception-hierarchy.png
+  bw: ../../lectures/_assets/05-05/book/custom-exception-hierarchy.png

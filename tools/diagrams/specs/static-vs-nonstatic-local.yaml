@@ -1,0 +1,59 @@
+# Лекція 2.22 «Локальні функції»
+# Оригінал: lectures/_assets/02-22/Архив/static-vs-nonstatic-local.png
+id: static-vs-nonstatic-local
+title: "Звичайна і static локальна функція"
+subtitle: "Звичайна захоплює змінні зовнішнього методу; static (C# 8) бачить лише свої параметри"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "звичайна — захоплює змінні"
+            check: skip
+            code: |
+              void GeneratePatientReport(string name, int ward)
+              {
+                  string header = $"=== {name} ===";
+                  PrintSection("Скарги", "Кашель");
+
+                  void PrintSection(string title, string content)
+                  {
+                      Console.WriteLine([[header]]);  // ✓ зовнішня
+                      Console.WriteLine($"[{title}]: {content}");
+                  }
+              }
+            notes: ["зручно, але може непомітно змінити", "стан зовнішнього методу"]
+        - box:
+            title: "static — ізольована"
+            kind: box_accent
+            check: skip
+            code: |
+              void ProcessLabResults(double[] values,
+                                     double minNorm, double maxNorm)
+              {
+                  foreach (var v in values)
+                      Classify(v, minNorm, maxNorm);
+
+                  static string Classify(double value,
+                                         double low, double high)
+                  {
+                      // [[minNorm]] тут — помилка CS8421
+                      return value < low ? "Нижче норми"
+                           : value > high ? "Вище норми" : "Норма";
+                  }
+              }
+            notes: ["поведінка залежить лише від аргументів", "— легко читати і тестувати"]
+
+check:
+  usings: [System]
+  asserts: |
+    string C(double value, double low, double high) => value < low ? "Нижче норми" : value > high ? "Вище норми" : "Норма";
+    if (C(3.5, 3.9, 6.1) != "Нижче норми" || C(7.2, 3.9, 6.1) != "Вище норми" || C(5.1, 3.9, 6.1) != "Норма") throw new Exception("c");
+
+publish:
+  dark: ../../lectures/_assets/02-22/static-vs-nonstatic-local.png
+  bw: ../../lectures/_assets/02-22/book/static-vs-nonstatic-local.png

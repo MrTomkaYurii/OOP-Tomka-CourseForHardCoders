@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 9
 number: "2.9"
 title: "Перетворення базових типів"
-source: "../_migration/source-chunks/06-peretvorennia-typiv.md"
 ---
 
 ## 2.9. Перетворення базових типів

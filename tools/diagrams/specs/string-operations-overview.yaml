@@ -1,0 +1,94 @@
+# Лекція 11.2 «Операції з рядками»
+# Оригінал: lectures/_assets/11-02/Архив/string-operations-overview.png
+id: string-operations-overview
+title: "Операції з рядками: групи методів String"
+subtitle: "Усі результати нижче обчислено для одного запису; оригінал record після них не змінюється"
+
+types: []
+
+body:
+  - box:
+      kind: box_accent
+      align: center
+      code: |
+        string record = "Петренко;Іван;67;кардіологія;I10.9";
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Пошук і перевірка"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["виклик", "результат"]
+                  groups:
+                    - rows:
+                        - ["record.Contains(\"кардіо\")",      "`true`"]
+                        - ["record.StartsWith(\"Петр\")",      "`true`"]
+                        - ["record.EndsWith(\"I10.9\")",       "`true`"]
+                        - ["record.IndexOf(\"Іван\")",         "`9` — з нуля"]
+                        - ["record.LastIndexOf(';')",          "`28`"]
+                        - ["record.IndexOf(\"ЛОР\")",          "`-1` — не знайдено"]
+                        - ["record.Length",                    "`34`"]
+                    - heading: "регістр — через StringComparison"
+                      rows:
+                        - ["\"i10\" == \"I10\"",               "`false`"]
+                        - ["string.Equals(\"i10\", \"I10\", OrdinalIgnoreCase)", "`true`"]
+
+        - panel:
+            heading: "Поділ і зʼєднання"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["виклик", "результат"]
+                  groups:
+                    - rows:
+                        - ["record.Split(';').Length",         "`5`"]
+                        - ["record.Split(';')[2]",             "`\"67\"`"]
+                        - ["\"a;;b\".Split(';').Length",       "`3` — є порожній"]
+                        - ["\"a;;b\".Split(';', RemoveEmptyEntries).Length", "`2`"]
+                        - ["record.Substring(9, 4)",           "`\"Іван\"`"]
+                        - ["record[^5..]",                     "`\"I10.9\"`"]
+                        - ["string.Join(\" | \", \"Петренко\", \"I10.9\")", "`\"Петренко | I10.9\"`"]
+
+  - panel:
+      heading: "Зміна → новий рядок"
+      children:
+        - row:
+            gap: 16
+            equal: true
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["виклик", "результат"]
+                  groups:
+                    - rows:
+                        - ["\"I10.9\".Replace('.', ',')",      "`\"I10,9\"`"]
+                        - ["record.Remove(8)",                 "`\"Петренко\"`"]
+                        - ["\"Іван\".Insert(0, \"п. \")",      "`\"п. Іван\"`"]
+                        - ["\"i10\".ToUpper()",                "`\"I10\"`"]
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["виклик", "результат"]
+                  groups:
+                    - rows:
+                        - ["\"  Іван \\t\".Trim()",            "`\"Іван\"`"]
+                        - ["\"##I10##\".Trim('#')",            "`\"I10\"`"]
+                        - ["\"42\".PadLeft(6, '0')",           "`\"000042\"`"]
+                        - ["\"Іван\".PadRight(6) + \"|\"",     "`\"Іван  |\"`"]
+        - note:
+            text:
+              - "Змінювати нічого — повертається [[той самий]] обʼєкт (`\"I10\".Trim()`); методи, що повертають `bool` чи `int`, рядків не створюють."
+
+check:
+  usings: [System, static System.StringComparison, static System.StringSplitOptions]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    string s = "I10"; Eq(ReferenceEquals(s.Trim(), s), true);
+    Eq(record, "Петренко;Іван;67;кардіологія;I10.9");
+
+publish:
+  dark: ../../lectures/_assets/11-02/string-operations-overview.png
+  bw: ../../lectures/_assets/11-02/book/string-operations-overview.png

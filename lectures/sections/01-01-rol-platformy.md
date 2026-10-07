@@ -4,7 +4,6 @@ chapterTitle: "Розділ 1. Вступ"
 section: 1
 number: "1.1"
 title: "Роль платформи"
-source: "../_migration/source-chunks/01-vstup.md"
 ---
 
 ## 1.1. Роль платформи

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 6. Делегати, події та лямбди"
 section: 2
 number: "6.2"
 title: "Лямбди"
-source: "../_migration/source-chunks/35-liambdy.md"
 ---
 
 ## 6.2. Лямбди

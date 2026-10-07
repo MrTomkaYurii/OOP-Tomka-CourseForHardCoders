@@ -2,14 +2,14 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // labs-to-docx.js — конвертер інструкцій лабораторних у окремі Word-файли (A4)
 //
-// Кожна лабораторна labs/lab-NN-*/instructions.md → output/labs/lab-NN-*.docx
+// Кожна лабораторна labs/lab-NN-*/instructions.md → tools/docx-export/output/labs/lab-NN-*.docx
 //
 // Використання:
 //   node labs-to-docx.js                  # усі 22
 //   node labs-to-docx.js --only 1          # лише Lab 01
 //   node labs-to-docx.js --only 1,2,3      # порційно
 //   node labs-to-docx.js --only 4-6        # діапазон
-//   node labs-to-docx.js --outdir ../../output/labs
+//   node labs-to-docx.js --outdir output/labs
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const {
@@ -28,7 +28,7 @@ const { C, SZ, PAGE_A4 }                = require('./lib/constants');
 
 const REPO      = path.resolve(__dirname, '..', '..');
 const LABS_DIR  = path.join(REPO, 'labs');
-const OUT_DIR   = path.join(REPO, 'output', 'labs');
+const OUT_DIR   = path.join(__dirname, 'output', 'labs');
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
 function parseArgs(argv) {

@@ -1,7 +1,7 @@
 # Функціональність по лабах — що де є в меню
 
-> Показує **що і коли** з'являється в `src/Program.cs`.  
-> Лаби 01–02 — ізольований sandbox, не входять у `src/`.
+> Показує **що і коли** з'являється в `solutions/ClinicApp/Program.cs`.  
+> Лаби 01–02 — ізольований sandbox, не входять у `solutions/ClinicApp/`.
 
 ---
 
@@ -368,10 +368,10 @@
 
 ---
 
-## Де живуть класи в `src/`
+## Де живуть класи в `solutions/ClinicApp/`
 
 ```
-src/
+solutions/ClinicApp/
 ├── Clinic.cs                    — Lab 03+ оркестратор; Lab 12: Logger/Exporter/Importer/Session; Lab 13: Passport/Tracker + SubscribeEvents()
 ├── Program.cs                   — Lab 03+ меню; Lab 12: FilesMenu, session load/save; Lab 13: Tracker.PrintSummary/SaveSummary при виході
 │

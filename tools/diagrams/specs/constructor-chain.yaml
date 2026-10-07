@@ -1,0 +1,38 @@
+# Лекція 3.2 «Конструктори, ініціалізатори та деконструктори»
+# Оригінал: lectures/_assets/03-02/Архив/constructor-chain.png
+id: constructor-chain
+title: "Ланцюжок конструкторів через this(…)"
+subtitle: "new Patient() делегує повнішому конструктору; тіла виконуються від найповнішого назад"
+
+types: [Patient]
+
+body:
+  - hchain:
+      nodes:
+        - {title: "Patient()", sub: ["`: this(\"Невідомий\")`"], kind: box_muted}
+        - {title: "Patient(string name)", via: "делегує", sub: ["`: this(name, 0)`"], kind: box_muted}
+        - {title: "Patient(string name, int age)", via: "делегує", sub: ["`this.name = name; this.age = age;`"], kind: box_accent}
+  - panel:
+      heading: "Результати (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["виклик", "Print()"]
+            groups:
+              - rows:
+                  - ["new Patient().Info",                     "`\"Невідомий, 0\"`"]
+                  - ["new Patient(\"Олена Ковальчук\").Info",   "`\"Олена Ковальчук, 0\"`"]
+                  - ["new Patient(\"Іван Петренко\", 45).Info", "`\"Іван Петренко, 45\"`"]
+        - text:
+            text: ["Те саме дає один конструктор `Patient(string name = \"Невідомий\", int age = 0)`, якщо логіки немає."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  types: |
+    class Patient { public string name; public int age; public Patient() : this("Невідомий") { } public Patient(string name) : this(name, 0) { } public Patient(string name, int age) { this.name = name; this.age = age; } public string Info => $"{name}, {age}"; }
+
+publish:
+  dark: ../../lectures/_assets/03-02/constructor-chain.png
+  bw: ../../lectures/_assets/03-02/book/constructor-chain.png

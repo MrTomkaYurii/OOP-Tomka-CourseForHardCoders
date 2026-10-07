@@ -1,0 +1,62 @@
+# Лекція 3.3 «Клас Program та метод Main. Програми верхнього рівня»
+# Оригінал: lectures/_assets/03-03/Архив/toplevel-to-main.png
+id: toplevel-to-main
+title: "Інструкції верхнього рівня → згенерований Main"
+subtitle: "Компілятор (C# 9+) загортає інструкції в метод точки входу; типи файлу лишаються окремими"
+
+types: [Patient, Program, Task]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Program.cs — що пишемо"
+            kind: box_accent
+            check: skip
+            code: |
+              using System;
+
+              Patient p = new("Іван", 45);
+              p.PrintInfo();
+
+              class Patient { … }   // типи — лише в кінці
+        - box:
+            title: "Що генерує компілятор (спрощено)"
+            check: skip
+            code: |
+              class Program
+              {
+                  static void <Main>$(string[] args)
+                  {
+                      Patient p = new("Іван", 45);
+                      p.PrintInfo();
+                  }
+              }
+              class Patient { … }   // поза Program
+  - panel:
+      heading: "Сигнатура залежить від коду"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["у коді є", "згенерований метод"]
+            groups:
+              - rows:
+                  - ["нічого особливого", "`static void <Main>$(string[] args)`"]
+                  - ["`return 1;`",        "`static int <Main>$(…)`"]
+                  - ["`await …`",          "`static async Task <Main>$(…)`"]
+                  - ["`await` і `return`", "`static async Task<int> <Main>$(…)`"]
+        - text:
+            text: ["`args` доступний як змінна; клас перед інструкціями — помилка CS8803; файл з інструкціями в проєкті — лише один."]
+
+check:
+  usings: [System, System.Reflection]
+  asserts: |
+    var ep = Assembly.GetEntryAssembly()!.EntryPoint!;
+    if (!ep.Name.Contains("Main")) throw new Exception(ep.Name);
+
+publish:
+  dark: ../../lectures/_assets/03-03/toplevel-to-main.png
+  bw: ../../lectures/_assets/03-03/book/toplevel-to-main.png

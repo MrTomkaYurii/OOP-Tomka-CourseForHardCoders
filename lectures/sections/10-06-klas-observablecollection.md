@@ -4,7 +4,6 @@ chapterTitle: "Розділ 10. Колекції"
 section: 6
 number: "10.6"
 title: "Клас ObservableCollection<T>"
-source: "../_combined/67-klas-observablecollection.md"
 ---
 
 ## 10.6. Клас ObservableCollection<T>

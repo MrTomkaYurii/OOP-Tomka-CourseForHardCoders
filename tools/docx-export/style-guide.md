@@ -529,7 +529,7 @@ md-to-docx.js  → CLI: args, glob, читання файлів, збірка Do
 
 ```bash
 # Один розділ по glob
-node md-to-docx.js "lectures/sections/01-*.md" -o "output/chapter-01.docx"
+node md-to-docx.js "../../lectures/sections/01-*.md" -o output/chapter-01.docx
 
 # Кілька файлів явно
 node md-to-docx.js file1.md file2.md file3.md -o out.docx
@@ -566,4 +566,4 @@ node md-to-docx.js "..." --assets "lectures/_assets"
   коду та для inline-коду в лабораторних (там це шляхи, команди, імена файлів).
   Перемикач — `plainInlineCode` у `lib/renderer.js` (визначається `opts.lab`).
 - Рисунки: якщо поруч із `_assets/NN-NN/x.png` є `_assets/NN-NN/book/x.png` (ч/б версія
-  схеми з `diagrams/`), у документ іде вона; інакше — оригінал (скриншоти тощо).
+  схеми з `tools/diagrams/`), у документ іде вона; інакше — оригінал (скриншоти тощо).

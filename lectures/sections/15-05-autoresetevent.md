@@ -4,7 +4,6 @@ chapterTitle: "Розділ 15. Багатопоточність"
 section: 5
 number: "15.5"
 title: "Клас AutoResetEvent"
-source: ""
 ---
 
 ## 15.5. Клас AutoResetEvent

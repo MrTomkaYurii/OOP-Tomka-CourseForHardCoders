@@ -4,7 +4,6 @@ chapterTitle: "Розділ 10. Колекції"
 section: 5
 number: "10.5"
 title: "Словник Dictionary<K, V>"
-source: "../_combined/66-slovnyk-dictionary-k-v.md"
 ---
 
 ## 10.5. Словник Dictionary<K, V>

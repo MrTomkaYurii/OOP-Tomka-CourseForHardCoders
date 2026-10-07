@@ -1,0 +1,54 @@
+# Лекція 3.5 «Типи значень та типи посилань»
+# Оригінал: lectures/_assets/03-05/Архив/stack-vs-heap.png
+id: stack-vs-heap
+title: "Struct і class у пам'яті"
+subtitle: "Значення типу-значення лежить там, де оголошено змінну чи поле; об'єкт класу — завжди в купі"
+
+types: [BloodPressure, Patient, Visit]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Локальні змінні методу (стек)"
+            children:
+              - box:
+                  title: "BloodPressure bp"
+                  check: skip
+                  code: |
+                    systolic  = 120
+                    diastolic = 80
+                  notes: ["поля — [[прямо]] в змінній"]
+              - box:
+                  title: "Patient patient"
+                  check: skip
+                  code: "посилання → об'єкт у купі"
+        - panel:
+            heading: "Купа"
+            children:
+              - box:
+                  title: "об'єкт Patient"
+                  kind: box_accent
+                  check: skip
+                  code: |
+                    name = "Іван Петренко"
+                    age  = 45
+                  notes: ["звільняє збирач сміття"]
+  - panel:
+      heading: "Де насправді лежить значення типу-значення"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["де оголошено", "де дані"]
+            groups:
+              - rows:
+                  - ["локальна змінна, параметр", "у стеку (кадр методу)"]
+                  - ["поле класу, елемент масиву", "[[у купі]] — разом з об'єктом"]
+                  - ["поле структури", "там, де сама структура"]
+                  - ["упаковано в `object`", "у купі, окремий об'єкт"]
+
+publish:
+  dark: ../../lectures/_assets/03-05/stack-vs-heap.png
+  bw: ../../lectures/_assets/03-05/book/stack-vs-heap.png

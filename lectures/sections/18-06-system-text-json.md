@@ -4,7 +4,6 @@ chapterTitle: "Розділ 18. Робота з файловою системо�
 section: 6
 number: "18.6"
 title: "System.Text.Json. Серіалізація та десеріалізація"
-source: ""
 ---
 
 ## 18.6. System.Text.Json. Серіалізація та десеріалізація

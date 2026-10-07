@@ -1,0 +1,82 @@
+# Лекція 10.4 «Stack<T>»
+# Оригінал: lectures/_assets/10-04/Архив/stack-lifo-structure.png
+id: stack-lifo-structure
+title: "Stack<T>: LIFO — останній прийшов, перший вийшов"
+subtitle: "Push кладе на вершину, Pop знімає з вершини; усередині — звичайний масив і лічильник"
+
+types: [Stack, List]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Журнал призначень"
+            gap: 8
+            children:
+              - note:
+                  align: center
+                  text: ["`Push(x)` кладе сюди ↓   ↑ `Pop()` знімає звідси"]
+              - box: { kind: box_accent, align: center, title: "Метформін 850 мг", notes: ["[3] · вершина · `Peek()`"] }
+              - box: { align: center, title: "Лізиноприл 10 мг", notes: ["[2]"] }
+              - box: { align: center, title: "Ібупрофен 400 мг", notes: ["[1]"] }
+              - box: { align: center, title: "Аспірин 100 мг", notes: ["[0] · дно"] }
+              - text:
+                  align: center
+                  text: ["Count = 4"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "Аспірин додано першим —"
+                    - "він вийде [[останнім]]"
+
+        - stack:
+            gap: 24
+            children:
+              - panel:
+                  heading: "Усередині: масив + Count"
+                  children:
+                    - cells:
+                        rows:
+                          - cells: ["Асп", "Ібу", "Ліз", "Мет", "·", "·", "·", "·"]
+                            kinds: [box, box, box, box_accent, box_muted, box_muted, box_muted, box_muted]
+                            top: ["0", "1", "2", "3", "4", "5", "6", "7"]
+                            bottom: ["", "", "", "Count-1", "Count", "", "", ""]
+                    - text:
+                        text:
+                          - "`Push` пише в `[Count]` і збільшує `Count`;"
+                          - "`Pop` зменшує `Count` і читає `[Count]` —"
+                          - "жодного зсуву, O(1). Буфер повний — масив ×2."
+              - panel:
+                  heading: "Методи"
+                  children:
+                    - kv:
+                        check: skip
+                        columns: ["метод", "складність"]
+                        groups:
+                          - rows:
+                              - ["Push(item)",    "O(1)* амортизовано"]
+                              - ["Pop() / Peek()", "O(1)"]
+                              - ["TryPop(out x)", "O(1), `false` — порожній"]
+                              - ["Contains(item)", "O(n)"]
+                    - note:
+                        kind: box_accent
+                        text:
+                          - "`Pop`/`Peek` на порожньому стеку →"
+                          - "[[`InvalidOperationException`]]"
+
+check:
+  usings: [System, System.Collections.Generic]
+  context: |
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    var s = new Stack<string>();
+    s.Push("Аспірин"); s.Push("Ібупрофен"); s.Push("Лізиноприл"); s.Push("Метформін");
+    Assert(s.Peek() == "Метформін" && s.Count == 4, "вершина");
+    Assert(s.Pop() == "Метформін" && s.Count == 3, "Pop");
+    var e = new Stack<string>(); Assert(!e.TryPop(out _), "TryPop");
+    try { e.Pop(); Assert(false, "Pop порожнього"); } catch (InvalidOperationException) { }
+
+publish:
+  dark: ../../lectures/_assets/10-04/stack-lifo-structure.png
+  bw: ../../lectures/_assets/10-04/book/stack-lifo-structure.png

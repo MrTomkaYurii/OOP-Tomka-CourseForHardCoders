@@ -4,7 +4,6 @@ chapterTitle: "Розділ 10. Колекції"
 section: 8
 number: "10.8"
 title: "Ітератори та yield return"
-source: "../_combined/69-iteratory-ta-yield-return.md"
 ---
 
 ## 10.8. Ітератори та yield return

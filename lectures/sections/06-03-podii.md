@@ -4,7 +4,6 @@ chapterTitle: "Розділ 6. Делегати, події та лямбди"
 section: 3
 number: "6.3"
 title: "Події"
-source: "../_migration/source-chunks/36-podii.md"
 ---
 
 ## 6.3. Події

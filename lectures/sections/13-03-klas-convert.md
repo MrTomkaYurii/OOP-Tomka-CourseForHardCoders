@@ -4,7 +4,6 @@ chapterTitle: "Розділ 13. Додаткові класи та структ�
 section: 3
 number: "13.3"
 title: "Клас Convert"
-source: "../_combined/80-klas-convert.md"
 ---
 
 ## 13.3. Клас `Convert`

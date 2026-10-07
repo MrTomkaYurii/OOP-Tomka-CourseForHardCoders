@@ -4,7 +4,6 @@ chapterTitle: "Розділ 12. Робота з датами та часом"
 section: 3
 number: "12.3"
 title: "DateOnly та TimeOnly"
-source: "../_combined/77-dateonly-ta-timeonly.md"
 ---
 
 ## 12.3. DateOnly та TimeOnly

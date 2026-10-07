@@ -1,0 +1,56 @@
+# Лекція 2.5 «Консольне введення-виведення»
+# Оригінал: lectures/_assets/02-05/Архив/console-io.png.png (файл мав подвійне розширення — лекція його не бачила)
+id: console-io
+title: "Консольне введення-виведення"
+subtitle: "Console пише й читає лише рядки; числа перетворюються явно — з урахуванням культури"
+
+types: [Console, Convert, CultureInfo]
+
+body:
+  - stack:
+      gap: 24
+      children:
+        - panel:
+            heading: "Виведення"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["`Console.WriteLine(x)`", "значення + новий рядок"]
+                        - ["`Console.Write(x)`", "без переходу на новий рядок"]
+                        - ["`$\"Вік: {age}\"`", "інтерполяція (рекомендовано)"]
+                        - ["`\"{0} — {1}\"`", "складений формат з індексами"]
+        - panel:
+            heading: "Введення"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["`Console.ReadLine()`", "`string?`: `null`, якщо введення закрито"]
+                        - ["`Convert.ToInt32(s)`", "`FormatException` для «abc»"]
+                        - ["`int.TryParse(s, out n)`", "без винятку — повертає `bool`"]
+                        - ["`Convert.ToDouble(s)`", "роздільник — з [[культури ОС]]"]
+  - panel:
+      heading: "Роздільник дробової частини (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["вираз", "результат"]
+            groups:
+              - rows:
+                  - ["double.Parse(\"36,6\", new CultureInfo(\"uk-UA\"))",       "`36.6`"]
+                  - ["double.Parse(\"36.6\", CultureInfo.InvariantCulture)",      "`36.6`"]
+                  - ["double.TryParse(\"36.6\", NumberStyles.Float, new CultureInfo(\"uk-UA\"), out _)", "`false`"]
+
+check:
+  usings: [System, System.Globalization]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+
+publish:
+  dark: ../../lectures/_assets/02-05/console-io.png
+  bw: ../../lectures/_assets/02-05/book/console-io.png

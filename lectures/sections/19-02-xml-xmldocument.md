@@ -4,7 +4,6 @@ chapterTitle: "Розділ 19. Серіалізація та десеріалі
 section: 2
 number: "19.2"
 title: "XML-формат та XmlDocument. DOM-модель"
-source: ""
 ---
 
 ## 19.2. XML-формат та XmlDocument. DOM-модель

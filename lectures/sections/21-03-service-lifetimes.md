@@ -4,7 +4,6 @@ chapterTitle: "Розділ 21. Generic Host та Dependency Injection"
 section: 3
 number: "21.3"
 title: "Часи життя сервісів — Singleton, Scoped, Transient"
-source: ""
 ---
 
 ## 21.3. Часи життя сервісів — Singleton, Scoped, Transient

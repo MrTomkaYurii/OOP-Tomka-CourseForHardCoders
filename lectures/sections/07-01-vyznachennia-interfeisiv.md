@@ -4,7 +4,6 @@ chapterTitle: "Розділ 7. Інтерфейси"
 section: 1
 number: "7.1"
 title: "Визначення інтерфейсів"
-source: "../_combined/39-vyznachennia-interfeisiv.md"
 ---
 
 ## 7.1. Визначення інтерфейсів

@@ -6,7 +6,7 @@
 > **Іменування.** У репозиторії студента (за інструкціями `labs/`): тренажери —
 > теки `Lab01/`, `Lab02/` на гілках `Lab-01`, `Lab-02` (у `main` не зливаються);
 > головний проєкт — тека `ClinicApp/`, гілки `Lab-03`…`Lab-22` (зливаються).
-> У цьому репо еталонний код поки в `sandbox/`, `src/` і на гілках `feature/*` —
+> У цьому репо еталонний код у `solutions/` (`Lab01/`, `Lab02/`, `ClinicApp/`) і на гілках `feature/*` —
 > шляхи в деревах нижче відображають саме його; заміна на нову схему — окрема задача.
 
 ---
@@ -20,13 +20,13 @@
 
 ---
 
-## Lab 01 — C# Basics (sandbox/intro)
+## Lab 01 — C# Basics (код: solutions/Lab01, гілка sandbox/intro)
 
 **Статус:** ✅ ЗАВЕРШЕНО
 **Гілка:** `sandbox/intro` — НЕ зливається
 **Файли:**
 ```
-sandbox/intro/
+solutions/Lab01/
 ├── ClinicIntro.csproj
 ├── Program.cs          ← Task1.Run() → Task2.Run() → ... → Task8.Run()
 ├── Task1.cs            ⭐   ІМТ пацієнта (double, формула, F2)
@@ -48,13 +48,13 @@ sandbox/intro/
 
 ---
 
-## Lab 02 — Arrays (sandbox/arrays)
+## Lab 02 — Arrays (код: solutions/Lab02, гілка sandbox/arrays)
 
 **Статус:** ✅ ЗАВЕРШЕНО
 **Гілка:** `sandbox/arrays` — НЕ зливається
 **Файли:**
 ```
-sandbox/arrays/
+solutions/Lab02/
 ├── SandboxArrays.csproj
 ├── Program.cs          ← Task1.Run() → ... → Task8.Run()
 ├── Task1.cs            ⭐   Ваги пацієнтів (1D array, статистика)
@@ -78,7 +78,7 @@ sandbox/arrays/
 **Гілка:** `feature/catalog` — ✅ **злито в main**
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── ClinicApp.csproj
 ├── Patient.cs              ← Task 1: клас Patient
 ├── Doctor.cs               ← Task 2: клас Doctor
@@ -135,7 +135,7 @@ src/
 **Гілка:** `feature/class-members` — ✅ **злито в main**
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── BloodType.cs            ← enum BloodType (9 значень)
 ├── Speciality.cs           ← enum Speciality (8 значень)
 ├── AppointmentStatus.cs    ← enum AppointmentStatus (3 значення)
@@ -168,7 +168,7 @@ src/
 **Гілка:** `feature/encapsulation` — ✅ **злито в main**
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Clinic.cs                        ← without changes to API
 ├── (GrowablePatientManager.cs → Managers/ за інструкцією; в еталоні поки в корені; з'явився в Lab 03)
 ├── Program.cs                       ← + using ClinicApp.*; try/catch у меню
@@ -219,7 +219,7 @@ src/
 **Гілка:** `feature/inheritance` — ✅ **злито в main**
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Models/
 │   ├── MedicalRecord.cs    ← abstract: Id, PatientId, DoctorId, Date, Notes
 │   │                          abstract GetSummary(); virtual GetRecordType(); virtual IsActive()
@@ -245,7 +245,7 @@ src/
 **Нове в меню:** пункт 4 "Медична картка" → зведення / всі записи / додати діагноз/аналіз/рецепт / записи лікаря (пункт «Звіт» переїжджає на 5)
 
 **Розходження еталон ↔ інструкція (`labs/lab-06-*`, переписана за новим стилем), для наступного проходу по гілці:**
-- Шляхи: еталон у `src/`, інструкція — `ClinicApp/`; коміти інструкції — `Lab06 Task01…04` (у гілці одиночний коміт «added lab 06»).
+- Шляхи: еталон у `solutions/ClinicApp/`, інструкція — `ClinicApp/`; коміти інструкції — `Lab06 Task01…04` (у гілці одиночний коміт «added lab 06»).
 - Валідатор: еталон передає українські підписи (`"Код діагнозу"`, `"PatientId"`), інструкція — `nameof(...)` (як у Лабі 05).
 - Меню: `double.TryParse(...)` без перевірки результату й без культури — на uk-UA `6.2` розбирається як `0` (мовчки), вивід `6,2`; кількість днів — те саме (`int.TryParse` без перевірки → `0`). Інструкція вимагає: `InvariantCulture` після блоку `using`, `TryParse` з `NumberStyles.Float`, перевірку результатів.
 - Меню: еталон не перевіряє існування пацієнта/лікаря (можна додати запис для ID 99); інструкція вимагає перевірку через `FindById`/`TryFindById`.
@@ -263,7 +263,7 @@ src/
 
 **Нові файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Interfaces/
 │   ├── IPayable.cs         ← decimal GetCost(); bool IsPaid; void MarkPaid()
 │   ├── ICancellable.cs     ← bool IsCancelled; string CancellationReason; bool Cancel(string)
@@ -288,7 +288,7 @@ src/
 **Нове в меню:** пункт 5 "Рахунки" → борги пацієнта, оплата запису, загальна сума боргів
 
 **Розходження еталон ↔ інструкція (`labs/lab-07-*`, переписана за новим стилем), для наступного проходу по гілці:**
-- Шляхи: еталон у `src/`, інструкція — `ClinicApp/`; коміти інструкції — `Lab07 Task01…04` (у гілці вони ж, але з описами: `Lab07 Task1: add IPayable, …`).
+- Шляхи: еталон у `solutions/ClinicApp/`, інструкція — `ClinicApp/`; коміти інструкції — `Lab07 Task01…04` (у гілці вони ж, але з описами: `Lab07 Task1: add IPayable, …`).
 - `ICancellable` та `ISchedulable` в еталоні **ніде не використовуються** (лише реалізовані); споживач є тільки для `IPayable` (`BillingManager`). **Інструкція додає споживачів (рішення користувача 2026-09-21):** `public static int AppointmentManager.CancelAll(ICancellable[] items, string reason = "")` (Т2; прототип перевірено: `Appointment[]` передається без приведення, рахуються лише `Cancel() == true`), пункт меню «Записи» → `8. Скасувати всі записи пацієнта` та «Лікарі» → `5. Вільні години лікаря` через змінну `ISchedulable` (Т4, з `try/catch` для `slotCount ≤ 0`). У еталонній гілці цього поки немає.
 - Порядок задач: в еталоні `IsCancelled`/`CancellationReason` додано вже в Т1 (бо `MarkPaid()` їх використовує); в інструкції Т1 перевіряє `Status` напряму, Т2 додає властивості й рефакторить `MarkPaid()` (Appointment.cs має позначки Т1 Т2).
 - `Doctor.GetAvailableSlots`: в еталоні `slotCount < 0` → `OverflowException`, `0` → порожній масив; інструкція вимагає `ClinicValidator.ValidatePositive` (`≤ 0` → `ArgumentOutOfRangeException`).
@@ -307,7 +307,7 @@ src/
 
 **Нові файли:**
 ```
-src/Models/
+solutions/ClinicApp/Models/
 ├── RegularAppointment.cs   ← override GetDescription() → "Звичайний прийом"
 ├── UrgentAppointment.cs    ← UrgencyNote; override GetCost() * 1.5m; sealed override GetDescription(); new GetPriority() => 1
 └── SpecialistAppointment.cs← sealed class; ConsultationTopic; override GetCost() * 1.3m; override GetDescription()
@@ -336,7 +336,7 @@ src/Models/
 **Гілка:** `feature/generics` — ✅ злито в main
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Models/
 │   └── WaitingQueue.cs          ← NEW: generic WaitingQueue<T> над Queue<T>
 ├── Interfaces/
@@ -371,7 +371,7 @@ src/
 **Гілка:** `feature/iterators` — ✅ зливається
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Models/
 │   ├── DoctorStats.cs           ← NEW: IComparable<DoctorStats> (за AppointmentCount desc)
 │   └── PatientStats.cs          ← NEW: IComparable<PatientStats> (за VisitCount desc)
@@ -405,7 +405,7 @@ src/
 **Гілка:** `feature/reflection` — ✅ зливається
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Attributes/
 │   ├── RequiredAttribute.cs     ← NEW: власний атрибут [Required]
 │   ├── MaxLengthAttribute.cs    ← NEW: власний атрибут [MaxLength(n)]
@@ -446,7 +446,7 @@ src/
 **Гілка:** `feature/files` — ✅ зливається
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 └── Utils/
     ├── ClinicLogger.cs      ← NEW: File.AppendAllText, ReadAllLines, GetLastLines(n)
     ├── ImportResult.cs      ← NEW: контейнер результатів імпорту (Imported/Skipped/Errors)
@@ -481,7 +481,7 @@ src/
 **Гілка:** `feature/events` — ✅ зливається
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Events/
 │   ├── AppointmentEventArgs.cs  ← NEW: Id, PatientId, DoctorId, ScheduledAt, Notes
 │   ├── PatientEventArgs.cs      ← NEW: PatientId, FullName
@@ -520,7 +520,7 @@ src/
 **Гілка:** `feature/linq` — ✅ злито в main
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Models/
 │   └── SpecialityReport.cs      ← NEW: DTO — спеціальність, кількість лікарів, прийомів, виручка
 └── Managers/
@@ -566,7 +566,7 @@ src/
 **Гілка:** `feature/functional` — ✅ злито в main
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Extensions/                      ← НОВА ПАПКА
 │   ├── AppointmentExtensions.cs     ← NEW: .Unpaid() .Upcoming() .ByDoctor() .Overdue() .CostAbove() .TotalCost()
 │   ├── PatientExtensions.cs         ← NEW: .Adults() .ByBloodType() .WithAppointments()
@@ -601,7 +601,7 @@ src/
 **Гілка:** `feature/console-ui` — ✅ злито в main
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 └── UI/
     └── ClinicRenderer.cs   ← NEW: статичний UI-фасад над Spectre.Console
 ```
@@ -650,7 +650,7 @@ src/
 **Гілка:** `feature/ef-core` — НЕ злито (зливається тільки після Lab 20)
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Data/
 │   ├── ClinicDbContext.cs   ← NEW: DbContext з DbSet<Patient>, DbSet<Doctor>
 │   └── DbSeeder.cs          ← NEW: ідемпотентне наповнення 5 пацієнтів + 5 лікарів
@@ -714,7 +714,7 @@ src/
 **Гілка:** `feature/ef-core` — НЕ злито
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Data/
 │   ├── ClinicDbContext.cs   ← UPD: DbSet<Appointment>, One-to-Many Fluent API, TPH
 │   ├── DbSeeder.cs          ← UPD: SeedAppointments (Regular, Urgent, Specialist)
@@ -760,7 +760,7 @@ src/
 **Гілка:** `feature/ef-core` — НЕ злито
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Data/
 │   ├── ClinicDbContext.cs  ← UPD: DbSet<MedicalRecord>, TPH, OwnsOne, RowVersion
 │   └── DbSeeder.cs         ← UPD: SeedMedicalRecords + EmergencyContact
@@ -791,7 +791,7 @@ src/
 **Гілка:** `feature/ef-core` — НЕ злито (злиття після фіналу)
 **Файли:**
 ```
-src/
+solutions/ClinicApp/
 ├── Data/
 │   ├── ClinicDbContext.cs     ← UPD: HasQueryFilter(!IsDeleted), IsDeleted default false
 │   └── ClinicQueryService.cs  ← NEW: IQueryable demo, Skip/Take, Select DTO, IgnoreQueryFilters
@@ -841,16 +841,16 @@ src/
 
 **Нові файли:**
 ```
-src/Models/ClinicDashboard.cs       ← record з 5 полями (PatientCount, DoctorCount, TotalRevenue, UpcomingCount, TodayCount)
-src/Data/AsyncClinicService.cs      ← Tasks 2-5: async EF методи, WhenAll, Parallel.ForEachAsync, AggregateException, IProgress<T>
-src/Data/ClinicHttpClient.cs        ← Task 6: HttpClient, GetFromJsonAsync, Task.WhenAny race
+solutions/ClinicApp/Models/ClinicDashboard.cs       ← record з 5 полями (PatientCount, DoctorCount, TotalRevenue, UpcomingCount, TodayCount)
+solutions/ClinicApp/Data/AsyncClinicService.cs      ← Tasks 2-5: async EF методи, WhenAll, Parallel.ForEachAsync, AggregateException, IProgress<T>
+solutions/ClinicApp/Data/ClinicHttpClient.cs        ← Task 6: HttpClient, GetFromJsonAsync, Task.WhenAny race
 ```
 
 **Змінені файли:**
 ```
-src/Data/DbSeeder.cs          ← додано SeedAsync() + async private методи (Task 1)
-src/Data/ClinicRepository.cs  ← додано async варіанти всіх методів з ConfigureAwait(false)
-src/Program.cs                ← using ClinicApp.Data + using Microsoft.EntityFrameworkCore
+solutions/ClinicApp/Data/DbSeeder.cs          ← додано SeedAsync() + async private методи (Task 1)
+solutions/ClinicApp/Data/ClinicRepository.cs  ← додано async варіанти всіх методів з ConfigureAwait(false)
+solutions/ClinicApp/Program.cs                ← using ClinicApp.Data + using Microsoft.EntityFrameworkCore
                                  + меню "База даних (EF Core)" + "Async (Lab 21)"
                                  + EfCoreMenu() + AsyncMenu()
 ```
@@ -906,26 +906,26 @@ src/Program.cs                ← using ClinicApp.Data + using Microsoft.EntityF
 
 **Нові файли:**
 ```
-src/Models/ClinicConfig.cs              ← record: Name, Address, Founded (SRP)
-src/Strategies/ICostStrategy.cs         ← interface (OCP)
-src/Strategies/RegularCostStrategy.cs   ← базова ставка
-src/Strategies/UrgentCostStrategy.cs    ← коефіцієнт ×multiplier
-src/Strategies/DiscountCostStrategy.cs  ← знижка (1 - percent)
-src/Services/IPatientService.cs         ← 6 методів (ISP)
-src/Services/IDoctorService.cs          ← 4 методи (ISP)
-src/Services/IAppointmentService.cs     ← 7 методів (ISP)
-src/Services/PatientService.cs          ← primary ctor, EF Core (DIP)
-src/Services/DoctorService.cs           ← primary ctor, EF Core
-src/Services/AppointmentService.cs      ← primary ctor, EF Core
-src/Services/LoggingPatientService.cs   ← Decorator над IPatientService
-src/Infrastructure/ServiceContainer.cs  ← IServiceCollection wiring
+solutions/ClinicApp/Models/ClinicConfig.cs              ← record: Name, Address, Founded (SRP)
+solutions/ClinicApp/Strategies/ICostStrategy.cs         ← interface (OCP)
+solutions/ClinicApp/Strategies/RegularCostStrategy.cs   ← базова ставка
+solutions/ClinicApp/Strategies/UrgentCostStrategy.cs    ← коефіцієнт ×multiplier
+solutions/ClinicApp/Strategies/DiscountCostStrategy.cs  ← знижка (1 - percent)
+solutions/ClinicApp/Services/IPatientService.cs         ← 6 методів (ISP)
+solutions/ClinicApp/Services/IDoctorService.cs          ← 4 методи (ISP)
+solutions/ClinicApp/Services/IAppointmentService.cs     ← 7 методів (ISP)
+solutions/ClinicApp/Services/PatientService.cs          ← primary ctor, EF Core (DIP)
+solutions/ClinicApp/Services/DoctorService.cs           ← primary ctor, EF Core
+solutions/ClinicApp/Services/AppointmentService.cs      ← primary ctor, EF Core
+solutions/ClinicApp/Services/LoggingPatientService.cs   ← Decorator над IPatientService
+solutions/ClinicApp/Infrastructure/ServiceContainer.cs  ← IServiceCollection wiring
 ```
 
 **Змінені файли:**
 ```
-src/Clinic.cs                          ← ClinicConfig + ctor delegation + SRP comments
-src/Managers/AppointmentProcessor.cs   ← WithCostStrategy(), CalculateCost(), CompareCost()
-src/Program.cs                         ← SolidDiMenu() + using Infrastructure/Services/Strategies
+solutions/ClinicApp/Clinic.cs                          ← ClinicConfig + ctor delegation + SRP comments
+solutions/ClinicApp/Managers/AppointmentProcessor.cs   ← WithCostStrategy(), CalculateCost(), CompareCost()
+solutions/ClinicApp/Program.cs                         ← SolidDiMenu() + using Infrastructure/Services/Strategies
 ```
 
 **API нових сервісів:**

@@ -1,0 +1,58 @@
+# Лекція 4.6 «Абстрактні класи та члени класів»
+# Оригінал: lectures/_assets/04-06/Архив/abstract-hierarchy.png
+id: abstract-hierarchy
+title: "Абстрактний клас MedicalStaff"
+subtitle: "Задає спільний стан і контракт; конкретні нащадки зобов'язані реалізувати abstract-члени"
+
+types: [MedicalStaff, Doctor, Nurse, Surgeon, CardiacSurgeon]
+
+body:
+  - box:
+      title: "abstract class MedicalStaff"
+      kind: box_accent
+      check: skip
+      code: |
+        public string Name { get; }
+        protected MedicalStaff(string name) => Name = name;  // лише через base(…)
+        public abstract string Role { get; }
+        public abstract void Examine();
+        public void PrintCard() => …;                        // звичайний метод
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box:
+            title: "Doctor : MedicalStaff"
+            check: skip
+            code: |
+              public override string Role => "Лікар";
+              public override void Examine() { … }
+        - box:
+            title: "Nurse : MedicalStaff"
+            check: skip
+            code: |
+              public override string Role => "Медсестра";
+              public override void Examine() { … }
+        - box:
+            title: "abstract Surgeon : MedicalStaff"
+            kind: box_muted
+            check: skip
+            code: |
+              public string SurgeryType { get; }
+              // Role, Examine — не реалізує
+            notes: ["реалізує нащадок `CardiacSurgeon`"]
+  - panel:
+      heading: "Перевірено компілятором"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["`new MedicalStaff(\"…\")`", "[[CS0144]] — екземпляр абстрактного класу"]
+                  - ["конкретний клас без `Examine()`", "[[CS0534]] — абстрактний член не реалізовано"]
+                  - ["`abstract` метод із тілом", "CS0500"]
+
+publish:
+  dark: ../../lectures/_assets/04-06/abstract-hierarchy.png
+  bw: ../../lectures/_assets/04-06/book/abstract-hierarchy.png

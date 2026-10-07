@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 1
 number: "8.1"
 title: "Визначення операторів"
-source: "../_combined/46-vyznachennia-operatoriv.md"
 ---
 
 ## 8.1. Визначення операторів

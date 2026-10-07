@@ -4,7 +4,6 @@ chapterTitle: "Розділ 16. Паралельне програмування 
 section: 3
 number: "16.3"
 title: "Продовження завдань. ContinueWith"
-source: ""
 ---
 
 ## 16.3. Продовження завдань. ContinueWith

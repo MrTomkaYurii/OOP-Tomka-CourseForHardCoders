@@ -1,0 +1,58 @@
+# Лекція 2.10 «Явні та неявні перетворення»
+# Оригінал: lectures/_assets/02-10/Архив/sign-extension-negative.png
+id: sign-extension-negative
+title: "Розширення зі знаком: sbyte -4 → short"
+subtitle: "Знаковий біт 1 копіюється в усі нові старші розряди — значення лишається -4 (перевірено Convert.ToString)"
+
+types: []
+
+body:
+  - panel:
+      heading: "Біти до і після"
+      children:
+        - cells:
+            rows:
+              - caption: "sbyte -4"
+                cells: ["1", "1", "1", "1", "1", "1", "0", "0"]
+                kinds: [box_accent, box, box, box, box, box, box, box]
+              - caption: "short -4"
+                cells: ["1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "0", "0"]
+                kinds: [box_muted, box_muted, box_muted, box_muted, box_muted, box_muted, box_muted, box_muted, box_accent, box, box, box, box, box, box, box]
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Що відбувається"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["молодші 8 бітів", "копіюються як є"]
+                        - ["старші 8 бітів", "заповнюються одиницями"]
+                        - ["значення", "лишається `-4`"]
+        - panel:
+            heading: "Беззнакові типи"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["`byte` → `ushort`", "завжди нулями"]
+                        - ["`(byte)252` → `int`", "`252`, не `-4`"]
+                        - ["`(sbyte)-4` → `int`", "`-4` — 32 біти"]
+
+check:
+  usings: [System]
+  asserts: |
+    sbyte s = -4; short t = s;
+    if (t != -4) throw new Exception("value");
+    string b = Convert.ToString(t, 2).PadLeft(16, '0');
+    if (b != string.Concat(new[] { "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "0", "0" })) throw new Exception(b);
+
+publish:
+  dark: ../../lectures/_assets/02-10/sign-extension-negative.png
+  bw: ../../lectures/_assets/02-10/book/sign-extension-negative.png

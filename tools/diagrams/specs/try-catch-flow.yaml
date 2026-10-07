@@ -1,0 +1,60 @@
+# Лекція 5.1 «Конструкція try..catch..finally»
+# Оригінал: lectures/_assets/05-01/Архив/try-catch-flow.png
+id: try-catch-flow
+title: "Потік виконання try..catch..finally"
+subtitle: "Три сценарії: без винятку, виняток перехоплено тут, виняток не перехоплено на цьому рівні"
+
+types: [FormatException]
+
+body:
+  - box:
+      title: "Приклад з лекції"
+      kind: box_accent
+      check: skip
+      code: |
+        try
+        {
+            int age = int.Parse(input);    // "abc" → FormatException
+            Console.WriteLine($"Вік: {age}");
+        }
+        catch (FormatException ex) { Console.WriteLine($"Помилка: {ex.Message}"); }
+        finally { Console.WriteLine("Перевірку завершено."); }
+        Console.WriteLine("Програма продовжує роботу.");
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - panel:
+            heading: "input = \"42\""
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "try до кінця", sub: ["«Вік: 42»"]}
+                    - {title: "catch пропущено", kind: box_muted}
+                    - {title: "finally"}
+                    - {title: "код після try", kind: box_accent, sub: ["програма продовжує"]}
+        - panel:
+            heading: "input = \"abc\""
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "try перервано", sub: ["на `int.Parse`"]}
+                    - {title: "catch (FormatException)", sub: ["«Помилка: …»"]}
+                    - {title: "finally"}
+                    - {title: "код після try", kind: box_accent, sub: ["програма продовжує"]}
+        - panel:
+            heading: "інший тип винятку"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "try перервано"}
+                    - {title: "catch не підходить", kind: box_muted}
+                    - {title: "finally", sub: ["якщо catch є вище — до нього"]}
+                    - {title: "виняток іде вгору", kind: box_accent, sub: ["код після try [[пропущено]]"]}
+
+publish:
+  dark: ../../lectures/_assets/05-01/try-catch-flow.png
+  bw: ../../lectures/_assets/05-01/book/try-catch-flow.png

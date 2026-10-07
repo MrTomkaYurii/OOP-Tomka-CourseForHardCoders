@@ -5,7 +5,7 @@ using System.Text;
 
 var repoRoot = FindRepoRoot(AppContext.BaseDirectory);
 var lecturesDir = Path.Combine(repoRoot, "lectures", "sections");
-var reportPath = Path.Combine(repoRoot, "tools", "report.md");
+var reportPath = Path.Combine(repoRoot, "tools", "code-checker", "report.md");
 
 var mdFiles = Directory.GetFiles(lecturesDir, "*.md").Order().ToArray();
 Console.WriteLine($"Лекцій: {mdFiles.Length}");

@@ -1,0 +1,99 @@
+# Лекція 11.4 «Клас StringBuilder»
+# Оригінал: lectures/_assets/11-04/Архив/stringbuilder-vs-string-memory.png
+id: stringbuilder-vs-string-memory
+title: "string += чи StringBuilder: що відбувається з памʼяттю"
+subtitle: "+= у циклі щоразу копіює весь рядок; StringBuilder дописує в буфер і копіює лише один раз — у ToString()"
+
+types: [StringBuilder]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "`string s = \"\"; s += x` — у циклі"
+            children:
+              - cells:
+                  rows:
+                    - caption: "s += \"A\""
+                      cells: ["A", "", "", ""]
+                      kinds: [box_accent, box_muted, box_muted, box_muted]
+                      note: "новий рядок, копія 1"
+                    - caption: "s += \"B\""
+                      cells: ["A", "B", "", ""]
+                      kinds: [box, box_accent, box_muted, box_muted]
+                      note: "новий рядок, копія 2"
+                    - caption: "s += \"C\""
+                      cells: ["A", "B", "C", ""]
+                      kinds: [box, box, box_accent, box_muted]
+                      note: "новий рядок, копія 3"
+                    - caption: "s += \"D\""
+                      cells: ["A", "B", "C", "D"]
+                      kinds: [box, box, box, box_accent]
+                      note: "новий рядок, копія 4"
+              - text:
+                  text:
+                    - "N ітерацій — N нових обʼєктів і 1 + 2 + … + N ="
+                    - "N(N+1)/2 скопійованих символів: [[O(N²)]]."
+                    - "Старі рядки одразу стають сміттям для GC."
+
+        - panel:
+            heading: "StringBuilder: ланцюжок чанків"
+            children:
+              - hchain:
+                  equal: true
+                  nodes:
+                    - { title: "чанк 1", sub: ["16 символів"] }
+                    - { title: "чанк 2", sub: ["+16 → 32"], via: "повний" }
+                    - { title: "чанк 3", sub: ["+32 → 64"], via: "повний" }
+                    - { title: "ToString()", code: true, sub: ["одна копія"], kind: box_accent, via: "кінець" }
+              - text:
+                  text:
+                    - "Заповнений чанк [[не копіюється]] — додається новий,"
+                    - "розміром ≈ поточній довжині, але ≤ 8000 символів."
+              - kv:
+                  check: skip
+                  columns: ["new StringBuilder(), Append до…", "Capacity"]
+                  groups:
+                    - rows:
+                        - ["Length 0…16",          "`16`"]
+                        - ["17 → 33 → 65 …",       "`32` → `64` → `128` …"]
+                        - ["після 8192",           "+8000 на чанк: `16192`, `24192`"]
+                        - ["new StringBuilder(512)", "`512` — без нових чанків"]
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Методи зміни повертають this"
+            code: |
+              var sb = new StringBuilder("I10.9");
+              sb.Append(" — ").Append(67).AppendLine();
+              sb[0] = 'J';          // індексатор із записом
+              sb.Length = 5;        // усікає: "J10.9"
+        - box:
+            title: "Коли що"
+            notes:
+              - "цикл, невідома кількість частин — `StringBuilder`;"
+              - "фіксовані 2–10 частин — `+` або `$\"…\"`"
+              - "(компілятор робить один `string.Concat`);"
+              - "`StringBuilder` не потокобезпечний"
+
+check:
+  usings: [System, System.Text]
+  context: |
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    Assert(sb.ToString() == "J10.9", "усікання");
+    var b = new StringBuilder(); Assert(b.Capacity == 16, "16");
+    b.Append(new string('x', 17)); Assert(b.Capacity == 32, "32");
+    b.Append(new string('x', 16)); Assert(b.Capacity == 64, "64");
+    var c = new StringBuilder(); for (int i = 0; i < 8193; i++) c.Append('x'); Assert(c.Capacity == 16192, "16192");
+    c.Append(new string('x', 8000)); Assert(c.Capacity == 24192, "24192");
+    var d = new StringBuilder(512); d.Append(new string('x', 500)); Assert(d.Capacity == 512, "512");
+    int ch = 0; foreach (var _ in c.GetChunks()) ch++; Assert(ch > 1, "чанки");
+
+publish:
+  dark: ../../lectures/_assets/11-04/stringbuilder-vs-string-memory.png
+  bw: ../../lectures/_assets/11-04/book/stringbuilder-vs-string-memory.png

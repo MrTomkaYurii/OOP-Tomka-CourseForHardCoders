@@ -4,7 +4,6 @@ chapterTitle: "Розділ 9. Pattern matching"
 section: 6
 number: "9.6"
 title: "Патерни списків"
-source: "../_combined/61-paterny-spyskiv.md"
 ---
 
 ## 9.6. Патерни списків

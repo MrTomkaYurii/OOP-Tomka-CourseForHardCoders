@@ -1,0 +1,34 @@
+# Лекція 1.1 «Роль платформи»
+# Оригінал: lectures/_assets/01-01/Архив/dotnet-pipeline.png
+id: dotnet-pipeline
+title: "Шлях C#-коду до виконання"
+subtitle: "Два перетворення: компілятор C# — один раз під час збирання, JIT — на машині, де програма запущена"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Збирання (dotnet build)"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "Program.cs", lines: "Console.WriteLine(\"Привіт\");", lines_check: skip, sub: ["вихідний код C#"]}
+                    - {title: "компілятор C# (Roslyn)", via: "", kind: box_muted, sub: ["перевіряє типи, видає помилки CS…"]}
+                    - {title: "Program.dll", kind: box_accent, via: "", sub: ["CIL + метадані", "не залежить від ОС і процесора"]}
+        - panel:
+            heading: "Виконання (dotnet run)"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "CLR", sub: ["завантажує збірку,", "перевіряє, готує типи"]}
+                    - {title: "JIT-компілятор", via: "перший виклик методу", kind: box_muted, sub: ["CIL → машинний код", "саме цього процесора"]}
+                    - {title: "машинний код x64 / Arm64", kind: box_accent, via: "", sub: ["виконує процесор;", "повторні виклики — без JIT"]}
+
+publish:
+  dark: ../../lectures/_assets/01-01/dotnet-pipeline.png
+  bw: ../../lectures/_assets/01-01/book/dotnet-pipeline.png

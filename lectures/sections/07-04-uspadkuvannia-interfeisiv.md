@@ -4,7 +4,6 @@ chapterTitle: "Розділ 7. Інтерфейси"
 section: 4
 number: "7.4"
 title: "Успадкування інтерфейсів"
-source: "../_combined/42-uspadkuvannia-interfeisiv.md"
 ---
 
 ## 7.4. Успадкування інтерфейсів

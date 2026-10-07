@@ -4,7 +4,6 @@ chapterTitle: "Розділ 18. Робота з файловою системо�
 section: 4
 number: "18.4"
 title: "StreamReader та StreamWriter. Текстові потоки"
-source: ""
 ---
 
 ## 18.4. StreamReader та StreamWriter. Текстові потоки

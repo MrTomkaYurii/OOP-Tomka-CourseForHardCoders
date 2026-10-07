@@ -4,7 +4,6 @@ chapterTitle: "Розділ 5. Обробка винятків"
 section: 2
 number: "5.2"
 title: "Блок catch та фільтри винятків"
-source: "../_combined/29-blok-catch-ta-filtry-vyniatkiv.md"
 ---
 
 ## 5.2. Блок catch та фільтри винятків

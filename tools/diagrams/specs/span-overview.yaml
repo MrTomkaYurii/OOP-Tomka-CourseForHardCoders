@@ -1,0 +1,119 @@
+# Лекція 13.5 «Span<T> та ReadOnlySpan<T>»
+# Оригінал: lectures/_assets/13-05/Архив/span-overview.png
+id: span-overview
+title: "Span<T>: доступ до частини пам'яті без копіювання"
+subtitle: "Span — це «вікно»: посилання на початок і довжина; самі дані лишаються, де були"
+
+types: [Span, ReadOnlySpan, Memory]
+
+body:
+  # ── 1. Substring vs Span ──────────────────────────────────────────────────
+  - panel:
+      heading: "Substring копіює, AsSpan — ні"
+      children:
+        - cells:
+            rows:
+              - caption: "string s"
+                cells: ["P", "0", "0", "1", ",", "І", "в", "а", "н"]
+                kinds: [box, box, box, box, box, box_accent, box_accent, box_accent, box_accent]
+                top: ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
+                note: "s.AsSpan(5, 4) — вікно на ці 4 символи, без нової пам'яті"
+              - caption: "s.Substring(5, 4)"
+                cells: ["І", "в", "а", "н"]
+                kinds: [box_muted, box_muted, box_muted, box_muted]
+                note: "нова ділянка heap — копія, навантаження на GC"
+
+  - row:
+      gap: 24
+      children:
+        # ── 2. API ────────────────────────────────────────────────────────
+        - panel:
+            heading: "API Span<T>"
+            children:
+              - kv:
+                  check: "_ = {};"
+                  groups:
+                    - heading: "створити"
+                      rows:
+                        - ["arr.AsSpan()",       "увесь масив"]
+                        - ["arr.AsSpan(1, 3)",   "частина масиву"]
+                        - ["s.AsSpan()",         "`ReadOnlySpan<char>` рядка"]
+                    - heading: "працювати"
+                      rows:
+                        - ["span[0]",            "індекс; запис змінює масив"]
+                        - ["span.Slice(1, 2)",   "підзріз — теж без копії"]
+                        - ["span.Length",        "довжина"]
+                        - ["span.ToArray()",     "копія в новий масив"]
+              - box:
+                  title: "буфер на стеку"
+                  code: |
+                    Span<int> buf = stackalloc int[16];
+
+        # ── 3. Парсинг ────────────────────────────────────────────────────
+        - panel:
+            heading: "Парсинг без Split"
+            children:
+              - box:
+                  code: |
+                    ReadOnlySpan<char> line = "P001,Іван,37";
+                    int comma = line.LastIndexOf(',');
+                    int age = int.Parse(line[(comma + 1)..]);
+                  notes:
+                    - "жодного проміжного рядка: `int.Parse`"
+                    - "приймає `ReadOnlySpan<char>` напряму"
+              - kv:
+                  key_code: false
+                  columns: ["", "Split / Substring", "Span"]
+                  groups:
+                    - rows:
+                        - ["нові рядки",  "на кожне поле",   "немає"]
+                        - ["тиск на GC",  "високий",         "нульовий"]
+                        - ["де доречно",  "прості задачі",   "гарячий шлях, потоки"]
+
+        # ── 4. Обмеження ──────────────────────────────────────────────────
+        - panel:
+            heading: "Обмеження ref struct"
+            children:
+              - kv:
+                  key_code: false
+                  check: skip
+                  groups:
+                    - heading: "Span живе лише на стеку, тому не можна:"
+                      rows:
+                        - ["поле класу",          "лише поле іншого `ref struct`"]
+                        - ["boxing",              "`object o = span` — помилка"]
+                        - ["масив `Span<T>[]`",   "елементи масиву — у heap"]
+                        - ["захоплення в лямбді", "замикання живе в heap"]
+                        - ["через `await`/`yield`", "у `async` можна, але [[не між await]]"]
+                        - ["LINQ",                "не `IEnumerable<T>`; `foreach` — так"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "потрібно зберегти в полі чи передати"
+                    - "через `await` — `Memory<T>` / `ReadOnlyMemory<T>`"
+
+check:
+  usings: [System]
+  context: |
+    string s = "P001,Іван";
+    int[] arr = [10, 20, 30, 40];
+    Span<int> span = arr.AsSpan();
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    Assert(s.AsSpan(5, 4).SequenceEqual("Іван") && s.Substring(5, 4) == "Іван", "AsSpan/Substring");
+    span[0] = 99; Assert(arr[0] == 99, "запис через span змінює масив");
+    var sub = span.Slice(1, 2); sub[0] = 7; Assert(arr[1] == 7, "Slice без копії");
+    var copy = span.ToArray(); copy[0] = 1; Assert(arr[0] == 99, "ToArray — копія");
+    Assert(age == 37 && buf.Length == 16, "парсинг/stackalloc");
+    Memory<int> mem = arr; Assert(mem.Span[0] == 99, "Memory");
+    Assert(await AsyncOk() == 1, "Span в async до await");
+    static async System.Threading.Tasks.Task<int> AsyncOk()
+    {
+        int v; { Span<int> t = stackalloc int[1]; t[0] = 1; v = t[0]; }
+        await System.Threading.Tasks.Task.Yield();
+        return v;
+    }
+
+publish:
+  dark: ../../lectures/_assets/13-05/span-overview.png
+  bw: ../../lectures/_assets/13-05/book/span-overview.png

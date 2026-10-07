@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 23
 number: "2.23"
 title: "Конструкція switch"
-source: "../_migration/source-chunks/12-switch-ta-enum.md"
 ---
 
 ## 2.23. Конструкція switch

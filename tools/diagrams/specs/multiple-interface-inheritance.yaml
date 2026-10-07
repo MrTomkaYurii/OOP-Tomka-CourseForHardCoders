@@ -1,0 +1,56 @@
+# Лекція 7.4 «Успадкування інтерфейсів»
+# Оригінал: lectures/_assets/07-04/Архив/multiple-interface-inheritance.png
+id: multiple-interface-inheritance
+title: "Множинне успадкування інтерфейсів"
+subtitle: "Інтерфейс може мати кілька базових інтерфейсів — клас ні; реалізація має покрити всі"
+
+types: [ISchedulable, IPayable, IClinicAppointment, Appointment]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "ISchedulable"
+            check: skip
+            code: |
+              void Schedule(string patientName, string time);
+              string GetSlot();
+        - box:
+            title: "IPayable"
+            check: skip
+            code: |
+              decimal CalculateCost();
+              void ApplyDiscount(int percent);
+  - box:
+      title: "interface IClinicAppointment : ISchedulable, IPayable"
+      kind: box_accent
+      check: skip
+      code: "string DoctorName { get; }"
+      notes: ["містить 4 успадковані члени + власний"]
+  - box:
+      title: "class Appointment : IClinicAppointment"
+      check: skip
+      code: |
+        public void    Schedule(string patientName, string time) { … }
+        public string  GetSlot()                     { … }
+        public decimal CalculateCost()               { … }
+        public void    ApplyDiscount(int percent)    { … }
+        public string  DoctorName { get; }
+      notes: ["змінну `Appointment` можна присвоїти будь-якому з трьох інтерфейсів"]
+
+check:
+  usings: [System]
+  asserts: |
+    var a = new Appointment();
+    if (!(a is ISchedulable) || !(a is IPayable) || !(a is IClinicAppointment)) throw new Exception("multi");
+  types: |
+    interface ISchedulable { void Schedule(string patientName, string time); string GetSlot(); }
+    interface IPayable { decimal CalculateCost(); void ApplyDiscount(int percent); }
+    interface IClinicAppointment : ISchedulable, IPayable { string DoctorName { get; } }
+    class Appointment : IClinicAppointment { public void Schedule(string p, string t) { } public string GetSlot() => ""; public decimal CalculateCost() => 0; public void ApplyDiscount(int p) { } public string DoctorName => ""; }
+
+publish:
+  dark: ../../lectures/_assets/07-04/multiple-interface-inheritance.png
+  bw: ../../lectures/_assets/07-04/book/multiple-interface-inheritance.png

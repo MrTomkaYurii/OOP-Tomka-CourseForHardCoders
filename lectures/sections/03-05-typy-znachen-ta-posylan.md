@@ -4,7 +4,6 @@ chapterTitle: "Розділ 3. Класи, структури та прості�
 section: 5
 number: "3.5"
 title: "Типи значень та типи посилань"
-source: "../_combined/17-typy-znachen-ta-posylan.md"
 ---
 
 ## 3.5. Типи значень та типи посилань

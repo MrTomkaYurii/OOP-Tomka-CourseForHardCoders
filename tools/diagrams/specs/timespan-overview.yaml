@@ -1,0 +1,84 @@
+# Лекція 12.4 «Структура TimeSpan»
+# Оригінал: lectures/_assets/12-04/Архив/timespan-overview.png
+id: timespan-overview
+title: "TimeSpan — тривалість, а не момент"
+subtitle: "Одне число long — тіки по 100 нс; може бути більшим за добу і від'ємним (±10,7 млн днів)"
+
+types: [DateTime, TimeOnly, TimeSpan]
+
+body:
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box: { title: "DateTime — «коли?»", align: center, notes: ["момент: 01.01.0001 – 31.12.9999"] }
+        - box: { title: "TimeOnly — «о котрій?»", align: center, notes: ["годинник: 00:00 – 23:59:59.9999999"] }
+        - box: { title: "TimeSpan — «скільки?»", align: center, kind: box_accent, notes: ["тривалість: > 24 год, може бути < 0"] }
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Створення → ToString()"
+            children:
+              - kv:
+                  check: "Eq(({}).ToString(), {v});"
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - rows:
+                        - ["new TimeSpan(2, 30, 0)",       "`\"02:30:00\"`"]
+                        - ["new TimeSpan(0, 36, 0, 0)",    "`\"1.12:00:00\"` — 36 год"]
+                        - ["new TimeSpan(25, 0, 0)",       "`\"1.01:00:00\"`"]
+                        - ["TimeSpan.FromDays(7.5)",       "`\"7.12:00:00\"`"]
+                        - ["TimeSpan.FromMinutes(90)",     "`\"01:30:00\"`"]
+                        - ["new TimeSpan(36_000_000_000)", "`\"01:00:00\"` — з тіків"]
+                        - ["discharge - admission",        "`\"7.05:30:00\"`"]
+                    - heading: "формат: d.hh:mm:ss; власний — з екрануванням"
+                      rows:
+                        - ["stay.ToString(@\"d\\d\\ hh\\:mm\")", "`\"7d 05:30\"`"]
+
+        - panel:
+            heading: "ts = new TimeSpan(1, 14, 30, 20)"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["", "компонент (int)", "Total* (double)"]
+                  groups:
+                    - rows:
+                        - ["дні",     "`Days` = `1`",     "`TotalDays` ≈ `1.604`"]
+                        - ["години",  "`Hours` = `14`",   "`TotalHours` ≈ `38.506`"]
+                        - ["хвилини", "`Minutes` = `30`", "`TotalMinutes` ≈ `2310.33`"]
+                        - ["секунди", "`Seconds` = `20`", "`TotalSeconds` = `138620`"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "Показати — компоненти: «1 д 14 год»."
+                    - "Порівняти — [[Total*]]: `stay.TotalHours > 72`."
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["арифметика", "тип результату"]
+                  groups:
+                    - rows:
+                        - ["`DateTime - DateTime`",        "`TimeSpan`"]
+                        - ["`DateTime ± TimeSpan`",        "`DateTime`"]
+                        - ["`TimeSpan ± TimeSpan`, `-ts`",  "`TimeSpan`"]
+                        - ["`(-30 год).Days / .Hours`",     "`-1` / `-6` — теж від'ємні"]
+                        - ["`ts.Duration()`",              "модуль: `1.06:00:00`"]
+
+check:
+  usings: [System]
+  context: |
+    var admission = new DateTime(2026, 6, 1, 9, 0, 0); var discharge = new DateTime(2026, 6, 8, 14, 30, 0);
+    var stay = discharge - admission;
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    var ts = new TimeSpan(1, 14, 30, 20);
+    Eq(ts.Days, 1); Eq(ts.Hours, 14); Eq(ts.Minutes, 30); Eq(ts.Seconds, 20);
+    Eq(Math.Round(ts.TotalDays, 3), 1.604); Eq(Math.Round(ts.TotalHours, 3), 38.506); Eq(Math.Round(ts.TotalMinutes, 2), 2310.33); Eq(ts.TotalSeconds, 138620.0);
+    var n = -TimeSpan.FromHours(30); Eq(n.Days, -1); Eq(n.Hours, -6); Eq(n.Duration().ToString(), "1.06:00:00");
+    Eq(Math.Round(TimeSpan.MaxValue.TotalDays / 1e6, 1), 10.7);
+
+publish:
+  dark: ../../lectures/_assets/12-04/timespan-overview.png
+  bw: ../../lectures/_assets/12-04/book/timespan-overview.png

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 1. Вступ"
 section: 4
 number: "1.4"
 title: "JIT-компіляція"
-source: "../_migration/source-chunks/01-vstup.md"
 ---
 
 ## 1.4. JIT-компіляція

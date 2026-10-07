@@ -1,0 +1,84 @@
+# Лекція 16.2 «Вкладені завдання та масиви завдань. Task<T>»
+# Оригінал: lectures/_assets/16-02/Архив/nested-tasks.png
+id: nested-tasks
+title: "Вкладені завдання: незалежні й AttachedToParent"
+subtitle: "За замовчуванням батьківське завдання не чекає вкладеного; дочірнє (AttachedToParent) — чекає"
+
+types: [Task, TaskCreationOptions, TaskStatus, AggregateException]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Незалежне (за замовчуванням)"
+            children:
+              - cells:
+                  rows:
+                    - caption: "outer"
+                      cells: ["", "", "", "", "", ""]
+                      kinds: [box_accent, box_accent, box_accent, box_muted, box_muted, box_muted]
+                      top: ["0", "100", "200", "300", "400", "500"]
+                    - caption: "inner"
+                      cells: ["", "", "", "", "", ""]
+                      kinds: [box_muted, box, box, box, box, box]
+                      bottom: ["", "", "", "Wait", "", ""]
+              - text:
+                  text:
+                    - "`outer.Wait()` повертається о 300 мс,"
+                    - "а `inner` [[ще працює]] — результат треба"
+                    - "чекати окремо або він загубиться."
+
+        - panel:
+            heading: "TaskCreationOptions.AttachedToParent"
+            children:
+              - cells:
+                  rows:
+                    - caption: "parent"
+                      cells: ["", "", "", "", "", ""]
+                      kinds: [box_accent, box_accent, box_accent, box, box, box]
+                      top: ["0", "100", "200", "300", "400", "500"]
+                    - caption: "child"
+                      cells: ["", "", "", "", "", ""]
+                      kinds: [box_muted, box, box, box, box, box]
+                      bottom: ["", "", "", "", "", "Wait"]
+              - text:
+                  text:
+                    - "Після свого коду батько в стані"
+                    - "`WaitingForChildrenToComplete` і завершується"
+                    - "разом з останньою дитиною."
+
+  - panel:
+      heading: "Тонкощі"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["`Task.Run(…)` як батько",   "[[ігнорує]] `AttachedToParent` (`DenyChildAttach`):"]
+                  - ["",                          "батька створюють через `Task.Factory.StartNew`"]
+                  - ["виняток у дитини",          "`AggregateException` усередині `AggregateException`"]
+                  - ["",                          "розгортає `e.Flatten()`"]
+                  - ["`Task<T>.Result`",          "блокує, як `Wait()`; після `WaitAll` — уже ні"]
+                  - ["`Result` задачі з помилкою", "`AggregateException`; `await` — сам виняток (розд. 17)"]
+
+check:
+  usings: [System, System.Threading, System.Threading.Tasks]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    bool done = false;
+    var outer = Task.Run(() => { Task.Run(() => { Thread.Sleep(200); done = true; }); }); outer.Wait(); Eq(done, false);
+    done = false; Task.Run(() => { Task.Factory.StartNew(() => { Thread.Sleep(200); done = true; }, TaskCreationOptions.AttachedToParent); }).Wait(); Eq(done, false);
+    done = false; Task.Factory.StartNew(() => { Task.Factory.StartNew(() => { Thread.Sleep(200); done = true; }, TaskCreationOptions.AttachedToParent); }).Wait(); Eq(done, true);
+    var p3 = Task.Factory.StartNew(() => { Task.Factory.StartNew(() => Thread.Sleep(150), TaskCreationOptions.AttachedToParent); });
+    Thread.Sleep(50); Eq(p3.Status, TaskStatus.WaitingForChildrenToComplete); p3.Wait();
+    var p4 = Task.Factory.StartNew(() => { Task.Factory.StartNew(() => throw new InvalidOperationException(), TaskCreationOptions.AttachedToParent); });
+    try { p4.Wait(); } catch (AggregateException e) { Eq(e.InnerException is AggregateException, true); Eq(e.Flatten().InnerException is InvalidOperationException, true); }
+    var bad = Task.FromException<int>(new InvalidOperationException()); try { _ = bad.Result; } catch (AggregateException) { }
+
+publish:
+  dark: ../../lectures/_assets/16-02/nested-tasks.png
+  bw: ../../lectures/_assets/16-02/book/nested-tasks.png

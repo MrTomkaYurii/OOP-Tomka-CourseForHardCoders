@@ -1,0 +1,39 @@
+# Лекція 2.19 «Передача параметрів за посиланням та значенням»
+# Оригінал: lectures/_assets/02-19/Архив/ref-out-in-table.png
+id: ref-out-in-table
+title: "ref, out, in — порівняння"
+subtitle: "Усі три передають посилання на змінну; різниця — у правилах (перевірено компілятором)"
+
+types: []
+
+body:
+  - panel:
+      heading: "Правила"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["", "без модифікатора", "ref", "out", "in"]
+            groups:
+              - rows:
+                  - ["у сигнатурі",          "`int x`",      "`ref int x`",  "`out int x`",        "`in int x`"]
+                  - ["передається",          "копія",        "посилання",    "посилання",          "посилання"]
+                  - ["ініціалізувати до виклику", "так",     "[[так]] (CS0165)", "ні",            "так"]
+                  - ["метод може змінити",   "лише копію",   "так",          "[[мусить]] (CS0177)", "[[ні]] (CS8331)"]
+                  - ["слово при виклику",    "—",            "`ref x`",      "`out x` / `out var x`", "`in x` (необов.)"]
+                  - ["навіщо",               "звичайно",     "змінити значення", "кілька результатів", "велика `struct`"]
+  - note:
+      text:
+        - "`out` повертає кілька значень; змінні оголошуються прямо у виклику (C# 7):"
+        - "`CalculateVitalSigns(45, out int max, out int target);`"
+        - "`in` — лише читання: метод бачить оригінал, але змінити не може."
+
+check:
+  usings: [System]
+  asserts: |
+    void C(int age, out int max, out int target) { max = 220 - age; target = max * 7 / 10; }
+    C(45, out int m, out var t); if (m != 175 || t != 122) throw new Exception("out");
+
+publish:
+  dark: ../../lectures/_assets/02-19/ref-out-in-table.png
+  bw: ../../lectures/_assets/02-19/book/ref-out-in-table.png

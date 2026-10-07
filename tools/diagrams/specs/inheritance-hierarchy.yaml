@@ -1,0 +1,51 @@
+# Лекція 4.1 «Успадкування»
+# Оригінал: lectures/_assets/04-01/Архив/inheritance-hierarchy.png
+id: inheritance-hierarchy
+title: "Ієрархія успадкування: Person → Patient, Doctor"
+subtitle: "Похідний клас отримує члени базового і додає власні; конструктори не успадковуються"
+
+types: [Person, Patient, Doctor]
+
+body:
+  - box:
+      title: "class Person — базовий"
+      kind: box_accent
+      check: skip
+      code: |
+        public string Name { get; set; }
+        public int    Age  { get; set; }
+        public void   Print()
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "class Patient : Person"
+            check: skip
+            code: |
+              // успадковано: Name, Age, Print()
+              public string Diagnosis { get; set; }
+              public void   PrintInfo()
+        - box:
+            title: "class Doctor : Person"
+            check: skip
+            code: |
+              // успадковано: Name, Age, Print()
+              public string Specialization { get; set; }
+              public void   PrintInfo()
+  - panel:
+      heading: "Правила (перевірено компілятором)"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["базовий клас", "лише [[один]]; без явного — `System.Object`"]
+                  - ["`private` член базового", "у похідному недоступний; `protected` — доступний"]
+                  - ["`public class X : InternalBase`", "[[CS0060]] — похідний не може бути доступнішим"]
+                  - ["`sealed` / `static` клас", "успадкувати не можна (CS0509 / CS0709)"]
+
+publish:
+  dark: ../../lectures/_assets/04-01/inheritance-hierarchy.png
+  bw: ../../lectures/_assets/04-01/book/inheritance-hierarchy.png

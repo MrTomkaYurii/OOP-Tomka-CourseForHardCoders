@@ -1,0 +1,52 @@
+# Лекція 2.8 «Операції присвоєння»
+# Оригінал: lectures/_assets/02-08/Архив/assignment-ops.png
+id: assignment-ops
+title: "Операції присвоєння"
+subtitle: "A op= B — це A = (тип A)(A op B), але A обчислюється один раз; присвоєння правоасоціативне"
+
+types: []
+
+body:
+  - stack:
+      gap: 24
+      children:
+        - panel:
+            heading: "Складені присвоєння (a = 10, виконано)"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["вираз", "a після"]
+                  groups:
+                    - rows:
+                        - ["Op(a => a += 5)",  "`15`"]
+                        - ["Op(a => a -= 3)",  "`7`"]
+                        - ["Op(a => a *= 2)",  "`20`"]
+                        - ["Op(a => a /= 3)",  "`3`"]
+                        - ["Op(a => a %= 4)",  "`2`"]
+                        - ["Op(a => a <<= 1)", "`20`"]
+                        - ["Op(a => a &= 6)",  "`2`"]
+        - panel:
+            heading: "Особливості"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["`a = b = c = 100;`", "справа наліво: спершу `c`"]
+                        - ["`byte b = 10; b += 5;`", "компілюється — неявний `(byte)`"]
+                        - ["`b = b + 5;`", "[[CS0266]] — `int` у `byte`"]
+                        - ["`s ??= \"—\";`", "присвоїть, лише якщо `null` (C# 8)"]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    int Op(Func<int, int> f) => f(10);
+  asserts: |
+    byte b = 10; b += 5; if (b != 15) throw new Exception("byte");
+    int x, y, z; x = y = z = 34 * 2 / 4; if (x != 17) throw new Exception("chain");
+
+publish:
+  dark: ../../lectures/_assets/02-08/assignment-ops.png
+  bw: ../../lectures/_assets/02-08/book/assignment-ops.png

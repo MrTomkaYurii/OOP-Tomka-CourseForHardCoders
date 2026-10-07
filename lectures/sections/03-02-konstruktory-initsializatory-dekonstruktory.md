@@ -4,7 +4,6 @@ chapterTitle: "Розділ 3. Класи, структури та прості�
 section: 2
 number: "3.2"
 title: "Конструктори, ініціалізатори та деконструктори"
-source: "../_migration/source-chunks/14-konstruktory-ta-this.md"
 ---
 
 ## 3.2. Конструктори, ініціалізатори та деконструктори

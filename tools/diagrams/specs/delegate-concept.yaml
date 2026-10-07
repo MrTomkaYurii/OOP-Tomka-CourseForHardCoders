@@ -1,0 +1,58 @@
+# Лекція 6.1 «Делегати»
+# Оригінал: lectures/_assets/06-01/Архив/delegate-concept.png
+id: delegate-concept
+title: "Делегат — тип, значення якого посилається на метод"
+subtitle: "Чотири кроки з першого прикладу лекції і правило сумісності сигнатур"
+
+types: [Notify, AlertHandler]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Від оголошення до виклику"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "1 · оголосити тип", sub: ["`delegate void Notify(string message);`"]}
+                    - {title: "2 · змінна делегата", sub: ["`Notify handler;` — поки `null`"]}
+                    - {title: "3 · присвоїти метод", kind: box_accent, sub: ["`handler = AlertDoctor;` — без `()`"]}
+                    - {title: "4 · викликати", sub: ["`handler(\"Критичний пульс!\");` = `AlertDoctor(…)`"]}
+        - stack:
+            gap: 24
+            children:
+              - panel:
+                  heading: "`delegate void AlertHandler(string message, int code);`"
+                  children:
+                    - kv:
+                        check: skip
+                        key_code: false
+                        columns: ["метод", "сумісний?"]
+                        groups:
+                          - rows:
+                              - ["`void LogAlert(string msg, int level)`",  "✓ імена не важливі"]
+                              - ["`string GetAlert(string msg, int code)`", "[[✗]] тип результату"]
+                              - ["`void Handle(int code, string msg)`",     "[[✗]] порядок"]
+                              - ["`void Handle(ref string msg, int code)`", "[[✗]] `ref`/`out`/`in`"]
+              - note:
+                  text:
+                    - "Об'єкт делегата зберігає [[ціль]] (`Target`: екземпляр"
+                    - "або `null` для статичного) і [[метод]] (`Method`)."
+                    - "`new Notify(AlertDoctor)` — те саме, що `= AlertDoctor`."
+
+check:
+  usings: [System]
+  asserts: |
+    Notify h = Clinic.AlertDoctor;
+    if (h.Target != null || h.Method.Name != "AlertDoctor") throw new Exception("static target");
+    AlertHandler a = Clinic.LogAlert;
+  types: |
+    delegate void Notify(string message);
+    delegate void AlertHandler(string message, int code);
+    static class Clinic { public static void AlertDoctor(string m) { } public static void LogAlert(string msg, int level) { } }
+
+publish:
+  dark: ../../lectures/_assets/06-01/delegate-concept.png
+  bw: ../../lectures/_assets/06-01/book/delegate-concept.png

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 3. Класи, структури та прості�
 section: 4
 number: "3.4"
 title: "Структури"
-source: "../_combined/16-struktury.md"
 ---
 
 ## 3.4. Структури

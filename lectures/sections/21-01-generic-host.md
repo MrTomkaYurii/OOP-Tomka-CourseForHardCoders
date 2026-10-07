@@ -4,7 +4,6 @@ chapterTitle: "Розділ 21. Generic Host та Dependency Injection"
 section: 1
 number: "21.1"
 title: "Generic Host — архітектура та життєвий цикл додатку"
-source: ""
 ---
 
 ## 21.1. Generic Host — архітектура та життєвий цикл додатку

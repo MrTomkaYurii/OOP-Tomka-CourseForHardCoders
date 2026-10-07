@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 4
 number: "4.4"
 title: "Приховування методів та властивостей"
-source: "../_combined/21-prykhovuvannia-metodiv-ta-vlastyvostei.md"
 ---
 
 ## 4.4. Приховування методів та властивостей

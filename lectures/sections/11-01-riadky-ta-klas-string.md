@@ -4,7 +4,6 @@ chapterTitle: "Розділ 11. Робота з рядками"
 section: 1
 number: "11.1"
 title: "Рядки та клас String"
-source: "../_combined/70-riadky-ta-klas-string.md"
 ---
 
 ## 11.1. Рядки та клас String

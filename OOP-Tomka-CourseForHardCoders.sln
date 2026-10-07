@@ -6,7 +6,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sandbox", "sandbox", "{3D40
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "intro", "intro", "{3BD65327-11B4-F52E-0193-3659EF8915F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicIntro", "sandbox\intro\ClinicIntro.csproj", "{0849661C-E749-C750-D14E-1E0857F45199}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClinicIntro", "solutions\Lab01\ClinicIntro.csproj", "{0849661C-E749-C750-D14E-1E0857F45199}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

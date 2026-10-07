@@ -4,7 +4,6 @@ chapterTitle: "Розділ 13. Додаткові класи та структ�
 section: 4
 number: "13.4"
 title: "Клас Array"
-source: "../_combined/81-klas-array.md"
 ---
 
 ## 13.4. Клас `Array`

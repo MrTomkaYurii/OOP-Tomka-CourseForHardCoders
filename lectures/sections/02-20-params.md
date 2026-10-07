@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 20
 number: "2.20"
 title: "Масив параметрів та ключове слово params"
-source: "../_migration/source-chunks/10-parametry-ref-out-in-params.md"
 ---
 
 ## 2.20. Масив параметрів та ключове слово params

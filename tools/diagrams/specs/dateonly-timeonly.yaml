@@ -1,0 +1,80 @@
+# Лекція 12.3 «DateOnly та TimeOnly»
+# Оригінал: lectures/_assets/12-03/Архив/dateonly-timeonly.png
+id: dateonly-timeonly
+title: "DateOnly і TimeOnly (.NET 6+)"
+subtitle: "Тип не може містити компонент, якого не повинно бути: дата народження — без «00:00», час прийому — без дати"
+
+types: [DateTime, DateOnly, TimeOnly, TimeSpan, DayOfWeek]
+
+body:
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box: { title: "DateTime", align: center, notes: ["дата + час + Kind", "момент події, журнал"] }
+        - box: { title: "DateOnly", align: center, kind: box_accent, notes: ["лише дата", "народження, виписка"] }
+        - box: { title: "TimeOnly", align: center, kind: box_accent, notes: ["лише час доби 00:00–23:59:59.9999999", "прийом о 09:00, зміна"] }
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "DateOnly d = new(2026, 6, 11)"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - rows:
+                        - ["d.DayOfWeek",             "`Thursday`"]
+                        - ["d.DayNumber",             "`739777` — днів від 01.01.0001"]
+                        - ["d.AddDays(7)",            "18.06.2026"]
+                        - ["d.AddMonths(1)",          "11.07.2026"]
+                        - ["end.DayNumber - start.DayNumber", "різниця в днях (`int`)"]
+                        - ["DateOnly.FromDateTime(dt)", "відкидає час"]
+                        - ["DateOnly.TryParse(\"29.02.2026\", …)", "`false` — не високосний"]
+
+        - panel:
+            heading: "TimeOnly t = new(9, 30)"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - rows:
+                        - ["t.AddHours(8)",                    "17:30"]
+                        - ["new TimeOnly(23, 0).AddHours(2)",  "01:00 — [[по колу]], без винятку"]
+                        - ["….AddHours(2, out int days)",      "`days` = 1 — перехід доби"]
+                        - ["t.IsBetween(new(8, 0), new(17, 0))", "`true`"]
+                        - ["new TimeOnly(17, 0).IsBetween(new(8, 0), new(17, 0))", "`false` — кінець не входить"]
+                        - ["new TimeOnly(1, 0).IsBetween(new(23, 0), new(7, 0))", "`true` — нічна зміна"]
+                        - ["t.ToTimeSpan()",                   "`TimeSpan` 09:30:00"]
+
+  - panel:
+      heading: "Комбінування"
+      children:
+        - hchain:
+            nodes:
+              - { title: "DateOnly + TimeOnly", sub: ["15.06.2026 · 10:30"] }
+              - { title: "date.ToDateTime(time)", code: true, sub: ["Kind = Unspecified"], kind: box_accent }
+              - { title: "DateTime", sub: ["15.06.2026 10:30:00"] }
+              - { title: "FromDateTime(dt)", code: true, sub: ["назад на дві частини"] }
+
+check:
+  usings: [System, System.Globalization]
+  context: |
+    var d = new DateOnly(2026, 6, 11); var t = new TimeOnly(9, 30);
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(d.DayOfWeek, DayOfWeek.Thursday); Eq(d.DayNumber, 739777); Eq(d.AddDays(7), new DateOnly(2026, 6, 18)); Eq(d.AddMonths(1), new DateOnly(2026, 7, 11));
+    Eq(DateOnly.TryParse("29.02.2026", CultureInfo.GetCultureInfo("uk-UA"), DateTimeStyles.None, out _), false);
+    Eq(t.AddHours(8), new TimeOnly(17, 30)); Eq(new TimeOnly(23, 0).AddHours(2), new TimeOnly(1, 0));
+    new TimeOnly(23, 0).AddHours(2, out int days); Eq(days, 1);
+    Eq(t.IsBetween(new(8, 0), new(17, 0)), true); Eq(new TimeOnly(17, 0).IsBetween(new(8, 0), new(17, 0)), false);
+    Eq(new TimeOnly(1, 0).IsBetween(new(23, 0), new(7, 0)), true); Eq(t.ToTimeSpan(), new TimeSpan(9, 30, 0));
+    var dt = new DateOnly(2026, 6, 15).ToDateTime(new TimeOnly(10, 30)); Eq(dt, new DateTime(2026, 6, 15, 10, 30, 0)); Eq(dt.Kind, DateTimeKind.Unspecified);
+    Eq(DateOnly.FromDateTime(dt), new DateOnly(2026, 6, 15)); Eq(TimeOnly.FromDateTime(dt), new TimeOnly(10, 30));
+
+publish:
+  dark: ../../lectures/_assets/12-03/dateonly-timeonly.png
+  bw: ../../lectures/_assets/12-03/book/dateonly-timeonly.png

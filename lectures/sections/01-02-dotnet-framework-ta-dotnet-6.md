@@ -4,7 +4,6 @@ chapterTitle: "Розділ 1. Вступ"
 section: 2
 number: "1.2"
 title: ".NET Framework та сучасний .NET"
-source: "../_migration/source-chunks/01-vstup.md"
 ---
 
 ## 1.2. .NET Framework та сучасний .NET

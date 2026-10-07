@@ -4,7 +4,6 @@ chapterTitle: "Розділ 10. Колекції"
 section: 3
 number: "10.3"
 title: "Черга Queue<T>"
-source: "../_combined/64-cherha-queue.md"
 ---
 
 ## 10.3. Черга Queue<T>

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 11. Робота з рядками"
 section: 4
 number: "11.4"
 title: "Клас StringBuilder"
-source: "../_combined/73-klas-stringbuilder.md"
 ---
 
 ## 11.4. Клас StringBuilder

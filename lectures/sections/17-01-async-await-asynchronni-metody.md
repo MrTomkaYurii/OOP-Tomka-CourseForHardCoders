@@ -4,7 +4,6 @@ chapterTitle: "Розділ 17. Асинхронне програмування"
 section: 1
 number: "17.1"
 title: "async та await. Асинхронні методи"
-source: ""
 ---
 
 ## 17.1. async та await. Асинхронні методи

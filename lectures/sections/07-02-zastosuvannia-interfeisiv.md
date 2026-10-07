@@ -4,7 +4,6 @@ chapterTitle: "Розділ 7. Інтерфейси"
 section: 2
 number: "7.2"
 title: "Застосування інтерфейсів"
-source: "../_combined/40-zastosuvannia-interfeisiv.md"
 ---
 
 ## 7.2. Застосування інтерфейсів

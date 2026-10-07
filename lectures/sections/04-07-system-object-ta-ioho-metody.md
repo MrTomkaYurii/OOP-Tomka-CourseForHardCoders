@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 7
 number: "4.7"
 title: "Клас System.Object та його методи"
-source: "../_combined/24-system-object-ta-ioho-metody.md"
 ---
 
 ## 4.7. Клас System.Object та його методи

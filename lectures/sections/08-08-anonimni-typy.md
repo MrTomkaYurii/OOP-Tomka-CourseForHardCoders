@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 8
 number: "8.8"
 title: "Анонімні типи"
-source: "../_combined/53-anonimni-typy.md"
 ---
 
 ## 8.8. Анонімні типи

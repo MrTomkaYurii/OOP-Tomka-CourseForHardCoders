@@ -4,7 +4,6 @@ chapterTitle: "Розділ 19. Серіалізація та десеріалі
 section: 1
 number: "19.1"
 title: "System.Text.Json — поглиблено"
-source: ""
 ---
 
 ## 19.1. System.Text.Json — поглиблено

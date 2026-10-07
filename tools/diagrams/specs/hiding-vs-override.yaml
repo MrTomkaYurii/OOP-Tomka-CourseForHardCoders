@@ -1,0 +1,62 @@
+# Лекція 4.4 «Приховування методів та властивостей»
+# Оригінал: lectures/_assets/04-04/Архив/hiding-vs-override.png
+id: hiding-vs-override
+title: "new (приховування) і override (перевизначення)"
+subtitle: "Той самий об'єкт Doctor, дві змінні — різниця видно лише через змінну базового типу"
+
+types: [Person, Doctor]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "override"
+            kind: box_accent
+            check: skip
+            code: |
+              class Person
+              { public virtual void Print() … }
+              class Doctor : Person
+              { public override void Print() … }
+        - box:
+            title: "new"
+            check: skip
+            code: |
+              class Person
+              { public void Print() … }
+              class Doctor : Person
+              { public new void Print() … }
+            notes: ["без `new` — те саме, але попередження CS0108"]
+  - panel:
+      heading: "Хто виконується (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["виклик", "результат"]
+            groups:
+              - heading: "override"
+                rows:
+                  - ["((OPerson)new ODoctor()).Print()", "`\"Doctor\"`"]
+                  - ["new ODoctor().Print()",            "`\"Doctor\"`"]
+              - heading: "new"
+                rows:
+                  - ["((HPerson)new HDoctor()).Print()", "`\"Person\"`"]
+                  - ["new HDoctor().Print()",            "`\"Doctor\"`"]
+        - text:
+            text: ["`new` можна застосувати й до полів, констант, вкладених типів; `override` — лише до методів, властивостей, індексаторів, подій."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  types: |
+    class OPerson { public virtual string Print() => "Person"; }
+    class ODoctor : OPerson { public override string Print() => "Doctor"; }
+    class HPerson { public string Print() => "Person"; }
+    class HDoctor : HPerson { public new string Print() => "Doctor"; }
+
+publish:
+  dark: ../../lectures/_assets/04-04/hiding-vs-override.png
+  bw: ../../lectures/_assets/04-04/book/hiding-vs-override.png

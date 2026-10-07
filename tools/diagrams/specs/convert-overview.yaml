@@ -1,0 +1,126 @@
+# Лекція 13.3 «Клас Convert»
+# Оригінал: lectures/_assets/13-03/Архив/convert-overview.png
+id: convert-overview
+title: "Клас Convert: перетворення типів"
+subtitle: "Приведення (int) відкидає дріб і не вміє рядки; Convert округлює, парсить і перевіряє межі"
+
+body:
+  - row:
+      gap: 24
+      children:
+        # ── 1. Cast vs Convert ────────────────────────────────────────────
+        - panel:
+            heading: "(int)x чи Convert.ToInt32(x)"
+            children:
+              - kv:
+                  key_code: false
+                  columns: ["x", "(int)x", "Convert.ToInt32(x)"]
+                  groups:
+                    - rows:
+                        - ["`3.9`",           "`3` — дріб відкинуто",  "`4` — округлено"]
+                        - ["`2.5`",           "`2`",                   "`2` — до парного"]
+                        - ["`3.5`",           "`3`",                   "`4` — до парного"]
+                        - ["`3e10`",          "`2147483647` (.NET 9+)", "`[[OverflowException]]`"]
+                        - ["`\"42\"`",        "помилка компіляції",    "`42`"]
+                        - ["`true`",          "помилка компіляції",    "`1`"]
+                        - ["`(object)null`",  "помилка компіляції",    "`0`"]
+              - note:
+                  text:
+                    - "`(int)` для `double` поза межами `int` з .NET 9 «насичується»"
+                    - "до `int.MaxValue`/`int.MinValue`; `NaN` → `0`. Раніше результат"
+                    - "залежав від платформи. `Convert` у такому разі кидає виняток"
+
+        # ── 2. Рядки й null ───────────────────────────────────────────────
+        - panel:
+            heading: "Рядки, null і помилки"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - heading: "з рядка"
+                      rows:
+                        - ["Convert.ToInt32(\"42\")",        "`42`"]
+                        - ["Convert.ToInt32(\"3.5\")",       "`FormatException`"]
+                        - ["Convert.ToByte(256)",           "`OverflowException` (0–255)"]
+                        - ["Convert.ToInt32((string?)null)", "`0`"]
+                        - ["int.Parse(null!)",              "`ArgumentNullException`"]
+                    - heading: "у рядок"
+                      rows:
+                        - ["Convert.ToString((object?)null)", "`\"\"` — порожній рядок"]
+                        - ["Convert.ToString((string?)null)", "[[`null`]] — інше перевантаження!"]
+              - box:
+                  title: "TryParse — без винятків"
+                  code: |
+                    if (int.TryParse(input, out int age))
+                        Console.WriteLine($"Вік: {age}");
+                    else
+                        Console.WriteLine("Некоректний вік");
+
+  - row:
+      gap: 24
+      children:
+        # ── 3. bool ───────────────────────────────────────────────────────
+        - panel:
+            heading: "Булеві"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - rows:
+                        - ["Convert.ToBoolean(1)",      "`true` (будь-яке ≠ 0)"]
+                        - ["Convert.ToBoolean(0)",      "`false`"]
+                        - ["Convert.ToBoolean(\"True\")", "`true`, регістр неважливий"]
+                        - ["Convert.ToBoolean(\"1\")",  "`FormatException`"]
+                        - ["Convert.ToInt32(true)",     "`1`"]
+
+        # ── 4. Base64 ─────────────────────────────────────────────────────
+        - panel:
+            heading: "Base64"
+            children:
+              - box:
+                  code: |
+                    byte[] scan = [1, 2, 3];
+                    string b64 = Convert.ToBase64String(scan); // "AQID"
+                    byte[] back = Convert.FromBase64String(b64);
+                  notes:
+                    - "байти → текст для JSON / HL7 FHIR;"
+                    - "розмір зростає на ~33 %"
+
+        # ── 5. ChangeType ─────────────────────────────────────────────────
+        - panel:
+            heading: "ChangeType"
+            children:
+              - box:
+                  code: |
+                    Type target = typeof(int);
+                    object r = Convert.ChangeType("42", target);
+                  notes:
+                    - "тип відомий лише під час виконання:"
+                    - "десеріалізація, конфіг, рефлексія"
+
+check:
+  usings: [System]
+  context: |
+    string input = "37";
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+    void Throws<E>(Func<object?> f, string what) where E : Exception { try { f(); Assert(false, what); } catch (E) { } }
+  asserts: |
+    double d39 = 3.9, d25 = 2.5, d35 = 3.5, big = 3e10, nan = double.NaN;
+    Assert((int)d39 == 3 && Convert.ToInt32(d39) == 4, "3.9");
+    Assert((int)d25 == 2 && Convert.ToInt32(d25) == 2, "2.5");
+    Assert((int)d35 == 3 && Convert.ToInt32(d35) == 4, "3.5");
+    Assert((int)big == int.MaxValue && (int)(-big) == int.MinValue && (int)nan == 0, "насичення");
+    Throws<OverflowException>(() => Convert.ToInt32(big), "ToInt32(3e10)");
+    Assert(Convert.ToInt32("42") == 42 && Convert.ToInt32(true) == 1 && Convert.ToInt32((object?)null) == 0, "Convert");
+    Throws<FormatException>(() => Convert.ToInt32("3.5"), "\"3.5\"");
+    Throws<OverflowException>(() => Convert.ToByte(256), "256");
+    Assert(Convert.ToInt32((string?)null) == 0, "null string → 0");
+    Throws<ArgumentNullException>(() => int.Parse(null!), "Parse(null)");
+    Assert(Convert.ToString((object?)null) == "" && Convert.ToString((string?)null) is null, "ToString(null)");
+    Assert(Convert.ToBoolean(1) && Convert.ToBoolean(-7) && !Convert.ToBoolean(0) && Convert.ToBoolean("True") && Convert.ToBoolean("true"), "bool");
+    Throws<FormatException>(() => Convert.ToBoolean("1"), "\"1\"");
+    Assert(b64 == "AQID" && back.Length == 3 && r is int i42 && i42 == 42, "Base64/ChangeType");
+
+publish:
+  dark: ../../lectures/_assets/13-03/convert-overview.png
+  bw: ../../lectures/_assets/13-03/book/convert-overview.png

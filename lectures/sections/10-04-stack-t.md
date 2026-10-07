@@ -4,7 +4,6 @@ chapterTitle: "Розділ 10. Колекції"
 section: 4
 number: "10.4"
 title: "Stack<T>"
-source: "../_combined/65-stack-t.md"
 ---
 
 ## 10.4. Stack<T>

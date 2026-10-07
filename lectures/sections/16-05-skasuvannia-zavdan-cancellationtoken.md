@@ -4,7 +4,6 @@ chapterTitle: "Розділ 16. Паралельне програмування 
 section: 5
 number: "16.5"
 title: "Скасування завдань. CancellationToken"
-source: ""
 ---
 
 ## 16.5. Скасування завдань. CancellationToken

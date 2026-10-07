@@ -1,0 +1,85 @@
+# Лекція 19.1 «System.Text.Json — поглиблено»
+# Оригінал: lectures/_assets/19-01/Архив/json-api-levels.png
+id: json-api-levels
+title: "Три рівні API System.Text.Json"
+subtitle: "Чим нижчий рівень, тим більше контролю й менше алокацій — і тим більше коду"
+
+types: [JsonSerializer, JsonDocument, JsonElement, JsonValueKind, JsonNode, JsonObject, Utf8JsonReader, Utf8JsonWriter, JsonTokenType, LabResult, Encoding]
+
+body:
+  - box:
+      align: center
+      check: skip
+      code: |
+        string json = """{"Test":"HbA1c","Value":7.2}""";   // усі три рівні читають Value = 7.2
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - panel:
+            heading: "1 · JsonSerializer"
+            children:
+              - box:
+                  kind: box_accent
+                  code: |
+                    var r = JsonSerializer
+                        .Deserialize<LabResult>(json)!;
+                    double v = r.Value;
+                  notes:
+                    - "потрібен клас; обʼєкт ↔ JSON"
+                    - "одним викликом"
+        - panel:
+            heading: "2 · JsonDocument (DOM)"
+            children:
+              - box:
+                  code: |
+                    using var doc = JsonDocument.Parse(json);
+                    double v2 = doc.RootElement
+                        .GetProperty("Value").GetDouble();
+                  notes:
+                    - "класу не треба; [[лише читання]];"
+                    - "памʼять з пулу — `using`"
+        - panel:
+            heading: "3 · Utf8JsonReader"
+            children:
+              - box:
+                  code: |
+                    var rd = new Utf8JsonReader(bytes);
+                    while (rd.Read())
+                        if (rd.TokenType == JsonTokenType.Number)
+                            v3 = rd.GetDouble();
+                  notes:
+                    - "токен за токеном по UTF-8 байтах;"
+                    - "`ref struct`, без алокацій"
+
+  - panel:
+      heading: "Що обрати"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["потреба", "API", "примітка"]
+            groups:
+              - rows:
+                  - ["є модель даних",            "`JsonSerializer`",                "найпростіше, за замовчуванням"]
+                  - ["схема невідома, читати",    "`JsonDocument` / `JsonElement`",  "`TryGetProperty`, `ValueKind`"]
+                  - ["схема невідома, змінювати", "`JsonNode` / `JsonObject`",       "DOM із записом (.NET 6+)"]
+                  - ["генерувати JSON швидко",    "`Utf8JsonWriter`",                "`WriteStartObject`, `WriteString`…"]
+                  - ["великі потоки, мінімум памʼяті", "`Utf8JsonReader`",           "основа самого `JsonSerializer`"]
+
+check:
+  usings: [System, System.Text, System.Text.Json, System.Text.Json.Nodes]
+  context: |
+    string json = """{"Test":"HbA1c","Value":7.2}""";
+    byte[] bytes = Encoding.UTF8.GetBytes(json); double v3 = 0;
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(v, 7.2); Eq(v2, 7.2); Eq(v3, 7.2);
+    var node = JsonNode.Parse(json)!; node["Value"] = 6.5; Eq(node.ToJsonString(), """{"Test":"HbA1c","Value":6.5}""");
+    Eq(doc.RootElement.GetProperty("Test").ValueKind, JsonValueKind.String);
+  types: |
+    public class LabResult { public string Test { get; set; } = ""; public double Value { get; set; } }
+
+publish:
+  dark: ../../lectures/_assets/19-01/json-api-levels.png
+  bw: ../../lectures/_assets/19-01/book/json-api-levels.png

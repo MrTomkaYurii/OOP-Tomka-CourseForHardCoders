@@ -4,7 +4,6 @@ chapterTitle: "Розділ 21. Generic Host та Dependency Injection"
 section: 4
 number: "21.4"
 title: "Options Pattern — типізована конфігурація з IOptions<T>"
-source: ""
 ---
 
 ## 21.4. Options Pattern — типізована конфігурація з IOptions&lt;T&gt;

@@ -1,0 +1,72 @@
+# Лекція 6.5 «Делегати Action, Predicate та Func» — замикання
+# Оригінал: lectures/_assets/06-05/Архив/closure-lifecycle.png
+id: closure-lifecycle
+title: "Замикання: захоплена змінна переживає метод"
+subtitle: "Компілятор переносить count і ward у клас-оточення в купі; делегат тримає посилання на нього"
+
+types: [Action]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - box:
+            title: "Код лекції"
+            check: skip
+            code: |
+              Action CreateAlertCounter(string ward)
+              {
+                  int count = 0;
+                  void Increment()
+                  {
+                      count++;
+                      Console.WriteLine($"{ward}: сповіщення #{count}");
+                  }
+                  return Increment;
+              }
+        - box:
+            title: "Що генерує компілятор (спрощено)"
+            kind: box_accent
+            check: skip
+            code: |
+              sealed class DisplayClass      // у купі
+              {
+                  public string ward;
+                  public int    count;
+                  public void Increment() { count++; … }
+              }
+              // return new Action(display.Increment);
+  - panel:
+      heading: "Виклики (виконано)"
+      children:
+        - hchain:
+            equal: true
+            nodes:
+              - {title: "icu()", sub: ["count 0 → 1"]}
+              - {title: "icu()", via: "", sub: ["count 1 → 2"]}
+              - {title: "card()", via: "", kind: box_accent, sub: ["[[своє]] оточення: 0 → 1"]}
+              - {title: "icu()", via: "", sub: ["count 2 → 3"]}
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - heading: "захоплюється змінна, а не значення"
+                rows:
+                  - ["`for (int i = 0; i < 3; i++) list.Add(() => i);`", "викличе [[3, 3, 3]] — одна `i` на цикл"]
+                  - ["`foreach (var x in new[] {0, 1, 2}) list.Add(() => x);`", "0, 1, 2 — нова `x` на ітерацію (C# 5)"]
+
+check:
+  usings: [System, System.Collections.Generic]
+  asserts: |
+    int n = 0;
+    Action Make(string ward) { int count = 0; return () => { count++; n = count; }; }
+    var icu = Make("ICU"); var card = Make("Кардіологія");
+    icu(); icu(); card(); if (n != 1) throw new Exception("card"); icu(); if (n != 3) throw new Exception("icu");
+    var a = new List<Func<int>>(); for (int i = 0; i < 3; i++) a.Add(() => i);
+    if (a[0]() != 3) throw new Exception("for");
+    var b = new List<Func<int>>(); foreach (var x in new[] { 0, 1, 2 }) b.Add(() => x);
+    if (b[0]() != 0 || b[2]() != 2) throw new Exception("foreach");
+
+publish:
+  dark: ../../lectures/_assets/06-05/closure-lifecycle.png
+  bw: ../../lectures/_assets/06-05/book/closure-lifecycle.png

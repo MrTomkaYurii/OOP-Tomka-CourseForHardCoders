@@ -1,0 +1,88 @@
+# Лекція 20.5 «ISP — принцип розподілу інтерфейсів»
+# Оригінал: lectures/_assets/20-05/Архив/after-isp.png
+id: after-isp
+title: "Після ISP: інтерфейс на кожну роль"
+subtitle: "Клас реалізує лише ролі, які справді виконує; клієнт просить лише роль, яка йому потрібна"
+
+types: [IPatientService, IAppointmentService, IReportService, ReceptionDesk, AnalyticsModule, FullClinicService]
+
+body:
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box:
+            title: "Пацієнти"
+            check: skip
+            code: |
+              interface IPatientService
+              {
+                  void   AddPatient(…);
+                  void   RemovePatient(…);
+                  string FindPatient(…);
+              }
+        - box:
+            title: "Прийоми"
+            check: skip
+            code: |
+              interface IAppointmentService
+              {
+                  void BookAppointment(…);
+                  void CancelAppointment(…);
+                  int  GetAppointmentCount(…);
+              }
+        - box:
+            title: "Звіти"
+            check: skip
+            code: |
+              interface IReportService
+              {
+                  string GeneratePdfReport();
+                  string ExportToCsv();
+                  void   SendReportByEmail(…);
+              }
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Класи: ролі замість заглушок"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["клас", "реалізує"]
+                  groups:
+                    - rows:
+                        - ["ReceptionDesk",     "`IPatientService`, `IAppointmentService`"]
+                        - ["AnalyticsModule",   "`IReportService`"]
+                        - ["FullClinicService", "усі три"]
+              - text:
+                  text: ["Жодного `NotImplementedException`."]
+        - panel:
+            heading: "Клієнти: мінімальний контракт"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["виклик", "результат"]
+                  groups:
+                    - rows:
+                        - ["RegisterPatient(desk, …)", "✓"]
+                        - ["MakeReport(analytics, …)", "✓"]
+                        - ["MakeReport(full, …)",      "✓"]
+                        - ["MakeReport(desk, …)",      "[[`CS1503`]] — компіляція"]
+
+check:
+  usings: [System]
+  asserts: |
+    if (typeof(IReportService).IsAssignableFrom(typeof(ReceptionDesk))) throw new Exception("desk");
+    if (!typeof(IReportService).IsAssignableFrom(typeof(FullClinicService))) throw new Exception("full");
+    if (!typeof(IPatientService).IsAssignableFrom(typeof(ReceptionDesk))) throw new Exception("desk2");
+  types: |
+    interface IPatientService { } interface IAppointmentService { } interface IReportService { }
+    class ReceptionDesk : IPatientService, IAppointmentService { }
+    class AnalyticsModule : IReportService { }
+    class FullClinicService : IPatientService, IAppointmentService, IReportService { }
+
+publish:
+  dark: ../../lectures/_assets/20-05/after-isp.png
+  bw: ../../lectures/_assets/20-05/book/after-isp.png

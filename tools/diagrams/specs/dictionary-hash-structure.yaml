@@ -1,0 +1,82 @@
+# Лекція 10.5 «Словник Dictionary<K, V>»
+# Оригінал: lectures/_assets/10-05/Архив/dictionary-hash-structure.png
+id: dictionary-hash-structure
+title: "Dictionary<K, V>: хеш-таблиця"
+subtitle: "Хеш ключа одразу вказує бакет — перебирати всі записи не треба, тому пошук у середньому O(1)"
+
+types: [Dictionary, Patient, KeyNotFoundException]
+
+body:
+  - panel:
+      heading: "Пошук `ward[\"P003\"]`"
+      children:
+        - hchain:
+            nodes:
+              - { title: "\"P003\"", code: true, sub: ["ключ"], kind: box_accent }
+              - { title: "GetHashCode()", code: true, sub: ["ціле число"], via: "1" }
+              - { title: "% buckets.Length", code: true, sub: ["номер бакета: 2"], via: "2" }
+              - { title: "buckets[2] = 2", code: true, sub: ["індекс запису"], via: "3" }
+              - { title: "entries[2]", code: true, sub: ["Equals? так → значення"], kind: box_accent, via: "4" }
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Усередині: два масиви (індекси умовні)"
+            children:
+              - cells:
+                  rows:
+                    - caption: "buckets"
+                      cells: ["3", "·", "2", "·", "·", "1", "·"]
+                      kinds: [box, box_muted, box_accent, box_muted, box_muted, box, box_muted]
+                      top: ["0", "1", "2", "3", "4", "5", "6"]
+                    - caption: "entries"
+                      cells: ["P001", "P002", "P003", "P004"]
+                      kinds: [box, box, box_accent, box]
+                      top: ["0", "1", "2", "3"]
+                      bottom: ["next -1", "next -1", "next 0", "next -1"]
+              - text:
+                  text:
+                    - "Запис — `hashCode`, `next`, `Key`, `Value`."
+                    - "P001 і P003 дали бакет 2 — [[колізія]]: бакет вказує"
+                    - "на P003, а `entries[2].next = 0` веде далі до P001."
+                    - "Ланцюжок — індекси в тому ж масиві, не окремі вузли."
+
+        - panel:
+            heading: "Вимоги до ключа"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["`Equals` рівні",        "→ `GetHashCode` рівні"]
+                        - ["`string`, `int`, `Guid`", "уже реалізують обидва"]
+                        - ["свій клас",               "перевизначити обидва"]
+                        - ["ключ у словнику",         "[[не змінювати]] — загубиться"]
+                        - ["хеш рядка",               "інший при кожному запуску"]
+              - kv:
+                  check: skip
+                  columns: ["виклик", "відсутній / дубль"]
+                  groups:
+                    - rows:
+                        - ["ward[\"P999\"]",          "`KeyNotFoundException`"]
+                        - ["ward.Add(\"P001\", p)",   "`ArgumentException`"]
+                        - ["ward.TryGetValue(k, out v)", "`false`"]
+                        - ["ward.TryAdd(k, v)",       "`false`"]
+
+check:
+  usings: [System, System.Collections.Generic]
+  context: |
+    var ward = new Dictionary<string, string> { ["P001"] = "Петренко", ["P002"] = "Коваль", ["P003"] = "Сидоренко", ["P004"] = "Мельник" };
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    Assert(ward.EnsureCapacity(0) == 7, "4 записи → 7 бакетів");
+    try { _ = ward["P999"]; Assert(false, "KeyNotFound"); } catch (KeyNotFoundException) { }
+    try { ward.Add("P001", "x"); Assert(false, "дубль"); } catch (ArgumentException) { }
+    Assert(!ward.TryGetValue("P999", out _) && !ward.TryAdd("P001", "x"), "Try*");
+    Assert(ward["P003"] == "Сидоренко", "пошук");
+
+publish:
+  dark: ../../lectures/_assets/10-05/dictionary-hash-structure.png
+  bw: ../../lectures/_assets/10-05/book/dictionary-hash-structure.png

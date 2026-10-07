@@ -4,7 +4,6 @@ chapterTitle: "Розділ 5. Обробка винятків"
 section: 3
 number: "5.3"
 title: "Типи винятків. Клас Exception"
-source: "../_combined/30-typy-vyniatkiv-klas-exception.md"
 ---
 
 ## 5.3. Типи винятків. Клас Exception

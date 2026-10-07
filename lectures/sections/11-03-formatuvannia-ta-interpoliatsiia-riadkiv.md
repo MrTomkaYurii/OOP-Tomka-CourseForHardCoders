@@ -4,7 +4,6 @@ chapterTitle: "Розділ 11. Робота з рядками"
 section: 3
 number: "11.3"
 title: "Форматування та інтерполяція рядків"
-source: "../_combined/72-formatuvannia-ta-interpoliatsiia-riadkiv.md"
 ---
 
 ## 11.3. Форматування та інтерполяція рядків

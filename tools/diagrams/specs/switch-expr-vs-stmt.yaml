@@ -1,0 +1,63 @@
+# Лекція 2.23 «Оператор switch»
+# Оригінал: lectures/_assets/02-23/Архив/switch-expr-vs-stmt.png
+id: switch-expr-vs-stmt
+title: "switch-оператор і switch-вираз"
+subtitle: "Той самий GetWardName: оператор виконує інструкції, вираз (C# 8) обчислює значення"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "оператор: case / return / default"
+            check: skip
+            code: |
+              string GetWardName(string code)
+              {
+                  switch (code)
+                  {
+                      case "ICU":  return "Інтенсивна терапія";
+                      case "SRG":  return "Хірургія";
+                      case "CARD": return "Кардіологія";
+                      default:     return "Загальне відділення";
+                  }
+              }
+        - box:
+            title: "вираз: => і _"
+            kind: box_accent
+            check: skip
+            code: |
+              string GetWardName(string code) => code switch
+              {
+                  "ICU"   => "Інтенсивна терапія",
+                  "SRG"   => "Хірургія",
+                  "CARD"  => "Кардіологія",
+                  "NEURO" => "Неврологія",
+                  _       => "Загальне відділення"
+              };
+  - panel:
+      heading: "Відмінності"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["", "switch-оператор", "switch-вираз"]
+            groups:
+              - rows:
+                  - ["що це",            "інструкція",                    "вираз — має значення"]
+                  - ["гілка",            "`case X:` … `break;`",          "`X => значення,`"]
+                  - ["інакше",           "`default:`",                    "`_`"]
+                  - ["не все покрито",   "просто нічого не виконається",  "[[CS8509]] (попередження) + `SwitchExpressionException`"]
+
+check:
+  usings: [System]
+  asserts: |
+    string W(string code) => code switch { "ICU" => "Інтенсивна терапія", "SRG" => "Хірургія", "CARD" => "Кардіологія", "NEURO" => "Неврологія", _ => "Загальне відділення" };
+    if (W("CARD") != "Кардіологія" || W("ORTHO") != "Загальне відділення") throw new Exception("w");
+
+publish:
+  dark: ../../lectures/_assets/02-23/switch-expr-vs-stmt.png
+  bw: ../../lectures/_assets/02-23/book/switch-expr-vs-stmt.png

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 18. Робота з файловою системо�
 section: 3
 number: "18.3"
 title: "Stream та FileStream. Потоковий доступ до файлів"
-source: ""
 ---
 
 ## 18.3. Stream та FileStream. Потоковий доступ до файлів

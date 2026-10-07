@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 12
 number: "2.12"
 title: "Конструкція if..else та тернарна операція"
-source: "../_migration/source-chunks/07-umovni-vyrazy-ta-cykly.md"
 ---
 
 ## 2.12. Конструкція if..else та тернарна операція

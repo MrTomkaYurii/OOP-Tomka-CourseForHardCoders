@@ -4,7 +4,6 @@ chapterTitle: "Розділ 3. Класи, структури та прості�
 section: 3
 number: "3.3"
 title: "Клас Program та метод Main. Програми верхнього рівня"
-source: "../_combined/15-program-main-ta-top-level-statements.md"
 ---
 
 ## 3.3. Клас Program та метод Main. Програми верхнього рівня

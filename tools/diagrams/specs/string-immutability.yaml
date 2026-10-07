@@ -1,0 +1,71 @@
+# Лекція 11.1 «Рядки та клас String»
+# Оригінал: lectures/_assets/11-01/Архив/string-immutability.png
+id: string-immutability
+title: "string — незмінний тип"
+subtitle: "Методи, що «змінюють» рядок, створюють новий обʼєкт у heap; змінні лише отримують нове посилання"
+
+types: []
+
+body:
+  - panel:
+      heading: "Змінні (стек) → обʼєкти string (heap)"
+      children:
+        - flow:
+            check: "{}"
+            rows:
+              - { left: "string diagnosis = \"Гіпертензія артеріальна\";", label: "ref", right: "\"Гіпертензія артеріальна\"" }
+              - { left: "string step1 = diagnosis.ToLower();",          label: "ref", right: "\"гіпертензія артеріальна\"" }
+              - { left: "string step2 = step1 + \" есенціальна\";",     label: "ref", right: "\"гіпертензія артеріальна есенціальна\"" }
+              - { left: "string step3 = step2.ToUpper();",              label: "ref", right: "\"ГІПЕРТЕНЗІЯ АРТЕРІАЛЬНА ЕСЕНЦІАЛЬНА\"" }
+        - text:
+            text:
+              - "Чотири різні обʼєкти; `diagnosis` і далі вказує на [[незмінений]] оригінал. `diagnosis[0] = 'г'` — помилка компіляції CS0200 (індексатор лише для читання)."
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "== порівнює вміст, а не посилання"
+            children:
+              - kv:
+                  check: "Assert({} == {v}, \"{}\");"
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - heading: "`a = \"I10\"`, `b = \"I10\"` — літерали; `c = new string(chars)`"
+                      rows:
+                        - ["a == b",                     "`true` — вміст однаковий"]
+                        - ["ReferenceEquals(a, b)",      "`true` — літерали інтерновано"]
+                        - ["a == c",                     "`true` — `==` перевизначено"]
+                        - ["ReferenceEquals(a, c)",      "`false` — `c` поза пулом"]
+                        - ["ReferenceEquals(a, string.Intern(c))", "`true` — взято з пулу"]
+
+        - panel:
+            heading: "Наслідки незмінності"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["`s += x` у циклі N разів", "копіює все щоразу — [[O(N²)]]"]
+                        - ["кілька потоків",            "читають без блокувань"]
+                        - ["ключ `Dictionary`",          "хеш не зміниться"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "Багато змін — `StringBuilder` (11.4):"
+                    - "змінний буфер без копії на кожен крок"
+
+check:
+  usings: [System]
+  context: |
+    string a = "I10", b = "I10";
+    string c = new string(new[] { 'I', '1', '0' });
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    Assert(diagnosis == "Гіпертензія артеріальна" && step3 == "ГІПЕРТЕНЗІЯ АРТЕРІАЛЬНА ЕСЕНЦІАЛЬНА", "ланцюжок");
+    Assert(!ReferenceEquals(step1, diagnosis), "новий обʼєкт");
+
+publish:
+  dark: ../../lectures/_assets/11-01/string-immutability.png
+  bw: ../../lectures/_assets/11-01/book/string-immutability.png

@@ -1,0 +1,49 @@
+# Лекція 9.2 «Патерн властивостей»
+# Оригінал: lectures/_assets/09-02/Архив/property-pattern-anatomy.png
+id: property-pattern-anatomy
+title: "Патерн властивостей: анатомія і варіанти"
+subtitle: "Двокрапка — не присвоєння, а «властивість відповідає вкладеному патерну»; кожен рядок таблиці виконано"
+
+types: [Patient, Department]
+
+body:
+  - box:
+      title: "Анатомія"
+      kind: box_accent
+      check: skip
+      code: |
+        p is Patient { Status: "Active", Priority: > 2 }
+        //   ↑ тип     ↑ властивість ↑ константа  ↑ реляційний патерн
+      notes: ["тип — необов'язковий; будь-який `{ … }` спершу перевіряє, що об'єкт [[не null]]"]
+  - panel:
+      heading: "Варіанти: p — активний пацієнт кардіології, Priority = 3"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["вираз", "результат", "що перевіряє"]
+            groups:
+              - rows:
+                  - ["p is Patient { Status: \"Active\", Priority: > 2 }", "`true`",  "тип + дві властивості"]
+                  - ["p is { Priority: > 3 }",                             "`false`", "лише властивість"]
+                  - ["p is { Department.Name: \"Кардіологія\" }",          "`true`",  "вкладена властивість (C# 10)"]
+                  - ["p is { Department: { Name: \"Кардіологія\" } }",     "`true`",  "те саме до C# 10"]
+                  - ["p is { }",                                           "`true`",  "будь-який не-null"]
+                  - ["nobody is { }",                                      "`false`", "`null` не збігається"]
+              - heading: "захоплення значення"
+                rows:
+                  - ["p is { Department.Name: var dept } ? dept : \"\"",  "`\"Кардіологія\"`", "`var` збігається з будь-чим"]
+
+check:
+  usings: [System]
+  context: |
+    var p = new Patient("Іван Петренко", "Active", 3, new Department("Кардіологія"));
+    Patient? nobody = null;
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  types: |
+    class Department { public string Name { get; } public Department(string n) => Name = n; }
+    class Patient { public string Name { get; } public string Status { get; } public int Priority { get; } public Department Department { get; }
+      public Patient(string n, string s, int pr, Department d) { Name = n; Status = s; Priority = pr; Department = d; } }
+
+publish:
+  dark: ../../lectures/_assets/09-02/property-pattern-anatomy.png
+  bw: ../../lectures/_assets/09-02/book/property-pattern-anatomy.png

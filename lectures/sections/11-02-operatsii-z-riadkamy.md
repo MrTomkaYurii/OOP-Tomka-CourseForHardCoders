@@ -4,7 +4,6 @@ chapterTitle: "Розділ 11. Робота з рядками"
 section: 2
 number: "11.2"
 title: "Операції з рядками"
-source: "../_combined/71-operatsii-z-riadkamy.md"
 ---
 
 ## 11.2. Операції з рядками

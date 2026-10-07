@@ -4,7 +4,6 @@ chapterTitle: "Розділ 12. Робота з датами та часом"
 section: 1
 number: "12.1"
 title: "Структура DateTime"
-source: "../_combined/75-struktura-datetime.md"
 ---
 
 ## 12.1. Структура DateTime

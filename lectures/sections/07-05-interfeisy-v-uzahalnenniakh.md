@@ -4,7 +4,6 @@ chapterTitle: "Розділ 7. Інтерфейси"
 section: 5
 number: "7.5"
 title: "Інтерфейси в узагальненнях"
-source: "../_combined/43-interfeisy-v-uzahalnenniakh.md"
 ---
 
 ## 7.5. Інтерфейси в узагальненнях

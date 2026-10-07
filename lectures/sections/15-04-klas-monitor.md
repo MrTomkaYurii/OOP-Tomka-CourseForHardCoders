@@ -4,7 +4,6 @@ chapterTitle: "Розділ 15. Багатопоточність"
 section: 4
 number: "15.4"
 title: "Клас Monitor"
-source: ""
 ---
 
 ## 15.4. Клас Monitor

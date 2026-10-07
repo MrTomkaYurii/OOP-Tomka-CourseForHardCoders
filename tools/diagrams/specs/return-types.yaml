@@ -1,0 +1,84 @@
+# Лекція 17.2 «Типи повернення async-методів»
+# Оригінал: lectures/_assets/17-02/Архив/return-types.png
+id: return-types
+title: "Що повертає async-метод"
+subtitle: "За замовчуванням — Task або Task<T>; async void — лише для обробників подій; ValueTask<T> — коли це доведено профілюванням"
+
+types: [Task, ValueTask, EventArgs, Patient]
+
+body:
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box:
+            title: "async void"
+            check: skip
+            code: |
+              async void Save_Click(
+                  object? s, EventArgs e)
+            notes: ["лише обробник події"]
+        - box:
+            title: "async Task"
+            check: skip
+            code: |
+              async Task SaveAsync(
+                  Patient p)
+            notes: ["операція без результату"]
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box:
+            title: "async Task<T>"
+            kind: box_accent
+            check: skip
+            code: |
+              async Task<Patient> LoadAsync(
+                  string id)
+            notes: ["основний вибір"]
+        - box:
+            title: "async ValueTask<T>"
+            check: skip
+            code: |
+              async ValueTask<Patient> FromCacheAsync(
+                  string id)
+            notes: ["часто завершується синхронно"]
+
+  - panel:
+      heading: "Порівняння"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["", "void", "Task", "Task<T>", "ValueTask<T>"]
+            groups:
+              - rows:
+                  - ["`await` / `WhenAll`",        "[[ні]]",                 "так",   "так",           "так; `AsTask()`"]
+                  - ["де ловити виняток",          "[[краш процесу]]**",     "`try` + `await`", "`try` + `await`", "`try` + `await`"]
+                  - ["`await` двічі",              "—",                      "можна", "можна",         "[[лише один раз]]"]
+                  - ["`return`",                   "нічого",                 "нічого", "значення `T`", "значення `T`"]
+                  - ["синхронний кінець", "—", "кешований `Task`", "новий `Task<T>`*", "[[без алокації]]"]
+        - note:
+            text:
+              - "* крім кешованих: `true`/`false`, `null`, малі цілі (−1…8)."
+              - "** у консолі й ASP.NET Core; у UI — глобальний обробник."
+              - "Готовий результат без `async`: `Task.FromResult(x)`, `Task.CompletedTask`."
+
+check:
+  usings: [System, System.Threading.Tasks]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    async Task<int> Sync() => 1000; async Task<int> Small() => 1; async Task Empty() { }
+    #pragma warning disable CS1998
+    Eq(ReferenceEquals(Empty(), Empty()), true);
+    Eq(ReferenceEquals(Sync(), Sync()), false); Eq(ReferenceEquals(Small(), Small()), true);
+    var t = Sync(); Eq(await t + await t, 2000);
+    async ValueTask<int> V() => 5; var vt = V(); Eq(vt.IsCompletedSuccessfully, true); Eq(await vt, 5);
+    await Task.WhenAll(V().AsTask(), Task.CompletedTask);
+    Eq((await Task.FromResult("P001")).Length, 4);
+
+publish:
+  dark: ../../lectures/_assets/17-02/return-types.png
+  bw: ../../lectures/_assets/17-02/book/return-types.png

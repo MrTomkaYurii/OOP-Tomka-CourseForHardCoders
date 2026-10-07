@@ -4,7 +4,6 @@ chapterTitle: "Розділ 10. Колекції"
 section: 7
 number: "10.7"
 title: "Інтерфейси IEnumerable<T> та IEnumerator<T>"
-source: "../_combined/68-ienumerable-ienumerator.md"
 ---
 
 ## 10.7. Інтерфейси IEnumerable<T> та IEnumerator<T>

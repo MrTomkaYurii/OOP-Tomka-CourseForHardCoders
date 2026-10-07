@@ -1,0 +1,96 @@
+# Лекція 17.3 «Послідовне та паралельне виконання. Task.WhenAll та Task.WhenAny»
+# Оригінал: lectures/_assets/17-03/Архив/sequential-vs-parallel-async.png
+id: sequential-vs-parallel-async
+title: "Послідовний await, WhenAll і WhenAny"
+subtitle: "Незалежні операції: спершу запустити всі, потім чекати; загальний час — найдовша, а не сума"
+
+types: [Task]
+
+body:
+  - panel:
+      heading: "Послідовно: await кожної — 400 + 250 + 300 = 950 мс"
+      children:
+        - hchain:
+            nodes:
+              - { title: "await Blood()", code: true, sub: ["400 мс"] }
+              - { title: "await Urine()", code: true, sub: ["250 мс"] }
+              - { title: "await Ecg()", code: true, sub: ["300 мс"] }
+        - text:
+            text:
+              - "Правильно лише тоді, коли наступний крок [[залежить]] від попереднього (авторизація → картка → збереження)."
+
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "await Task.WhenAll(t1, t2, t3) — 400 мс"
+            children:
+              - cells:
+                  rows:
+                    - caption: "кров"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box, box, box, box_accent]
+                      top: ["50", "100", "150", "200", "250", "300", "350", "400"]
+                    - caption: "сеча"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box, box_muted, box_muted, box_muted]
+                    - caption: "ЕКГ"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box, box, box_muted, box_muted]
+              - text:
+                  text:
+                    - "Завершується, коли [[всі]]; для `Task<T>[]` —"
+                    - "масив `T[]` у порядку задач, а не завершення."
+        - panel:
+            heading: "await Task.WhenAny(t1, t2, t3) — 250 мс"
+            children:
+              - cells:
+                  rows:
+                    - caption: "кров"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box, box_muted, box_muted, box_muted]
+                      top: ["50", "100", "150", "200", "250", "300", "350", "400"]
+                    - caption: "сеча"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box_accent, box_muted, box_muted, box_muted]
+                    - caption: "ЕКГ"
+                      cells: ["", "", "", "", "", "", "", ""]
+                      kinds: [box, box, box, box, box, box_muted, box_muted, box_muted]
+              - text:
+                  text:
+                    - "Повертає [[першу завершену задачу]];"
+                    - "інші працюють далі — їх не скасовано."
+
+  - panel:
+      heading: "Помилки"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["`await Task.WhenAll(…)`",       "чекає всіх, потім кидає [[перший]] виняток"]
+                  - ["`whenAll.Exception.InnerExceptions`", "усі винятки — зберігайте задачу `WhenAll` у змінній"]
+                  - ["`await Task.WhenAny(…)`",       "сам не кидає: повертає задачу, навіть `Faulted` — її теж треба `await`"]
+                  - ["тайм-аут",                      "`WhenAny(work, Task.Delay(500))` — або `work.WaitAsync(timeout)` (.NET 6+)"]
+
+check:
+  usings: [System, System.Linq, System.Threading.Tasks]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    async Task<string> Lab(string n, int ms, bool fail = false) { await Task.Delay(ms); if (fail) throw new InvalidOperationException(n); return n; }
+  asserts: |
+    var sw = System.Diagnostics.Stopwatch.StartNew();
+    string[] all = await Task.WhenAll(Lab("кров", 400), Lab("сеча", 250), Lab("ЕКГ", 300));
+    Eq(string.Join(",", all), "кров,сеча,ЕКГ"); Eq(sw.ElapsedMilliseconds < 700, true);
+    var first = await Task.WhenAny(Lab("кров", 400), Lab("сеча", 250), Lab("ЕКГ", 300)); Eq(await first, "сеча");
+    var wa = Task.WhenAll(Lab("a", 10, true), Lab("b", 20, true));
+    try { await wa; } catch (InvalidOperationException e) { Eq(e.Message, "a"); }
+    Eq(wa.Exception!.InnerExceptions.Count, 2);
+    var bad = await Task.WhenAny(Lab("x", 10, true)); Eq(bad.IsFaulted, true);
+    try { await Lab("slow", 300).WaitAsync(TimeSpan.FromMilliseconds(50)); Eq(0, 1); } catch (TimeoutException) { }
+
+publish:
+  dark: ../../lectures/_assets/17-03/sequential-vs-parallel-async.png
+  bw: ../../lectures/_assets/17-03/book/sequential-vs-parallel-async.png

@@ -1,0 +1,66 @@
+# Лекція 8.4 «Індексатори»
+# Оригінал: lectures/_assets/08-04/Архив/indexer-anatomy.png
+id: indexer-anatomy
+title: "Індексатор: властивість з параметром"
+subtitle: "Замість імені — this[…]; у IL це властивість Item з методами get_Item / set_Item"
+
+types: [Ward, Patient, AppointmentGrid, ArgumentOutOfRangeException, IndexOutOfRangeException]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Властивість — фіксоване ім'я"
+            kind: box_muted
+            check: skip
+            code: |
+              public Patient FirstPatient
+              {
+                  get => patients[0];
+                  set => patients[0] = value;
+              }
+              // ward.FirstPatient
+        - box:
+            title: "Індексатор — this[параметр]"
+            kind: box_accent
+            check: skip
+            code: |
+              public Patient this[int index]
+              {
+                  get => patients[index];
+                  set => patients[index] = value;
+              }
+              // ward[0], ward[i]
+  - panel:
+      heading: "Варіанти з лекції"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["оголошення", "звернення", "примітка"]
+            groups:
+              - rows:
+                  - ["`this[int index]`",            "`ward[0]`",            "за позицією"]
+                  - ["`this[string key]`",           "`patient[\"BloodType\"]`", "як словник"]
+                  - ["`this[int day, int hour]`",    "`schedule[0, 9]`",     "кілька параметрів"]
+                  - ["обидва в `Ward`",              "`ward[\"Марія Коваль\"]`", "перевантаження за типом"]
+        - text:
+            text:
+              - "Індексатор не буває `static`; може бути `virtual`/`abstract`, без `set` — лише для читання."
+              - "Масив за межами кидає `IndexOutOfRangeException`; власний індексатор — що напишете (у лекції `ArgumentOutOfRangeException`)."
+
+check:
+  usings: [System, System.Linq, System.Reflection]
+  asserts: |
+    var p = typeof(Ward).GetProperty("Item");
+    if (p == null || p.GetMethod!.Name != "get_Item") throw new Exception("Item");
+    try { int[] a = new int[1]; _ = a[3]; throw new Exception("no"); } catch (IndexOutOfRangeException) { }
+  types: |
+    class Patient { }
+    class Ward { Patient[] patients = new Patient[3]; public Patient this[int i] { get => patients[i]; set => patients[i] = value; } }
+
+publish:
+  dark: ../../lectures/_assets/08-04/indexer-anatomy.png
+  bw: ../../lectures/_assets/08-04/book/indexer-anatomy.png

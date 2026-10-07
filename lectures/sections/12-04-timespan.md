@@ -4,7 +4,6 @@ chapterTitle: "Розділ 12. Робота з датами та часом"
 section: 4
 number: "12.4"
 title: "Структура TimeSpan"
-source: "../_combined/78-timespan.md"
 ---
 
 ## 12.4. Структура TimeSpan

@@ -1,0 +1,68 @@
+# Лекція 21.1 «Generic Host — архітектура та життєвий цикл»
+# Оригінал: lectures/_assets/21-01/Архив/host-architecture-html.png
+# (HTML-генератор: lectures/_assets/diagram-generators/21-generic-host)
+id: host-architecture
+title: "Generic Host: три ролі та життєвий цикл"
+subtitle: "IHost збирає контейнер, конфігурацію й керування запуском; порядок подій перевірено на .NET 10"
+
+types: [IPatientRepository, InMemoryPatientRepository, IHost, Host, IServiceProvider, IConfiguration, IHostApplicationLifetime, IHostedService, BackgroundService, AppointmentReminderService]
+
+body:
+  - box:
+      title: "Будівельник → IHost"
+      kind: box_accent
+      check: skip
+      code: |
+        IHost host = Host.CreateDefaultBuilder(args)
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPatientRepository, InMemoryPatientRepository>();
+                services.AddHostedService<AppointmentReminderService>();
+            })
+            .Build();                       // контейнер зібрано
+        await host.RunAsync();              // Start → чекати сигналу → Stop
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box:
+            title: "1 · DI-контейнер"
+            check: skip
+            code: "host.Services   // IServiceProvider"
+            text: ["реєстрація, створення,", "час життя, `Dispose`"]
+        - box:
+            title: "2 · Конфігурація"
+            check: skip
+            code: "IConfiguration"
+            text: ["`appsettings.json`, змінні", "середовища, аргументи CLI"]
+        - box:
+            title: "3 · Життєвий цикл"
+            check: skip
+            code: "IHostApplicationLifetime"
+            text: ["`IHostedService`, сигнали", "`SIGTERM` / Ctrl+C"]
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Запуск"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "Build()", sub: ["у Development — ще й ValidateOnBuild"]}
+                    - {title: "StartAsync кожного IHostedService", sub: ["по черзі, у порядку реєстрації"]}
+                    - {title: "ApplicationStarted", kind: box_accent, sub: ["хост працює й чекає сигналу"]}
+        - panel:
+            heading: "Зупинка"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "ApplicationStopping", sub: ["Ctrl+C, SIGTERM або StopAsync()"]}
+                    - {title: "StopAsync у [[зворотному]] порядку", sub: ["ShutdownTimeout — 30 с на всіх"]}
+                    - {title: "ApplicationStopped → Dispose", kind: box_accent, sub: ["контейнер звільняє IDisposable"]}
+
+publish:
+  dark: ../../lectures/_assets/21-01/host-architecture.png
+  bw: ../../lectures/_assets/21-01/book/host-architecture.png

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 7. Інтерфейси"
 section: 3
 number: "7.3"
 title: "Явна реалізація інтерфейсів"
-source: "../_combined/41-yavna-realizatsiia-interfeisiv.md"
 ---
 
 ## 7.3. Явна реалізація інтерфейсів

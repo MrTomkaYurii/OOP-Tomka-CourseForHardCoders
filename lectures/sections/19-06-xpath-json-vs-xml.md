@@ -4,7 +4,6 @@ chapterTitle: "Розділ 19. Серіалізація та десеріалі
 section: 6
 number: "19.6"
 title: "XPath та вибір між JSON і XML"
-source: ""
 ---
 
 ## 19.6. XPath та вибір між JSON і XML

@@ -1,0 +1,48 @@
+# Лекція 6.2 «Лямбди»
+# Оригінал: lectures/_assets/06-02/Архив/lambda-syntax.png
+id: lambda-syntax
+title: "Синтаксис лямбда-виразу"
+subtitle: "параметри => тіло; типи параметрів виводяться з делегата, тип самої лямбди — з контексту"
+
+types: [PatientHandler, NotifyHandler, BloodPressureHandler, Action, Func]
+
+body:
+  - panel:
+      heading: "Форми (приклади з лекції)"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["форма", "приклад"]
+            groups:
+              - rows:
+                  - ["без параметрів",          "`PatientHandler greet = () => Console.WriteLine(\"…\");`"]
+                  - ["один параметр, без дужок", "`NotifyHandler n = name => Console.WriteLine(name);`"]
+                  - ["кілька параметрів",       "`(name, msg) => Console.WriteLine($\"{name}: {msg}\")`"]
+                  - ["блок-тіло з `return`",    "`(s, d) => { if (s >= 140) return \"Гіпертонія\"; return \"Норма\"; }`"]
+                  - ["явні типи",               "`var calc = (double w, double h) => w / (h * h);`"]
+  - panel:
+      heading: "Природний тип лямбди (C# 10)"
+      children:
+        - kv:
+            check: "Eq(Lam.A({}).GetType(), {v});"
+            columns: ["var x = …", "тип x"]
+            groups:
+              - rows:
+                  - ["() => Console.WriteLine(\"Привіт\")", "`typeof(Action)`"]
+                  - ["(double w, double h) => w / (h * h)", "`typeof(Func<double, double, double>)`"]
+        - text:
+            text:
+              - "`var f = x => x * 2;` — CS8917: без типів параметрів природного типу немає."
+              - "Нове: `static` лямбда (C# 9) не захоплює змінних; параметри за замовчуванням — C# 12."
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  types: |
+    static class Lam { public static Delegate A(Delegate d) => d; }
+
+publish:
+  dark: ../../lectures/_assets/06-02/lambda-syntax.png
+  bw: ../../lectures/_assets/06-02/book/lambda-syntax.png

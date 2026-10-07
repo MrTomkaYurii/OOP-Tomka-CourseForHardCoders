@@ -1,0 +1,57 @@
+# Лекція 2.18 «Повернення значення та оператор return»
+# Оригінал: lectures/_assets/02-18/Архив/early-return.png (підписи були набрані латиницею-транслітом)
+id: early-return
+title: "Ранній вихід (guard clause)"
+subtitle: "RegisterPatient з лекції: перевірки на початку, return; — основна логіка без вкладених if"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      children:
+        - box:
+            title: "void RegisterPatient(string name, int age)"
+            kind: box_accent
+            check: skip
+            code: |
+              if (string.IsNullOrWhiteSpace(name))
+              {
+                  Console.WriteLine("Помилка: ім'я порожнє.");
+                  return;                       // вихід 1
+              }
+              if (age < 0 || age > 150)
+              {
+                  Console.WriteLine($"Помилка: вік — {age}.");
+                  return;                       // вихід 2
+              }
+              Console.WriteLine($"Зареєстровано: {name}, {age} р.");
+              Console.WriteLine("Медичну картку відкрито.");
+        - panel:
+            heading: "Що виведе (виконано)"
+            children:
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["виклик", "перший рядок"]
+                  groups:
+                    - rows:
+                        - ["Reg(\"\", 30)",          "`\"Помилка: ім'я порожнє.\"`"]
+                        - ["Reg(\"Іван\", 200)",     "`\"Помилка: вік — 200.\"`"]
+                        - ["Reg(\"Іван\", 45)",      "`\"Зареєстровано: Іван, 45 р.\"`"]
+              - note:
+                  text:
+                    - "Без раннього виходу основна логіка"
+                    - "опинилась би у `else` двох вкладених `if`."
+                    - "З `return;` — кожна перевірка відсікає"
+                    - "невалідний випадок, а «щасливий шлях»"
+                    - "лишається на нульовому рівні вкладення."
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    string Reg(string name, int age) { if (string.IsNullOrWhiteSpace(name)) return "Помилка: ім'я порожнє."; if (age < 0 || age > 150) return $"Помилка: вік — {age}."; return $"Зареєстровано: {name}, {age} р."; }
+
+publish:
+  dark: ../../lectures/_assets/02-18/early-return.png
+  bw: ../../lectures/_assets/02-18/book/early-return.png

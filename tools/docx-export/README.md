@@ -7,6 +7,9 @@
 | `md-to-docx.js` | лекції: багато секцій → один документ розділу | A5, книжкова верстка |
 | `labs-to-docx.js` | лабораторні: кожна `labs/lab-NN-*/instructions.md` → окремий `.docx` | A4, технічна методичка |
 
+Усі результати — у `tools/docx-export/output/` (тека в `.gitignore`, у git не потрапляє).
+Команди запускаються з теки `tools/docx-export/`.
+
 ## Лабораторні
 
 ```bash
@@ -34,20 +37,22 @@ npm run labs:pdf                     # to-pdf-all.ps1 → output/labs/*.pdf
 - рядки таблиць `cantSplit` (не рвуться між сторінками);
 - колонтитул зверху — назва лабораторної, знизу — номер сторінки.
 
-## Лекції
-
-## Використання
+## Лекції (книга)
 
 ```bash
-# Один розділ (всі секції по glob)
-node md-to-docx.js "lectures/sections/01-*.md" -o "output/chapter-01.docx"
+npm run book                         # уся книга: 21 розділ + питання → output/full-course.docx
+node md-to-docx.js --all -o output/full-course-v5.docx   # те саме, з власним ім'ям файлу
 
-# Явний перелік файлів
-node md-to-docx.js file1.md file2.md -o out.docx
+# Один розділ (секції по glob + питання)
+node md-to-docx.js "../../lectures/sections/01-*.md" "../../lectures/questions/01-questions.md" -o output/chapter-01.docx
 
-# З кастомною назвою розділу
-node md-to-docx.js "lectures/sections/02-*.md" -o out.docx --title "Розділ 2. Основи мови"
+# Явний перелік файлів / власна назва розділу
+node md-to-docx.js file1.md file2.md -o output/test.docx --title "Розділ 2. Основи мови"
 ```
+
+Книжкова верстка лекцій (A5): поля верх/низ 15 мм, ліве 25 мм, праве 10 мм; рисунки —
+ч/б версії з `book/` на всю ширину тексту; inline-код — шрифтом тексту без заливки;
+блоки коду з номерами рядків; таблиці в сірих тонах. Деталі — `style-guide.md`.
 
 ## Структура проєкту
 

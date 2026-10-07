@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 5
 number: "4.5"
 title: "Відмінність перевизначення та приховування методів"
-source: "../_combined/22-vidminnist-perevyznachennia-ta-prykhovuvannia.md"
 ---
 
 ## 4.5. Відмінність перевизначення та приховування методів

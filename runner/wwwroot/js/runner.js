@@ -182,7 +182,7 @@ window.runnerJs = {
             '.cm-atom{color:#79B8FF !important;}',
             '.cm-property{color:#79B8FF;}',
             '.CodeMirror-matchingbracket{color:#E1E4E8 !important;outline:1px solid #6A737D;}',
-            // світла тема — палітра схем курсу (diagrams/themes.yaml → light.syntax)
+            // світла тема — палітра схем курсу (tools/diagrams/themes.yaml → light.syntax)
             'html[data-theme="light"] .CodeMirror{background:#eef2f0;color:#17201c;}',
             'html[data-theme="light"] .CodeMirror-gutters{background:#e6ebe8;border-right:1px solid #d3dbd7;}',
             'html[data-theme="light"] .CodeMirror-linenumber{color:#66716c;}',

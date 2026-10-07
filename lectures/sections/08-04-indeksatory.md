@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 4
 number: "8.4"
 title: "Індексатори"
-source: "../_combined/49-indeksatory.md"
 ---
 
 ## 8.4. Індексатори

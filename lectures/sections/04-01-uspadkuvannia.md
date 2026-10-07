@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 1
 number: "4.1"
 title: "Успадкування"
-source: "../_combined/18-uspadkuvannia.md"
 ---
 
 ## 4.1. Успадкування

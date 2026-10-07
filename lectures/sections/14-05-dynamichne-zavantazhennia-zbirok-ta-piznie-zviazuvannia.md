@@ -4,7 +4,6 @@ chapterTitle: "Розділ 14. Рефлексія"
 section: 5
 number: "14.5"
 title: "Динамічне завантаження збірок та пізнє зв'язування"
-source: "../_combined/88-dynamichne-zavantazhennia-zbirok-ta-piznie-zviazuvannia.md"
 ---
 
 ## 14.5. Динамічне завантаження збірок та пізнє зв'язування

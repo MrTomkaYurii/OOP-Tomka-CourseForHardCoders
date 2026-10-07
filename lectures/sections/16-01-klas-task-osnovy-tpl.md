@@ -4,7 +4,6 @@ chapterTitle: "Розділ 16. Паралельне програмування 
 section: 1
 number: "16.1"
 title: "Клас Task. Основи TPL"
-source: ""
 ---
 
 ## 16.1. Клас Task. Основи TPL

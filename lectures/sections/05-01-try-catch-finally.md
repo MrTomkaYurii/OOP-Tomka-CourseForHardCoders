@@ -4,7 +4,6 @@ chapterTitle: "Розділ 5. Обробка винятків"
 section: 1
 number: "5.1"
 title: "Конструкція try..catch..finally"
-source: "../_combined/28-try-catch-finally.md"
 ---
 
 ## 5.1. Конструкція try..catch..finally

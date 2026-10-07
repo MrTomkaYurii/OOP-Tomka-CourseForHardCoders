@@ -4,7 +4,6 @@ chapterTitle: "Розділ 5. Обробка винятків"
 section: 6
 number: "5.6"
 title: "Пошук блоку catch при обробці винятків"
-source: "../_combined/33-poshuk-bloku-catch-pry-obrobtsi-vyniatkiv.md"
 ---
 
 ## 5.6. Пошук блоку catch при обробці винятків

@@ -1,0 +1,112 @@
+# Лекція 18.1 «Класи Path, File та Directory»
+# Оригінал: lectures/_assets/18-01/Архив/static-classes-overview.png
+id: static-classes-overview
+title: "Path, File і Directory — статичні класи System.IO"
+subtitle: "Path працює лише з рядками; File і Directory звертаються до диска — кожен виклик сам відкриває й закриває ресурс"
+
+types: [Path, File, Directory, FileInfo, DirectoryInfo, IOException, DirectoryNotFoundException, FileNotFoundException]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Path — рядки шляхів"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - heading: "розібрати"
+                      rows:
+                        - ["GetFileName(p)", ""]
+                        - ["GetFileNameWithoutExtension(p)", ""]
+                        - ["GetExtension(p)", ""]
+                        - ["GetDirectoryName(p)", ""]
+                    - heading: "скласти й нормалізувати"
+                      rows:
+                        - ["Combine(a, b, c)", ""]
+                        - ["GetFullPath(relative)", ""]
+                        - ["GetTempPath()", ""]
+                        - ["GetRandomFileName()", ""]
+              - note:
+                  text:
+                    - "[[Диска не торкається]] — шлях може"
+                    - "й не існувати"
+        - panel:
+            heading: "File — файл цілком"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - heading: "текст і байти"
+                      rows:
+                        - ["WriteAllText(p, s)", ""]
+                        - ["AppendAllText(p, s)", ""]
+                        - ["ReadAllText(p) / ReadAllLines(p)", ""]
+                        - ["ReadAllBytes(p) / WriteAllBytes", ""]
+                    - heading: "керування"
+                      rows:
+                        - ["Exists(p)", ""]
+                        - ["Copy(src, dst, overwrite)", ""]
+                        - ["Move(src, dst, overwrite)", ""]
+                        - ["Delete(p)", ""]
+              - note:
+                  text:
+                    - "`Delete` неіснуючого файлу —"
+                    - "без винятку; теки — `DirectoryNotFoundException`"
+        - panel:
+            heading: "Directory — теки"
+            children:
+              - kv:
+                  check: skip
+                  groups:
+                    - heading: "створити й перевірити"
+                      rows:
+                        - ["Exists(p)", ""]
+                        - ["CreateDirectory(p)", ""]
+                        - ["GetCurrentDirectory()", ""]
+                    - heading: "вміст"
+                      rows:
+                        - ["GetFiles(p, \"*.txt\")", ""]
+                        - ["EnumerateFiles(p, …)", ""]
+                        - ["GetDirectories(p)", ""]
+                    - heading: "змінити"
+                      rows:
+                        - ["Move(src, dst)", ""]
+                        - ["Delete(p, recursive: true)", ""]
+              - note:
+                  text:
+                    - "`CreateDirectory` створює всі рівні"
+                    - "й не кидає, якщо тека вже є"
+
+  - panel:
+      heading: "Пастки"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["`dir + \"\\\\\" + file`",          "ламається на Linux/macOS — завжди `Path.Combine`"]
+                  - ["`Path.Combine(\"a\", \"/b\")`",     "друга частина абсолютна → [[`\"/b\"`]], першу відкинуто"]
+                  - ["`GetFiles` vs `EnumerateFiles`",   "масив одразу / ліниво, перший файл без очікування всього обходу"]
+                  - ["`Directory.Delete(p)` непорожньої", "`IOException`; з `recursive: true` — разом із вмістом"]
+                  - ["обʼєктний підхід",                 "`FileInfo` / `DirectoryInfo` (18.2) — коли до одного файлу кілька звернень"]
+
+check:
+  usings: [System, System.IO]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(Path.Combine("a", "/b"), "/b");
+    var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+    Directory.CreateDirectory(Path.Combine(root, "x", "y")); Directory.CreateDirectory(root);
+    File.Delete(Path.Combine(root, "none.txt"));
+    try { File.Delete(Path.Combine(root, "nodir", "f.txt")); Eq(0, 1); } catch (DirectoryNotFoundException) { }
+    try { Directory.Delete(root); Eq(0, 1); } catch (IOException) { }
+    Directory.Delete(root, recursive: true); Eq(Directory.Exists(root), false);
+
+publish:
+  dark: ../../lectures/_assets/18-01/static-classes-overview.png
+  bw: ../../lectures/_assets/18-01/book/static-classes-overview.png

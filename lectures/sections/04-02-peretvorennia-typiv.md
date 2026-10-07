@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 2
 number: "4.2"
 title: "Перетворення типів"
-source: "../_combined/19-peretvorennia-typiv.md"
 ---
 
 ## 4.2. Перетворення типів

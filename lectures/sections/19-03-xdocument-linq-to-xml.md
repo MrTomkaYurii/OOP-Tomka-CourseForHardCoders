@@ -4,7 +4,6 @@ chapterTitle: "Розділ 19. Серіалізація та десеріалі
 section: 3
 number: "19.3"
 title: "XDocument та LINQ to XML"
-source: ""
 ---
 
 ## 19.3. XDocument та LINQ to XML

@@ -1,0 +1,120 @@
+# Лекція 13.1 «Відкладена ініціалізація та тип Lazy<T>»
+# Оригінал: lectures/_assets/13-01/Архив/lazy-init.png
+id: lazy-init
+title: "Lazy<T>: створити об'єкт лише тоді, коли він потрібен"
+subtitle: "Обгортка відкладає дорогу ініціалізацію до першого звернення до Value"
+
+types: [PatientRecord, Lazy, LazyThreadSafetyMode]
+
+body:
+  - row:
+      gap: 24
+      children:
+        # ── 1. Eager vs Lazy ──────────────────────────────────────────────
+        - panel:
+            heading: "Звичайне поле чи Lazy<T>"
+            children:
+              - kv:
+                  key_code: false
+                  columns: ["момент", "звичайне поле", "Lazy<T>"]
+                  groups:
+                    - rows:
+                        - ["створення картки",   "анамнез завантажено одразу",   "лише обгортка"]
+                        - ["",                   "",                              "`IsValueCreated` = `false`"]
+                        - ["перше `.Value`",     "—",                             "фабрика → результат у кеш"]
+                        - ["повторне `.Value`",  "—",                             "той самий об'єкт із кешу"]
+                        - ["картку не відкрили", "[[час і пам'ять — даремно]]",   "нічого не завантажено"]
+              - kv:
+                  groups:
+                    - heading: "API"
+                      rows:
+                        - ["new Lazy<T>()",              "через конструктор `T()`"]
+                        - ["new Lazy<T>(factory)",       "через фабрику `Func<T>`"]
+                        - ["new Lazy<T>(factory, mode)", "+ режим потокобезпеки"]
+                        - [".Value",                     "1-й раз створює, далі — кеш"]
+                        - [".IsValueCreated",            "чи створено — без запуску"]
+
+        # ── 2. Приклад ────────────────────────────────────────────────────
+        - panel:
+            heading: "Медична картка"
+            children:
+              - box:
+                  code: |
+                    class PatientRecord
+                    {
+                        private readonly Lazy<string[]> _history;
+
+                        public PatientRecord(string name) =>
+                            _history = new Lazy<string[]>(() => LoadHistory(name));
+
+                        public bool IsHistoryLoaded => _history.IsValueCreated;
+                        public string[] History => _history.Value; // тригер
+
+                        static string[] LoadHistory(string name) => ["2024-01 огляд"];
+                    }
+                  check: skip
+              - note:
+                  kind: box_accent
+                  text:
+                    - "Фабрика, що звертається до членів екземпляра, не може стояти"
+                    - "в ініціалізаторі поля (помилка CS0236) — створюйте `Lazy` у конструкторі"
+
+  # ── 3. Потокобезпека ──────────────────────────────────────────────────────
+  - panel:
+      heading: "LazyThreadSafetyMode"
+      children:
+        - row:
+            gap: 24
+            children:
+              - kv:
+                  groups:
+                    - rows:
+                        - ["ExecutionAndPublication", "фабрику виконує один потік, решта чекають — [[за замовчуванням]]"]
+                        - ["PublicationOnly",         "кілька потоків, зберігається перший результат"]
+                        - ["None",                    "без синхронізації — лише для одного потоку"]
+              - note:
+                  text:
+                    - "виняток у фабриці кешується"
+                    - "(крім `PublicationOnly`): кожне"
+                    - "наступне `.Value` кидає той самий"
+                    - "виняток, фабрика не повторюється"
+
+check:
+  usings: [System, System.Threading, Med]
+  asserts: |
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+    var p = new PatientRecord("Петренко");
+    Assert(!p.IsHistoryLoaded, "до .Value не створено");
+    Assert(p.History.Length == 1 && p.IsHistoryLoaded && ReferenceEquals(p.History, p.History), "кеш");
+    var dflt = new Lazy<int>(() => 1);
+    var mode = typeof(Lazy<int>).GetProperty("Mode", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+    Assert(mode is null || (LazyThreadSafetyMode?)mode.GetValue(dflt) == LazyThreadSafetyMode.ExecutionAndPublication, "за замовчуванням");
+    int calls = 0;
+    var bad = new Lazy<int>(() => { calls++; throw new InvalidOperationException(); });
+    for (int i = 0; i < 2; i++) { try { _ = bad.Value; } catch (InvalidOperationException) { } }
+    Assert(calls == 1, "виняток кешується");
+    int calls2 = 0;
+    var pub = new Lazy<int>(() => { calls2++; throw new InvalidOperationException(); }, LazyThreadSafetyMode.PublicationOnly);
+    for (int i = 0; i < 2; i++) { try { _ = pub.Value; } catch (InvalidOperationException) { } }
+    Assert(calls2 == 2, "PublicationOnly не кешує виняток");
+    Assert(new Lazy<System.Text.StringBuilder>().Value is not null, "Lazy<T>() через конструктор T");
+  types: |
+    namespace Med
+    {
+        class PatientRecord
+        {
+            private readonly Lazy<string[]> _history;
+
+            public PatientRecord(string name) =>
+                _history = new Lazy<string[]>(() => LoadHistory(name));
+
+            public bool IsHistoryLoaded => _history.IsValueCreated;
+            public string[] History => _history.Value; // тригер
+
+            static string[] LoadHistory(string name) => ["2024-01 огляд"];
+        }
+    }
+
+publish:
+  dark: ../../lectures/_assets/13-01/lazy-init.png
+  bw: ../../lectures/_assets/13-01/book/lazy-init.png

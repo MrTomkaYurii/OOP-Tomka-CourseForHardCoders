@@ -4,7 +4,6 @@ chapterTitle: "Розділ 12. Робота з датами та часом"
 section: 2
 number: "12.2"
 title: "Налаштування формату часу та дати"
-source: "../_combined/76-nalashtuvannia-formatu-chasu-ta-daty.md"
 ---
 
 ## 12.2. Налаштування формату часу та дати

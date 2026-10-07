@@ -4,7 +4,6 @@ chapterTitle: "Розділ 11. Робота з рядками"
 section: 5
 number: "11.5"
 title: "Регулярні вирази"
-source: "../_combined/74-rehuliarni-vyrazy.md"
 ---
 
 ## 11.5. Регулярні вирази

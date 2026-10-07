@@ -1,0 +1,45 @@
+# Лекція 7.2 «Застосування інтерфейсів»
+# Оригінал: lectures/_assets/07-02/Архив/interface-type-cast.png
+id: interface-type-cast
+title: "Перетворення типів через інтерфейс"
+subtitle: "До інтерфейсу — автоматично (розширення); від інтерфейсу до класу — лише з перевіркою або cast"
+
+types: [IDiagnosable, Patient, LabSample, InvalidCastException]
+
+body:
+  - hchain:
+      nodes:
+        - {title: "Patient", kind: box_accent, sub: ["`Name`, `DiagCode`, `RunDiagnostics()`"]}
+        - {title: "IDiagnosable", via: "автоматично", back: "is / as / cast", sub: ["лише `RunDiagnostics()`"]}
+  - panel:
+      heading: "`IDiagnosable diag = new Patient(\"Олена Сидоренко\", \"D-055\");`"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["вираз", "результат", "коли не той тип"]
+            groups:
+              - rows:
+                  - ["diag is Patient",                    "`true`",  "`false`"]
+                  - ["diag is LabSample",                  "`false`", "—"]
+                  - ["(diag as LabSample) == null",        "`true`",  "`as` дає `null`"]
+                  - ["((Patient)diag).Name",               "`\"Олена Сидоренко\"`", "[[`InvalidCastException`]]"]
+        - text:
+            text:
+              - "`diag.Name` не компілюється (CS1061): через змінну інтерфейсу видно лише його члени."
+              - "Найзручніше — `if (diag is Patient pat)`: перевірка, приведення і змінна разом."
+
+check:
+  usings: [System]
+  context: |
+    IDiagnosable diag = new Patient("Олена Сидоренко", "D-055");
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    try { _ = (LabSample)diag; throw new Exception("no"); } catch (InvalidCastException) { }
+  types: |
+    interface IDiagnosable { void RunDiagnostics(); }
+    class Patient : IDiagnosable { public string Name { get; } public string DiagCode { get; } public Patient(string n, string c) { Name = n; DiagCode = c; } public void RunDiagnostics() { } }
+    class LabSample : IDiagnosable { public void RunDiagnostics() { } }
+
+publish:
+  dark: ../../lectures/_assets/07-02/interface-type-cast.png
+  bw: ../../lectures/_assets/07-02/book/interface-type-cast.png

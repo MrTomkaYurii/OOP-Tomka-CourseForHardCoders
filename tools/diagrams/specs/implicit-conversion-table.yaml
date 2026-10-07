@@ -1,0 +1,52 @@
+# Лекція 2.10 «Явні та неявні перетворення»
+# Оригінал: lectures/_assets/02-10/Архив/implicit-conversion-table.png
+id: implicit-conversion-table
+title: "Неявні числові перетворення C#"
+subtitle: "Повна таблиця за специфікацією (перевірено компіляцією кожної пари); [[≈]] — можлива втрата точності"
+
+types: []
+
+body:
+  - panel:
+      heading: "з типу → у тип (без (тип))"
+      children:
+        - kv:
+            check: skip
+            key_code: true
+            columns: ["з", "у"]
+            groups:
+              - rows:
+                  - ["sbyte",  "`short int long float double decimal`"]
+                  - ["byte",   "`short ushort int uint long ulong float double decimal`"]
+                  - ["short",  "`int long float double decimal`"]
+                  - ["ushort", "`int uint long ulong float double decimal`"]
+                  - ["int",    "`long double decimal`, `float` [[≈]]"]
+                  - ["uint",   "`long ulong double decimal`, `float` [[≈]]"]
+                  - ["long",   "`decimal`, `float` [[≈]], `double` [[≈]]"]
+                  - ["ulong",  "`decimal`, `float` [[≈]], `double` [[≈]]"]
+                  - ["char",   "`ushort int uint long ulong float double decimal`"]
+                  - ["float",  "`double`"]
+  - note:
+      text:
+        - "`float`/`double` ↔ `decimal` — лише явно; у `char` неявно не перетворюється жоден тип."
+        - "«≈»: діапазон вміщує, але мантиса `float` має 24 біти, `double` — 53."
+
+check:
+  usings: [System]
+  asserts: |
+    sbyte sb = 1; byte b = 1; short s = 1; ushort us = 1; int i = 1; uint ui = 1; long l = 1; ulong ul = 1; char c = 'A'; float f = 1;
+    short a1 = sb; int a2 = sb; long a3 = sb; float a4 = sb; double a5 = sb; decimal a6 = sb;
+    short b1 = b; ushort b2 = b; int b3 = b; uint b4 = b; long b5 = b; ulong b6 = b; float b7 = b; double b8 = b; decimal b9 = b;
+    int c1 = s; long c2 = s; float c3 = s; double c4 = s; decimal c5 = s;
+    int d1 = us; uint d2 = us; long d3 = us; ulong d4 = us; float d5 = us; double d6 = us; decimal d7 = us;
+    long e1 = i; float e2 = i; double e3 = i; decimal e4 = i;
+    long f1 = ui; ulong f2 = ui; float f3 = ui; double f4 = ui; decimal f5 = ui;
+    float g1 = l; double g2 = l; decimal g3 = l;
+    float h1 = ul; double h2 = ul; decimal h3 = ul;
+    ushort k1 = c; int k2 = c; uint k3 = c; long k4 = c; ulong k5 = c; float k6 = c; double k7 = c; decimal k8 = c;
+    double m1 = f;
+    if ((long)(double)(9007199254740993L) == 9007199254740993L) throw new Exception("double precise?");
+
+publish:
+  dark: ../../lectures/_assets/02-10/implicit-conversion-table.png
+  bw: ../../lectures/_assets/02-10/book/implicit-conversion-table.png

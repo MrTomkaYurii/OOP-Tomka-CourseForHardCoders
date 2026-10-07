@@ -1,0 +1,69 @@
+# Лекція 15.1 «Введення у багатопоточність. Клас Thread»
+# Оригінал: lectures/_assets/15-01/Архив/foreground-vs-background.png
+id: foreground-vs-background
+title: "Передні й фонові потоки"
+subtitle: "Процес живе, доки живий хоч один передній потік; фонові зупиняються разом із процесом"
+
+types: [Thread, Task, ThreadPool]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Передній (foreground)"
+            children:
+              - box:
+                  code: |
+                    var sender = new Thread(SendReports);
+                    // IsBackground = false — за замовчуванням
+                  notes:
+                    - "процес [[чекає]] на його завершення;"
+                    - "для того, що мусить доробитися:"
+                    - "збереження результатів аналізів, звітів"
+        - panel:
+            heading: "Фоновий (background)"
+            children:
+              - box:
+                  kind: box_accent
+                  code: |
+                    var monitor = new Thread(Monitor);
+                    monitor.IsBackground = true;
+                  notes:
+                    - "процес його [[не чекає]];"
+                    - "для того, що можна обірвати:"
+                    - "моніторинг, кеш, журнал у фоні"
+
+  - panel:
+      heading: "Що відбувається, коли Main повернувся"
+      children:
+        - hchain:
+            nodes:
+              - { title: "Main завершився", sub: ["головний потік — передній"] }
+              - { title: "чекаємо передні", sub: ["`ReportSender` ще 300 мс"], via: "1" }
+              - { title: "процес завершується", sub: ["коли передніх не лишилось"], kind: box_accent, via: "2" }
+              - { title: "фонові обриваються", sub: ["без винятку, на будь-якому рядку"], via: "3" }
+        - kv:
+            check: skip
+            key_code: false
+            groups:
+              - rows:
+                  - ["`IsBackground`",              "можна змінити і [[після]] `Start()`, поки потік живий"]
+                  - ["потоки пулу, `Task.Run`",     "завжди фонові — `Main` їх не чекає без `Wait`/`await`"]
+                  - ["фоновий потік пише у файл",   "може обірватися посеред запису — дані зіпсуються"]
+
+check:
+  usings: [System, System.Threading, System.Threading.Tasks]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    void SendReports() { } void Monitor() { }
+  asserts: |
+    Eq(sender.IsBackground, false);
+    var t = new Thread(() => Thread.Sleep(100)); t.Start(); t.IsBackground = true; Eq(t.IsBackground, true); t.Join();
+    bool bg = false; Task.Run(() => bg = Thread.CurrentThread.IsBackground && Thread.CurrentThread.IsThreadPoolThread).Wait(); Eq(bg, true);
+    Eq(Thread.CurrentThread.IsBackground, false);
+
+publish:
+  dark: ../../lectures/_assets/15-01/foreground-vs-background.png
+  bw: ../../lectures/_assets/15-01/book/foreground-vs-background.png

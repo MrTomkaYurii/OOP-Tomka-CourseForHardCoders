@@ -4,7 +4,6 @@ chapterTitle: "Розділ 6. Делегати, події та лямбди"
 section: 1
 number: "6.1"
 title: "Делегати"
-source: "../_combined/34-delehaty.md"
 ---
 
 ## 6.1. Делегати

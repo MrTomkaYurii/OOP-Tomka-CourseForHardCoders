@@ -1,0 +1,52 @@
+# Лекція 7.2 «Застосування інтерфейсів»
+# Оригінал: lectures/_assets/07-02/Архив/multiple-interfaces.png
+id: multiple-interfaces
+title: "Один клас — кілька ролей"
+subtitle: "Patient реалізує три інтерфейси; змінна кожного інтерфейсу бачить лише свою роль"
+
+types: [IDiagnosable, IBillable, INotifiable, Patient]
+
+body:
+  - row:
+      gap: 16
+      equal: true
+      children:
+        - box: {title: "IDiagnosable", check: skip, code: "void RunDiagnostics();"}
+        - box: {title: "IBillable", check: skip, code: "decimal CalcBill();"}
+        - box: {title: "INotifiable", check: skip, code: "void Notify(string message);"}
+  - box:
+      title: "class Patient : IDiagnosable, IBillable, INotifiable"
+      kind: box_accent
+      check: skip
+      code: |
+        public void    RunDiagnostics()  => Console.WriteLine($"… діагностика за кодом {DiagCode}");
+        public decimal CalcBill()        => 850.00m;
+        public void    Notify(string msg) => Console.WriteLine($"[SMS → {Name}]: {msg}");
+      notes: ["базовий клас (якщо є) — першим у списку, далі інтерфейси через кому"]
+  - panel:
+      heading: "`Patient p = new Patient(\"Надія Литвин\", \"D-2024-077\");`"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["змінна", "доступно", "недоступно"]
+            groups:
+              - rows:
+                  - ["`IDiagnosable diag = p;`", "`diag.RunDiagnostics()`", "`diag.CalcBill()` — CS1061"]
+                  - ["`IBillable bill = p;`",    "`bill.CalcBill()` → `850.00`", "`bill.Notify(…)` — CS1061"]
+                  - ["`INotifiable note = p;`",  "`note.Notify(…)`",        "`note.Name` — CS1061"]
+
+check:
+  usings: [System]
+  asserts: |
+    var p = new Patient(); IBillable b = p;
+    if (b.CalcBill() != 850.00m || !(p is IDiagnosable) || !(p is INotifiable)) throw new Exception("multi");
+  types: |
+    interface IDiagnosable { void RunDiagnostics(); }
+    interface IBillable { decimal CalcBill(); }
+    interface INotifiable { void Notify(string message); }
+    class Patient : IDiagnosable, IBillable, INotifiable { public void RunDiagnostics() { } public decimal CalcBill() => 850.00m; public void Notify(string m) { } }
+
+publish:
+  dark: ../../lectures/_assets/07-02/multiple-interfaces.png
+  bw: ../../lectures/_assets/07-02/book/multiple-interfaces.png

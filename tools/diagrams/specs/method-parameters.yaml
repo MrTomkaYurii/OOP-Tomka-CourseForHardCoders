@@ -1,0 +1,40 @@
+# Лекція 2.17 «Параметри методів»
+# Оригінал: lectures/_assets/02-17/Архив/method-parameters.png
+id: method-parameters
+title: "Параметри та аргументи"
+subtitle: "Формальні параметри — в оголошенні, аргументи — при виклику; за позицією, за замовчуванням і за іменем"
+
+types: []
+
+body:
+  - box:
+      title: "Оголошення з лекції"
+      kind: box_accent
+      check: skip
+      code: "void RegisterVisit(string patientName, string ward = \"Загальна терапія\", bool urgent = false)"
+      notes: ["необов'язкові параметри — лише [[після]] обов'язкових"]
+  - panel:
+      heading: "Виклики (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["виклик", "отримані значення"]
+            groups:
+              - rows:
+                  - ["V(\"Іван\", \"Кардіологія\", true)",    "`\"Іван|Кардіологія|True\"`"]
+                  - ["V(\"Марія\", \"Неврологія\")",           "`\"Марія|Неврологія|False\"`"]
+                  - ["V(\"Олег\")",                            "`\"Олег|Загальна терапія|False\"`"]
+                  - ["V(\"Олег\", urgent: true)",              "`\"Олег|Загальна терапія|True\"`"]
+                  - ["V(urgent: true, patientName: \"Ганна\")", "`\"Ганна|Загальна терапія|True\"`"]
+        - text:
+            text: ["Позиційний аргумент після іменованого допустимий лише на «своїй» позиції (C# 7.2); `byte` → `int` неявно, `string` → `int` — CS1503."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    string V(string patientName, string ward = "Загальна терапія", bool urgent = false) => $"{patientName}|{ward}|{urgent}";
+
+publish:
+  dark: ../../lectures/_assets/02-17/method-parameters.png
+  bw: ../../lectures/_assets/02-17/book/method-parameters.png

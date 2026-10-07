@@ -4,7 +4,6 @@ chapterTitle: "Розділ 14. Рефлексія"
 section: 4
 number: "14.4"
 title: "Дослідження полів та властивостей за допомогою рефлексії"
-source: "../_combined/87-doslidzhennia-poliv-ta-vlastyvostei-za-dopomohoiu-refleksii.md"
 ---
 
 ## 14.4. Дослідження полів та властивостей за допомогою рефлексії

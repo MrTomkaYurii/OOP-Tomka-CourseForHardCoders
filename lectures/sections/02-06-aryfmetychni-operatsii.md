@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 6
 number: "2.6"
 title: "Арифметичні операції"
-source: "../_migration/source-chunks/05-operatsii-ta-prysvoiennia.md"
 ---
 
 ## 2.6. Арифметичні операції

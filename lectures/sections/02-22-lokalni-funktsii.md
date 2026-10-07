@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 22
 number: "2.22"
 title: "Локальні функції"
-source: "../_migration/source-chunks/11-rekursiia-ta-lokalni-funktsii.md"
 ---
 
 ## 2.22. Локальні функції

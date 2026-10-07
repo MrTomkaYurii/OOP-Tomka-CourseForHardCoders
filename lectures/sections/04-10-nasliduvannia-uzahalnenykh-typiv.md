@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 10
 number: "4.10"
 title: "Наслідування узагальнених типів"
-source: "../_combined/27-nasliduvannia-uzahalnenykh-typiv.md"
 ---
 
 ## 4.10. Наслідування узагальнених типів

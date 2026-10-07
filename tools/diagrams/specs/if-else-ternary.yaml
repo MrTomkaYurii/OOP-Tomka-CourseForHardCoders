@@ -1,0 +1,55 @@
+# Лекція 2.12 «Конструкція if..else та тернарна операція»
+# Оригінал: lectures/_assets/02-12/Архив/if-else-ternary.png
+id: if-else-ternary
+title: "if / else if / else і тернарна операція"
+subtitle: "Умови перевіряються згори вниз — виконується лише перша істинна гілка"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Ланцюжок else if"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "if (temp >= 39.0)", sub: ["true → «Висока температура», кінець"]}
+                    - {title: "else if (temp >= 37.5)", sub: ["true → «Підвищена», кінець"]}
+                    - {title: "else if (temp >= 36.0)", sub: ["true → «Норма», кінець"]}
+                    - {title: "else", kind: box_accent, sub: ["усе інше → «Знижена»"]}
+        - panel:
+            heading: "Тернарна операція — вираз"
+            children:
+              - box:
+                  title: "умова ? якщо_true : якщо_false"
+                  kind: box_accent
+                  check: skip
+                  code: |
+                    string status = age >= 18
+                        ? "Повнолітній"
+                        : "Неповнолітній";
+              - kv:
+                  check: "Eq({}, {v});"
+                  columns: ["вираз", "результат"]
+                  groups:
+                    - rows:
+                        - ["Classify(38.2)", "`\"Підвищена\"`"]
+                        - ["Classify(36.6)", "`\"Норма\"`"]
+                        - ["Classify(35.5)", "`\"Знижена\"`"]
+                        - ["Classify(39.0)", "`\"Висока температура\"`"]
+                        - ["17 >= 18 ? \"так\" : \"ні\"", "`\"ні\"`"]
+              - text:
+                  text: ["Обидві гілки мають давати сумісний тип;", "`if (isEmergency)` — без `== true`."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    string Classify(double temp) { if (temp >= 39.0) return "Висока температура"; else if (temp >= 37.5) return "Підвищена"; else if (temp >= 36.0) return "Норма"; else return "Знижена"; }
+
+publish:
+  dark: ../../lectures/_assets/02-12/if-else-ternary.png
+  bw: ../../lectures/_assets/02-12/book/if-else-ternary.png

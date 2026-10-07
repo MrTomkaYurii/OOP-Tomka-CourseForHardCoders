@@ -1,0 +1,98 @@
+# Лекція 10.7 «Інтерфейси IEnumerable<T> та IEnumerator<T>»
+# Оригінал: lectures/_assets/10-07/Архив/ienumerable-foreach-decomposition.png
+id: ienumerable-foreach-decomposition
+title: "foreach зсередини: IEnumerable<T> і IEnumerator<T>"
+subtitle: "Компілятор перетворює foreach на виклики GetEnumerator, MoveNext, Current і Dispose"
+
+types: [IEnumerable, IEnumerator, IDisposable, List, Ward]
+
+body:
+  - panel:
+      heading: "Що пишете — і що генерує компілятор"
+      children:
+        - hchain:
+            align: left
+            nodes:
+              - title: "foreach — синтаксичний цукор"
+                lines: |
+                  foreach (var p in ward)
+                      Console.WriteLine(p);
+                sub:
+                  - "1 · `GetEnumerator()` — один раз"
+                  - "2 · `MoveNext()` — перед кожним"
+                  - "    елементом; `false` — вихід"
+                  - "3 · `Current` — сам елемент"
+                  - "4 · `Dispose()` — у `finally`:"
+                  - "    і після `break`, і при винятку"
+              - title: "розгорнутий код"
+                kind: box_accent
+                via: "компілятор"
+                lines: |
+                  var e = ward.GetEnumerator();
+                  try
+                  {
+                      while (e.MoveNext())
+                      {
+                          var p = e.Current;
+                          Console.WriteLine(p);
+                      }
+                  }
+                  finally { e.Dispose(); }
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Хто що оголошує"
+            children:
+              - kv:
+                  check: skip
+                  columns: ["член", "інтерфейс", "роль"]
+                  groups:
+                    - rows:
+                        - ["GetEnumerator()", "`IEnumerable<T>`", "дай новий перелічувач"]
+                        - ["T Current",       "`IEnumerator<T>`", "поточний елемент"]
+                        - ["bool MoveNext()", "`IEnumerator`",    "крок; `false` — кінець"]
+                        - ["void Reset()",    "`IEnumerator`",    "на початок; у `yield` — виняток"]
+                        - ["void Dispose()",  "`IDisposable`",    "звільнити ресурси"]
+              - text:
+                  text:
+                    - "`IEnumerator<T>` сам оголошує лише `Current`;"
+                    - "решту [[успадковує]] від `IEnumerator` і `IDisposable`."
+
+        - panel:
+            heading: "Правила foreach"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["до першого `MoveNext()`",  "`Current` не визначено"]
+                        - ["кожен `foreach`",          "новий `GetEnumerator()`"]
+                        - ["змінити `List` у циклі",   "`InvalidOperationException`"]
+                        - ["масив `T[]`",              "компілюється у `for` з індексом"]
+              - note:
+                  kind: box_accent
+                  text:
+                    - "`foreach` шукає [[метод]] `GetEnumerator()`,"
+                    - "а не інтерфейс: достатньо публічного методу"
+                    - "з `MoveNext()` і `Current` у результаті"
+
+check:
+  usings: [System, System.Collections.Generic]
+  context: |
+    var ward = new List<string> { "Петренко", "Коваль" };
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    try { foreach (var x in ward) ward.Add("x"); Assert(false, "зміна в циклі"); } catch (InvalidOperationException) { }
+    IEnumerable<int> Gen() { yield return 1; }
+    try { Gen().GetEnumerator().Reset(); Assert(false, "Reset у yield"); } catch (NotSupportedException) { }
+    int n = 0; foreach (var b in new Beds()) n += b; Assert(n == 3, "патерн без інтерфейсу");
+  types: |
+    class Beds { public BedsEnum GetEnumerator() => new BedsEnum(); }
+    class BedsEnum { int i; public int Current => i; public bool MoveNext() => ++i <= 2; }
+
+publish:
+  dark: ../../lectures/_assets/10-07/ienumerable-foreach-decomposition.png
+  bw: ../../lectures/_assets/10-07/book/ienumerable-foreach-decomposition.png

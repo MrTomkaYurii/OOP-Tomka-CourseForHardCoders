@@ -1,4 +1,4 @@
-param([string]$Dir = "$PSScriptRoot\..\..\output\labs")
+param([string]$Dir = "$PSScriptRoot\output\labs")
 $ErrorActionPreference = 'Stop'
 $dir = (Resolve-Path $Dir).Path
 $word = New-Object -ComObject Word.Application

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 14. Рефлексія"
 section: 1
 number: "14.1"
 title: "Введення у рефлексію. Клас System.Type"
-source: "../_combined/84-vvedennia-u-refleksiiu-klas-system-type.md"
 ---
 
 ## 14.1. Введення у рефлексію. Клас System.Type

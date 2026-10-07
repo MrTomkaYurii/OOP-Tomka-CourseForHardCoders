@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 6
 number: "4.6"
 title: "Абстрактні класи та члени класів"
-source: "../_combined/23-abstraktni-klasy-ta-chleny-klasiv.md"
 ---
 
 ## 4.6. Абстрактні класи та члени класів

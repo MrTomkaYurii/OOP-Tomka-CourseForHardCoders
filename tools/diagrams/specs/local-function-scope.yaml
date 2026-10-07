@@ -1,0 +1,62 @@
+# Лекція 2.22 «Локальні функції»
+# Оригінал: lectures/_assets/02-22/Архив/local-function-scope.png
+id: local-function-scope
+title: "Область видимості локальної функції"
+subtitle: "Classify видима в усьому тілі AnalyzeBloodTest (навіть до оголошення) і невидима ззовні"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "void AnalyzeBloodTest(…)"
+            children:
+              - box:
+                  title: "виклики — до оголошення"
+                  check: skip
+                  code: |
+                    Classify(hemoglobin, 120, 170);
+                    Classify(glucose, 3.9, 6.1);
+                    Classify(cholesterol, 3.0, 5.2);
+              - box:
+                  title: "локальна функція"
+                  kind: box_accent
+                  check: skip
+                  code: |
+                    string Classify(double value, double low, double high)
+                    {
+                        if (value < low)  return "Низький";
+                        if (value > high) return "Високий";
+                        return "Норма";
+                    }
+        - stack:
+            children:
+              - panel:
+                  heading: "Результат (виконано)"
+                  children:
+                    - kv:
+                        check: "Eq({}, {v});"
+                        columns: ["виклик", "результат"]
+                        groups:
+                          - rows:
+                              - ["Classify(115.0, 120, 170)", "`\"Низький\"`"]
+                              - ["Classify(5.4, 3.9, 6.1)",   "`\"Норма\"`"]
+                              - ["Classify(6.1, 3.0, 5.2)",   "`\"Високий\"`"]
+              - note:
+                  text:
+                    - "Поза методом `Classify` не існує:"
+                    - "виклик ззовні — помилка [[CS0103]]."
+                    - "Логіка не дублюється тричі й не"
+                    - "засмічує клас допоміжним методом."
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    string Classify(double value, double low, double high) { if (value < low) return "Низький"; if (value > high) return "Високий"; return "Норма"; }
+
+publish:
+  dark: ../../lectures/_assets/02-22/local-function-scope.png
+  bw: ../../lectures/_assets/02-22/book/local-function-scope.png

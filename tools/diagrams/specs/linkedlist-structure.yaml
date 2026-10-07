@@ -1,0 +1,82 @@
+# Лекція 10.2 «Двозвʼязаний список LinkedList<T>»
+# Оригінал: lectures/_assets/10-02/Архив/linkedlist-structure.png
+id: linkedlist-structure
+title: "LinkedList<T>: двозвʼязний список вузлів"
+subtitle: "Кожен елемент — окремий обʼєкт LinkedListNode<T> з посиланнями на сусідів; суцільного масиву немає"
+
+types: [LinkedList, LinkedListNode, List]
+
+body:
+  - panel:
+      heading: "LinkedList<string> ward — 4 вузли, Count = 4"
+      children:
+        - hchain:
+            equal: true
+            nodes:
+              - { title: "null", kind: box_muted, code: true }
+              - { title: "Петренко", sub: ["ward.First"], kind: box_accent, fwd: false, back: "Previous" }
+              - { title: "Коваль", via: "Next", back: "Previous" }
+              - { title: "Сидоренко", via: "Next", back: "Previous" }
+              - { title: "Мельник", sub: ["ward.Last"], kind: box_accent, via: "Next", back: "Previous" }
+              - { title: "null", kind: box_muted, code: true, via: "Next" }
+        - text:
+            text:
+              - "Публічно `First.Previous` і `Last.Next` повертають `null`; сам список тримає лише посилання на перший вузол і `Count`."
+
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Вузол LinkedListNode<T>"
+            children:
+              - kv:
+                  check: "_ = {};"
+                  columns: ["властивість", "що містить"]
+                  groups:
+                    - rows:
+                        - ["node.Value",    "сам елемент (тут — `string`)"]
+                        - ["node.Next",     "наступний вузол; у хвоста — `null`"]
+                        - ["node.Previous", "попередній; у голови — `null`"]
+                        - ["node.List",     "список-власник; після `Remove` — `null`"]
+              - note:
+                  text:
+                    - "Вузол не можна вставити в інший список,"
+                    - "поки він належить цьому: `InvalidOperationException`"
+
+        - panel:
+            heading: "Вставка після відомого вузла"
+            children:
+              - box:
+                  code: |
+                    var node = ward.Find("Коваль");    // O(n)
+                    ward.AddAfter(node!, "Бойко");     // O(1)
+                  notes:
+                    - "переписуються 4 посилання:"
+                    - "`Коваль.Next`, `Бойко.Previous`, `Бойко.Next`,"
+                    - "`Сидоренко.Previous` — без зсуву елементів"
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["пошук вузла (`Find`, обхід)",        "O(n)"]
+                        - ["вставка/видалення за вузлом",       "[[O(1)]]"]
+                        - ["`AddFirst`, `AddLast`, `RemoveFirst`", "O(1)"]
+                        - ["доступ за індексом `[i]`",          "немає"]
+
+check:
+  usings: [System, System.Collections.Generic]
+  context: |
+    var ward = new LinkedList<string>(new[] { "Петренко", "Коваль", "Сидоренко", "Мельник" });
+    void Assert(bool ok, string what) { if (!ok) throw new Exception("Схема бреше: " + what); }
+  asserts: |
+    Assert(ward.First!.Value == "Петренко" && ward.Last!.Value == "Мельник", "First/Last");
+    Assert(ward.First.Previous == null && ward.Last.Next == null, "null на краях");
+    Assert(node!.Next!.Value == "Бойко" && node.Next.Next!.Value == "Сидоренко" && node.Next.Next.Previous!.Value == "Бойко", "AddAfter");
+    var n = ward.First; ward.RemoveFirst(); Assert(n.List == null && ward.Count == 4, "List після Remove");
+    var other = new LinkedList<string>();
+    try { other.AddLast(ward.First!); Assert(false, "чужий вузол"); } catch (InvalidOperationException) { }
+
+publish:
+  dark: ../../lectures/_assets/10-02/linkedlist-structure.png
+  bw: ../../lectures/_assets/10-02/book/linkedlist-structure.png

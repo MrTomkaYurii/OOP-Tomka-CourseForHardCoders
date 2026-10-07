@@ -4,7 +4,6 @@ chapterTitle: "Розділ 18. Робота з файловою системо�
 section: 5
 number: "18.5"
 title: "BinaryReader та BinaryWriter. Бінарні потоки"
-source: ""
 ---
 
 ## 18.5. BinaryReader та BinaryWriter. Бінарні потоки

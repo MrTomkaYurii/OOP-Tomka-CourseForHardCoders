@@ -4,7 +4,6 @@ chapterTitle: "Розділ 14. Рефлексія"
 section: 3
 number: "14.3"
 title: "Дослідження методів та конструкторів за допомогою рефлексії"
-source: "../_combined/86-doslidzhennia-metodiv-ta-konstruktoriv-za-dopomohoiu-refleksii.md"
 ---
 
 ## 14.3. Дослідження методів та конструкторів за допомогою рефлексії

@@ -1,0 +1,55 @@
+# Лекція 9.6 «Патерни списків»
+# Оригінал: lectures/_assets/09-06/Архив/list-pattern-syntax.png
+id: list-pattern-syntax
+title: "Патерн списків: позиції і slice (C# 11)"
+subtitle: "Спершу перевіряється довжина, потім кожна позиція; .. — нуль або більше елементів, не більше одного разу"
+
+types: []
+
+body:
+  - panel:
+      heading: "readings — серія вимірювань пульсу"
+      children:
+        - cells:
+            rows:
+              - caption: "readings"
+                cells: ["72", "88", "95", "101", "88"]
+                kinds: [box_accent, box, box, box, box_accent]
+                top: ["[0]", "[1]", "[2]", "[3]", "[4]"]
+                bottom: ["^5", "^4", "^3", "^2", "^1"]
+                note: "Length = 5"
+  - panel:
+      heading: "Патерн → результат (виконано)"
+      children:
+        - kv:
+            check: "Eq(readings is {}, {v});"
+            columns: ["readings is …", "збіг", "умова"]
+            groups:
+              - rows:
+                  - ["[72, 88, 95, 101, 88]",  "`true`",  "Length == 5 і кожен елемент"]
+                  - ["[> 70, _, _, > 90, _]",  "`true`",  "реляційні патерни в позиціях"]
+                  - ["[72, ..]",               "`true`",  "Length ≥ 1, перший 72"]
+                  - ["[.., 101]",              "`false`", "останній — 88"]
+                  - ["[_, .., _]",             "`true`",  "Length ≥ 2"]
+                  - ["[]",                     "`false`", "Length == 0"]
+                  - ["[..]",                   "`true`",  "будь-який не-null масив"]
+              - heading: "захоплення"
+                check: skip
+                rows:
+                  - ["[var first, .., var last]",     "`true`", "first = 72, last = 88"]
+                  - ["[72, .. var middle, 88]",       "`true`", "middle = `[88, 95, 101]` — новий масив"]
+        - text:
+            text: ["`.. var x` потребує зрізу: масив, `string`, `Span<T>`, `List<T>` (.NET 8+); з `IList<T>` — CS1503."]
+
+check:
+  usings: [System]
+  context: |
+    int[] readings = { 72, 88, 95, 101, 88 };
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    if (readings is [var first, .., var last]) Eq((first, last), (72, 88)); else throw new Exception("fl");
+    if (readings is [72, .. var middle, 88]) Eq(string.Join(",", middle), "88,95,101"); else throw new Exception("mid");
+
+publish:
+  dark: ../../lectures/_assets/09-06/list-pattern-syntax.png
+  bw: ../../lectures/_assets/09-06/book/list-pattern-syntax.png

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 17. Асинхронне програмування"
 section: 5
 number: "17.5"
 title: "Скасування async-операцій. CancellationToken"
-source: ""
 ---
 
 ## 17.5. Скасування async-операцій. CancellationToken

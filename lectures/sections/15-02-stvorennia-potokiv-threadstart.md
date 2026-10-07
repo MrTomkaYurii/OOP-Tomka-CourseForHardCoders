@@ -4,7 +4,6 @@ chapterTitle: "Розділ 15. Багатопоточність"
 section: 2
 number: "15.2"
 title: "Створення потоків. ThreadStart та ParameterizedThreadStart"
-source: ""
 ---
 
 ## 15.2. Створення потоків. ThreadStart та ParameterizedThreadStart

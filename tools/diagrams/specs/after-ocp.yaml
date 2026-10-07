@@ -1,0 +1,67 @@
+# Лекція 20.3 «OCP — принцип відкритості/закритості»
+# Оригінал: lectures/_assets/20-03/Архив/after-ocp.png
+id: after-ocp
+title: "Після OCP: новий тип — новий клас"
+subtitle: "Точка варіативності стала інтерфейсом; CostCalculator закритий для змін і відкритий для розширення"
+
+types: [IAppointmentType, RegularAppointment, UrgentAppointment, SpecialistAppointment, VipAppointment, CostCalculator]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Абстракція"
+            check: skip
+            kind: box_accent
+            code: |
+              interface IAppointmentType
+              {
+                  string TypeName { get; }
+                  decimal CalculateCost(int durationMinutes);
+              }
+        - box:
+            title: "Клієнт — не змінюється ніколи"
+            check: skip
+            code: |
+              class CostCalculator
+              {
+                  public decimal Calculate(IAppointmentType t, int min)
+                      => t.CalculateCost(min);
+              }
+
+  - panel:
+      heading: "Реалізації: кожна у своєму класі"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["CostCalculator.Calculate(…)", "грн", "правило"]
+            groups:
+              - rows:
+                  - ["calc.Calculate(new RegularAppointment(), 45)",    "`575m`",  "500 + 5 за хв понад 30"]
+                  - ["calc.Calculate(new UrgentAppointment(), 20)",     "`800m`",  "500 × 1,6"]
+                  - ["calc.Calculate(new SpecialistAppointment(\"Кардіолог\"), 60)", "`1200m`", "фіксовано"]
+              - heading: "додано пізніше — без жодної правки вище"
+                rows:
+                  - ["calc.Calculate(new VipAppointment(), 40)",        "`9000m`", "[[новий клас]]: 150 за хв, мінімум 60"]
+        - text:
+            text:
+              - "Не абстрагуйте наперед: «правило трьох» — абстракцію вводять, коли точка варіативності [[вже]] змінювалась."
+
+check:
+  usings: [System]
+  context: |
+    var calc = new CostCalculator();
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  types: |
+    interface IAppointmentType { string TypeName { get; } decimal CalculateCost(int durationMinutes); }
+    class RegularAppointment : IAppointmentType { public string TypeName => "Первинний прийом"; public decimal CalculateCost(int d) { decimal c = 500m; if (d > 30) c += (d - 30) * 5m; return c; } }
+    class UrgentAppointment : IAppointmentType { public string TypeName => "Терміновий прийом"; public decimal CalculateCost(int d) => 500m * 1.6m; }
+    class SpecialistAppointment : IAppointmentType { readonly string _s; public SpecialistAppointment(string s) => _s = s; public string TypeName => $"Консультація: {_s}"; public decimal CalculateCost(int d) => 1200m; }
+    class VipAppointment : IAppointmentType { public string TypeName => "VIP-обслуговування"; public decimal CalculateCost(int d) { int b = Math.Max(d, 60); return b * 150m; } }
+    class CostCalculator { public decimal Calculate(IAppointmentType t, int min) => t.CalculateCost(min); }
+
+publish:
+  dark: ../../lectures/_assets/20-03/after-ocp.png
+  bw: ../../lectures/_assets/20-03/book/after-ocp.png

@@ -4,7 +4,6 @@ chapterTitle: "Розділ 19. Серіалізація та десеріалі
 section: 4
 number: "19.4"
 title: "XmlReader та XmlWriter. Потоковий XML"
-source: ""
 ---
 
 ## 19.4. XmlReader та XmlWriter. Потоковий XML

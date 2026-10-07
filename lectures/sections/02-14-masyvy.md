@@ -4,7 +4,6 @@ chapterTitle: "Розділ 2. Основи програмування на C#"
 section: 14
 number: "2.14"
 title: "Масиви"
-source: "../_migration/source-chunks/08-masyvy.md"
 ---
 
 ## 2.14. Масиви

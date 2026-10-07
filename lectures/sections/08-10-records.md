@@ -4,7 +4,6 @@ chapterTitle: "Розділ 8. Додаткові можливості ООП у
 section: 10
 number: "8.10"
 title: "Records"
-source: "../_combined/55-records.md"
 ---
 
 ## 8.10. Records

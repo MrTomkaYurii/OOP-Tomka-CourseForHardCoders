@@ -1,0 +1,61 @@
+# Лекція 3.5 «Типи значень та типи посилань»
+# Оригінал: lectures/_assets/03-05/Архив/struct-shared-reference.png
+id: struct-shared-reference
+title: "Копія структури з полем-посиланням"
+subtitle: "Visit visit2 = visit1; копіює поля, але поле diagnosis — це посилання на один об'єкт Diagnosis"
+
+types: [Visit, Diagnosis]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - stack:
+            gap: 16
+            children:
+              - box:
+                  title: "visit1 (struct)"
+                  check: skip
+                  code: |
+                    date      = "2026-05-21"
+                    diagnosis → Diagnosis
+              - box:
+                  title: "visit2 = visit1 (копія)"
+                  check: skip
+                  code: |
+                    date      = "2026-05-21"
+                    diagnosis → той самий Diagnosis
+        - box:
+            title: "Diagnosis у купі — один"
+            kind: box_accent
+            check: skip
+            code: |
+              title = "Не встановлено"
+                    → "Ангіна"
+            notes: ["`visit2.diagnosis.title = \"Ангіна\"`", "видно і через `visit1`"]
+  - panel:
+      heading: "Перевірено виконанням"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["після зміни через visit2", "результат"]
+            groups:
+              - rows:
+                  - ["v1.diagnosis.title",                      "`\"Ангіна\"`"]
+                  - ["ReferenceEquals(v1.diagnosis, v2.diagnosis)", "`true`"]
+                  - ["ReferenceEquals(v1.date, v2.date)",       "`true`"]
+        - text:
+            text: ["`string` теж посилання — але незмінний: присвоєння `visit2.date = …` створює новий рядок і `visit1` не зачіпає."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    Visit v1 = new Visit("2026-05-21"); Visit v2 = v1; v2.diagnosis.title = "Ангіна";
+  types: |
+    struct Visit { public string date; public Diagnosis diagnosis; public Visit(string d) { date = d; diagnosis = new Diagnosis(); } }
+    class Diagnosis { public string title = "Не встановлено"; }
+
+publish:
+  dark: ../../lectures/_assets/03-05/struct-shared-reference.png
+  bw: ../../lectures/_assets/03-05/book/struct-shared-reference.png

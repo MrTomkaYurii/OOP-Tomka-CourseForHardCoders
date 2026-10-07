@@ -1,0 +1,59 @@
+# Лекція 16.1 «Клас Task. Основи TPL»
+# Оригінал: lectures/_assets/16-01/Архив/thread-vs-task.png
+id: thread-vs-task
+title: "Thread чи Task: модель виконання"
+subtitle: "Thread — окремий потік ОС; Task — одиниця роботи, яку планувальник TPL виконує на потоках пулу"
+
+types: [Thread, Task, ThreadPool, CancellationToken, AggregateException, TaskCreationOptions]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Thread"
+            code: |
+              var t = new Thread(() => Analyze("P001"));
+              t.Start();
+              t.Join();               // результату немає
+        - box:
+            title: "Task"
+            kind: box_accent
+            code: |
+              Task<int> task = Task.Run(() => Analyze("P001"));
+              int score = task.Result; // чекає й повертає результат
+
+  - panel:
+      heading: "Порівняння"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["", "Thread", "Task"]
+            groups:
+              - rows:
+                  - ["де виконується",   "власний потік ОС, стек ~1 МБ",   "потік [[пулу]] — повторно використовується"]
+                  - ["створення",        "дороге: потік ОС щоразу",        "дешеве: обʼєкт у черзі пулу"]
+                  - ["результат",        "лише через спільні змінні",      "`Task<T>.Result`, `await`"]
+                  - ["виняток у коді",   "[[завершує весь процес]]",       "зберігається в задачі → `AggregateException` при `Wait`"]
+                  - ["продовження",      "вручну",                         "`ContinueWith`, `await`"]
+                  - ["скасування",       "вручну (прапорець)",             "`CancellationToken`"]
+                  - ["фоновий?",         "передній за замовчуванням",      "завжди фоновий (потік пулу)"]
+                  - ["коли обрати",      "особливий потік: свій пріоритет, `STA`", "майже завжди; довге — `TaskCreationOptions.LongRunning`"]
+
+check:
+  usings: [System, System.Threading, System.Threading.Tasks]
+  context: |
+    int Analyze(string id) => id.Length;
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+  asserts: |
+    Eq(score, 4);
+    Eq(Task.Run(() => Thread.CurrentThread.IsThreadPoolThread && Thread.CurrentThread.IsBackground).Result, true);
+    Eq(new Thread(() => { }).IsBackground, false);
+    Eq(Task.Factory.StartNew(() => Thread.CurrentThread.IsThreadPoolThread, TaskCreationOptions.LongRunning).Result, false);
+    var f = Task.Run(() => throw new InvalidOperationException()); try { f.Wait(); Eq(0, 1); } catch (AggregateException e) { Eq(e.InnerException is InvalidOperationException, true); }
+
+publish:
+  dark: ../../lectures/_assets/16-01/thread-vs-task.png
+  bw: ../../lectures/_assets/16-01/book/thread-vs-task.png

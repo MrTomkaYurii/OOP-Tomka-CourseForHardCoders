@@ -4,7 +4,6 @@ chapterTitle: "Розділ 4. Об'єктно-орієнтоване прогр
 section: 3
 number: "4.3"
 title: "Віртуальні методи та властивості"
-source: "../_combined/20-virtualni-metody-ta-vlastyvosti.md"
 ---
 
 ## 4.3. Віртуальні методи та властивості
