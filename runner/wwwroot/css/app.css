@@ -239,3 +239,19 @@ body { display: flex; flex-direction: column; }
 *::-webkit-scrollbar-thumb { background: #4a5c56; border-radius: 4px; }
 *::-webkit-scrollbar-thumb:hover { background: #607a72; }
 *::-webkit-scrollbar-track { background: #161b19; }
+
+/* ── Світла тема (data-theme="light" ставить index.html / runner.js за темою сайту) ── */
+html[data-theme="light"] {
+  --bg: #ffffff; --panel: #f3f6f4; --panel-2: #e9eeeb;
+  --text: #17201c; --muted: #4f5854; --line: #d3dbd7;
+  --accent: #2f7d68; --accent-2: #a84b4b; --code-bg: #eef2f0;
+}
+html[data-theme="light"] .btn-primary { color: #ffffff; }
+html[data-theme="light"] .btn-primary:hover:not(:disabled) { background: #276b59; border-color: #276b59; }
+html[data-theme="light"] .btn-ghost:hover { border-color: #aab6b1; }
+html[data-theme="light"] .gutter { color: #66716c; border-right-color: #d3dbd7; }
+html[data-theme="light"] .code-area::placeholder { color: #8a948f; }
+html[data-theme="light"] .output { background: #f3f6f4; }
+html[data-theme="light"] *::-webkit-scrollbar-thumb { background: #b9c5c0; }
+html[data-theme="light"] *::-webkit-scrollbar-thumb:hover { background: #9aa8a2; }
+html[data-theme="light"] *::-webkit-scrollbar-track { background: #e9eeeb; }

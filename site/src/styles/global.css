@@ -16,6 +16,7 @@
   --topbar-bg: rgba(255, 255, 255, 0.9);
   --hover-bg: #edf2ef;
   --code-inline-bg: #edf2ef;
+  --code-block-bg: #eef2f0; /* блоки коду у світлій темі: сірий, не білий */
   --quote-bg: #f0f4f2;
   --glow-card: 0 0 0 1px rgba(47, 125, 104, 0.22), 0 8px 28px rgba(47, 125, 104, 0.13);
   --glow-badge: 0 0 8px rgba(47, 125, 104, 0.28);
@@ -42,6 +43,7 @@
   --topbar-bg: rgba(18, 22, 21, 0.94);
   --hover-bg: #242d29;
   --code-inline-bg: #22302b;
+  --code-block-bg: var(--code-bg);
   --quote-bg: #1d2925;
   --glow-card: 0 0 0 1px rgba(118, 199, 173, 0.38), 0 8px 32px rgba(118, 199, 173, 0.18);
   --glow-badge: 0 0 14px rgba(118, 199, 173, 0.55), 0 0 4px rgba(118, 199, 173, 0.75);
@@ -1326,6 +1328,20 @@ pre {
   font-size: 14px;
   line-height: 1.6;
 }
+
+/* Підсвітка коду (shiki, дві палітри): світла тема — світло-сірий фон і палітра
+   схем курсу, темна — github-dark. Кольори токенів приходять CSS-змінними. */
+.markdown-body pre.shiki {
+  background: var(--code-block-bg);
+  border: 1px solid var(--line);
+  color: var(--shiki-light);
+}
+.markdown-body pre.shiki span { color: var(--shiki-light); font-style: var(--shiki-light-font-style); }
+[data-theme="dark"] .markdown-body pre.shiki {
+  border-color: transparent;
+  color: var(--shiki-dark);
+}
+[data-theme="dark"] .markdown-body pre.shiki span { color: var(--shiki-dark); font-style: var(--shiki-dark-font-style); }
 
 .markdown-body :not(pre) > code {
   padding: 2px 6px;

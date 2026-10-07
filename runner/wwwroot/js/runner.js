@@ -1,3 +1,8 @@
+// Перемикання теми на сайті → подія storage в iframe (той самий origin) → перефарбувати
+window.addEventListener('storage', function (e) {
+    if (e.key === 'theme' && e.newValue) document.documentElement.dataset.theme = e.newValue;
+});
+
 window.runnerJs = {
 
     initScrollSync: function (textareaId, gutterId) {
@@ -177,6 +182,21 @@ window.runnerJs = {
             '.cm-atom{color:#79B8FF !important;}',
             '.cm-property{color:#79B8FF;}',
             '.CodeMirror-matchingbracket{color:#E1E4E8 !important;outline:1px solid #6A737D;}',
+            // світла тема — палітра схем курсу (diagrams/themes.yaml → light.syntax)
+            'html[data-theme="light"] .CodeMirror{background:#eef2f0;color:#17201c;}',
+            'html[data-theme="light"] .CodeMirror-gutters{background:#e6ebe8;border-right:1px solid #d3dbd7;}',
+            'html[data-theme="light"] .CodeMirror-linenumber{color:#66716c;}',
+            'html[data-theme="light"] .CodeMirror-cursor{border-left:2px solid #17201c;}',
+            'html[data-theme="light"] .CodeMirror-selected,html[data-theme="light"] .CodeMirror-focused .CodeMirror-selected{background:#cfe2da;}',
+            'html[data-theme="light"] .cm-keyword,html[data-theme="light"] .cm-builtin,html[data-theme="light"] .cm-atom{color:#1d4fb0 !important;}',
+            'html[data-theme="light"] .cm-string,html[data-theme="light"] .cm-string-2{color:#a03d0c !important;}',
+            'html[data-theme="light"] .cm-number{color:#4c6b14 !important;}',
+            'html[data-theme="light"] .cm-comment{color:#5b6863 !important;}',
+            'html[data-theme="light"] .cm-variable,html[data-theme="light"] .cm-variable-2,html[data-theme="light"] .cm-property{color:#17201c;}',
+            'html[data-theme="light"] .cm-def,html[data-theme="light"] .cm-type{color:#16735a !important;}',
+            'html[data-theme="light"] .cm-operator{color:#17201c !important;}',
+            'html[data-theme="light"] .cm-meta{color:#5b6863;}',
+            'html[data-theme="light"] .CodeMirror-matchingbracket{color:#17201c !important;outline:1px solid #8a948f;}',
             '.editor-wrap .CodeMirror{flex:1;min-width:0;}',
             '.editor-wrap .CodeMirror-scroll{overflow-x:auto;overflow-y:auto;}',
         ].join('\n');

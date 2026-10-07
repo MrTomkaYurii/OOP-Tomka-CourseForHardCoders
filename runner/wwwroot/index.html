@@ -9,15 +9,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="css/app.css?v=13" rel="stylesheet" />
+    <script>
+        // Тема як на сайті: той самий origin → спільний localStorage("theme")
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem("theme"); } catch (e) {}
+            if (!t) t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            document.documentElement.dataset.theme = t;
+        })();
+    </script>
+    <link href="css/app.css?v=14" rel="stylesheet" />
 </head>
 <body>
     <div id="app">
-        <div style="color:#a1aaa6;font-family:'Inter',sans-serif;font-size:13px;padding:16px">
+        <div style="color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;padding:16px">
             Завантаження C# runner…
         </div>
     </div>
-    <script src="js/runner.js?v=13"></script>
+    <script src="js/runner.js?v=14"></script>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
 </html>

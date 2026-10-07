@@ -394,9 +394,36 @@ function getLectureSummaries() {
 }
 
 // ── Shiki singleton ────────────────────────────────────────────────────────
+// Світла палітра коду — та сама, що у світлої теми схем (diagrams/themes.yaml → light.syntax),
+// щоб код на сайті й на рисунках мав одні кольори. Темна — стандартна github-dark.
+const courseLightTheme = {
+  name: "course-light",
+  type: "light",
+  colors: { "editor.background": "#eef2f0", "editor.foreground": "#17201c" },
+  tokenColors: [
+    { settings: { foreground: "#17201c" } },
+    { scope: ["comment", "punctuation.definition.comment"], settings: { foreground: "#5b6863", fontStyle: "italic" } },
+    { scope: ["keyword", "storage", "storage.type", "storage.modifier", "constant.language", "variable.language",
+              "keyword.type", "keyword.operator.expression", "keyword.operator.new", "keyword.control"],
+      settings: { foreground: "#1d4fb0" } },
+    { scope: ["keyword.operator", "punctuation"], settings: { foreground: "#17201c" } },
+    { scope: ["entity.name.type", "entity.name.class", "entity.name.interface", "entity.name.struct",
+              "entity.name.type.enum", "support.type", "support.class", "entity.other.inherited-class",
+              "storage.type.cs", "entity.name.type.namespace"],
+      settings: { foreground: "#16735a" } },
+    { scope: ["entity.name.function", "support.function", "meta.function-call entity.name.function"],
+      settings: { foreground: "#7f4d00" } },
+    { scope: ["string", "string.quoted", "punctuation.definition.string", "constant.character"],
+      settings: { foreground: "#a03d0c" } },
+    { scope: ["constant.numeric"], settings: { foreground: "#4c6b14" } },
+    { scope: ["entity.name.tag"], settings: { foreground: "#1d4fb0" } },
+    { scope: ["entity.other.attribute-name", "support.type.property-name"], settings: { foreground: "#16735a" } },
+  ],
+};
+
 async function getHighlighter() {
   return getSingletonHighlighter({
-    themes: ["github-dark"],
+    themes: ["github-dark", courseLightTheme as any],
     langs: ["csharp", "typescript", "javascript", "json", "bash", "text", "markdown", "xml", "sql"],
   });
 }
@@ -452,7 +479,12 @@ export async function renderMarkdown(markdown: string, options: { assetPrefix?: 
       return `<iframe src="${src}" style="width:100%;height:${height}px;border:0;border-radius:8px;display:block;margin:1.25rem 0;" loading="lazy" allow=""></iframe>`;
     }
 
-    return highlighter.codeToHtml(text, { lang: language, theme: "github-dark" });
+    // Обидві палітри одразу (CSS-змінні --shiki-light / --shiki-dark); тему обирає global.css
+    return highlighter.codeToHtml(text, {
+      lang: language,
+      themes: { light: "course-light", dark: "github-dark" },
+      defaultColor: false,
+    });
   };
 
   // Схеми лекцій мають дві версії: темну (_assets/NN-NN/x.png) і ч/б для книги
