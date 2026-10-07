@@ -1,0 +1,49 @@
+# Лекція 4.1 «Успадкування»
+# Оригінал: lectures/_assets/04-01/Архив/constructor-order.png
+id: constructor-order
+title: "Порядок конструкторів при `new Doctor(…)`"
+subtitle: "Виклики йдуть від похідного до базового, а тіла виконуються у зворотному порядку — від Object до Doctor"
+
+types: [Person, Doctor]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "1 · виклики (делегування вгору)"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "Doctor(name, age, spec)", sub: ["`: base(name, age)`"]}
+                    - {title: "Person(name, age)", sub: ["`: this(name)`"]}
+                    - {title: "Person(name)", sub: ["неявно `: base()`"]}
+                    - {title: "Object()", kind: box_muted, sub: ["перший, чиє тіло виконається"]}
+        - panel:
+            heading: "2 · тіла (вивід runnable-прикладу)"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "Object()", kind: box_muted, sub: ["нічого не виводить"]}
+                    - {title: "Person(name)", sub: ["«Person(name): Олена Коваль»"]}
+                    - {title: "Person(name, age)", sub: ["«Person(name, age): Олена Коваль, 38»"]}
+                    - {title: "Doctor(…)", kind: box_accent, sub: ["«Doctor(name, age, spec): Кардіологія»"]}
+  - note:
+      text: ["Ініціалізатори полів виконуються ще раніше — на вході в конструктор, [[до]] виклику `base(…)`: спершу Doctor, потім Person."]
+
+check:
+  usings: [System, System.Collections.Generic]
+  asserts: |
+    Log.L.Clear(); var d = new Doctor();
+    if (string.Join(",", Log.L) != "поле Doctor,поле Person,Person(name),Person(name, age),Doctor") throw new Exception(string.Join(",", Log.L));
+  types: |
+    static class Log { public static List<string> L = new(); public static int Add(string s) { L.Add(s); return 0; } }
+    class Person { int f = Log.Add("поле Person"); public Person(string n) => Log.Add("Person(name)"); public Person(string n, int a) : this(n) => Log.Add("Person(name, age)"); }
+    class Doctor : Person { int g = Log.Add("поле Doctor"); public Doctor() : base("Олена Коваль", 38) => Log.Add("Doctor"); }
+
+publish:
+  dark: ../lectures/_assets/04-01/constructor-order.png
+  bw: ../lectures/_assets/04-01/book/constructor-order.png

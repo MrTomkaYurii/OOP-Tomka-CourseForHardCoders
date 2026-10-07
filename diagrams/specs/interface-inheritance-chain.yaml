@@ -1,0 +1,59 @@
+# Лекція 7.4 «Успадкування інтерфейсів»
+# Оригінал: lectures/_assets/07-04/Архив/interface-inheritance-chain.png
+id: interface-inheritance-chain
+title: "Ланцюжок успадкування інтерфейсів"
+subtitle: "Кожен інтерфейс додає вимоги; клас, що реалізує останній, зобов'язаний реалізувати весь ланцюжок"
+
+types: [IExaminable, IDiagnosable, ITreatable, Doctor]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "Контракт росте"
+            children:
+              - chain:
+                  align: left
+                  nodes:
+                    - {title: "interface IExaminable", sub: ["`void Examine();`"]}
+                    - {title: "interface IDiagnosable : IExaminable", via: "+ Diagnose()", sub: ["`void Diagnose();`"]}
+                    - {title: "interface ITreatable : IDiagnosable", via: "+ Treat()", sub: ["`void Treat();`"]}
+                    - {title: "class Doctor : ITreatable", via: "реалізує", kind: box_accent, sub: ["`Examine()`, `Diagnose()`, `Treat()` — усі три"]}
+        - panel:
+            heading: "Тип змінної — зріз контракту"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  columns: ["змінна", "доступно"]
+                  groups:
+                    - rows:
+                        - ["`Doctor d`",        "усі три + власні члени"]
+                        - ["`ITreatable t`",    "`Examine`, `Diagnose`, `Treat`"]
+                        - ["`IDiagnosable g`",  "`Examine`, `Diagnose`"]
+                        - ["`IExaminable e`",   "лише `Examine`"]
+                    - heading: "перетворення"
+                      rows:
+                        - ["`IExaminable e = t;`", "неявно — вгору ланцюжком"]
+                        - ["`ITreatable x = e;`",  "[[CS0266]] — потрібен cast"]
+                        - ["`e is ITreatable`",    "`true` — об'єкт той самий"]
+              - text:
+                  text:
+                    - "Без `Treat()` клас не компілюється:"
+                    - "CS0535 — член інтерфейсу не реалізовано."
+
+check:
+  usings: [System]
+  asserts: |
+    ITreatable t = new Doctor(); IExaminable e = t; IDiagnosable g = t;
+    if (!(e is ITreatable) || !typeof(IExaminable).IsAssignableFrom(typeof(ITreatable))) throw new Exception("chain");
+  types: |
+    interface IExaminable { void Examine(); }
+    interface IDiagnosable : IExaminable { void Diagnose(); }
+    interface ITreatable : IDiagnosable { void Treat(); }
+    class Doctor : ITreatable { public void Examine() { } public void Diagnose() { } public void Treat() { } }
+
+publish:
+  dark: ../lectures/_assets/07-04/interface-inheritance-chain.png
+  bw: ../lectures/_assets/07-04/book/interface-inheritance-chain.png

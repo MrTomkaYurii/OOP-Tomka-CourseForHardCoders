@@ -1,0 +1,41 @@
+# Лекція 2.20 «Масив параметрів та ключове слово params»
+# Оригінал: lectures/_assets/02-20/Архив/params-variants.png
+id: params-variants
+title: "params: способи виклику"
+subtitle: "Компілятор збирає аргументи в масив; усередині методу values — звичайний double[]"
+
+types: []
+
+body:
+  - box:
+      title: "Оголошення з лекції"
+      kind: box_accent
+      check: skip
+      code: "void LogVitalSigns(params double[] values)"
+      notes: ["`params` — лише один і [[останній]] параметр (CS0231)"]
+  - panel:
+      heading: "Що отримує метод (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["виклик", "values"]
+            groups:
+              - rows:
+                  - ["Log()",                          "`\"[]\"`"]
+                  - ["Log(36.6)",                      "`\"[36.6]\"`"]
+                  - ["Log(120.0, 80.0)",               "`\"[120, 80]\"`"]
+                  - ["Log(new[] { 72.0, 36.7, 98.5 })", "`\"[72, 36.7, 98.5]\"`"]
+        - text:
+            text: ["C# 13 дозволяє `params` і для колекцій: `params ReadOnlySpan<double> values` — без виділення масиву."]
+
+check:
+  usings: [System, System.Globalization]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    string Log(params double[] values) => "[" + string.Join(", ", Array.ConvertAll(values, v => v.ToString(CultureInfo.InvariantCulture))) + "]";
+  asserts: |
+    string S(params ReadOnlySpan<double> v) => v.Length.ToString(); if (S(1, 2) != "2") throw new Exception("span");
+
+publish:
+  dark: ../lectures/_assets/02-20/params-variants.png
+  bw: ../lectures/_assets/02-20/book/params-variants.png

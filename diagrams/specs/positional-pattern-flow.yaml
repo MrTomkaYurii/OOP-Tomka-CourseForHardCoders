@@ -1,0 +1,53 @@
+# Лекція 9.4 «Позиційний патерн»
+# Оригінал: lectures/_assets/09-04/Архив/positional-pattern-flow.png
+id: positional-pattern-flow
+title: "Позиційний патерн: Deconstruct → позиції → патерни"
+subtitle: "Кількість позицій у патерні має дорівнювати кількості out-параметрів Deconstruct"
+
+types: [VitalSigns]
+
+body:
+  - panel:
+      heading: "Що робить компілятор для v switch { (>= 38.5, _, _) => … }"
+      children:
+        - hchain:
+            nodes:
+              - {title: "v", sub: ["`VitalSigns(38.8, 105, 96)`"]}
+              - {title: "Deconstruct", via: "викликає", kind: box_accent, sub: ["`out double t, out int p, out int o2`", "record генерує його сам"]}
+              - {title: "три значення", via: "out", sub: ["`38.8` · `105` · `96`", "без проміжного кортежу"]}
+              - {title: "патерни позицій", via: "зіставляє", sub: ["`>= 38.5` · `_` · `_`", "→ збіг"]}
+  - panel:
+      heading: "Assess(v) з лекції: arm-и згори вниз"
+      children:
+        - kv:
+            check: "Eq(Assess(new VitalSigns{}), {v});"
+            columns: ["(t, p, o2)", "результат", "перший збіг arm"]
+            groups:
+              - rows:
+                  - ["(39.5, 95, 99)", "`\"КРИТИЧНО: висока t° + тахікардія\"`", "`(>= 39.0, > 90, _)`"]
+                  - ["(38.8, 105, 96)", "`\"Жар — призначити жарознижуюче\"`", "`(>= 38.5, _, _)`"]
+                  - ["(36.9, 68, 85)", "`\"УВАГА: гіпоксія — кисень\"`", "`(_, _, < 90)`"]
+                  - ["(36.6, 72, 98)", "`\"Норма — спостереження\"`", "`(>= 36.0 and <= 37.0, < 100, >= 95)`"]
+                  - ["(37.2, 72, 98)", "`\"Стан: t=37.2 p=72 O2=98%\"`", "`(var t, var p, var o2)`"]
+        - text:
+            text: ["`(>= 36.0, ..)` [[не компілюється]]: `..` — лише в патерні списків; потрібні всі три позиції (CS8129)."]
+
+check:
+  usings: [System, System.Globalization]
+  context: |
+    CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    string Assess(VitalSigns v) => v switch
+    {
+        (>= 39.0, > 90, _)                  => "КРИТИЧНО: висока t° + тахікардія",
+        (>= 38.5, _, _)                     => "Жар — призначити жарознижуюче",
+        (_, _, < 90)                        => "УВАГА: гіпоксія — кисень",
+        (>= 36.0 and <= 37.0, < 100, >= 95) => "Норма — спостереження",
+        (var t, var p, var o2)              => $"Стан: t={t:F1} p={p} O2={o2}%"
+    };
+  types: |
+    public record VitalSigns(double Temperature, int Pulse, int OxygenSat);
+
+publish:
+  dark: ../lectures/_assets/09-04/positional-pattern-flow.png
+  bw: ../lectures/_assets/09-04/book/positional-pattern-flow.png

@@ -1,0 +1,38 @@
+# Лекція 2.18 «Повернення значення та оператор return»
+# Оригінал: lectures/_assets/02-18/Архив/return-flow.png
+id: return-flow
+title: "Потік виконання з return"
+subtitle: "Виклик передає керування в метод; return завершує метод і повертає значення в місце виклику"
+
+types: []
+
+body:
+  - row:
+      gap: 24
+      children:
+        - chain:
+            align: left
+            nodes:
+              - {title: "1 · виклик — код чекає", lines: "string diagnosis = GetDiagnosis();"}
+              - {title: "2 · тіло методу", via: "керування переходить у метод", lines: "string result = \"Пневмонія\";"}
+              - {title: "3 · метод завершено", kind: box_accent, via: "", lines: "return result;", lines_check: skip}
+              - {title: "4 · повернення в місце виклику", via: "значення \"Пневмонія\"", lines: "Console.WriteLine(diagnosis);", sub: ["наступний рядок після виклику"]}
+        - note:
+            text:
+              - "Значення з `return` стає"
+              - "результатом виразу"
+              - "`GetDiagnosis()` і"
+              - "присвоюється `diagnosis`."
+              - ""
+              - "Код після `return` у тому"
+              - "самому блоці — недосяжний:"
+              - "попередження CS0162."
+
+check:
+  usings: [System]
+  context: |
+    string GetDiagnosis() { string result = "Пневмонія"; return result; }
+
+publish:
+  dark: ../lectures/_assets/02-18/return-flow.png
+  bw: ../lectures/_assets/02-18/book/return-flow.png

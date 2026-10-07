@@ -31,7 +31,7 @@ throw new ExceptionType("повідомлення про помилку");
 
 Після `throw` вказується **новий об'єкт** будь-якого класу винятку. Рядок у конструкторі стає значенням властивості `Message`.
 
-```csharp run
+```csharp
 using System;
 
 RegisterPatient("Іван Петренко", 45);
@@ -51,7 +51,7 @@ void RegisterPatient(string name, int age)
 }
 ```
 
-Цей код не компілюється у повноцінний runnable без try/catch навколо. Загорнемо виклики:
+Цей код компілюється, але виконати його до кінця не вдасться: вже на другому виклику `RegisterPatient("", 30)` виняток `ArgumentException` ніхто не перехоплює, і програма аварійно завершується (`Unhandled exception`), а третій виклик так і не відбудеться. Загорнемо виклики в `try...catch`:
 
 ```csharp run
 using System;
@@ -155,6 +155,17 @@ void ProcessMedicalRecord(string id, string ageInput)
 
 Внутрішній `catch` логує помилку, але не пригнічує її — `throw;` передає виняток зовнішньому блоку. **Стек викликів залишається незмінним**: зовнішній обробник бачить оригінальне місце виникнення помилки.
 
+## throw як вираз і ThrowIfNull
+
+З C# 7 `throw` може бути не лише інструкцією, а й **виразом** — у тернарному операторі, після `??` та в тілі-виразі `=>`. Це дозволяє компактно перевіряти аргументи:
+
+```csharp
+public Patient(string name) =>
+    Name = name ?? throw new ArgumentNullException(nameof(name));
+```
+
+Для найчастіших перевірок .NET має готові статичні методи: `ArgumentNullException.ThrowIfNull(name)` (.NET 6), `ArgumentException.ThrowIfNullOrWhiteSpace(name)` (.NET 8), `ArgumentOutOfRangeException.ThrowIfNegative(age)` (.NET 8). Вони самі підставляють ім'я параметра в повідомлення.
+
 ## throw; vs throw ex; — важлива різниця
 
 ```csharp
@@ -224,6 +235,6 @@ int ParseAge(string raw)
 | `throw new Ex("msg")` | Будь-де | Генерує новий виняток |
 | `throw new Ex("msg", innerEx)` | Будь-де | Генерує виняток із збереженням причини |
 | `throw;` | Лише у `catch` | Перекидає поточний виняток, зберігаючи StackTrace |
-| `throw ex;` | Лише у `catch` | Перекидає з **новим** StackTrace — уникайте |
+| `throw ex;` | Будь-де, де є змінна винятку (зазвичай у `catch`) | Кидає той самий об'єкт, але StackTrace **починається заново** з цього місця — уникайте |
 
 `throw` у методі — це не помилка, а норма. Метод має «кидати» виняток, якщо не може виконати свою роботу коректно. Обробку помилки слід залишати тому рівню, який знає, що з нею робити.

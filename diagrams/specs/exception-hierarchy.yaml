@@ -1,0 +1,53 @@
+# Лекція 5.3 «Типи винятків. Клас Exception»
+# Оригінал: lectures/_assets/05-03/Архив/exception-hierarchy.png
+id: exception-hierarchy
+title: "Ієрархія класу Exception"
+subtitle: "Безпосередні базові класи поширених винятків (перевірено BaseType на .NET 10)"
+
+types: [Exception, SystemException, FormatException, ArithmeticException, OverflowException, DivideByZeroException, IndexOutOfRangeException, NullReferenceException, InvalidCastException, ArgumentException, ArgumentOutOfRangeException, ArgumentNullException, InvalidOperationException]
+
+body:
+  - row:
+      gap: 24
+      children:
+        - box:
+            title: "System.Exception"
+            kind: box_accent
+            check: skip
+            code: |
+              string     Message
+              string?    StackTrace
+              Exception? InnerException
+              MethodBase? TargetSite
+              string?    Source
+            notes: ["`ex.GetType().Name` — фактичний тип"]
+        - panel:
+            heading: "Тип → безпосередній базовий клас"
+            children:
+              - kv:
+                  check: "Eq(typeof({}).BaseType, {v});"
+                  columns: ["тип", "BaseType"]
+                  groups:
+                    - rows:
+                        - ["SystemException",              "`typeof(Exception)`"]
+                        - ["FormatException",              "`typeof(SystemException)`"]
+                        - ["ArithmeticException",          "`typeof(SystemException)`"]
+                        - ["OverflowException",            "`typeof(ArithmeticException)`"]
+                        - ["DivideByZeroException",        "`typeof(ArithmeticException)`"]
+                        - ["IndexOutOfRangeException",     "`typeof(SystemException)`"]
+                        - ["NullReferenceException",       "`typeof(SystemException)`"]
+                        - ["InvalidCastException",         "`typeof(SystemException)`"]
+                        - ["ArgumentException",            "`typeof(SystemException)`"]
+                        - ["ArgumentOutOfRangeException",  "`typeof(ArgumentException)`"]
+                        - ["ArgumentNullException",        "`typeof(ArgumentException)`"]
+  - note:
+      text: ["`catch (ArithmeticException)` перехопить і `OverflowException`, і `DivideByZeroException`; похідний тип — завжди вище за базовий у списку catch."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+
+publish:
+  dark: ../lectures/_assets/05-03/exception-hierarchy.png
+  bw: ../lectures/_assets/05-03/book/exception-hierarchy.png

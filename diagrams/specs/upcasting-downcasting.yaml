@@ -1,0 +1,43 @@
+# Лекція 4.2 «Перетворення типів»
+# Оригінал: lectures/_assets/04-02/Архив/upcasting-downcasting.png
+id: upcasting-downcasting
+title: "Upcasting і downcasting"
+subtitle: "Обидві змінні посилаються на один об'єкт; змінюється лише те, що видно через тип змінної"
+
+types: [Person, Patient, Doctor, InvalidCastException]
+
+body:
+  - hchain:
+      nodes:
+        - {title: "Patient", kind: box_accent, sub: ["`Name`, `Age`, `Diagnosis`"]}
+        - {title: "Person", via: "неявно", back: "явно: (Patient), as, is", sub: ["видно лише `Name`, `Age`, `Print()`"]}
+  - panel:
+      heading: "Способи downcasting (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["вираз", "результат", "коли тип не той"]
+            groups:
+              - rows:
+                  - ["((Patient)asPerson).Diagnosis",       "`\"Гіпертонія\"`", "[[`InvalidCastException`]]"]
+                  - ["(plain as Patient) == null",          "`true`",           "`as` дає `null`"]
+                  - ["asPerson is Patient p && p.Age == 45", "`true`",          "`false`, змінна не присвоєна"]
+                  - ["ReferenceEquals(asPerson, patient)",  "`true`",           "той самий об'єкт"]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    Patient patient = new Patient("Іван Петренко", 45, "Гіпертонія");
+    Person asPerson = patient;
+    Person plain = new Person("Сергій Бойко", 52);
+  asserts: |
+    try { _ = (Patient)plain; throw new Exception("no"); } catch (InvalidCastException) { }
+  types: |
+    class Person { public string Name { get; set; } = ""; public int Age { get; set; } public Person(string n, int a) { Name = n; Age = a; } public virtual string Print() => "Person"; }
+    class Patient : Person { public string Diagnosis { get; set; } = ""; public Patient(string n, int a, string d) : base(n, a) => Diagnosis = d; public override string Print() => "Patient"; }
+    class Doctor : Person { public string Specialization { get; set; } = ""; public Doctor(string n, int a, string s) : base(n, a) => Specialization = s; public override string Print() => "Doctor"; }
+
+publish:
+  dark: ../lectures/_assets/04-02/upcasting-downcasting.png
+  bw: ../lectures/_assets/04-02/book/upcasting-downcasting.png

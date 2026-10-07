@@ -1,0 +1,67 @@
+# Лекція 6.4 «Коваріантність та контраваріантність делегатів»
+# Оригінал: lectures/_assets/06-04/Архив/covariance-contravariance.png
+id: covariance-contravariance
+title: "Варіантність при присвоєнні методу делегату"
+subtitle: "Метод може повертати конкретніший тип і приймати загальніший, ніж оголошено в делегаті"
+
+types: [Notification, EmailNotification, NotificationBuilder, EmailReceiver]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - panel:
+            heading: "Коваріантність — результат"
+            children:
+              - box:
+                  title: "делегат"
+                  check: skip
+                  code: "delegate Notification NotificationBuilder(string text);"
+              - box:
+                  title: "метод"
+                  kind: box_accent
+                  check: skip
+                  code: "EmailNotification CreateEmail(string text)"
+              - text:
+                  text:
+                    - "`NotificationBuilder b = CreateEmail;` ✓"
+                    - "повернений `EmailNotification` [[є]] `Notification`"
+        - panel:
+            heading: "Контраваріантність — параметри"
+            children:
+              - box:
+                  title: "делегат"
+                  check: skip
+                  code: "delegate void EmailReceiver(EmailNotification n);"
+              - box:
+                  title: "метод"
+                  kind: box_accent
+                  check: skip
+                  code: "void ProcessNotification(Notification n)"
+              - text:
+                  text:
+                    - "`EmailReceiver r = ProcessNotification;` ✓"
+                    - "метод прийме [[будь-яке]] сповіщення, і email теж"
+  - note:
+      text:
+        - "Лише для посилальних типів: `Func<object> f = GetInt;`"
+        - "(метод повертає `int`) — помилка CS0407: `int` → `object`"
+        - "потребує упаковки, а делегат лише переадресовує виклик."
+
+check:
+  usings: [System]
+  asserts: |
+    NotificationBuilder b = M.CreateEmail; if (!(b("x") is EmailNotification)) throw new Exception("cov");
+    EmailReceiver r = M.Process; r(new EmailNotification("y"));
+  types: |
+    class Notification { public string Text { get; } public Notification(string t) => Text = t; }
+    class EmailNotification : Notification { public EmailNotification(string t) : base(t) { } }
+    class SmsNotification : Notification { public SmsNotification(string t) : base(t) { } }
+    delegate Notification NotificationBuilder(string text);
+    delegate void EmailReceiver(EmailNotification n);
+    static class M { public static EmailNotification CreateEmail(string t) => new EmailNotification(t); public static void Process(Notification n) { } }
+
+publish:
+  dark: ../lectures/_assets/06-04/covariance-contravariance.png
+  bw: ../lectures/_assets/06-04/book/covariance-contravariance.png

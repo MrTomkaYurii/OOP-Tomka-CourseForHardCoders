@@ -1,0 +1,50 @@
+# Лекція 6.3 «Події»
+# Оригінал: lectures/_assets/06-03/Архив/event-flow.png
+id: event-flow
+title: "Подія: підписка ззовні, виклик зсередини"
+subtitle: "Patient (видавець) не знає, хто підписаний; обробники викликаються по черзі в порядку підписки"
+
+types: [Patient, PatientHandler]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Видавець: class Patient"
+            kind: box_accent
+            check: skip
+            code: |
+              public event PatientHandler? Notify;
+
+              public void Spend(int amount)
+              {
+                  …
+                  Notify?.Invoke($"З рахунку {Name} списано: …");
+              }
+            notes: ["викликати подію може лише сам клас"]
+        - box:
+            title: "Підписник: зовнішній код"
+            check: skip
+            code: |
+              var p = new Patient("Тарас", 100);
+              p.Notify += DisplayMessage;
+              p.Notify += DisplayWarningMessage;
+              p.AddFunds(100);     // обидва
+              p.Notify -= DisplayWarningMessage;
+              p.Spend(300);        // лише перший
+            notes: ["ззовні доступні лише `+=` і `-=`"]
+  - panel:
+      heading: "Що відбувається при p.Spend(…)"
+      children:
+        - hchain:
+            nodes:
+              - {title: "Spend(…)", sub: ["змінився стан"]}
+              - {title: "Notify?.Invoke(msg)", via: "викликає", kind: box_accent, sub: ["`null` без підписників"]}
+              - {title: "DisplayMessage", via: "1-й", sub: ["`Console.WriteLine`"]}
+              - {title: "DisplayWarningMessage", via: "2-й", sub: ["якщо підписаний"]}
+
+publish:
+  dark: ../lectures/_assets/06-03/event-flow.png
+  bw: ../lectures/_assets/06-03/book/event-flow.png

@@ -1,0 +1,67 @@
+# Лекція 9.5 «Реляційний та логічний патерни»
+# Оригінал: lectures/_assets/09-05/Архив/relational-pattern-ranges.png
+id: relational-pattern-ranges
+title: "Реляційний патерн: шкала температури тіла"
+subtitle: "Сім arm-ів AssessTemperature з лекції покривають вісь без дірок; межі — з and"
+
+types: []
+
+body:
+  - panel:
+      heading: "Інтервали arm-ів (°C)"
+      children:
+        - cells:
+            rows:
+              - caption: "t"
+                cells: ["Гіпотермія", "Нижче норми", "Норма", "Субфебр.", "Жар", "Висока", "Критична"]
+                kinds: [box, box, box_accent, box, box, box, box]
+                top: ["< 35", "35…36", "36…37", "37…37.5", "37.5…38.5", "38.5…39.5", "≥ 39.5"]
+  - row:
+      gap: 24
+      children:
+        - panel:
+            heading: "AssessTemperature(t)"
+            children:
+              - kv:
+                  check: "Eq(AssessTemperature({}), {v});"
+                  columns: ["t", "результат", "arm"]
+                  groups:
+                    - rows:
+                        - ["34.8", "`\"Гіпотермія — термінова допомога\"`", "`< 35.0`"]
+                        - ["35.5", "`\"Нижче норми — спостереження\"`", "`>= 35.0 and < 36.0`"]
+                        - ["37.0", "`\"Нормальна температура\"`", "`>= 36.0 and <= 37.0`"]
+                        - ["37.2", "`\"Субфебрильна — спостереження\"`", "`> 37.0 and < 37.5`"]
+                        - ["39.0", "`\"Висока — термінова оцінка\"`", "`>= 38.5 and < 39.5`"]
+        - panel:
+            heading: "Правила (.NET 10)"
+            children:
+              - kv:
+                  check: skip
+                  key_code: false
+                  groups:
+                    - rows:
+                        - ["пріоритет", "`not` > `and` > `or`"]
+                        - ["праворуч", "лише [[константа]]: `> limit` — CS9135"]
+                        - ["`double` без `_`", "CS8509: не покрито `double.NaN`"]
+                        - ["`and` / `or`", "поєднують [[патерни]], а не `bool`"]
+                        - ["`is not null`", "не викликає перевантажений `==`"]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    string AssessTemperature(double t) => t switch
+    {
+        < 35.0              => "Гіпотермія — термінова допомога",
+        >= 35.0 and < 36.0  => "Нижче норми — спостереження",
+        >= 36.0 and <= 37.0 => "Нормальна температура",
+        > 37.0  and < 37.5  => "Субфебрильна — спостереження",
+        >= 37.5 and < 38.5  => "Жар — призначити жарознижуюче",
+        >= 38.5 and < 39.5  => "Висока — термінова оцінка",
+        >= 39.5             => "Критична — госпіталізація",
+        _                   => "NaN"
+    };
+
+publish:
+  dark: ../lectures/_assets/09-05/relational-pattern-ranges.png
+  bw: ../lectures/_assets/09-05/book/relational-pattern-ranges.png

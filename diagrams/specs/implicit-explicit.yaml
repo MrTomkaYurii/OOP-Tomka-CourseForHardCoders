@@ -1,0 +1,56 @@
+# Лекція 2.10 «Явні та неявні перетворення»
+# Оригінал: lectures/_assets/02-10/Архив/implicit-explicit.png
+id: implicit-explicit
+title: "Явні та неявні перетворення, checked"
+subtitle: "Звуження за замовчуванням мовчки відкидає старші біти; checked перетворює це на виняток"
+
+types: [OverflowException]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "Неявні — компілятор вставляє сам"
+            check: skip
+            code: |
+              byte  a = 10;
+              int   b = a;      // byte → int
+              long  c = b;      // int → long
+              double d = c;     // long → double
+        - box:
+            title: "Явні — програміст пише (тип)"
+            check: skip
+            code: |
+              double d = 3.7;
+              int    b = (int)d;     // 3
+              ushort u = 1000;
+              byte   c = (byte)u;    // 232 — втрата
+  - panel:
+      heading: "int a = 33, b = 600; (byte)(a + b) — виконано"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["варіант", "результат"]
+            groups:
+              - rows:
+                  - ["Unchk(33, 600)", "`\"121\"`"]
+                  - ["Chk(33, 600)",   "`\"OverflowException\"`"]
+                  - ["unchecked(int.MaxValue + Zero())", "`int.MinValue`"]
+        - text:
+            text:
+              - "633 = `10 0111 1001₂`; у `byte` лишаються 8 молодших бітів → 121."
+              - "Для [[констант]] (`(byte)633`) компілятор сам ловить переповнення — CS0221."
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    int Zero() => 1;
+    string Unchk(int a, int b) => ((byte)(a + b)).ToString();
+    string Chk(int a, int b) { try { return checked((byte)(a + b)).ToString(); } catch (Exception e) { return e.GetType().Name; } }
+
+publish:
+  dark: ../lectures/_assets/02-10/implicit-explicit.png
+  bw: ../lectures/_assets/02-10/book/implicit-explicit.png

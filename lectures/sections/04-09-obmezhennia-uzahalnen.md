@@ -328,9 +328,9 @@ void Compare<T>(T a, T b) where T : class, IComparable<T>, IEquatable<T> { }
 // void Wrong<T>() where T : class, struct { }
 ```
 
-## Обмеження notnull та unmanaged (C# 8+)
+## Обмеження notnull (C# 8) та unmanaged (C# 7.3)
 
-Починаючи з C# 8 з'явилися два додаткових обмеження.
+Є ще два додаткових обмеження: `notnull` (C# 8) і `unmanaged` (з'явилося раніше, у C# 7.3).
 
 **`where T : notnull`** — T не може бути nullable reference type (`string?`, `Patient?`) або `Nullable<T>` (`int?`, `double?`). Це корисно в nullable-aware context, де компілятор відстежує nullable-анотації:
 
@@ -358,11 +358,22 @@ class Cache<T> where T : notnull
 }
 ```
 
-**`where T : unmanaged`** — T є blittable value type: примітивний тип (`int`, `double`, `bool`, `char`) або структура, яка складається виключно з таких типів (без полів-посилань). Це обмеження дозволяє використовувати unsafe-операції (`sizeof(T)`, поінтер `T*`, `Span<T>` зі стек-алокацією), що важливо при роботі з бінарними протоколами та медичним обладнанням (DICOM, HL7 Binary):
+**`where T : unmanaged`** — T є **unmanaged-типом**: примітивний числовий тип (`int`, `double`, `bool`, `char`), `enum`, покажчик або структура, яка на всіх рівнях вкладеності складається виключно з таких типів (без полів-посилань). Часто такі типи неточно називають blittable, але це різні поняття: `bool` і `char` є unmanaged, проте не blittable — при передачі в нативний код їх представлення може змінюватися. Це обмеження дозволяє використовувати unsafe-операції (`sizeof(T)`, поінтер `T*`, `Span<T>` зі стек-алокацією), що важливо при роботі з бінарними протоколами та медичним обладнанням (DICOM, HL7 Binary):
 
 ```csharp run
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
+// T : unmanaged — можна отримати розмір і серіалізувати без рефлексії
+BinarySerializer<VitalMeasurement> serializer = new();
+VitalMeasurement m = new() { PatientId = 101, Systolic = 140f, Diastolic = 90f, HeartRate = 78f };
+byte[] bytes = serializer.ToBytes(m);
+
+Console.WriteLine($"Розмір структури: {Unsafe.SizeOf<VitalMeasurement>()} байт");
+Console.WriteLine($"Байтів серіалізовано: {bytes.Length}");
+VitalMeasurement m2 = serializer.FromBytes(bytes);
+Console.WriteLine($"Відновлено: пацієнт #{m2.PatientId}, АТ {m2.Systolic}/{m2.Diastolic}, ЧСС {m2.HeartRate}");
 
 // Бінарна структура вимірювання — без посилань, blittable
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -374,33 +385,21 @@ struct VitalMeasurement
     public float  HeartRate;   // 4 байти
 }
 
-// T : unmanaged — можна отримати розмір і серіалізувати без рефлексії
-BinarySerializer<VitalMeasurement> serializer = new();
-VitalMeasurement m = new() { PatientId = 101, Systolic = 140f, Diastolic = 90f, HeartRate = 78f };
-byte[] bytes = serializer.ToBytes(m);
-
-Console.WriteLine($"Розмір структури: {Marshal.SizeOf<VitalMeasurement>()} байт");
-Console.WriteLine($"Байтів серіалізовано: {bytes.Length}");
-VitalMeasurement m2 = serializer.FromBytes(bytes);
-Console.WriteLine($"Відновлено: пацієнт #{m2.PatientId}, АТ {m2.Systolic}/{m2.Diastolic}, ЧСС {m2.HeartRate}");
-
 class BinarySerializer<T> where T : unmanaged
 {
-    public unsafe byte[] ToBytes(T value)
+    // MemoryMarshal працює лише з unmanaged-типами — саме це гарантує обмеження
+    public byte[] ToBytes(T value)
     {
-        byte[] result = new byte[sizeof(T)];
-        fixed (byte* ptr = result)
-            *(T*)ptr = value;
+        byte[] result = new byte[Unsafe.SizeOf<T>()];
+        MemoryMarshal.Write(result, in value);
         return result;
     }
 
-    public unsafe T FromBytes(byte[] data)
-    {
-        fixed (byte* ptr = data)
-            return *(T*)ptr;
-    }
+    public T FromBytes(byte[] data) => MemoryMarshal.Read<T>(data);
 }
 ```
+
+Попередня версія цього прикладу використовувала `unsafe`-код із покажчиками (`fixed`, `*(T*)ptr`). Він теж коректний, але вимагає дозволу `AllowUnsafeBlocks` у проєкті й не виконувався б у браузерному раннері сайту, а ще ставив оголошення структури перед інструкціями верхнього рівня (помилка CS8803). `MemoryMarshal` з простору імен `System.Runtime.InteropServices` робить те саме без `unsafe` — і так само потребує обмеження `unmanaged`. Перевірено на .NET 10: розмір структури 14 байт, дані відновлюються без втрат.
 
 ## Зведена таблиця обмежень
 
@@ -411,5 +410,5 @@ class BinarySerializer<T> where T : unmanaged
 | `where T : class` | Reference type (клас, рядок) | Можна порівнювати з `null` |
 | `where T : struct` | Value type (struct, int…) | T ніколи не `null` |
 | `where T : notnull` | Не nullable (C# 8+) | Nullable-safe контейнери |
-| `where T : unmanaged` | Blittable value type (C# 7.3+) | Unsafe-операції, бінарна серіалізація |
+| `where T : unmanaged` | Unmanaged value type, без полів-посилань (C# 7.3+) | Unsafe-операції, бінарна серіалізація |
 | `where T : new()` | Публічний конструктор без параметрів | `new T()` всередині узагальненого класу |

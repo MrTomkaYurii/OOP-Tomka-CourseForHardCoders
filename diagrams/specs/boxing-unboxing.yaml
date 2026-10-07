@@ -1,0 +1,39 @@
+# Лекція 3.5 «Типи значень та типи посилань»
+# Оригінал: lectures/_assets/03-05/Архив/boxing-unboxing.png
+id: boxing-unboxing
+title: "Упаковка (boxing) і розпакування (unboxing)"
+subtitle: "int → object створює новий об'єкт-обгортку в купі; назад — явне приведення до точно того самого типу"
+
+types: []
+
+body:
+  - hchain:
+      nodes:
+        - {title: "int age = 45", sub: ["значення"]}
+        - {title: "object boxed = age", via: "boxing", kind: box_accent, sub: ["[[новий]] об'єкт у купі"]}
+        - {title: "int unboxed = (int)boxed", via: "unboxing", sub: ["знову копія"]}
+  - panel:
+      heading: "Поведінка (виконано)"
+      children:
+        - kv:
+            check: "Eq({}, {v});"
+            columns: ["вираз", "результат"]
+            groups:
+              - rows:
+                  - ["(int)boxed",                         "`45`"]
+                  - ["ReferenceEquals(boxed, (object)age)", "`false`"]
+                  - ["Unbox<double>(boxed)",               "`\"InvalidCastException\"`"]
+                  - ["(double)(int)boxed",                 "`45.0`"]
+        - text:
+            text: ["Розпакувати можна лише в той самий тип (або `int?`);", "кожна упаковка — новий об'єкт. `List<int>` обходиться без неї."]
+
+check:
+  usings: [System]
+  context: |
+    void Eq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"Схема бреше: {a} != {b}"); }
+    int age = 45; object boxed = age;
+    string Unbox<T>(object o) { try { _ = (T)o; return "ok"; } catch (Exception e) { return e.GetType().Name; } }
+
+publish:
+  dark: ../lectures/_assets/03-05/boxing-unboxing.png
+  bw: ../lectures/_assets/03-05/book/boxing-unboxing.png

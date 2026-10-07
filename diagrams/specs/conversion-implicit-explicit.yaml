@@ -1,0 +1,65 @@
+# Лекція 8.3 «Перевантаження операцій перетворення типів»
+# Оригінал: lectures/_assets/08-03/Архив/conversion-implicit-explicit.png
+id: conversion-implicit-explicit
+title: "Оператори перетворення: implicit і explicit"
+subtitle: "Тип результату — куди, параметр — звідки; один із них має бути типом, у якому оголошено оператор"
+
+types: [BodyTemperature, FahrenheitTemperature]
+
+body:
+  - row:
+      gap: 24
+      equal: true
+      children:
+        - box:
+            title: "implicit: double → BodyTemperature"
+            kind: box_accent
+            check: skip
+            code: |
+              public static implicit operator BodyTemperature(double c)
+                  => new BodyTemperature(c);
+
+              BodyTemperature t = 36.6;   // викликано op_Implicit
+            notes: ["безпечне, без втрат, очевидне;", "не повинне кидати винятків"]
+        - box:
+            title: "explicit: BodyTemperature → double"
+            check: skip
+            code: |
+              public static explicit operator double(BodyTemperature t)
+                  => t.Celsius;
+
+              double c = (double)t;       // викликано op_Explicit
+              double e = t;               // CS0266
+            notes: ["втрата сенсу, формула чи можливий виняток —", "програміст має написати cast явно"]
+  - panel:
+      heading: "Що заборонено компілятором"
+      children:
+        - kv:
+            check: skip
+            key_code: false
+            columns: ["спроба", "помилка"]
+            groups:
+              - rows:
+                  - ["ні параметр, ні результат не є власним типом", "CS0556"]
+                  - ["перетворення з/до інтерфейсу", "CS0552"]
+                  - ["з/до базового чи похідного класу, `object`", "CS0553 / CS0554"]
+                  - ["implicit і explicit для однієї пари типів", "CS0557"]
+
+check:
+  usings: [System]
+  asserts: |
+    BodyTemperature t = 36.6;
+    double c = (double)t;
+    if (c != 36.6) throw new Exception("conv");
+  types: |
+    class BodyTemperature
+    {
+        public double Celsius { get; }
+        public BodyTemperature(double c) => Celsius = c;
+        public static implicit operator BodyTemperature(double c) => new BodyTemperature(c);
+        public static explicit operator double(BodyTemperature t) => t.Celsius;
+    }
+
+publish:
+  dark: ../lectures/_assets/08-03/conversion-implicit-explicit.png
+  bw: ../lectures/_assets/08-03/book/conversion-implicit-explicit.png
