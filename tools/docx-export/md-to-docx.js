@@ -171,7 +171,8 @@ async function main() {
       properties: {
         page: {
           size:   { width: PAGE.A5_W, height: PAGE.A5_H },
-          margin: { top: PAGE.M_TOP, bottom: PAGE.M_BOT, left: PAGE.M_INN, right: PAGE.M_OUT },
+          margin: { top: PAGE.M_TOP, bottom: PAGE.M_BOT, left: PAGE.M_INN, right: PAGE.M_OUT,
+                    footer: PAGE.FOOTER },
         },
       },
       footers:  { default: makeFooter() },
